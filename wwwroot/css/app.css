@@ -1,0 +1,74 @@
+:root {
+    --sfondo: #12171c;
+    --superficie: #1b2229;
+    --testo: #e8edf2;
+    --testo-tenue: #9aa8b5;
+    --accento: #4a9d7f;
+    --bordo: #2b343d;
+    --raggio: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--sfondo);
+    color: var(--testo);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.app-layout, .login-layout {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+.login-layout {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 48px;            /* bersaglio tattile: sotto i 44px si sbaglia a toccare */
+    padding: 0 1.25rem;
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    background: var(--superficie);
+    color: var(--testo);
+    font: inherit;
+    cursor: pointer;
+}
+
+.btn.primary { background: var(--accento); border-color: var(--accento); color: #06120d; font-weight: 600; }
+.btn:disabled { opacity: .6; cursor: default; }
+
+.errore {
+    border: 1px solid #6d2b2b;
+    background: #2a1616;
+    border-radius: var(--raggio);
+    padding: .75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.avvio { padding: 2rem; color: var(--testo-tenue); }
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    inset: auto 0 0 0;
+    padding: .75rem 1rem;
+    background: #ffe08a;
+    color: #202020;
+}

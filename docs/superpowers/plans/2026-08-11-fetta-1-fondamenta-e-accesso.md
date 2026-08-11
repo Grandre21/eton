@@ -149,8 +149,8 @@ Evita il rumore CRLF/LF già visto al primo commit.
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.5" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
     <PackageReference Include="Supabase.Gotrue" Version="6.3.0" />
     <PackageReference Include="Supabase.Postgrest" Version="4.4.0" />
   </ItemGroup>
@@ -164,12 +164,29 @@ Evita il rumore CRLF/LF già visto al primo commit.
     <InternalsVisibleTo Include="Eton.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Eton.Tests/ è una SOTTOCARTELLA di questo progetto, non un fratello: la radice del
+         repository è anche la cartella di Eton.csproj. Il glob implicito dell'SDK (**/*.cs)
+         esclude d'ufficio solo bin/ e obj/ DI QUESTO progetto, quindi senza queste righe
+         Eton.csproj compilerebbe anche i sorgenti dei test — incluso il generato
+         Eton.Tests/obj/**/Eton.Tests.GlobalUsings.g.cs, che contiene `global using Xunit;` —
+         e fallirebbe con CS0246 su Xunit, che non è referenziato qui.
+         Stesso rimedio, per la stessa ragione, in DndCompanion.csproj. -->
+    <Compile Remove="Eton.Tests\**\*.cs" />
+    <Content Remove="Eton.Tests\**\*" />
+    <None Remove="Eton.Tests\**\*" />
+  </ItemGroup>
+
 </Project>
 ```
 
-> Se la versione 10.0.5 di `Microsoft.AspNetCore.Components.WebAssembly` non è disponibile,
-> allineare alla patch più recente della banda 10.0.\* installata (`dotnet list package --outdated`);
-> non cambiare la major.
+> **La versione 10.0.10 non è arbitraria:** è quella del runtime effettivamente installato su
+> questa macchina (`dotnet --list-runtimes` → `Microsoft.AspNetCore.App 10.0.10`). Il pacchetto
+> del framework va allineato al runtime, non alzato all'ultima patch pubblicata su NuGet
+> (10.0.11 al momento): un pacchetto più recente del runtime costringe a scaricare pack
+> aggiuntivi e introduce differenze fra la macchina di sviluppo e la CI senza dare nulla in
+> cambio. I pacchetti di terze parti (Supabase) seguono invece la regola opposta, decisa
+> dall'utente: ultima versione.
 
 - [ ] **Step 3: Creare `Eton.Tests/Eton.Tests.csproj`**
 
@@ -215,9 +232,13 @@ Evita il rumore CRLF/LF già visto al primo commit.
 @using Microsoft.JSInterop
 @using Eton
 @using Eton.Layout
-@using Eton.Services
-@using Eton.Shared
 ```
+
+> **Niente `@using Eton.Services` né `@using Eton.Shared` qui.** Quei namespace nascono ai Task 3
+> e 5, e in Razor un `@using` verso un namespace inesistente non è rumore innocuo: è `CS0234`, e
+> siccome `_Imports.razor` viene incluso in *ogni* componente, rompe la compilazione dell'intero
+> progetto. La regola: **il `using` si aggiunge nel task che crea il namespace** — Task 3 Step 10
+> per `Eton.Services`, Task 5 Step 5 per `Eton.Shared`.
 
 - [ ] **Step 5: Creare `App.razor`**
 
@@ -459,12 +480,15 @@ Sostituire temporaneamente il corpo di `Pages/Home.razor` con `@page "/"` + `<h1
 
 ```bash
 cd /g/Sviluppo/Eton
-dotnet new sln -n Eton
-dotnet sln add Eton.csproj Eton.Tests/Eton.Tests.csproj
+dotnet new sln -n Eton -f sln
+dotnet sln Eton.sln add Eton.csproj Eton.Tests/Eton.Tests.csproj
 dotnet build Eton.sln
 ```
 
 Atteso: `Build succeeded`, zero errori.
+
+> `-f sln` è necessario: l'SDK .NET 10 genera di default il nuovo formato `.slnx`. Si resta su
+> `.sln` per coerenza con `DndCompanion` e con la riga `*.sln text eol=crlf` di `.gitattributes`.
 
 - [ ] **Step 14: Verificare che l'app si apra**
 
@@ -781,6 +805,7 @@ git commit -m "Schema iniziale: profili, spazi, membri, funzioni SECURITY DEFINE
 
 **Files:**
 - Create: `Services/SessionFreshness.cs`, `Services/OAuthCallback.cs`
+- Modify: `_Imports.razor` (aggiunge `@using Eton.Services`, che qui diventa lecito)
 - Test: `Eton.Tests/SessionFreshnessTests.cs`, `Eton.Tests/OAuthCallbackTests.cs`
 
 **Interfaces:**
@@ -1027,10 +1052,27 @@ dotnet test Eton.Tests/Eton.Tests.csproj
 
 Atteso: 13 test passati.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 9: Aggiungere `@using Eton.Services` a `_Imports.razor`**
+
+Ora il namespace esiste, quindi l'importazione è lecita. Aggiungere la riga in fondo all'elenco:
+
+```razor
+@using Eton.Services
+```
+
+- [ ] **Step 10: Verificare che il progetto compili ancora**
 
 ```bash
-git add Services/SessionFreshness.cs Services/OAuthCallback.cs Eton.Tests/
+dotnet build Eton.sln
+```
+
+Atteso: `Build succeeded`. Se compare `CS0234` su `Eton.Services`, il namespace dei due file
+nuovi non è quello dichiarato: controllare che entrambi abbiano `namespace Eton.Services;`.
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add Services/SessionFreshness.cs Services/OAuthCallback.cs Eton.Tests/ _Imports.razor
 git commit -m "Logica pura di sessione e ritorno OAuth, con i suoi test"
 ```
 
@@ -1491,7 +1533,8 @@ git commit -m "Strato Supabase su Gotrue 6 con flusso PKCE"
 
 **Files:**
 - Create: `Services/AuthStateService.cs`, `Shared/AuthRedirect.razor`, `Pages/Login.razor`
-- Modify: `Program.cs`, `Layout/MainLayout.razor`, `Pages/Home.razor`, `wwwroot/appsettings.json`
+- Modify: `Program.cs`, `_Imports.razor` (aggiunge `@using Eton.Shared`),
+  `Layout/MainLayout.razor`, `Pages/Home.razor`, `wwwroot/appsettings.json`
 
 **Interfaces:**
 - Consumes: `SupabaseService.GetClientAsync()`, `.AvviaAccessoGoogleAsync()`, `.SignOutAsync()`,
@@ -1658,10 +1701,18 @@ public class AuthStateService
 
 Sostituire le versioni provvisorie del Task 1 Step 12 con quelle definitive degli Step 6 e 7.
 
-- [ ] **Step 5: Registrare `AuthStateService` in `Program.cs`**
+- [ ] **Step 5: Registrare `AuthStateService` e aggiungere `@using Eton.Shared`**
+
+In `Program.cs`:
 
 ```csharp
 builder.Services.AddSingleton<AuthStateService>();
+```
+
+In `_Imports.razor`, ora che `Shared/AuthRedirect.razor` esiste e quindi il namespace anche:
+
+```razor
+@using Eton.Shared
 ```
 
 - [ ] **Step 6: Aggiungere gli stili della schermata di accesso a `wwwroot/css/app.css`**
@@ -1755,21 +1806,28 @@ git commit -m "Accesso con Google, guardia di rotta e logout"
 {
   "name": "Eton",
   "short_name": "Eton",
+  "description": "Note personali, note condivise e collezioni da recensire insieme.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
+  "lang": "it",
+  "dir": "ltr",
   "display": "standalone",
   "background_color": "#12171c",
   "theme_color": "#1f2933",
-  "lang": "it",
-  "dir": "ltr",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
-    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
     { "src": "icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
   ]
 }
 ```
+
+> Niente `shortcuts` per ora: punterebbero a rotte che non esistono ancora. Si aggiungono con la
+> fetta 2, quando ci saranno Note e Collezioni — e sono anche uno degli elementi che irrobustiscono
+> la TWA rispetto al criterio Play Store di "funzionalità minima".
 
 - [ ] **Step 2: Creare le icone**
 
@@ -1788,27 +1846,41 @@ self.addEventListener('fetch', () => { });
 
 - [ ] **Step 4: Creare `wwwroot/service-worker.published.js`**
 
+Questa versione è quella collaudata di `DndCompanion/wwwroot/service-worker.published.js`, ridotta
+alle parti che servono a Eton (non c'è il ramo dei pacchetti dati dei cataloghi D&D).
+
 ```javascript
-// Cache-first sugli asset dell'applicazione, network-first per tutto il resto.
-// L'elenco degli asset lo genera il publish in service-worker-assets.js.
+// Attenzione ai caveat dell'offline nelle PWA: https://aka.ms/blazor-offline-considerations
 self.importScripts('./service-worker-assets.js');
 
-self.addEventListener('install', event => event.waitUntil(onInstall()));
-self.addEventListener('activate', event => event.waitUntil(onActivate()));
+self.addEventListener('install', event => event.waitUntil(onInstall(event)));
+self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
 self.addEventListener('fetch', event => event.respondWith(onFetch(event)));
+
+// Aggiornamento su richiesta: la pagina invia { type: 'SKIP_WAITING' } quando l'utente accetta di
+// aggiornare, e solo allora il service worker in attesa si attiva. NESSUNO skipWaiting automatico
+// in onInstall: attivare una versione nuova sotto i piedi di una sessione aperta significa
+// mescolare codice vecchio e nuovo nella stessa pagina. Il banner che invia il messaggio arriva
+// in una fetta successiva; il gestore sta qui da subito perché cambiare la strategia di
+// aggiornamento a service worker già installati sui telefoni è molto più fastidioso che
+// prevederla adesso.
+self.addEventListener('message', event => {
+    if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
-const offlineAssetsInclude = [/\.dll$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/];
+const offlineAssetsInclude = [/\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.webmanifest$/];
 const offlineAssetsExclude = [/^service-worker\.js$/];
 
-// Sul sito pubblicato l'app vive sotto /eton/: la richiesta di navigazione va risolta con
-// l'index.html di QUESTO scope, non con quello della radice del dominio.
-const base = self.registration.scope.replace(self.location.origin, '');
-const baseUrl = new URL(base, self.location.origin);
+// Base path derivato DINAMICAMENTE dallo scope: "/" in locale, "/eton/" su GitHub Pages.
+// 'self.location' è l'URL di questo script, quindi './' risolve la cartella da cui è servito:
+// nessun percorso scritto a mano, e nessun sed da ricordare nel workflow di deploy.
+const base = new URL('./', self.location).pathname;
+const baseUrl = new URL(base, self.origin);
 const manifestUrlList = self.assetsManifest.assets.map(asset => new URL(asset.url, baseUrl).href);
 
-async function onInstall() {
+async function onInstall(event) {
     const assetsRequests = self.assetsManifest.assets
         .filter(asset => offlineAssetsInclude.some(pattern => pattern.test(asset.url)))
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
@@ -1816,16 +1888,24 @@ async function onInstall() {
     await caches.open(cacheName).then(cache => cache.addAll(assetsRequests));
 }
 
-async function onActivate() {
+async function onActivate(event) {
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    // Prende il controllo dei client già aperti subito dopo l'attivazione: così al PRIMO
+    // caricamento la pagina è già controllata dal service worker e l'app funziona offline da
+    // subito, senza un reload manuale. Non intacca l'aggiornamento su richiesta: negli update
+    // onActivate gira solo dopo lo SKIP_WAITING.
+    await self.clients.claim();
 }
 
 async function onFetch(event) {
     let cachedResponse = null;
     if (event.request.method === 'GET') {
+        // Ogni richiesta di navigazione si risolve con l'index.html in cache, tranne quando punta
+        // a una risorsa vera dell'app: è ciò che fa funzionare le rotte di Blazor offline.
         const shouldServeIndexHtml = event.request.mode === 'navigate'
             && !manifestUrlList.some(url => url === event.request.url);
 
@@ -1839,34 +1919,66 @@ async function onFetch(event) {
 
 - [ ] **Step 5: Creare `wwwroot/404.html`**
 
-GitHub Pages non conosce le rotte di Blazor: senza questo file, un accesso diretto a `/eton/login`
-restituisce 404. Rimandare tutto all'app:
+GitHub Pages non conosce le rotte di Blazor: un accesso diretto a `/eton/login` restituisce 404.
+Si usa la tecnica `spa-github-pages`, la stessa già in uso in `DndCompanion/wwwroot/404.html`:
+il 404 riscrive il percorso profondo come query string e rimanda all'`index.html`, che lo
+ripristina con `history.replaceState`. Rispetto a una soluzione con `sessionStorage` non perde
+query string e hash, e non ha percorsi scritti a mano oltre a `pathSegmentsToKeep`.
+
+`wwwroot/404.html`:
 
 ```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eton</title>
-    <script>
-        sessionStorage.setItem('rotta-richiesta', location.pathname + location.search);
-        location.replace('/eton/');
+    <script type="text/javascript">
+        // Single Page Apps for GitHub Pages — https://github.com/rafgraph/spa-github-pages
+        // GitHub Pages serve questo file per qualunque percorso sconosciuto. Lo script riscrive
+        // l'URL profondo come query string e rimanda all'index.html dell'app, che lo ripristina.
+        //
+        // pathSegmentsToKeep = 1 tiene "/eton" come base e codifica tutto ciò che segue.
+        // Va cambiato se cambia il nome del repository.
+        var pathSegmentsToKeep = 1;
+
+        var l = window.location;
+        l.replace(
+            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+            l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+            l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+            (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+            l.hash
+        );
     </script>
 </head>
 <body></body>
 </html>
 ```
 
-E in `wwwroot/index.html`, subito prima del tag di chiusura `</body>`, ripristinare la rotta:
+E in `wwwroot/index.html`, **dentro `<head>` e prima di ogni altro script**, la controparte che
+ripristina il percorso:
 
 ```html
-<script>
-    (function () {
-        var rotta = sessionStorage.getItem('rotta-richiesta');
-        if (rotta) { sessionStorage.removeItem('rotta-richiesta'); history.replaceState(null, '', rotta); }
-    })();
+<script type="text/javascript">
+    // Controparte di 404.html: ripristina il percorso profondo prima che Blazor legga l'URL.
+    (function (l) {
+        if (l.search[1] === '/') {
+            var decoded = l.search.slice(1).split('&').map(function (s) {
+                return s.replace(/~and~/g, '&');
+            }).join('?');
+            window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+    }(window.location));
 </script>
 ```
+
+> **Attenzione all'interazione col ritorno OAuth.** Google riporta su `.../eton/?code=…`, che è un
+> percorso *esistente*: GitHub Pages lo serve normalmente e questo script non interviene, perché
+> `l.search[1]` vale `c`, non `/`. Verificare esplicitamente questo caso al Task 6 Step 7 — un
+> `?code=` mangiato dalla riscrittura darebbe un login che non si completa mai, con l'URL
+> apparentemente corretto.
 
 - [ ] **Step 6: Creare `.github/workflows/deploy.yml`**
 
@@ -1931,6 +2043,14 @@ jobs:
 cd /g/Sviluppo/Eton
 dotnet publish Eton.csproj -c Release -o publish
 ```
+
+> **Possibile ostacolo, verificato in anticipo:** su questa macchina `dotnet workload list`
+> elenca `android`, `ios`, `maccatalyst`, `maui-windows` ma **non `wasm-tools`**. Se il publish
+> fallisce con `NETSDK1147` ("per compilare questo progetto è necessario installare i carichi di
+> lavoro seguenti: wasm-tools"), serve `dotnet workload install wasm-tools` — comando che può
+> richiedere privilegi di amministratore ed è quindi **un'azione umana**, da chiedere in chat.
+> Se invece il publish riesce, il workload non serviva: il trimming IL è nell'SDK, mentre
+> `wasm-tools` occorre per la compilazione AOT, che qui non è attiva.
 
 Il nome del progetto è obbligatorio: senza, il CLI prende la soluzione, tira dentro i test e
 affianca copie **non trimmate** al `wwwroot`, che maschererebbero proprio il difetto che si sta

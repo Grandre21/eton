@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Eton</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- I tipi Gotrue e Postgrest sono (de)serializzati via reflection da Newtonsoft: senza root,
+         TrimMode=full rimuove i costruttori e l'app fallisce con "Unable to find a constructor to
+         use for type ...". Il difetto NON si vede in Debug: solo nel publish Release. Nomi degli
+         ASSEMBLY (DLL), non dei namespace. -->
+    <TrimmerRootAssembly Include="Eton" />
+    <TrimmerRootAssembly Include="Supabase.Gotrue" />
+    <TrimmerRootAssembly Include="Supabase.Postgrest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
+    <PackageReference Include="Supabase.Gotrue" Version="6.3.0" />
+    <PackageReference Include="Supabase.Postgrest" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Espone i membri internal (helper puri) al progetto di test. -->
+    <InternalsVisibleTo Include="Eton.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Eton.Tests/ è una SOTTOCARTELLA di questo progetto, non un fratello: la radice del
+         repository è anche la cartella di Eton.csproj. Il glob implicito dell'SDK (**/*.cs)
+         esclude d'ufficio solo bin/ e obj/ DI QUESTO progetto, quindi senza queste righe
+         Eton.csproj compilerebbe anche i sorgenti dei test — incluso il generato
+         Eton.Tests/obj/**/Eton.Tests.GlobalUsings.g.cs, che contiene `global using Xunit;` —
+         e fallirebbe con CS0246 su Xunit, che non è referenziato qui.
+         Lo stesso rimedio è già presente, per la stessa ragione, in DndCompanion.csproj. -->
+    <Compile Remove="Eton.Tests\**\*.cs" />
+    <Content Remove="Eton.Tests\**\*" />
+    <None Remove="Eton.Tests\**\*" />
+  </ItemGroup>
+
+</Project>

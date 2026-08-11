@@ -398,7 +398,7 @@ RLS abilitata su **tutte** le tabelle. Nessun accesso al ruolo `anon` oltre l'au
 |---|---|---|---|---|
 | `spaces` | `is_space_member(id)` | **nessuna policy** — solo via `create_space` | `is_space_owner(id)` | `is_space_owner(id)` ∧ `not is_personal` |
 | `space_members` | `is_space_member(space_id)` | **nessuna policy** — solo via `create_space` / `join_space` | nessuna | `not is_personal(space)` ∧ ( `user_id = auth.uid()` — uscire — ∨ `is_space_owner(space_id)` — espellere ) |
-| `profiles` | `id = auth.uid()` ∨ `shares_space_with(id)` | `id = auth.uid()` | `id = auth.uid()` | `id = auth.uid()` |
+| `profiles` | `id = auth.uid()` ∨ `shares_space_with(id)` | `id = auth.uid()` | `id = auth.uid()` | **nessuna policy** — vedi sotto |
 | `notes` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `owner_id = auth.uid()` | `owner_id = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
 | `collections` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `owner_id = auth.uid()` | `owner_id = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
 | `collection_items` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `added_by = auth.uid()` | `added_by = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
@@ -411,6 +411,15 @@ spazio.
 Lo spazio personale non si abbandona e non si cancella: le policy di `DELETE` su `spaces` e
 `space_members` escludono esplicitamente `is_personal`. È l'unico spazio senza `invite_code`,
 quindi non è nemmeno raggiungibile da `join_space`.
+
+**Perché `profiles` non ha una policy di `DELETE`.** Con RLS attiva, un'operazione priva di policy
+è vietata a chiunque: l'assenza *è* la regola. E qui il divieto è voluto. La riga in `profiles` è
+1:1 con `auth.users` e viene creata **una sola volta**, dal trigger `on_auth_user_created`: un
+utente che cancellasse il proprio profilo restando autenticato finirebbe in uno stato senza
+uscita — il trigger non riparte, e per gli altri membri dei suoi spazi i suoi voti resterebbero
+attribuiti a un profilo inesistente. La cancellazione dell'account avviene a monte, su
+`auth.users`, e da lì il `on delete cascade` porta via il profilo. (Anche in `DndCompanion`
+`profiles` non ha mai avuto una policy di `DELETE`.)
 
 Il vincolo *"il voto non supera `rating_max` della sua collezione"* non è esprimibile in una
 `CHECK` (attraversa tre tabelle): il database garantisce solo `0 < rating ≤ 10`, la coerenza con
