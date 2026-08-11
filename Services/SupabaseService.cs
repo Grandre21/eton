@@ -23,6 +23,7 @@ public class SupabaseService
     private readonly NavigationManager _navigation;
     private readonly BrowserSessionHandler _sessionHandler;
     private readonly PkceStore _pkce;
+    private readonly string _urlAuth;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
     private DateTime? _ultimoRefreshFallito;
@@ -41,9 +42,11 @@ public class SupabaseService
             throw new InvalidOperationException(
                 "Supabase:Url e Supabase:AnonKey vanno valorizzati in wwwroot/appsettings.json.");
 
+        _urlAuth = $"{url}/auth/v1";
+
         _auth = new Client(new ClientOptions
         {
-            Url = $"{url}/auth/v1",
+            Url = _urlAuth,
             Headers = new Dictionary<string, string> { { "apikey", anonKey } },
         });
 
@@ -135,24 +138,40 @@ public class SupabaseService
         return _facade;
     }
 
-    /// <summary>Avvia l'accesso con Google: chiede l'URL del provider e ci porta il browser.</summary>
-    public async Task AvviaAccessoGoogleAsync()
+    /// <summary>
+    /// Avvia l'accesso con Google costruendo <b>a mano</b> l'URL di <c>/authorize</c>.
+    /// <para>
+    /// Non si usa <c>_auth.SignIn(Provider.Google, …)</c>, e non è una preferenza: quel metodo
+    /// accoda un parametro <c>state</c> di propria invenzione, che il server Gotrue inoltra a
+    /// Google <i>al posto</i> di quello che avrebbe generato lui. Al ritorno non lo riconosce e
+    /// rifiuta l'accesso con <c>OAuth state parameter is invalid</c>. Verificato contro il server
+    /// reale: omettendo il parametro il flusso parte, includendolo no. Non è disattivabile —
+    /// passarlo vuoto lo inoltra vuoto, e <c>QueryParams</c> può solo sovrascrivere una chiave,
+    /// non toglierla.
+    /// </para>
+    /// Lo <c>state</c> lo gestisce quindi interamente il server, che è anche l'unico in grado di
+    /// verificarlo. A noi resta il verificatore PKCE, che deve sopravvivere al redirect: fra un
+    /// istante questa pagina non esisterà più.
+    /// </summary>
+    public Task AvviaAccessoGoogleAsync()
     {
         ErroreAccesso = null;
 
-        var stato = await _auth.SignIn(Constants.Provider.Google, new SignInOptions
-        {
-            FlowType = Constants.OAuthFlowType.PKCE,
-            RedirectTo = _navigation.BaseUri,
-        });
+        var verificatore = PkceChallenge.GeneraVerificatore();
+        _pkce.Salva(verificatore);
 
-        // Il verificatore deve sopravvivere al redirect: fra poco questa pagina non esisterà più.
-        if (!string.IsNullOrEmpty(stato.PKCEVerifier))
-            _pkce.Salva(stato.PKCEVerifier);
+        var indirizzo =
+            $"{_urlAuth}/authorize"
+            + "?provider=google"
+            + "&flow_type=pkce"
+            + $"&code_challenge={Uri.EscapeDataString(PkceChallenge.Impronta(verificatore))}"
+            + "&code_challenge_method=s256"
+            + $"&redirect_to={Uri.EscapeDataString(_navigation.BaseUri)}";
 
-        // La libreria non redirige da sola in WebAssembly: forceLoad obbligatorio, altrimenti
-        // il router di Blazor tratterebbe l'URL di Google come una rotta interna.
-        _navigation.NavigateTo(stato.Uri.ToString(), forceLoad: true);
+        // forceLoad obbligatorio: senza, il router di Blazor tratterebbe l'indirizzo di Supabase
+        // come una rotta interna e non uscirebbe mai dall'applicazione.
+        _navigation.NavigateTo(indirizzo, forceLoad: true);
+        return Task.CompletedTask;
     }
 
     private async Task ScambiaCodiceAsync(string codice)
