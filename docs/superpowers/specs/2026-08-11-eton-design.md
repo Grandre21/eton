@@ -408,6 +408,90 @@ Ogni `UPDATE` porta lo stesso predicato sia in `USING` sia in `WITH CHECK`, come
 del D&D: senza `WITH CHECK` si potrebbe modificare una riga *spostandola* fuori dal proprio
 spazio.
 
+### 5.3 La RLS filtra, non concede
+
+Questo è il livello più basso, e il più facile da dare per scontato: **una policy RLS non
+autorizza nulla.** Restringe un permesso che deve già esistere. L'ordine di valutazione è
+`GRANT` prima, policy dopo — se il ruolo non ha il privilegio sulla tabella, la query fallisce con
+`permission denied for table ...` senza che nessuna policy venga mai consultata.
+
+Su Supabase questo è oggi una trappola: nei progetti creati di recente il ruolo `authenticated`
+**non** riceve automaticamente `SELECT/INSERT/UPDATE/DELETE` sulle tabelle nuove del suo schema.
+I `default privileges` concedono `REFERENCES, TRIGGER, TRUNCATE` — tutto ciò che *non* serve a
+un'applicazione. Un migration file fatto di sole `create table` + `create policy` produce quindi
+uno schema in cui **niente funziona**, e l'errore non arriva alla scrittura della migration ma al
+primo `select` reale.
+
+Un dettaglio che rende la cosa scivolosa: uno schema esportato con `pg_dump` da un progetto
+funzionante *contiene* i `grant`, perché `pg_dump` riversa lo stato finale. Chi impara leggendo un
+dump non vede il problema, perché la soluzione è già lì dentro, mescolata a decine di righe
+generate. Chi scrive una migration da zero lo incontra in pieno.
+
+La migration di Eton chiude quindi con una sezione di privilegi **espliciti e minimi**: `anon` non
+tocca nulla, `authenticated` riceve solo le operazioni che l'app esegue davvero, `service_role`
+resta pieno per il pannello amministrativo.
+
+```sql
+grant usage on schema public to anon, authenticated;
+revoke all on public.profiles, public.spaces, public.space_members from anon;
+grant select, insert on public.profiles      to authenticated;
+grant select, delete on public.spaces        to authenticated;
+grant select, delete on public.space_members to authenticated;
+```
+
+Nessun `insert` su `spaces` e `space_members`: si entra solo da `create_space()` e `join_space()`,
+che sono `security definer`. Il divieto sta quindi **sotto** la RLS, non dentro.
+
+### 5.4 Le policy non bastano: servono anche i privilegi di colonna
+
+Le policy RLS decidono **quali righe** si toccano. Non decidono **quali colonne**, e su questo
+hanno due limiti strutturali:
+
+- **In una policy non esiste `OLD`.** Non si può scrivere "`is_personal` non può passare da `true`
+  a `false`", perché il valore precedente non è accessibile.
+- **`WITH CHECK` valuta la riga proposta, ma solo per le colonne che nomina.** Un predicato come
+  `is_space_owner(id)` sembra proteggere, e non protegge: la funzione riceve `id` — che non
+  cambia — e va a rileggere `owner_id` dalla tabella, dove c'è ancora il valore vecchio. Il
+  contrasto con `profiles`, dove `with check (id = auth.uid())` funziona benissimo, è istruttivo:
+  lì la colonna è nominata direttamente. **In `WITH CHECK` si controlla una colonna solo
+  nominandola; incapsularla in una funzione che rilegge equivale a non controllarla.**
+
+Senza difesa, la conseguenza era concreta: il proprietario poteva azzerare `is_personal` sul
+proprio spazio personale con una `PATCH`, e poi cancellarlo — aggirando l'invariante "lo spazio
+personale non si cancella", che con `notes` e `collections` in cascata significa perdita di dati.
+
+La difesa sta un livello più sotto, nei **privilegi di colonna**:
+
+```sql
+revoke update on public.spaces from anon, authenticated;
+grant  update (name) on public.spaces to authenticated;
+
+revoke update on public.profiles from anon, authenticated;
+grant  update (display_name, avatar_url) on public.profiles to authenticated;
+```
+
+Regola generale per le tabelle future: **si concede l'`UPDATE` colonna per colonna, solo su ciò
+che l'utente modifica davvero.** Chiavi, `space_id`, `owner_id`, contatori di versione e
+timestamp non sono mai scrivibili dal client.
+
+Sulla stessa linea, le funzioni non pensate per il client vengono tolte dalla superficie
+`/rest/v1/rpc` (`revoke all on function ... from public, anon, authenticated`). **Eccezione
+obbligatoria:** le funzioni usate *dentro* le policy — `is_space_member`, `is_space_owner`,
+`is_space_owner_of`, `shares_space_with`, `space_is_personal` — devono restare eseguibili da
+`authenticated`, perché le policy le invocano a nome del ruolo che sta interrogando: revocarle
+farebbe fallire ogni query con `permission denied for function` invece di restituire zero righe.
+Per questo restituiscono **booleani** e non identificatori: chi le chiama direttamente deve già
+conoscere gli UUID su cui interroga.
+
+### 5.5 Il proprietario non esce dal proprio spazio
+
+La policy di `DELETE` su `space_members` protegge esplicitamente la riga del proprietario, che
+non è rimovibile da nessuno — nemmeno da lui stesso. Il motivo: `spaces_delete` usa
+`is_space_owner`, mentre `spaces_select` usa `is_space_member`. Un proprietario che uscisse
+resterebbe quindi in grado di **cancellare** lo spazio pur non riuscendo più a **vederlo**.
+Per andarsene, il proprietario cancella lo spazio; il passaggio di proprietà a un altro membro è
+una funzionalità futura, non presente in questa versione.
+
 Lo spazio personale non si abbandona e non si cancella: le policy di `DELETE` su `spaces` e
 `space_members` escludono esplicitamente `is_personal`. È l'unico spazio senza `invite_code`,
 quindi non è nemmeno raggiungibile da `join_space`.
@@ -538,6 +622,14 @@ Autenticandosi come **due utenti distinti**, si asseriscono le negazioni:
 - B non crea uno spazio scrivendo direttamente in `spaces` (nessuna policy di `INSERT`);
 - nessuno cancella né abbandona il proprio spazio personale.
 
+Nella fetta 1 questo test esiste già, ma come **script `psql`** — `supabase/verifica-rls.sql`,
+tredici sezioni eseguite contro lo stack Supabase locale, ciascuna con il risultato atteso
+dichiarato accanto. Diventerà un progetto xUnit nella fetta 2, quando ci sarà abbastanza da
+asserire da giustificarlo. Nella forma attuale ha già ripagato il costo: ha scoperto due difetti
+che nessuna revisione statica aveva colto — i `grant` mancanti di §5.3, e il fatto che un client
+non può cercare uno spazio dal codice invito prima di entrarci (la `select` è filtrata dalla RLS,
+quindi il codice va passato *direttamente* a `join_space`, mai usato per una ricerca preliminare).
+
 **`Eton.Tests` — logica pura**, con `InternalsVisibleTo` come nel D&D: `FieldSchema` (validazione
 e serializzazione dei campi `jsonb`), `ItemDataMapper`, `RatingCalculations` (medie, conteggi,
 "non l'hai ancora provato"), `AccessControl`, generazione del codice invito.
@@ -553,6 +645,7 @@ e serializzazione dei campi `jsonb`), `ItemDataMapper`, `RatingCalculations` (me
 | Progetto Supabase free **in pausa dopo 7 giorni** di inattività | Certa se l'app non viene usata | Nessuna perdita di dati: si riattiva dal pannello. Da sapere, non da mitigare |
 | Il trigger su `auth.users` non è creabile con i privilegi disponibili | Bassa | Ripiego: creazione di profilo e spazio personale lato client al primo accesso, idempotente |
 | L'editor dei campi si allarga (riordino, tipi, cancellazione con dati esistenti) | Media | Nella prima versione: aggiunta e rinomina sì; cancellazione di un campo lascia il dato orfano nel `jsonb` e lo ignora, senza migrazione |
+| **Cancellare un utente cancella i suoi spazi condivisi.** `spaces.owner_id` ha `on delete cascade` verso `auth.users`: eliminare un account dal pannello Supabase porta via *tutti* gli spazi di cui era proprietario, e con essi note, collezioni e recensioni **di tutti i membri**, senza preavviso | Bassa (accade solo da pannello amministrativo) | **Accettato consapevolmente** in questa versione. Le alternative peggiorano: `on delete restrict` renderebbe impossibile cancellare un account finché possiede spazi, `set null` non è applicabile perché `owner_id` è `not null`. La via giusta, quando servirà, è il **passaggio di proprietà** prima della cancellazione — la stessa funzionalità che manca a §5.5 |
 
 ---
 
