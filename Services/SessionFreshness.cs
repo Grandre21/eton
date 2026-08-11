@@ -26,18 +26,40 @@ public static class SessionFreshness
     public static bool SiPuoRitentare(DateTime? ultimoFallimentoUtc, DateTime adessoUtc)
         => ultimoFallimentoUtc is null || adessoUtc - ultimoFallimentoUtc.Value >= AttesaDopoFallimento;
 
+    /// <summary>Una sessione mai valida: qualunque confronto la dà per scaduta. È il valore di
+    /// ripiego di <see cref="ScadenzaUtc"/> quando i dati non hanno senso.</summary>
+    private static readonly DateTime Scaduta = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+
+    /// <summary>Massimo che i server Gotrue accettano per <c>expires_in</c>: una settimana.
+    /// Oltre, il dato non viene dal server.</summary>
+    private const long DurataMassimaSecondi = 604_800;
+
     /// <summary>Scadenza di una sessione Gotrue, che espone solo l'istante di creazione e una durata
     /// in secondi: <c>Session.ExpiresAt()</c> non esiste in Supabase.Gotrue 6.
     /// Il confronto che ne segue è immune allo scarto d'orologio col server, perché
     /// <c>CreatedAt</c> è timbrato dal client alla ricezione del token: si confronta sempre e solo
-    /// l'orologio locale con se stesso.</summary>
+    /// l'orologio locale con se stesso.
+    /// <para>
+    /// <b>Non lancia per nessun ingresso.</b> I valori arrivano da <c>localStorage</c>, che l'utente
+    /// può manomettere e che una versione futura della libreria può scrivere in un formato diverso;
+    /// questo metodo viene invocato durante il bootstrap, dove un'eccezione murerebbe l'app.
+    /// Davanti a un dato che non ha senso risponde <see cref="Scaduta"/>, mai un'ipotesi
+    /// ottimistica: sbagliare per eccesso di prudenza costa un rinnovo inutile, sbagliare per
+    /// difetto costa richieste rifiutate dal gateway che l'utente legge come "i dati non si
+    /// caricano".
+    /// </para></summary>
     public static DateTime ScadenzaUtc(DateTime creataUtc, long duraSecondi)
     {
-        // Una durata assurda arriverebbe da un localStorage manomesso o corrotto, non dal server:
-        // AddSeconds lancerebbe, e un'eccezione qui fermerebbe l'avvio dell'app invece di
-        // provocare — correttamente — un semplice rinnovo. Zero e i negativi cadono nel passato,
-        // che è la direzione sicura: si rinfresca.
-        var durata = Math.Clamp(duraSecondi, 0, (long)TimeSpan.FromDays(365).TotalSeconds);
-        return DateTime.SpecifyKind(creataUtc, DateTimeKind.Utc).AddSeconds(durata);
+        if (duraSecondi <= 0 || duraSecondi > DurataMassimaSecondi)
+            return Scaduta;
+
+        var creata = DateTime.SpecifyKind(creataUtc, DateTimeKind.Utc);
+
+        // Il confronto va fatto PRIMA della somma: verificare l'esito dopo significherebbe averla
+        // già eseguita, cioè aver già lanciato.
+        if (creata > DateTime.MaxValue.AddSeconds(-DurataMassimaSecondi))
+            return Scaduta;
+
+        return creata.AddSeconds(duraSecondi);
     }
 }

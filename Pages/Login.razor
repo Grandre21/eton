@@ -1,0 +1,52 @@
+@page "/login"
+@layout LoginLayout
+@inject SupabaseService SupabaseService
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Accedi — Eton</PageTitle>
+
+<div class="login-card">
+    <h1>Eton</h1>
+    <p class="sottotitolo">Note e collezioni, da soli o con gli altri.</p>
+
+    @if (!string.IsNullOrEmpty(errore))
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <button type="button" class="btn primary" @onclick="Accedi" disabled="@occupato">
+        @(occupato ? "Attendere…" : "Accedi con Google")
+    </button>
+</div>
+
+@code {
+    private string? errore;
+    private bool occupato;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Il bootstrap può essere già stato eseguito (ritorno da Google): se è andato male,
+        // il motivo sta qui.
+        await SupabaseService.GetClientAsync();
+        errore = SupabaseService.ErroreAccesso;
+
+        if (await AuthState.IsLoggedInAsync())
+            Navigation.NavigateTo("", replace: true);
+    }
+
+    private async Task Accedi()
+    {
+        occupato = true;
+        errore = null;
+        try
+        {
+            await SupabaseService.AvviaAccessoGoogleAsync();
+        }
+        catch (Exception ex)
+        {
+            errore = $"Errore di accesso: {ex.Message}";
+            occupato = false;
+        }
+    }
+}

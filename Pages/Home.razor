@@ -1,3 +1,38 @@
 @page "/"
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Eton</PageTitle>
 
 <h1>Eton</h1>
+
+@* Il contenuto si mostra in base allo stato di ACCESSO, non alla presenza del nome: il nome è
+   cosmetico e può legittimamente mancare (un account Google senza email né nome completo), mentre
+   "sono autenticato" è la condizione vera. Confonderli lascerebbe l'utente su "Caricamento…" per
+   sempre, senza nemmeno il pulsante per uscirne. *@
+@if (loggato)
+{
+    <p>Ciao, @(nome ?? "utente").</p>
+    <button class="btn" @onclick="Esci">Esci</button>
+}
+else
+{
+    <p>Caricamento…</p>
+}
+
+@code {
+    private bool loggato;
+    private string? nome;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggato = await AuthState.IsLoggedInAsync();
+        if (loggato)
+            nome = await AuthState.GetDisplayNameAsync();
+    }
+
+    private async Task Esci()
+    {
+        await AuthState.LogoutAsync();
+    }
+}

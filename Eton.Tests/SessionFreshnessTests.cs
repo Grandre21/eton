@@ -46,15 +46,22 @@ public class SessionFreshnessTests
     public void La_scadenza_resta_in_utc()
         => Assert.Equal(DateTimeKind.Utc, SessionFreshness.ScadenzaUtc(Adesso, 3600).Kind);
 
-    [Fact]
-    public void Una_durata_assurda_non_fa_esplodere_il_calcolo()
-    {
-        var scadenza = SessionFreshness.ScadenzaUtc(Adesso, long.MaxValue);
-        Assert.True(scadenza > Adesso);
-        Assert.False(SessionFreshness.VaRinfrescata(scadenza, Adesso));
-    }
+    [Theory]
+    [InlineData(long.MaxValue)]   // localStorage manomesso
+    [InlineData(-1L)]             // durata negativa
+    [InlineData(0L)]              // campo assente nel JSON
+    [InlineData(604_801L)]        // un secondo oltre il massimo che Gotrue accetta
+    public void Una_durata_senza_senso_vale_come_gia_scaduta(long durata)
+        => Assert.True(SessionFreshness.VaRinfrescata(SessionFreshness.ScadenzaUtc(Adesso, durata), Adesso));
 
     [Fact]
-    public void Una_durata_nulla_significa_gia_scaduta()
-        => Assert.True(SessionFreshness.VaRinfrescata(SessionFreshness.ScadenzaUtc(Adesso, 0), Adesso));
+    public void La_durata_massima_ammessa_da_gotrue_e_accettata()
+        => Assert.Equal(Adesso.AddDays(7), SessionFreshness.ScadenzaUtc(Adesso, 604_800));
+
+    [Fact]
+    public void Una_data_di_creazione_assurda_non_fa_traboccare_il_calcolo()
+    {
+        var scadenza = SessionFreshness.ScadenzaUtc(DateTime.MaxValue, 3600);
+        Assert.True(SessionFreshness.VaRinfrescata(scadenza, Adesso));
+    }
 }

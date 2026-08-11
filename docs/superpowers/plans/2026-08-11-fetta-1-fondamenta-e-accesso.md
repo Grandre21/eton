@@ -1104,7 +1104,32 @@ git commit -m "Logica pura di sessione e ritorno OAuth, con i suoi test"
 `SignInOptions { FlowType, RedirectTo, Scopes, QueryParams, State }` · `Constants.OAuthFlowType { Implicit, PKCE }` ·
 `ExchangeCodeForSession(string codeVerifier, string authCode)` · `RefreshToken(string, string)` ·
 `SignOut(Constants.SignOutScope)` con `SignOutScope { Global, Local, Others }` ·
-`DestroySession()` e `UpdateSession(Session)` **pubblici** · `NotifyAuthStateChange(Constants.AuthState)`.
+`NotifyAuthStateChange(Constants.AuthState)` · `CurrentSession` **in sola lettura dall'esterno** (il setter è privato: `CanWrite` risponde
+`true` lo stesso, e non basta a saperlo) ·
+`Online` (default `true`; `SignIn` lancia `GotrueException` se falso).
+**`DestroySession()`, `UpdateSession(Session)` e il setter di `CurrentSession` sono tutti
+PRIVATI** — verificato decompilando la DLL. In Gotrue 6 **non esiste alcun modo diretto** di
+azzerare la sessione in memoria dall'esterno. L'unica porta pubblica è `LoadSession()`, che
+assegna alla sessione corrente ciò che la persistenza restituisce: a deposito svuotato legge
+`null`, e Gotrue si azzera da sé emettendo `SignedOut`. Ne discende un **ordine vincolante**:
+prima si cancella `localStorage`, poi si chiama `LoadSession()`. Invertirli rimette in memoria la
+sessione che si voleva buttare.
+**`Session` non ha `ExpiresAt()` né `Expired()`**: si usa `SessionFreshness.ScadenzaUtc`.
+
+**Come si propagano gli header, verificato sul codice decompilato.** `Api.Headers` vale
+`MergeLeft(GetHeaders(), _headers)`, e `MergeLeft` fa vincere gli ultimi: gli header del
+costruttore (`ClientOptions.Headers`, che è un **campo**, non una proprietà) prevalgono su quelli
+della funzione. Ma ogni chiamata autenticata passa da
+`CreateAuthedRequestHeaders(jwt)`, che riscrive `Authorization` **dopo** la copia: il token
+dell'utente vince sempre. Mettere l'`apikey` in `ClientOptions.Headers` è quindi sicuro e non
+interferisce con le chiamate autenticate.
+
+**Chi salva su localStorage.** Non l'assegnazione di `CurrentSession`, ma gli **eventi**:
+`SetPersistence` registra un `PersistenceListener` che su `SignedIn`, `UserUpdated` e
+`TokenRefreshed` chiama `SaveSession`, e su `SignedOut` chiama `DestroySession`. Ne segue che
+assegnare `CurrentSession = null` a mano **non** ripulisce localStorage: va cancellato a parte.
+E che `ExchangeCodeForSession` e `RefreshToken(a, r)` persistono già da soli — emettono
+rispettivamente `SignedIn` e `TokenRefreshed` — quindi non serve notificare nulla a mano.
 **Su Supabase.Postgrest 4.4.0:** namespace `Supabase.Postgrest`; `Client(string, ClientOptions)`;
 `GetHeaders` property; `Table<T>()`; `Rpc<T>(string, object)`; `Supabase.Postgrest.Models.BaseModel`.
 
@@ -1427,8 +1452,9 @@ public class SupabaseService
     /// <summary>
     /// Rinnovo vero e proprio, senza prendere il lock. Ricontrolla da sé se serve (due chiamate
     /// concorrenti possono arrivare qui entrambe) e non propaga MAI eccezioni.
-    /// Si usa l'overload a DUE argomenti di <c>RefreshToken</c>: quello senza argomenti si rifiuta
-    /// di lavorare quando l'access token è già scaduto, cioè proprio nel caso per cui esiste.
+    /// Si usa l'overload a DUE argomenti di <c>RefreshToken</c>: legge i token da una
+    /// <c>Session</c> già catturata in locale, quindi non può inciampare in un
+    /// <c>CurrentSession</c> azzerato da un'altra chiamata concorrente nel frattempo.
     /// </summary>
     private async Task RinnovaSessioneAsync()
     {
@@ -1445,9 +1471,12 @@ public class SupabaseService
 
         try
         {
+            // RefreshToken(a, r) assegna già CurrentSession ed emette TokenRefreshed, che il
+            // PersistenceListener traduce in SaveSession: notificare SignedIn a mano non solo è
+            // superfluo, è sbagliato — un rinnovo non è un accesso, e ogni ascoltatore dello stato
+            // vedrebbe un "hai appena fatto login" a ogni ora.
             await _auth.RefreshToken(session.AccessToken, session.RefreshToken);
             _ultimoRefreshFallito = null;
-            _auth.NotifyAuthStateChange(Constants.AuthState.SignedIn);
         }
         catch (Supabase.Gotrue.Exceptions.GotrueException ex) when (
             ex.Reason == Supabase.Gotrue.Exceptions.FailureHint.Reason.ExpiredRefreshToken
@@ -1466,8 +1495,13 @@ public class SupabaseService
 
     /// <summary>
     /// Porta l'app a uno stato di logout pulito senza MAI propagare eccezioni.
-    /// In Gotrue 6 <c>DestroySession()</c> è pubblico, quindi non serve più il giro tortuoso che
-    /// in 4.2.7 sfruttava l'eccezione di <c>SetSession("","")</c> per ripulire lo stato interno.
+    /// <c>SignOut</c> azzera già la sessione in memoria — ma solo se la chiamata al server
+    /// riesce: <c>UpdateSession(null)</c> sta DOPO l'<c>await</c>, quindi con la rete giù la
+    /// sessione resterebbe viva e l'utente "sloggato" continuerebbe a vedere i propri dati. Da qui
+    /// la pulizia esplicita che segue, che non è ridondante.
+    /// <c>DestroySession()</c>, <c>UpdateSession()</c> e il setter di <c>CurrentSession</c> sono
+    /// tutti privati in Gotrue 6: l'unica porta pubblica è <c>LoadSession()</c> su una persistenza
+    /// già svuotata.
     /// <c>SignOutScope.Local</c>: si esce da questo dispositivo senza revocare le sessioni altrove.
     /// </summary>
     public async Task SignOutAsync()
@@ -1481,23 +1515,19 @@ public class SupabaseService
             Console.Error.WriteLine($"[Auth] SignOut lato server fallito, procedo con la pulizia locale: {ex.Message}");
         }
 
-        try
-        {
-            _auth.DestroySession();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[Auth] Pulizia sessione in memoria: {ex.Message}");
-        }
-
+        // L'ordine di queste tre righe è vincolante, e stanno in un unico try apposta: se la
+        // cancellazione fallisse, LoadSession() rileggerebbe la sessione ancora sul disco e la
+        // rimetterebbe in memoria — cioè annullerebbe il logout. Fallendo insieme, invece, lo
+        // stato resta coerente (utente ancora dentro) invece che rotto a metà.
         try
         {
             _sessionHandler.DestroySession();
             _pkce.Cancella();
+            _auth.LoadSession();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Pulizia localStorage fallita: {ex.Message}");
+            Console.Error.WriteLine($"[Auth] Pulizia locale fallita: {ex.Message}");
         }
     }
 }
@@ -1702,7 +1732,9 @@ public class AuthStateService
 
 - [ ] **Step 4: Ripristinare `MainLayout.razor` e `Home.razor`**
 
-Sostituire le versioni provvisorie del Task 1 Step 12 con quelle definitive degli Step 6 e 7.
+Sostituire le versioni provvisorie introdotte dal **Task 1, Step 12** con quelle definitive del
+**Task 1, Step 6** (`Layout/MainLayout.razor`) e **Task 1, Step 7** (`Pages/Home.razor`), riportate
+per intero lì.
 
 - [ ] **Step 5: Registrare `AuthStateService` e aggiungere `@using Eton.Shared`**
 
@@ -2047,13 +2079,28 @@ cd /g/Sviluppo/Eton
 dotnet publish Eton.csproj -c Release -o publish
 ```
 
-> **Possibile ostacolo, verificato in anticipo:** su questa macchina `dotnet workload list`
-> elenca `android`, `ios`, `maccatalyst`, `maui-windows` ma **non `wasm-tools`**. Se il publish
-> fallisce con `NETSDK1147` ("per compilare questo progetto è necessario installare i carichi di
-> lavoro seguenti: wasm-tools"), serve `dotnet workload install wasm-tools` — comando che può
-> richiedere privilegi di amministratore ed è quindi **un'azione umana**, da chiedere in chat.
-> Se invece il publish riesce, il workload non serviva: il trimming IL è nell'SDK, mentre
-> `wasm-tools` occorre per la compilazione AOT, che qui non è attiva.
+> **Ostacolo previsto, e risolto: `wasm-tools` non serve.** Su questa macchina
+> `dotnet workload list` elenca `android`, `ios`, `maccatalyst`, `maui-windows` ma **non
+> `wasm-tools`**, e il publish riesce lo stesso: il trimming IL sta nell'SDK, il workload serve
+> alla compilazione AOT e al relinking nativo, che qui non sono attivi. L'SDK stampa un invito a
+> installarlo (*"Publishing without optimizations…"*): è un consiglio sulle dimensioni, non un
+> errore. **Nessuna azione umana richiesta.**
+
+**Esito reale del publish, eseguito l'11 agosto 2026.** I quattro assembly che contano
+sopravvivono al trimming — `Supabase.Gotrue`, `Supabase.Postgrest`, `Supabase.Core`,
+`Newtonsoft.Json` — quindi i `TrimmerRootAssembly` di `Eton.csproj` funzionano. Il pacchetto pesa
+**3,4 MB compressi in brotli** (10,4 MB non compressi), scaricati una volta sola e poi tenuti dal
+service worker.
+
+Dentro quei 3,4 MB ci sono però **~0,5 MB di zavorra**: `System.Private.Xml` (0,35 MB) e
+`System.Data.Common` (0,15 MB), tirati dentro da `Newtonsoft.Json` per i suoi convertitori
+`XmlNode` e `DataSet` — roba che Eton non userà mai. Ci finiscono perché
+`TrimmerRootAssembly` è un martello: radica l'assembly **per intero**, impedendo al trimmer di
+potare anche ciò che è davvero irraggiungibile. È il prezzo consapevole della sicurezza contro la
+deserializzazione a riflessione. Si potrebbe scendere a un `TrimmerRootDescriptor` XML, che radica
+i singoli tipi — ma è un'ottimizzazione da fare **dopo** che il login funziona end-to-end, mai
+prima: senza un collaudo reale che confermi quali tipi servono davvero, si scambierebbe mezzo
+megabyte con un `Unable to find a constructor to use for type …` in produzione.
 
 Il nome del progetto è obbligatorio: senza, il CLI prende la soluzione, tira dentro i test e
 affianca copie **non trimmate** al `wwwroot`, che maschererebbero proprio il difetto che si sta
