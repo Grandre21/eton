@@ -24,13 +24,19 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Publish
-        run: dotnet publish Eton.csproj -c Release -o publish
-
       # L'app è servita da https://<utente>.github.io/eton/, non dalla radice del dominio:
       # senza questa riscrittura il browser cercherebbe _framework/ sulla radice e non lo troverebbe.
+      #
+      # Si corregge il SORGENTE, PRIMA di pubblicare. Farlo dopo, sul file pubblicato, sembra più
+      # mirato ed è invece un errore: la pubblicazione registra in service-worker-assets.js
+      # l'hash SHA-256 di ogni file, e il service worker li scarica con un controllo di integrità.
+      # Modificare index.html dopo che il suo hash è stato calcolato lo fa rifiutare — l'app non
+      # si avvia affatto, con un messaggio che parla di SRI e non nomina il base href.
       - name: Correggi il base href
-        run: sed -i 's|<base href="/" />|<base href="/eton/" />|g' publish/wwwroot/index.html
+        run: sed -i 's|<base href="/" />|<base href="/eton/" />|g' wwwroot/index.html
+
+      - name: Publish
+        run: dotnet publish Eton.csproj -c Release -o publish
 
       # Senza .nojekyll, GitHub Pages scarta le cartelle che iniziano con l'underscore:
       # _framework, cioè tutto il runtime .NET.

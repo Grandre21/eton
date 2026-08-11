@@ -39,7 +39,11 @@
         <span class="dismiss">🗙</span>
     </div>
 
-    <script src="_framework/blazor.webassembly.js"></script>
+    <!-- Il segnaposto #[.{fingerprint}] non è decorativo: da .NET 9 questo script viene
+         pubblicato con un'impronta nel nome (blazor.webassembly.w3qd1tpl0e.js), e riferirlo
+         come "blazor.webassembly.js" dà 404 sul sito pubblicato — cioè un'applicazione che
+         non si avvia. Il segnaposto viene risolto sia in pubblicazione sia in sviluppo. -->
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
         navigator.serviceWorker?.register('service-worker.js');
     </script>
