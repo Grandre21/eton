@@ -811,6 +811,7 @@ git commit -m "Schema iniziale: profili, spazi, membri, funzioni SECURITY DEFINE
 **Interfaces:**
 - Consumes: niente.
 - Produces:
+  - `SessionFreshness.ScadenzaUtc(DateTime creataUtc, long duraSecondi) → DateTime`
   - `SessionFreshness.VaRinfrescata(DateTime scadenzaUtc, DateTime adessoUtc) → bool`
   - `SessionFreshness.SiPuoRitentare(DateTime? ultimoFallimentoUtc, DateTime adessoUtc) → bool`
   - `SessionFreshness.Margine` / `.AttesaDopoFallimento` (`TimeSpan`)
@@ -1284,9 +1285,9 @@ public class SupabaseService
             GetHeaders = () =>
             {
                 var session = _auth.CurrentSession;
-                var bearer = session is not null && !session.Expired()
-                    ? session.AccessToken
-                    : anonKey;
+                var scaduta = session is null
+                    || DateTime.UtcNow >= SessionFreshness.ScadenzaUtc(session.CreatedAt, session.ExpiresIn);
+                var bearer = scaduta ? anonKey : session!.AccessToken;
                 return new Dictionary<string, string>
                 {
                     { "apikey", anonKey },
@@ -1309,7 +1310,8 @@ public class SupabaseService
         if (_initialized)
         {
             var corrente = _auth.CurrentSession;
-            if (corrente is not null && SessionFreshness.VaRinfrescata(corrente.ExpiresAt(), DateTime.UtcNow))
+            if (corrente is not null && SessionFreshness.VaRinfrescata(
+                    SessionFreshness.ScadenzaUtc(corrente.CreatedAt, corrente.ExpiresIn), DateTime.UtcNow))
                 await RinnovaSessioneSeServeAsync();
             return _facade;
         }
@@ -1434,7 +1436,8 @@ public class SupabaseService
         if (session is null
             || string.IsNullOrEmpty(session.AccessToken)
             || string.IsNullOrEmpty(session.RefreshToken)
-            || !SessionFreshness.VaRinfrescata(session.ExpiresAt(), DateTime.UtcNow))
+            || !SessionFreshness.VaRinfrescata(
+                   SessionFreshness.ScadenzaUtc(session.CreatedAt, session.ExpiresIn), DateTime.UtcNow))
             return;
 
         if (!SessionFreshness.SiPuoRitentare(_ultimoRefreshFallito, DateTime.UtcNow))
@@ -2106,7 +2109,20 @@ che lo usano `AuthStateService` (`client.Auth.CurrentSession`) e `AuthRedirect`.
 `OAuthCallback.Analizza` restituisce `OAuthCallbackEsito`, letto in `SupabaseService` come
 `esito.Codice` / `esito.Errore` — gli stessi nomi definiti nel record.
 `SessionFreshness.VaRinfrescata(DateTime, DateTime)` è invocata con
-`session.ExpiresAt()` e `DateTime.UtcNow` in entrambi i punti d'uso.
+`SessionFreshness.ScadenzaUtc(session.CreatedAt, session.ExpiresIn)` e `DateTime.UtcNow` in
+entrambi i punti d'uso.
+
+**`Session.ExpiresAt()` e `Session.Expired()` NON esistono in `Supabase.Gotrue` 6.3.0**, benché
+esistano nel pacchetto diverso `gotrue-csharp` 4.x usato dal D&D, da cui `SessionFreshness` è stata
+portata. Verificato per riflessione sul pacchetto realmente referenziato: `Session` espone
+`AccessToken, RefreshToken, TokenType, ExpiresIn (long, secondi), CreatedAt (DateTime), User,
+ProviderToken, ProviderRefreshToken` — e nient'altro. La scadenza si calcola con
+`SessionFreshness.ScadenzaUtc(CreatedAt, ExpiresIn)`.
+
+`CreatedAt` è timbrato dal **client** alla deserializzazione (il token endpoint non manda
+`created_at`), ed è `Kind=Utc` sia alla ricezione sia dopo il round-trip in `localStorage`. Ne
+segue una proprietà utile: il calcolo della freschezza confronta sempre l'orologio locale con se
+stesso, quindi è immune a uno scarto d'orologio col server.
 `PkceStore.Salva/Leggi/Cancella` combaciano con le chiamate in `SupabaseService`.
 
 **Rischio residuo dichiarato:** le firme di Gotrue 6.3.0 sono state estratte dalla documentazione
