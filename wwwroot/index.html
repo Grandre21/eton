@@ -27,6 +27,15 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="css/app.css" />
     <meta name="theme-color" content="#1f2933" />
+
+    <!-- Sembra un elemento vuoto dimenticato, ed è invece indispensabile: la pubblicazione lo
+         riempie con la traduzione fra i nomi logici dei file del runtime e i nomi con impronta
+         effettivamente presenti sul server (_framework/dotnet.js → dotnet.3ilfxr93yh.js).
+         Senza, lo script Blazor parte e poi chiede "dotnet.js", che sul sito pubblicato non
+         esiste: 404, e "Failed to start platform". In sviluppo non si vedrebbe mai.
+         Va tenuto perché lo ha il modello ufficiale dell'SDK — questo index.html è scritto a
+         mano, ed è così che se n'era perso per strada. -->
+    <script type="importmap"></script>
 </head>
 <body>
     <div id="app">
