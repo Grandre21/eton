@@ -11,11 +11,13 @@ public class AuthStateService
 {
     private readonly SupabaseService _supabase;
     private readonly NavigationManager _navigation;
+    private readonly SpaceStateService _spazi;
 
-    public AuthStateService(SupabaseService supabase, NavigationManager navigation)
+    public AuthStateService(SupabaseService supabase, NavigationManager navigation, SpaceStateService spazi)
     {
         _supabase = supabase;
         _navigation = navigation;
+        _spazi = spazi;
     }
 
     public async Task<bool> IsLoggedInAsync()
@@ -65,10 +67,21 @@ public class AuthStateService
     /// nuovo al login — uno sfarfallio a ogni pressione.
     /// <c>forceLoad</c> solo quando l'uscita non è riuscita: ricaricare la pagina butta via tutto
     /// lo stato in memoria, ed è l'ultima carta quando la sessione non si è lasciata azzerare.
+    /// <para>
+    /// <c>Dimentica()</c> va DOPO <c>SignOutAsync()</c>, e l'ordine non è indifferente: quell'await
+    /// è una chiamata di rete vera, e per tutta la sua durata la sessione è ancora valida. Se lo
+    /// spazio venisse dimenticato prima, una navigazione dell'utente in quella finestra — l'app
+    /// resta interattiva — ricaricherebbe l'elenco con una sessione che funziona ancora e
+    /// riscriverebbe in localStorage lo spazio di chi sta uscendo, che è esattamente ciò che
+    /// <c>Dimentica()</c> serve a impedire. Dopo, invece, non c'è più niente da cui ripopolarsi.
+    /// <c>SignOutAsync()</c> non propaga eccezioni (ogni passo ha il proprio try e restituisce un
+    /// bool), quindi metterlo prima non rischia di far saltare la pulizia.
+    /// </para>
     /// </summary>
     public async Task LogoutAsync()
     {
         var uscito = await _supabase.SignOutAsync();
+        _spazi.Dimentica();
         _navigation.NavigateTo("login", forceLoad: !uscito, replace: true);
     }
 }

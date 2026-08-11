@@ -1,0 +1,312 @@
+@page "/spaces/{Id:guid}"
+@using Eton.Models
+@inject SpaceRepository Repository
+@inject SpaceStateService Spazi
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>@(spazio?.Name ?? "Spazio") — Eton</PageTitle>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (spazio is null && errore is not null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <a class="btn" href="spaces">Torna agli spazi</a>
+    </div>
+}
+else if (spazio is null)
+{
+    <div class="vuoto">
+        <p>Questo spazio non esiste, oppure non ne fai più parte.</p>
+        <a class="btn" href="spaces">Torna agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
+    <h1>@spazio.Name</h1>
+
+    @if (sonoProprietario && !spazio.IsPersonal)
+    {
+        <div class="scheda">
+            <h2>Rinomina</h2>
+            <div class="campo">
+                <input type="text" maxlength="60" @bind="nome" @bind:event="oninput" disabled="@occupato" />
+                <button class="btn" @onclick="Rinomina"
+                        disabled="@(occupato || string.IsNullOrWhiteSpace(nome) || nome.Trim() == spazio.Name)">Salva</button>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(spazio.InviteCode))
+    {
+        <div class="scheda">
+            <h2>Codice invito</h2>
+            <p class="testo-tenue">Chi ha questo codice può entrare. Dallo solo a chi vuoi dentro.</p>
+            <div class="campo">
+                <code class="codice-grande">@spazio.InviteCode</code>
+                <button class="btn" @onclick="Copia">@(copiato ? "Copiato" : "Copia")</button>
+            </div>
+        </div>
+    }
+
+    <div class="scheda">
+        <h2>Membri (@membri.Count)</h2>
+        <ul class="elenco-membri">
+            @foreach (var m in membri)
+            {
+                <li class="membro">
+                    @if (!string.IsNullOrEmpty(m.Avatar))
+                    {
+                        <img class="avatar" src="@m.Avatar" alt="" referrerpolicy="no-referrer" />
+                    }
+                    else
+                    {
+                        <span class="avatar segnaposto" aria-hidden="true">@(m.Nome.Length > 0 ? m.Nome[..1].ToUpperInvariant() : "?")</span>
+                    }
+                    <span class="nome">@m.Nome</span>
+                    @if (m.EProprietario)
+                    {
+                        <span class="pastiglia">proprietario</span>
+                    }
+                    @if (sonoProprietario && !m.EProprietario)
+                    {
+                        <button class="btn piccolo" @onclick="() => Rimuovi(m)" disabled="@occupato">Rimuovi</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    @if (!spazio.IsPersonal)
+    {
+        <div class="scheda pericolo">
+            @if (sonoProprietario)
+            {
+                <h2>Elimina lo spazio</h2>
+                <p class="testo-tenue">Sparisce per tutti i membri, insieme a tutto quello che contiene. Non si torna indietro.</p>
+                @if (confermaRichiesta)
+                {
+                    <div class="azioni">
+                        <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
+                        <button class="btn" @onclick="() => confermaRichiesta = false" disabled="@occupato">Annulla</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn rosso" @onclick="() => confermaRichiesta = true" disabled="@occupato">Elimina</button>
+                }
+            }
+            else
+            {
+                <h2>Esci dallo spazio</h2>
+                <p class="testo-tenue">Smetterai di vederne il contenuto. Puoi rientrare col codice.</p>
+                <button class="btn rosso" @onclick="Esci" disabled="@occupato">Esci</button>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Space? spazio;
+    private IReadOnlyList<Membro> membri = [];
+    private Guid utenteCorrente;
+    private bool sonoProprietario;
+    private bool caricato, occupato, copiato, confermaRichiesta;
+    private string nome = "";
+    private string? errore, avviso;
+    private int generazione;
+
+    // OnParametersSetAsync e non OnInitializedAsync: navigando da uno spazio all'altro Blazor
+    // riusa la stessa istanza del componente e cambia solo il parametro.
+    //
+    // `generazione` c'è perché Blazor NON aspetta che questo metodo finisca prima di richiamarlo
+    // con un Id nuovo: due caricamenti possono sovrapporsi, e quello partito prima può rispondere
+    // per ultimo. Senza il controllo, a schermo finirebbero i dati dello spazio vecchio mentre
+    // `Id` punta già al nuovo — e "Elimina" ed "Esci", che usano `Id`, agirebbero su uno spazio
+    // diverso da quello che l'utente sta guardando.
+    protected override async Task OnParametersSetAsync()
+    {
+        var mia = ++generazione;
+
+        caricato = false;
+        errore = avviso = null;
+        confermaRichiesta = copiato = false;
+        membri = [];
+
+        try
+        {
+            Guid.TryParse(await AuthState.GetUserIdAsync(), out var utente);
+            if (mia != generazione) return;
+            utenteCorrente = utente;
+
+            var letto = await Repository.LeggiAsync(Id);
+            if (mia != generazione) return;
+            spazio = letto;
+
+            if (spazio is not null)
+            {
+                nome = spazio.Name;
+                sonoProprietario = spazio.OwnerId == utenteCorrente;
+
+                var elenco = await Repository.MembriAsync(Id);
+                if (mia != generazione) return;
+                membri = elenco;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            spazio = null;
+            errore = $"Non è stato possibile caricare lo spazio: {ex.Message}";
+        }
+
+        caricato = true;
+    }
+
+    private async Task Rinomina()
+    {
+        occupato = true; errore = avviso = null;
+        try
+        {
+            if (!await Repository.RinominaAsync(Id, nome))
+            {
+                errore = "Il database ha rifiutato la modifica: solo il proprietario può rinominare.";
+                return;
+            }
+
+            // Il nome è già cambiato nel database: un errore nel rileggerlo non è un fallimento
+            // della rinomina, e dirlo tale spingerebbe a riprovare un'operazione già riuscita.
+            try
+            {
+                await Ricarica();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Rilettura dopo la rinomina fallita: {ex.Message}");
+            }
+
+            avviso = "Nome aggiornato.";
+        }
+        catch (Exception ex) { errore = $"Non è stato possibile rinominare: {ex.Message}"; }
+        finally { occupato = false; }
+    }
+
+    private async Task Rimuovi(Membro m)
+    {
+        occupato = true; errore = avviso = null;
+        try
+        {
+            if (!await Repository.EsciAsync(Id, m.UtenteId))
+            {
+                errore = "Il database ha rifiutato la rimozione.";
+                return;
+            }
+
+            try
+            {
+                membri = await Repository.MembriAsync(Id);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Rilettura dei membri fallita: {ex.Message}");
+            }
+
+            avviso = $"{m.Nome} non fa più parte dello spazio.";
+        }
+        catch (Exception ex) { errore = $"Non è stato possibile rimuovere: {ex.Message}"; }
+        finally { occupato = false; }
+    }
+
+    private async Task Esci()
+    {
+        occupato = true; errore = null;
+        try
+        {
+            if (!await Repository.EsciAsync(Id, utenteCorrente))
+            {
+                errore = "Il database ha rifiutato l'uscita.";
+                return;
+            }
+
+            // Si è già fuori. La ricarica dell'elenco è solo cosmesi: se fallisce si va comunque
+            // via da questa pagina, che senza membership non mostrerebbe più nulla di utile.
+            try
+            {
+                await Spazi.RicaricaAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'uscita: {ex.Message}");
+            }
+
+            Navigation.NavigateTo("spaces");
+        }
+        catch (Exception ex) { errore = $"Non è stato possibile uscire: {ex.Message}"; }
+        finally { occupato = false; }
+    }
+
+    private async Task Elimina()
+    {
+        occupato = true; errore = null;
+        try
+        {
+            if (!await Repository.EliminaAsync(Id))
+            {
+                errore = "Il database ha rifiutato l'eliminazione.";
+                return;
+            }
+
+            try
+            {
+                await Spazi.RicaricaAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'eliminazione: {ex.Message}");
+            }
+
+            Navigation.NavigateTo("spaces");
+        }
+        catch (Exception ex) { errore = $"Non è stato possibile eliminare: {ex.Message}"; }
+        finally { occupato = false; confermaRichiesta = false; }
+    }
+
+    private async Task Copia()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", spazio!.InviteCode);
+            copiato = true;
+        }
+        catch
+        {
+            // Segnalato come avviso e non come errore: su http non sicuro, o senza permesso, la
+            // clipboard non è disponibile, ma il codice resta leggibile a schermo. Chi ha premuto
+            // "Copia" deve però sapere che non è successo niente, altrimenti incolla il vuoto.
+            avviso = "Copia non riuscita: seleziona il codice a mano.";
+        }
+    }
+
+    private async Task Ricarica()
+    {
+        spazio = await Repository.LeggiAsync(Id);
+        if (spazio is not null) nome = spazio.Name;
+        await Spazi.RicaricaAsync();
+    }
+}

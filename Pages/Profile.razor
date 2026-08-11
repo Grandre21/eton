@@ -1,0 +1,58 @@
+@page "/profile"
+@inject AuthStateService AuthState
+
+<PageTitle>Profilo — Eton</PageTitle>
+
+<h1>Profilo</h1>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else
+{
+    <div class="scheda">
+        <p class="nome-grande">@(nome ?? "utente")</p>
+        @if (!string.IsNullOrEmpty(email))
+        {
+            <p class="testo-tenue">@email</p>
+        }
+    </div>
+
+    <div class="azioni">
+        <button class="btn rosso" @onclick="Esci" disabled="@occupato">
+            @(occupato ? "Esco…" : "Esci")
+        </button>
+    </div>
+}
+
+@code {
+    private string? nome, email;
+    private bool caricato;
+    private bool occupato;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            nome = await AuthState.GetDisplayNameAsync();
+            email = await AuthState.GetEmailAsync();
+        }
+        catch (Exception ex)
+        {
+            // Il profilo non è indispensabile: senza nome ed email il pulsante "Esci" funziona
+            // comunque, ed è l'unica cosa per cui si arriva davvero su questa pagina.
+            Console.Error.WriteLine($"[Profilo] Lettura dell'identità fallita: {ex.Message}");
+        }
+        caricato = true;
+    }
+
+    // `occupato` non è cosmesi: LogoutAsync attende una chiamata di rete, e per tutta la sua durata
+    // l'applicazione resta navigabile. Senza il pulsante disabilitato l'utente può premere due
+    // volte, o andarsene altrove mentre esce.
+    private async Task Esci()
+    {
+        occupato = true;
+        await AuthState.LogoutAsync();
+    }
+}

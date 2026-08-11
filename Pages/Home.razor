@@ -1,38 +1,153 @@
 @page "/"
+@using Eton.Models
 @inject AuthStateService AuthState
+@inject SpaceStateService Spazi
+@inject SpaceRepository Repository
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Eton</PageTitle>
 
-<h1>Eton</h1>
-
-@* Il contenuto si mostra in base allo stato di ACCESSO, non alla presenza del nome: il nome è
-   cosmetico e può legittimamente mancare (un account Google senza email né nome completo), mentre
-   "sono autenticato" è la condizione vera. Confonderli lascerebbe l'utente su "Caricamento…" per
-   sempre, senza nemmeno il pulsante per uscirne. *@
-@if (loggato)
+@if (!caricato)
 {
-    <p>Ciao, @(nome ?? "utente").</p>
-    <button class="btn" @onclick="Esci">Esci</button>
+    <p class="avvio">Caricamento…</p>
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Non sei ancora dentro nessuno spazio.</p>
+        <a class="btn primary" href="spaces">Vai agli spazi</a>
+    </div>
 }
 else
 {
-    <p>Caricamento…</p>
+    @* Se lo spazio c'è, l'errore è di un caricamento secondario (il conteggio dei membri): va
+       segnalato SOPRA il contenuto, non al posto suo. Prendersi tutta la pagina per un dettaglio
+       mancante nasconderebbe uno spazio caricato benissimo. Stessa forma di SpaceDetail. *@
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <header class="intestazione">
+        <label class="selettore">
+            <span class="etichetta-piccola">Spazio attivo</span>
+            <select value="@Spazi.Attivo.Id" @onchange="Cambia">
+                @foreach (var s in Spazi.Elenco)
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            </select>
+        </label>
+    </header>
+
+    <h1>@Spazi.Attivo.Name</h1>
+    <p class="sottotitolo">
+        @if (Spazi.Attivo.IsPersonal)
+        {
+            <text>Il tuo spazio personale: quello che ci metti lo vedi solo tu.</text>
+        }
+        else
+        {
+            <text>@membri membri.</text>
+        }
+    </p>
+
+    <div class="scheda">
+        <h2>Note</h2>
+        <p class="testo-tenue">Non ancora disponibili: arrivano nella prossima parte.</p>
+    </div>
+
+    <div class="scheda">
+        <h2>Collezioni</h2>
+        <p class="testo-tenue">Non ancora disponibili: arrivano dopo le note.</p>
+    </div>
+
+    <div class="azioni">
+        <a class="btn" href="spaces/@Spazi.Attivo.Id">Gestisci questo spazio</a>
+    </div>
 }
 
 @code {
-    private bool loggato;
-    private string? nome;
+    private bool caricato;
+    private int membri;
+    private string? errore;
 
     protected override async Task OnInitializedAsync()
     {
-        loggato = await AuthState.IsLoggedInAsync();
-        if (loggato)
-            nome = await AuthState.GetDisplayNameAsync();
+        Spazi.Cambiato += Ridisegna;
+        await Carica();
     }
 
-    private async Task Esci()
+    private async Task Carica()
     {
-        await AuthState.LogoutAsync();
+        errore = null;
+        try
+        {
+            await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Senza questo, un errore di rete al primo caricamento risalirebbe fino al riquadro
+            // di crash di Blazor: schermata bianca e "Ricarica", invece di un messaggio e un
+            // pulsante che ritenta senza buttare via l'applicazione.
+            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            caricato = true;
+            return;
+        }
+
+        // Il conteggio dei membri ha il proprio try, separato: è un dettaglio accessorio, e un suo
+        // fallimento non deve far sparire uno spazio che si è caricato benissimo.
+        try
+        {
+            await ContaMembri();
+        }
+        catch (Exception ex)
+        {
+            errore = $"Spazio caricato, ma non ho potuto contare i membri: {ex.Message}";
+        }
+
+        caricato = true;
     }
+
+    private async Task Riprova()
+    {
+        caricato = false;
+        await Carica();
+    }
+
+    private async Task ContaMembri()
+    {
+        membri = Spazi.Attivo is null || Spazi.Attivo.IsPersonal
+            ? 0
+            : (await Repository.MembriAsync(Spazi.Attivo.Id)).Count;
+    }
+
+    private async Task Cambia(ChangeEventArgs e)
+    {
+        if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+        Spazi.Imposta(id);
+        errore = null;
+        try
+        {
+            await ContaMembri();
+        }
+        catch (Exception ex)
+        {
+            errore = $"Spazio cambiato, ma non ho potuto contare i membri: {ex.Message}";
+        }
+    }
+
+    // L'evento arriva da un servizio, cioè fuori dal ciclo di rendering di questo componente:
+    // senza InvokeAsync il ridisegno partirebbe sul thread sbagliato.
+    private void Ridisegna() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Spazi.Cambiato -= Ridisegna;
 }

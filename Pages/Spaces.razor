@@ -1,0 +1,160 @@
+@page "/spaces"
+@using Eton.Models
+@inject SpaceRepository Repository
+@inject SpaceStateService Spazi
+@inject NavigationManager Navigation
+
+<PageTitle>Spazi — Eton</PageTitle>
+
+<h1>I tuoi spazi</h1>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <ul class="elenco-spazi">
+        @foreach (var s in Spazi.Elenco)
+        {
+            <li>
+                <a class="riga-spazio" href="spaces/@s.Id">
+                    <span class="nome">@s.Name</span>
+                    @if (s.IsPersonal)
+                    {
+                        <span class="pastiglia">personale</span>
+                    }
+                    @if (s.Id == Spazi.Attivo?.Id)
+                    {
+                        <span class="pastiglia accesa">attivo</span>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+
+    <div class="scheda">
+        <h2>Crea uno spazio</h2>
+        <p class="testo-tenue">Ne diventi il proprietario, e ottieni un codice da dare agli altri.</p>
+        <div class="campo">
+            <input type="text" placeholder="Nome dello spazio" maxlength="60"
+                   @bind="nuovoNome" @bind:event="oninput" disabled="@occupato" />
+            <button class="btn primary" @onclick="Crea"
+                    disabled="@(occupato || string.IsNullOrWhiteSpace(nuovoNome))">Crea</button>
+        </div>
+    </div>
+
+    <div class="scheda">
+        <h2>Entra con un codice</h2>
+        <p class="testo-tenue">Fattelo dare da chi ha creato lo spazio.</p>
+        <div class="campo">
+            <input type="text" placeholder="Codice invito" maxlength="8" class="codice-invito"
+                   @bind="codice" @bind:event="oninput" disabled="@occupato" />
+            <button class="btn primary" @onclick="Entra"
+                    disabled="@(occupato || string.IsNullOrWhiteSpace(codice))">Entra</button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool caricato;
+    private bool occupato;
+    private string? errore;
+    private string nuovoNome = "";
+    private string codice = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Le pagine gestiscono già l'errore delle mutazioni; il caricamento non lo faceva, e
+            // un blip di rete finiva nel riquadro di crash di Blazor.
+            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+        }
+        caricato = true;
+    }
+
+    private async Task Crea()
+    {
+        occupato = true;
+        errore = null;
+        try
+        {
+            var id = await Repository.CreaAsync(nuovoNome);
+            nuovoNome = "";
+
+            // Da qui in poi lo spazio ESISTE. Un fallimento dell'aggiornamento dell'elenco non
+            // va riportato come "creazione non riuscita": l'utente riproverebbe, e create_space
+            // non deduplica sul nome — si ritroverebbe due spazi identici. Si prosegue lo stesso,
+            // perché la pagina di dettaglio carica i propri dati per conto suo.
+            try
+            {
+                await Spazi.RicaricaAsync();
+                Spazi.Imposta(id);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo la creazione: {ex.Message}");
+            }
+
+            Navigation.NavigateTo($"spaces/{id}");
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile creare lo spazio: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Entra()
+    {
+        occupato = true;
+        errore = null;
+        try
+        {
+            var id = await Repository.EntraAsync(codice);
+            if (id is null)
+            {
+                // Deliberatamente vago sul perché: dire "questo codice non esiste" permetterebbe
+                // di provarne molti e scoprire quali sono validi.
+                errore = "Codice non valido. Controlla di averlo copiato per intero.";
+                return;
+            }
+
+            codice = "";
+
+            // Come in Crea(): l'ingresso è già avvenuto, l'elenco è solo la vista.
+            try
+            {
+                await Spazi.RicaricaAsync();
+                Spazi.Imposta(id.Value);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'ingresso: {ex.Message}");
+            }
+
+            Navigation.NavigateTo($"spaces/{id.Value}");
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile entrare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+}

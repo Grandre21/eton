@@ -85,3 +85,149 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 
 .login-card .sottotitolo { color: var(--testo-tenue); margin: 0 0 1.5rem; }
 .login-card .btn { width: 100%; }
+
+/* ---- guscio: la barra fissa in basso non deve coprire il contenuto ---- */
+/* env() va risommato, non ereditato: questa dichiarazione vince per cascata su quella di .app-layout
+   più in alto, quindi scriverne solo "5.5rem" butterebbe via il safe-area-inset-bottom che c'era lì.
+   Va risommato anche perché la barra stessa se ne allarga (v. .barra-basso qui sotto): su un iPhone
+   con l'home indicator, 5.5rem secchi non basterebbero a scavalcarla. */
+.app-layout { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+
+.barra-basso {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    background: var(--superficie);
+    border-top: 1px solid var(--bordo);
+    /* Su iPhone la barra di sistema mangia il fondo dello schermo: senza questo, l'ultima voce
+       finisce sotto la tacca. La variabile vale 0 ovunque non serva. */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.barra-basso .voce {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+    padding: .55rem 0;
+    text-decoration: none;
+    color: var(--testo-tenue);
+    font-size: .7rem;
+}
+
+.barra-basso .voce.attiva { color: var(--accento); }
+.barra-basso .icona { font-size: 1.25rem; line-height: 1; }
+
+/* ---- schede e testo ---- */
+.scheda {
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.scheda h2 { font-size: 1rem; margin: 0 0 .35rem; }
+.scheda.pericolo { border-color: #6b2b2b; }
+.testo-tenue { color: var(--testo-tenue); font-size: .85rem; margin: 0 0 .75rem; }
+.sottotitolo { color: var(--testo-tenue); margin: 0 0 1rem; }
+.nome-grande { font-size: 1.15rem; margin: 0 0 .25rem; }
+.etichetta-piccola { display: block; font-size: .7rem; color: var(--testo-tenue); margin-bottom: .2rem; }
+
+.vuoto { text-align: center; padding: 2.5rem 1rem; color: var(--testo-tenue); }
+.vuoto .btn { margin-top: 1rem; }
+
+.avviso {
+    background: #1d3a2e;
+    border: 1px solid var(--accento);
+    border-radius: var(--raggio);
+    padding: .6rem .8rem;
+    margin-bottom: 1rem;
+    font-size: .9rem;
+}
+
+/* ---- selettore dello spazio attivo ---- */
+.intestazione { margin-bottom: 1rem; }
+
+.selettore select {
+    width: 100%;
+    padding: .6rem .7rem;
+    background: var(--superficie);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-size: 1rem;
+}
+
+/* ---- elenchi ---- */
+.elenco-spazi, .elenco-membri { list-style: none; padding: 0; margin: 0 0 1rem; }
+
+.riga-spazio {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    margin-bottom: .5rem;
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    color: var(--testo);
+    text-decoration: none;
+}
+
+.riga-spazio .nome { flex: 1; }
+
+.pastiglia {
+    font-size: .68rem;
+    padding: .15rem .45rem;
+    border-radius: 999px;
+    border: 1px solid var(--bordo);
+    color: var(--testo-tenue);
+    white-space: nowrap;
+}
+
+.pastiglia.accesa { border-color: var(--accento); color: var(--accento); }
+
+.membro { display: flex; align-items: center; gap: .6rem; padding: .45rem 0; }
+.membro .nome { flex: 1; }
+
+.avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex: none; }
+
+.avatar.segnaposto {
+    display: grid;
+    place-items: center;
+    background: var(--bordo);
+    color: var(--testo-tenue);
+    font-size: .85rem;
+}
+
+/* ---- campi e pulsanti ---- */
+.campo { display: flex; gap: .5rem; align-items: center; }
+.campo input { flex: 1; min-width: 0; }
+
+.campo input[type=text] {
+    padding: .6rem .7rem;
+    background: var(--sfondo);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-size: 1rem;
+}
+
+.codice-invito { text-transform: uppercase; letter-spacing: .12em; }
+
+.codice-grande {
+    flex: 1;
+    font-size: 1.3rem;
+    letter-spacing: .18em;
+    padding: .5rem .7rem;
+    background: var(--sfondo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    text-align: center;
+}
+
+.azioni { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btn.piccolo { padding: .3rem .6rem; font-size: .78rem; }
+.btn.rosso { border-color: #6b2b2b; color: #ff9b9b; }

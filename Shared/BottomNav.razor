@@ -1,0 +1,33 @@
+@inject NavigationManager Navigation
+
+<nav class="barra-basso">
+    @foreach (var voce in Voci)
+    {
+        <a href="@voce.Rotta" class="voce @(EAttiva(voce.Rotta) ? "attiva" : "")">
+            <span class="icona" aria-hidden="true">@voce.Icona</span>
+            <span class="etichetta">@voce.Testo</span>
+        </a>
+    }
+</nav>
+
+@code {
+    private sealed record Voce(string Rotta, string Icona, string Testo);
+
+    private static readonly Voce[] Voci =
+    [
+        new("", "🏠", "Home"),
+        new("spaces", "👥", "Spazi"),
+        new("profile", "👤", "Profilo"),
+    ];
+
+    private bool EAttiva(string rotta)
+    {
+        var corrente = Navigation.ToBaseRelativePath(Navigation.Uri).TrimEnd('/');
+        var i = corrente.IndexOf('?');
+        if (i >= 0) corrente = corrente[..i];
+
+        // La Home è l'unica rotta vuota: senza questo caso a parte risulterebbe attiva sempre,
+        // perché ogni percorso "comincia per" stringa vuota.
+        return rotta.Length == 0 ? corrente.Length == 0 : corrente.StartsWith(rotta, StringComparison.Ordinal);
+    }
+}
