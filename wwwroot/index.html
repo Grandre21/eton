@@ -3,6 +3,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <script type="text/javascript">
+        // Controparte di 404.html: ripristina il percorso profondo prima che Blazor legga l'URL.
+        // Sta qui, subito dopo la dichiarazione di codifica e prima di ogni altro script, perché
+        // deve correggere l'indirizzo prima che il router lo legga.
+        // La guardia `l.search[1] === '/'` distingue il rimbalzo dal 404 (che produce `?/rotta`)
+        // dal ritorno OAuth (`?code=...`, dove il carattere in posizione 1 è `c`): senza, il
+        // codice di autorizzazione verrebbe distrutto e il login non si completerebbe mai.
+        (function (l) {
+            if (l.search[1] === '/') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&');
+                }).join('?');
+                window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+            }
+        }(window.location));
+    </script>
     <title>Eton</title>
     <base href="/" />
     <link rel="manifest" href="manifest.webmanifest" />
