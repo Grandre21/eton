@@ -1,0 +1,64 @@
+@inject SpaceStateService Spazi
+@implements IDisposable
+
+@* Il selettore dello spazio attivo, estratto dalla Home perché ora vive in due posti: in cima alla
+   Home sul telefono, e in fondo alla colonna di navigazione su schermo largo (v. Shared/Navigazione.razor).
+   Due copie del markup avrebbero significato due <select> da tenere allineati a mano; lo stato è
+   uno solo e sta nel servizio, quindi il componente si può montare quante volte serve.
+
+   Non mostra niente finché non c'è uno spazio attivo: all'avvio, e per chi non è ancora dentro
+   nessuno spazio, un menù a tendina vuoto non direbbe nulla e occuperebbe il posto di qualcosa che
+   invece va detto — se ne occupa la Home, con il proprio riquadro "Non sei ancora dentro nessuno
+   spazio". *@
+@if (Spazi.Attivo is not null)
+{
+    <label class="selettore">
+        <span class="etichetta-piccola">Spazio attivo</span>
+        <select value="@Spazi.Attivo.Id" @onchange="Cambia">
+            @foreach (var s in Spazi.Elenco)
+            {
+                <option value="@s.Id">@s.Name</option>
+            }
+        </select>
+    </label>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Spazi.Cambiato += Ridisegna;
+
+        try
+        {
+            // Idempotente: se qualcun altro ha già caricato, non tocca la rete (v. il doppio
+            // controllo in SpaceStateService.AssicuraCaricatoAsync).
+            await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Silenzio deliberato, e non trascuratezza: questo componente è montato su OGNI pagina
+            // privata attraverso la barra di navigazione, mentre l'errore appartiene alla pagina
+            // che sta cercando di lavorare con quegli spazi ed è lei a saperlo dire nel contesto
+            // giusto. Un banner rosso dentro la barra di navigazione comparirebbe una seconda volta
+            // accanto a quello della pagina, dicendo la stessa cosa in un posto dove non si può
+            // fare niente per rimediare.
+            Console.Error.WriteLine($"[Selettore] Spazi non caricati: {ex.Message}");
+        }
+    }
+
+    private void Cambia(ChangeEventArgs e)
+    {
+        if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+
+        // Imposta scatena l'evento Cambiato: chi mostra dati dipendenti dallo spazio se ne accorge
+        // da sé. Questo componente non sa nulla di note, collezioni o membri, ed è il motivo per
+        // cui può stare dentro la barra di navigazione.
+        Spazi.Imposta(id);
+    }
+
+    // L'evento arriva da un servizio, cioè fuori dal ciclo di rendering di questo componente:
+    // senza InvokeAsync il ridisegno partirebbe sul thread sbagliato.
+    private void Ridisegna() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Spazi.Cambiato -= Ridisegna;
+}

@@ -7,7 +7,7 @@ footer.piede {
 
 .hero-contenuto,
 .schede > h2,
-.schede .elenco-schede,
+.schede .elenco-carte,
 .spazi,
 .riservatezza,
 .chiusura {
@@ -28,23 +28,27 @@ footer.piede {
     text-align: center;
     overflow: hidden;
     background:
-        radial-gradient(60% 50% at 50% 0%, var(--accento-tenue) 0%, transparent 70%),
+        radial-gradient(60% 50% at 50% 0%, rgba(76, 141, 255, .10), transparent 70%),
         var(--sfondo);
 }
 
+/* Il marchio fa da sopratitolo al titolo: micro-etichetta, non colore d'accento,
+   perché qui non è un'azione da premere. */
 .marchio {
     margin: 0 0 var(--s4);
-    font-size: var(--t-md);
+    font-size: var(--t-xs);
     font-weight: 600;
-    letter-spacing: .08em;
+    letter-spacing: .18em;
     text-transform: uppercase;
-    color: var(--accento);
+    color: var(--testo-fioco);
 }
 
 .hero h1 {
     margin: 0 0 var(--s5);
     font-size: clamp(var(--t-2xl), 6vw, var(--t-3xl));
     line-height: 1.15;
+    letter-spacing: -.03em;
+    font-weight: 700;
     color: var(--testo);
 }
 
@@ -63,9 +67,12 @@ footer.piede {
 
 /* ---------- Assaggio dell'interfaccia ---------- */
 
-/* Ricalca le proporzioni vere di .riga-elemento (48px di riga, voto a destra in
-   cifre tabellari): serve a far riconoscere l'applicazione, quindi se un domani
-   le righe vere cambiassero forma, questa va cambiata con loro. */
+/* Ricalca le proporzioni vere di una riga elemento (48px di riga, voto a destra
+   in cifre tabellari): serve a far riconoscere l'applicazione, quindi se un domani
+   le righe vere cambiassero forma, questa va cambiata con loro. È anche l'unico
+   punto della vetrina dove compare il verde acido: qui il numero è un voto letto,
+   non un'azione da premere — da qui l'ombra tinta d'accento, riservata a ciò che
+   è in evidenza. */
 .anteprima {
     max-width: 22rem;
     margin: var(--s7) auto 0;
@@ -73,7 +80,7 @@ footer.piede {
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
-    box-shadow: var(--ombra);
+    box-shadow: var(--ombra-accento), inset 0 1px 0 rgba(255, 255, 255, .04);
     overflow: hidden;
 }
 
@@ -92,6 +99,9 @@ footer.piede {
 .anteprima-conteggio {
     margin-left: auto;
     font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
     color: var(--testo-fioco);
 }
 
@@ -116,7 +126,7 @@ footer.piede {
 .anteprima-voto {
     margin-left: auto;
     font-weight: 700;
-    color: var(--accento);
+    color: var(--secondario);
     font-variant-numeric: tabular-nums;
 }
 
@@ -149,17 +159,15 @@ footer.piede {
     background: var(--accento);
     color: var(--su-accento);
     font-weight: 600;
+    box-shadow: var(--ombra-accento);
 }
 
 .azione.primaria:hover {
-    background: var(--accento-caldo);
+    background: var(--accento-scuro);
 }
 
-.azione:focus-visible {
-    outline: 2px solid var(--accento);
-    outline-offset: 2px;
-}
-
+/* Nessun :focus-visible qui: la regola globale di app.css lo dà già identico a tutto ciò che si
+   mette a fuoco, e ripeterlo significherebbe doverlo cambiare in due posti. */
 .azione:disabled {
     opacity: .6;
     cursor: default;
@@ -174,11 +182,13 @@ footer.piede {
 .schede h2 {
     margin: 0 0 var(--s6);
     font-size: var(--t-xl);
+    letter-spacing: -.02em;
+    font-weight: 600;
     text-align: center;
     color: var(--testo);
 }
 
-.elenco-schede {
+.elenco-carte {
     display: grid;
     gap: var(--s5);
     list-style: none;
@@ -186,28 +196,30 @@ footer.piede {
     padding: 0;
 }
 
-.scheda {
+.carta {
     padding: var(--s6);
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
-    box-shadow: var(--ombra);
+    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
 }
 
-.icona-scheda {
+.icona-carta {
     display: block;
     margin-bottom: var(--s3);
     font-size: var(--t-2xl);
     line-height: 1;
 }
 
-.scheda h3 {
+.carta h3 {
     margin: 0 0 var(--s2);
     font-size: var(--t-lg);
+    letter-spacing: -.02em;
+    font-weight: 600;
     color: var(--testo);
 }
 
-.scheda p {
+.carta p {
     margin: 0;
     font-size: var(--t-sm);
     line-height: 1.5;
@@ -219,6 +231,8 @@ footer.piede {
 .spazi h2 {
     margin: 0 0 var(--s4);
     font-size: var(--t-xl);
+    letter-spacing: -.02em;
+    font-weight: 600;
     color: var(--testo);
 }
 
@@ -259,11 +273,14 @@ footer.piede {
     color: var(--accento);
     font-weight: 600;
     font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
 }
 
 .passi h3 {
     margin: 0 0 var(--s1);
     font-size: var(--t-base);
+    letter-spacing: -.02em;
+    font-weight: 600;
     color: var(--testo);
 }
 
@@ -282,6 +299,8 @@ footer.piede {
 .riservatezza h2 {
     margin: 0 0 var(--s4);
     font-size: var(--t-xl);
+    letter-spacing: -.02em;
+    font-weight: 600;
     color: var(--testo);
 }
 
@@ -308,6 +327,8 @@ footer.piede {
     gap: var(--s3);
 }
 
+/* Il segno ✓ è un valore constatato, non un'azione da premere: verde acido,
+   non blu. */
 .voci-riservatezza span {
     display: inline-flex;
     align-items: center;
@@ -316,8 +337,8 @@ footer.piede {
     width: var(--s5);
     height: var(--s5);
     border-radius: var(--raggio-pieno);
-    background: var(--accento-tenue);
-    color: var(--accento);
+    background: var(--secondario-tenue);
+    color: var(--secondario);
     font-weight: 700;
     font-size: var(--t-xs);
 }
@@ -331,6 +352,8 @@ footer.piede {
 .chiusura h2 {
     margin: 0 0 var(--s3);
     font-size: var(--t-xl);
+    letter-spacing: -.02em;
+    font-weight: 600;
     color: var(--testo);
 }
 
@@ -358,13 +381,13 @@ footer.piede {
 /* ---------- Viewport più larghi ---------- */
 
 @media (min-width: 40rem) {
-    .elenco-schede {
+    .elenco-carte {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (min-width: 64rem) {
-    .elenco-schede {
+    .elenco-carte {
         grid-template-columns: repeat(3, 1fr);
     }
 
@@ -373,8 +396,6 @@ footer.piede {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .azione {
-        transition: none;
-    }
-}
+/* Nessun blocco prefers-reduced-motion qui: app.css ne ha già uno con selettore universale e
+   !important, che azzera le transizioni anche di questi elementi. Una regola locale non
+   aggiungerebbe niente e darebbe l'impressione che senza di lei la vetrina si muova. */

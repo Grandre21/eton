@@ -18,7 +18,11 @@ self.addEventListener('message', event => {
 
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
-const offlineAssetsInclude = [/\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.webmanifest$/];
+// .woff2 va elencato a parte: /\.woff$/ è ancorato alla fine della stringa e quindi NON copre i
+// .woff2, che è il formato di ogni font moderno — quello dell'applicazione compreso. Senza,
+// l'unico font del sito è anche l'unica risorsa che offline non c'è, e l'app installata sul
+// telefono si disegna col carattere di sistema ogni volta che manca la rete.
+const offlineAssetsInclude = [/\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.woff2$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.webmanifest$/];
 const offlineAssetsExclude = [/^service-worker\.js$/];
 
 // Base path derivato DINAMICAMENTE dallo scope: "/" in locale, "/eton/" su GitHub Pages.

@@ -38,16 +38,12 @@ else
         <div class="errore" role="alert">@errore</div>
     }
 
-    <header class="intestazione">
-        <label class="selettore">
-            <span class="etichetta-piccola">Spazio attivo</span>
-            <select value="@Spazi.Attivo.Id" @onchange="Cambia">
-                @foreach (var s in Spazi.Elenco)
-                {
-                    <option value="@s.Id">@s.Name</option>
-                }
-            </select>
-        </label>
+    @* Su schermo largo il selettore sta in fondo alla barra di navigazione, che è sempre a
+       schermo: qui sparisce (v. .solo-stretto in app.css), altrimenti la stessa tendina
+       comparirebbe due volte nella stessa schermata e nessuna delle due sembrerebbe quella
+       buona. Sul telefono la barra in basso non ha spazio per contenerlo, quindi resta qui. *@
+    <header class="intestazione solo-stretto">
+        <SelettoreSpazio />
     </header>
 
     <h1>@Spazi.Attivo.Name</h1>
@@ -66,63 +62,69 @@ else
         }
     </p>
 
-    <div class="scheda">
-        <h2>Note</h2>
-        @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'note.Count == 0', perché
-           l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono note" da "non
-           sono riuscito a leggerle". *@
-        @if (dettagliMancanti)
-        {
-            <p class="testo-tenue">Non sono riuscito a leggere le note di questo spazio.</p>
-        }
-        else if (note.Count == 0)
-        {
-            <p class="testo-tenue">Ancora nessuna nota in questo spazio.</p>
-        }
-        else
-        {
-            <ul class="elenco-note compatto">
-                @foreach (var n in note)
-                {
-                    <li>
-                        <a href="notes/@n.Id">@n.TitoloVisibile()</a>
-                    </li>
-                }
-            </ul>
-        }
-        <div class="azioni">
-            <a class="btn" href="notes">Tutte le note</a>
-            <a class="btn primary" href="notes/new">Nuova nota</a>
+    @* Le due schede sono riquadri indipendenti: sul telefono si impilano, su schermo largo stanno
+       affiancate (v. .griglia-due in app.css). Senza questo contenitore non ci sarebbe niente su
+       cui appoggiare la griglia, e su un monitor le due schede resterebbero una sotto l'altra in
+       una colonna stretta con metà schermo vuoto accanto. *@
+    <div class="griglia-due">
+        <div class="scheda">
+            <h2>Note</h2>
+            @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'note.Count == 0', perché
+               l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono note" da "non
+               sono riuscito a leggerle". *@
+            @if (dettagliMancanti)
+            {
+                <p class="testo-tenue">Non sono riuscito a leggere le note di questo spazio.</p>
+            }
+            else if (note.Count == 0)
+            {
+                <p class="testo-tenue">Ancora nessuna nota in questo spazio.</p>
+            }
+            else
+            {
+                <ul class="elenco-note compatto">
+                    @foreach (var n in note)
+                    {
+                        <li>
+                            <a href="notes/@n.Id">@n.TitoloVisibile()</a>
+                        </li>
+                    }
+                </ul>
+            }
+            <div class="azioni">
+                <a class="btn" href="notes">Tutte le note</a>
+                <a class="btn primary" href="notes/new">Nuova nota</a>
+            </div>
         </div>
-    </div>
 
-    <div class="scheda">
-        <h2>Collezioni</h2>
-        @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'collezioni.Count == 0',
-           perché l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono
-           collezioni" da "non sono riuscito a leggerle". *@
-        @if (dettagliMancanti)
-        {
-            <p class="testo-tenue">Non sono riuscito a leggere le collezioni di questo spazio.</p>
-        }
-        else if (collezioni.Count == 0)
-        {
-            <p class="testo-tenue">Ancora nessuna collezione in questo spazio.</p>
-        }
-        else
-        {
-            <ul class="elenco-collezioni compatto">
-                @foreach (var c in collezioni)
-                {
-                    <li>
-                        <a href="collections/@c.Id">@(string.IsNullOrWhiteSpace(c.Icon) ? "" : c.Icon + " ")@c.Name</a>
-                    </li>
-                }
-            </ul>
-        }
-        <div class="azioni">
-            <a class="btn" href="collections">Tutte le collezioni</a>
-            <a class="btn primary" href="collections/new">Nuova collezione</a>
+        <div class="scheda">
+            <h2>Collezioni</h2>
+            @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'collezioni.Count == 0',
+               perché l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono
+               collezioni" da "non sono riuscito a leggerle". *@
+            @if (dettagliMancanti)
+            {
+                <p class="testo-tenue">Non sono riuscito a leggere le collezioni di questo spazio.</p>
+            }
+            else if (collezioni.Count == 0)
+            {
+                <p class="testo-tenue">Ancora nessuna collezione in questo spazio.</p>
+            }
+            else
+            {
+                <ul class="elenco-collezioni compatto">
+                    @foreach (var c in collezioni)
+                    {
+                        <li>
+                            <a href="collections/@c.Id">@(string.IsNullOrWhiteSpace(c.Icon) ? "" : c.Icon + " ")@c.Name</a>
+                        </li>
+                    }
+                </ul>
+            }
+            <div class="azioni">
+                <a class="btn" href="collections">Tutte le collezioni</a>
+                <a class="btn primary" href="collections/new">Nuova collezione</a>
+            </div>
         </div>
     </div>
 
@@ -145,9 +147,19 @@ else
     // cui non abbiamo letto niente. Accanto a un banner d'errore si contraddicono a vicenda.
     private bool dettagliMancanti;
 
+    // Lo spazio di cui i dettagli a schermo sono stati letti. Serve a distinguere un evento che
+    // annuncia un cambio vero da uno che ripete quello che già si sta mostrando.
+    private Guid? spazioMostrato;
+
+    // Vero mentre è il primo caricamento a essere in corso. Quel caricamento emette esso stesso
+    // l'evento Cambiato, e i dettagli li legge già Carica() subito dopo: senza questa guardia
+    // partirebbero due letture identiche, e la più lenta finirebbe scartata dal contatore di
+    // generazione dopo aver comunque occupato la rete.
+    private bool caricamentoIniziale;
+
     protected override async Task OnInitializedAsync()
     {
-        Spazi.Cambiato += Ridisegna;
+        Spazi.Cambiato += SpazioCambiato;
         await Carica();
     }
 
@@ -156,6 +168,7 @@ else
         errore = null;
         try
         {
+            caricamentoIniziale = true;
             await Spazi.AssicuraCaricatoAsync();
         }
         catch (Exception ex)
@@ -166,6 +179,13 @@ else
             errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
             caricato = true;
             return;
+        }
+        finally
+        {
+            // Nel finally e non dopo il try: il ramo d'errore esce con un return, e una riga
+            // scritta sotto il blocco non verrebbe mai eseguita in quel caso — la guardia
+            // resterebbe alzata per sempre e la Home smetterebbe di reagire ai cambi di spazio.
+            caricamentoIniziale = false;
         }
 
         // I dettagli si gestiscono l'errore da soli, dentro CaricaDettagli: sono accessori, e un
@@ -202,6 +222,12 @@ else
         collezioni = [];
         dettagliMancanti = false;
 
+        // Segnato PRIMA degli await, non dopo: mentre la lettura è in volo possono arrivare altri
+        // eventi per lo stesso spazio — il selettore della barra ne emette uno a ogni ridisegno
+        // dell'elenco — e senza questa riga ciascuno di essi farebbe ripartire la stessa lettura
+        // da capo.
+        spazioMostrato = Spazi.Attivo?.Id;
+
         if (Spazi.Attivo is null) return;
 
         // L'id si cattura UNA volta sola. Rileggere Spazi.Attivo dopo un await interrogherebbe lo
@@ -236,18 +262,33 @@ else
         }
     }
 
-    private async Task Cambia(ChangeEventArgs e)
+    // Lo spazio attivo si cambia dal selettore, che ora sta in due posti: in cima a questa pagina
+    // sul telefono, e in fondo alla barra di navigazione su schermo largo (v. Shared/SelettoreSpazio.razor).
+    // La Home non può più sapere chi l'ha cambiato, quindi non reagisce più al gesto ma
+    // all'evento — che è anche più corretto di prima: prima un cambio di spazio avvenuto altrove
+    // avrebbe lasciato a schermo le note dello spazio precedente sotto il nome di quello nuovo.
+    private void SpazioCambiato()
     {
-        if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+        if (caricamentoIniziale) return;
 
-        Spazi.Imposta(id);
-        errore = null;
-        await CaricaDettagli("Spazio cambiato");
+        // Stesso spazio: l'evento annuncia un ridisegno dell'elenco, non un cambio di contesto.
+        // Rileggere note, collezioni e membri sarebbe traffico per riscrivere quello che c'è già.
+        if (Spazi.Attivo?.Id == spazioMostrato)
+        {
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        // L'evento arriva da un servizio, cioè fuori dal ciclo di rendering di questo componente:
+        // senza InvokeAsync il lavoro partirebbe sul thread sbagliato. CaricaDettagli non lancia —
+        // si gestisce l'errore da sé — quindi questa continuazione non ha nulla da far risalire.
+        InvokeAsync(async () =>
+        {
+            errore = null;
+            await CaricaDettagli("Spazio cambiato");
+            StateHasChanged();
+        });
     }
 
-    // L'evento arriva da un servizio, cioè fuori dal ciclo di rendering di questo componente:
-    // senza InvokeAsync il ridisegno partirebbe sul thread sbagliato.
-    private void Ridisegna() => InvokeAsync(StateHasChanged);
-
-    public void Dispose() => Spazi.Cambiato -= Ridisegna;
+    public void Dispose() => Spazi.Cambiato -= SpazioCambiato;
 }

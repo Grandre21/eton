@@ -2,8 +2,18 @@
 
 <AuthRedirect />
 
-<main class="app-layout">
-    @Body
-</main>
+@* La navigazione precede il contenuto nel markup, e non è indifferente: sul telefono è disegnata
+   in fondo allo schermo, ma chi usa un lettore di schermo o il tasto Tab la incontra per prima,
+   che è l'ordine giusto — prima si sa dove si può andare, poi si legge dove si è. La posizione
+   sullo schermo la decide il CSS. *@
+<Navigazione />
 
-<BottomNav />
+@* Due contenitori e non uno: quello esterno lascia libera la colonna della barra su schermo largo,
+   quello interno centra il contenuto nello spazio rimasto e gli dà una larghezza leggibile. Una
+   sola scatola non può fare entrambe le cose, perché il margine sinistro servirebbe insieme a
+   'margin-inline: auto' e il secondo annullerebbe il primo. *@
+<div class="area-contenuto">
+    <main class="app-layout">
+        @Body
+    </main>
+</div>

@@ -8,8 +8,8 @@
   "lang": "it",
   "dir": "ltr",
   "display": "standalone",
-  "background_color": "#0e1317",
-  "theme_color": "#0e1317",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
   "categories": ["productivity", "utilities"],
   "prefer_related_applications": false,
   "icons": [

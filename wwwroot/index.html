@@ -25,6 +25,15 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <!-- Il font si scarica in parallelo al foglio di stile invece che dopo. Senza questa riga il
+         browser scopre di averne bisogno solo quando ha finito di leggere app.css e ha incontrato
+         la regola che lo usa: due viaggi in fila invece di due in parallelo, cioè il tempo in cui
+         il testo resta disegnato col font di sistema e poi salta.
+         'crossorigin' non è un refuso e non è facoltativo: i font si richiedono SEMPRE in modalità
+         anonima, anche quando stanno sullo stesso dominio, e senza l'attributo il browser
+         scaricherebbe il file due volte — una per il preload e una per il @font-face, che per lui
+         sono richieste diverse. -->
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="css/app.css" />
     <!-- Bundle degli stili isolati per componente (Benvenuto.razor.css e simili): lo genera la
          build a partire dai file .razor.css, e senza questo <link> nessuno lo carica. -->
@@ -32,7 +41,7 @@
     <!-- Stesso valore di --sfondo in css/app.css e di background_color nel manifest: è il colore
          con cui il sistema tinge la barra di stato e la schermata d'avvio dell'app installata.
          Discordare significa un lampo di un altro colore a ogni apertura. -->
-    <meta name="theme-color" content="#0e1317" />
+    <meta name="theme-color" content="#0d0d0d" />
 
     <!-- Sembra un elemento vuoto dimenticato, ed è invece indispensabile: la pubblicazione lo
          riempie con la traduzione fra i nomi logici dei file del runtime e i nomi con impronta

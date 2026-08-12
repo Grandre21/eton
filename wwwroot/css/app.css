@@ -1,45 +1,91 @@
 /* =========================================================================
    Eton — foglio di stile unico dell'applicazione.
 
-   Non ci sono asset esterni, e non è una dimenticanza: il sito sta su GitHub
-   Pages e deve funzionare offline come PWA. Niente @import, niente font
-   scaricati, niente CDN. Solo font di sistema, colori e forme.
+   Nessun asset remoto, e non è una dimenticanza: il sito sta su GitHub Pages e
+   deve funzionare offline come PWA. Niente @import, niente CDN, niente immagini
+   esterne. Il font è l'unico file in più, ed è servito da noi.
 
    Le pagine usano SOLO i nomi di classe definiti qui e le variabili di :root.
    Un colore scritto a mano dentro una regola è un colore che non seguirà il
    giorno in cui la tavolozza cambia.
+
+   DUE ACCENTI, DUE SIGNIFICATI. Non sono intercambiabili, e non è una
+   preferenza estetica: il blu è dove si preme (pulsanti, collegamenti, voce di
+   navigazione attiva, campo a fuoco), il verde acido è dove si constata (voti,
+   medie, conteggi, e i segni di spunta che dicono come stanno le cose). Chi
+   guarda uno schermo di Eton capisce dove si tocca e dove si legge senza aver
+   imparato niente. Usare il verde per un pulsante, o il blu per una media,
+   toglie all'interfaccia esattamente questa informazione.
+   Il discrimine non è "numero contro non numero" ma "premibile contro
+   constatato": un ✓ accanto a "non vendiamo i tuoi dati" è verde perché è un
+   fatto, e blu suggerirebbe che ci si possa cliccare sopra.
    ========================================================================= */
 
+/* Inter, in un unico file variabile: un solo woff2 da 48 KB copre tutti i pesi
+   da 100 a 900, quindi non c'è niente da guadagnare a scaricarne uno per peso —
+   sarebbero sette richieste per gli stessi glifi.
+   font-display: swap — il testo compare subito col font di sistema e viene
+   sostituito appena il file è pronto. L'alternativa predefinita ('auto', che
+   nella pratica è 'block') tiene il testo INVISIBILE fino a tre secondi: su una
+   connessione lenta significa una pagina bianca al primo accesso, cioè proprio
+   la volta in cui il font non è ancora in cache. */
+@font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
-    /* --- superfici, dalla più profonda alla più in rilievo --- */
-    --sfondo: #0e1317;
-    --sfondo-alt: #131a20;
-    --superficie: #171f26;
-    --superficie-alta: #1e272f;
-    --bordo: #29333c;
-    --bordo-forte: #38444f;
+    /* --- superfici: scala di grigi NEUTRA, senza dominante di colore ---
+       Un nero che tira al blu (com'era prima) litiga con un accento blu: i due
+       si sommano e la pagina intera sembra virata. Su neutro l'accento resta
+       l'unica cosa colorata dello schermo, che è il punto. */
+    --sfondo: #0d0d0d;
+    --sfondo-alt: #111111;
+    --superficie: #151515;
+    --superficie-alta: #1c1c1c;
+    --bordo: #262626;
+    --bordo-forte: #333333;
 
     /* --- testo: tre livelli, non di più. Il quarto livello non si legge --- */
-    --testo: #e9eef3;
-    --testo-tenue: #94a3b1;
-    --testo-fioco: #6b7a88;
+    --testo: #f2f2f2;
+    --testo-tenue: #a1a1a1;
+    --testo-fioco: #6e6e6e;
 
-    /* --- accento --- */
-    --accento: #35c99a;
-    --accento-caldo: #2ba884;
-    --accento-tenue: rgba(53, 201, 154, .14);
-    --su-accento: #04140e;      /* testo sopra il colore d'accento pieno */
+    /* --- accento primario: BLU. Azioni, navigazione, stato attivo, fuoco --- */
+    --accento: #4c8dff;
+    --accento-scuro: #2f6fe0;
+    --accento-tenue: rgba(76, 141, 255, .14);
+    /* Testo sopra il blu pieno. È SCURO, non bianco: su #4c8dff il bianco sta a
+       circa 3,3:1, sotto la soglia di leggibilità; questo sta sopra 5:1. */
+    --su-accento: #04122e;
+
+    /* --- accento secondario: VERDE ACIDO. Valori, voti, medie, conteggi --- */
+    --secondario: #b6f36a;
+    --secondario-scuro: #8fd142;
+    --secondario-tenue: rgba(182, 243, 106, .12);
+    --su-secondario: #16240a;
 
     /* --- stati --- */
     --errore: #ff9b9b;
-    --errore-sfondo: #2a1618;
-    --errore-bordo: #6d2b2b;
+    --errore-sfondo: #241416;
+    --errore-bordo: #5e2b2e;
 
     /* --- forma --- */
-    --raggio: 14px;
-    --raggio-s: 9px;
+    --raggio: 12px;
+    --raggio-s: 8px;
     --raggio-pieno: 999px;
-    --ombra: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 30px -18px rgba(0, 0, 0, .9);
+
+    /* Ombre a due strati: una stretta che stacca il bordo dal fondo, una larga e
+       molto diffusa che dà profondità. Su fondo nero un'ombra sola o non si vede
+       o sembra sporco. */
+    --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 40px -20px rgba(0, 0, 0, .9);
+    /* Per ciò che deve staccarsi davvero: stessa struttura, più un alone tinto
+       dell'accento. È l'alone colorato — non la dimensione dell'ombra — a
+       distinguere una superficie in evidenza da una scheda qualunque. */
+    --ombra-accento: 0 4px 16px rgba(0, 0, 0, .3), 0 12px 48px rgba(76, 141, 255, .18);
 
     /* --- ritmo verticale: si usano questi, non rem sparsi --- */
     --s1: .25rem;
@@ -67,13 +113,19 @@
        soglia che usano sia Material sia le linee guida di accessibilità. */
     --tocco: 48px;
 
+    /* Larghezza della colonna di navigazione su schermo largo. Sta qui e non
+       dentro la media query perché serve anche all'area di contenuto, che è un
+       altro blocco: ripeterla in due punti significa vederle divergere. */
+    --barra: 248px;
+
     /* Dice al browser che la pagina è scura: da qui in poi le barre di
        scorrimento, i menù dei <select>, i selettori di data e le caselle di
        spunta nativi nascono scuri invece che bianchi. Una riga sola, e
        sistema tutti i controlli che il CSS non può raggiungere. */
     color-scheme: dark;
 
-    /* Colora caselle di spunta e cursori nativi senza doverli ricostruire. */
+    /* Colora caselle di spunta e cursori nativi senza doverli ricostruire.
+       Blu: una casella si spunta, cioè è un'azione. */
     accent-color: var(--accento);
 }
 
@@ -86,7 +138,10 @@ html, body {
     padding: 0;
     background: var(--sfondo);
     color: var(--testo);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    /* Inter prima, poi i font di sistema: se il woff2 non arriva — offline alla
+       primissima visita, o bloccato — la pagina resta leggibile e cambia solo di
+       carattere. */
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: 16px;
     line-height: 1.55;
     /* Su fondo scuro il testo non antialiasato appare più grasso di quanto
@@ -129,14 +184,25 @@ a, button, select, input, textarea, [role=button] {
 
 /* --------------------------------------------------------- tipografia --- */
 
+/* Due trattamenti opposti, ed è la firma dello stile.
+   I titoli si STRINGONO: a corpo grande le lettere di Inter risultano slegate, e
+   una crenatura negativa le ricompatta in una parola sola invece che in una fila
+   di caratteri allineati. Le micro-etichette si ALLARGANO (v. .etichetta-piccola
+   più sotto): a corpo piccolo e tutto maiuscolo, senza spaziatura le lettere si
+   impastano e la parola diventa una macchia. */
 h1, h2, h3 {
-    /* I titoli di sistema, a corpo grande, risultano slegati: stringerli di un
-       filo li ricompatta in una parola sola invece che in lettere allineate. */
-    letter-spacing: -.015em;
+    letter-spacing: -.02em;
     text-wrap: balance;
 }
 
-h1 { font-size: var(--t-2xl); font-weight: 700; margin: 0 0 var(--s4); line-height: 1.2; }
+h1 {
+    font-size: var(--t-2xl);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    margin: 0 0 var(--s4);
+    line-height: 1.15;
+}
+
 h2 { font-size: var(--t-lg); font-weight: 650; margin: 0 0 var(--s3); }
 h3 { font-size: var(--t-base); font-weight: 600; margin: 0 0 var(--s2); }
 
@@ -144,26 +210,32 @@ a { color: var(--accento); }
 
 .sottotitolo { color: var(--testo-tenue); margin: 0 0 var(--s4); }
 .testo-tenue { color: var(--testo-tenue); font-size: var(--t-sm); margin: 0 0 var(--s3); }
-.nome-grande { font-size: var(--t-lg); font-weight: 600; margin: 0 0 var(--s1); }
+.nome-grande { font-size: var(--t-lg); font-weight: 600; letter-spacing: -.02em; margin: 0 0 var(--s1); }
 
 .etichetta-piccola {
     display: block;
     font-size: var(--t-xs);
     font-weight: 600;
-    letter-spacing: .04em;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--testo-fioco);
-    margin-bottom: var(--s1);
+    margin-bottom: var(--s2);
 }
 
 /* ------------------------------------------------------------- guscio --- */
+
+/* Il contenitore del contenuto. Su telefono non fa niente; su schermo largo
+   lascia libera la colonna occupata dalla barra di navigazione. La spinta è qui
+   e non su .app-layout perché quest'ultimo si centra da solo dentro lo spazio
+   rimasto: una sola scatola non può fare tutte e due le cose. */
+.area-contenuto { min-height: 100vh; }
 
 .app-layout {
     max-width: 720px;
     margin: 0 auto;
     padding: var(--s5) var(--s4);
     /* La barra fissa in basso non deve coprire il contenuto. env() va
-       risommato e non ereditato: la barra stessa se ne allarga (v. .barra-basso),
+       risommato e non ereditato: la barra stessa se ne allarga (v. .nav-app),
        quindi su un iPhone con l'home indicator un valore secco non basterebbe
        a scavalcarla. */
     padding-bottom: calc(var(--s8) + var(--s5) + env(safe-area-inset-bottom));
@@ -197,7 +269,7 @@ a { color: var(--accento); }
 }
 
 /* Proposta di aggiornamento della PWA. Vive in index.html, fuori dall'applicazione, quindi si veste
-   qui: sta sopra la barra di navigazione (z-index maggiore di .barra-basso) e le si appoggia sopra
+   qui: sta sopra la barra di navigazione (z-index maggiore di .nav-app) e le si appoggia sopra
    invece di coprirla. L'attributo 'hidden' basta a nasconderlo — display:flex lo rimetterebbe in
    scena, quindi va escluso esplicitamente. */
 #aggiornamento-pwa {
@@ -211,9 +283,9 @@ a { color: var(--accento); }
     gap: var(--s3);
     padding: var(--s3) var(--s4);
     background: var(--superficie-alta);
-    border: 1px solid var(--accento-caldo);
+    border: 1px solid var(--bordo-forte);
     border-radius: var(--raggio);
-    box-shadow: var(--ombra);
+    box-shadow: var(--ombra-accento);
     font-size: var(--t-md);
 }
 
@@ -234,9 +306,14 @@ a { color: var(--accento); }
     touch-action: manipulation;
 }
 
-/* ------------------------------------------------ navigazione in basso --- */
+/* -------------------------------------------------------- navigazione --- */
 
-.barra-basso {
+/* Una sola barra per due forme. Su telefono è la striscia in fondo allo schermo,
+   dove arriva il pollice; su schermo largo diventa la colonna a sinistra, dove
+   l'occhio cerca la navigazione. Stesso markup, stesso componente, stesse voci:
+   cambia la disposizione, non la struttura — due componenti separati sarebbero
+   due elenchi di voci da tenere allineati a mano. */
+.nav-app {
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 20;
@@ -253,7 +330,13 @@ a { color: var(--accento); }
     padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.barra-basso .voce {
+/* Marchio e piede della colonna esistono solo nella forma larga: su telefono la
+   striscia in fondo ha spazio per cinque voci e nient'altro. */
+.nav-marchio, .nav-piede { display: none; }
+
+.nav-voci { display: flex; flex: 1; }
+
+.nav-app .voce {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -270,12 +353,12 @@ a { color: var(--accento); }
     transition: color var(--transizione);
 }
 
-.barra-basso .voce.attiva { color: var(--accento); }
-.barra-basso .voce:active { color: var(--testo); }
+.nav-app .voce.attiva { color: var(--accento); }
+.nav-app .voce:active { color: var(--testo); }
 
-.barra-basso .voce .etichetta { line-height: 1.2; }
+.nav-app .voce .etichetta { line-height: 1.2; }
 
-.barra-basso .icona {
+.nav-app .icona {
     display: grid;
     place-items: center;
     width: 2.4rem;
@@ -291,7 +374,7 @@ a { color: var(--accento); }
 /* La voce attiva si riconosce anche senza distinguere i colori: sotto
    l'icona compare una pastiglia piena. Il colore da solo non basta a chi non
    lo vede. */
-.barra-basso .voce.attiva .icona { background: var(--accento-tenue); }
+.nav-app .voce.attiva .icona { background: var(--accento-tenue); }
 
 /* ----------------------------------------------------------- superfici --- */
 
@@ -299,12 +382,26 @@ a { color: var(--accento); }
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
-    padding: var(--s4);
+    padding: var(--s5) var(--s4);
     margin-bottom: var(--s4);
-    box-shadow: var(--ombra);
+    /* Il filo chiaro in cima non è un vezzo: su fondo nero una superficie appena
+       più chiara del fondo non si stacca, e il bordo da solo la fa sembrare un
+       riquadro disegnato invece che un piano rialzato. Una riga di luce sul
+       bordo superiore è come cade la luce su un oggetto vero. */
+    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
 }
 
-.scheda h2 { font-size: var(--t-base); margin: 0 0 var(--s2); }
+/* Il titolo di una scheda è un sopratitolo, non un titolo: dice di che cosa è
+   l'elenco che segue, e deve pesare meno del contenuto che introduce. */
+.scheda h2 {
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--testo-fioco);
+    margin: 0 0 var(--s3);
+}
+
 .scheda.pericolo { border-color: var(--errore-bordo); }
 
 .vuoto {
@@ -330,7 +427,7 @@ a { color: var(--accento); }
 }
 
 .avviso {
-    border: 1px solid var(--accento-caldo);
+    border: 1px solid var(--accento-scuro);
     background: var(--accento-tenue);
     border-radius: var(--raggio);
     padding: var(--s3) var(--s4);
@@ -373,12 +470,13 @@ a { color: var(--accento); }
     border-color: var(--accento);
     color: var(--su-accento);
     font-weight: 600;
+    box-shadow: 0 6px 20px -8px rgba(76, 141, 255, .55);
 }
 
-.btn.primary:hover { background: var(--accento-caldo); border-color: var(--accento-caldo); }
+.btn.primary:hover { background: var(--accento-scuro); border-color: var(--accento-scuro); }
 
-.btn.rosso { border-color: var(--errore-bordo); color: var(--errore); background: var(--errore-sfondo); }
-.btn.rosso:hover { background: #351b1d; }
+.btn.rosso { border-color: var(--errore-bordo); color: var(--errore); background: var(--errore-sfondo); box-shadow: none; }
+.btn.rosso:hover { background: #2f1a1c; }
 
 .btn.piccolo {
     min-height: 2.2rem;
@@ -391,6 +489,7 @@ a { color: var(--accento); }
     opacity: .5;
     cursor: default;
     transform: none;
+    box-shadow: none;
 }
 
 .azioni {
@@ -456,6 +555,9 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     border: 1px dashed var(--bordo-forte);
     border-radius: var(--raggio);
     text-align: center;
+    /* Un codice d'invito si legge carattere per carattere e spesso si detta ad
+       alta voce: a passo fisso le cifre non ballano e non si perde il segno. */
+    font-variant-numeric: tabular-nums;
 }
 
 /* ------------------------------------------------- intestazioni pagina --- */
@@ -481,6 +583,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     align-items: center;
     font-size: var(--t-xs);
     font-weight: 600;
+    letter-spacing: .02em;
     padding: var(--s1) var(--s3);
     border-radius: var(--raggio-pieno);
     border: 1px solid var(--bordo);
@@ -490,7 +593,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 }
 
 .pastiglia.accesa {
-    border-color: var(--accento-caldo);
+    border-color: var(--accento-scuro);
     background: var(--accento-tenue);
     color: var(--accento);
 }
@@ -530,11 +633,33 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     transform: scale(.99);
 }
 
+/* La freccia in fondo alla riga: due bordi di un quadrato vuoto, ruotati di 45
+   gradi. Disegnata così e non con un carattere (›) né con un'immagine perché
+   deve essere identica su ogni sistema — la punta di un glifo cambia forma e
+   allineamento a seconda del font installato — e non deve costare una richiesta.
+   Sulle righe delle note non c'è: quelle impilano titolo, estratto e data in
+   colonna, e una freccia finirebbe sotto il testo invece che accanto. */
+.riga-spazio::after, .riga-collezione::after, .riga-elemento::after {
+    content: "";
+    flex: none;
+    width: 7px;
+    height: 7px;
+    margin-left: auto;
+    border-right: 2px solid var(--testo-fioco);
+    border-bottom: 2px solid var(--testo-fioco);
+    transform: rotate(-45deg);
+    transition: border-color var(--transizione);
+}
+
+.riga-spazio:hover::after, .riga-collezione:hover::after, .riga-elemento:hover::after {
+    border-color: var(--accento);
+}
+
 /* La riga di una nota impila titolo, estratto e data; le altre affiancano. */
 .riga-nota { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
-.riga-spazio .nome { flex: 1; }
-.riga-nota .titolo { font-weight: 600; }
+.riga-spazio .nome { flex: 1; font-weight: 500; }
+.riga-nota .titolo { font-weight: 600; letter-spacing: -.01em; }
 .riga-nota .estratto, .riga-nota .meta { color: var(--testo-tenue); font-size: var(--t-sm); }
 
 /* L'estratto sta su una riga sola: una nota lunga non deve allungare la
@@ -553,7 +678,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     gap: var(--s1);
 }
 
-.riga-collezione .nome, .riga-elemento .nome { font-weight: 600; }
+.riga-collezione .nome, .riga-elemento .nome { font-weight: 600; letter-spacing: -.01em; }
 
 .riga-collezione .meta, .riga-elemento .meta {
     color: var(--testo-tenue);
@@ -644,6 +769,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     border-radius: var(--raggio-s);
     font-size: var(--t-lg);
     font-weight: 600;
+    letter-spacing: -.02em;
 }
 
 /* Selettore a segmenti (Scrivi / Anteprima): non usa .btn perché non sono
@@ -738,7 +864,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 .markdown > :last-child  { margin-bottom: 0; }
 
 .markdown h1 { font-size: var(--t-xl); margin: var(--s5) 0 var(--s2); }
-.markdown h2 { font-size: var(--t-lg); margin: var(--s5) 0 var(--s2); }
+.markdown h2 { font-size: var(--t-lg); margin: var(--s5) 0 var(--s2); text-transform: none; letter-spacing: -.02em; color: var(--testo); }
 .markdown h3 { font-size: var(--t-base); margin: var(--s4) 0 var(--s2); }
 .markdown p  { margin: 0 0 var(--s3); }
 .markdown ul, .markdown ol { margin: 0 0 var(--s3); padding-left: var(--s5); }
@@ -768,7 +894,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 .markdown blockquote {
     margin: 0 0 var(--s3);
     padding: var(--s1) 0 var(--s1) var(--s4);
-    border-left: 3px solid var(--accento-caldo);
+    border-left: 3px solid var(--accento-scuro);
     color: var(--testo-tenue);
 }
 
@@ -813,11 +939,15 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 /* --------------------------------------------------------------- voti --- */
 
+/* Qui vive il secondo accento. Un voto è il dato che dà senso a una collezione:
+   colorarlo di verde acido lo rende leggibile in diagonale, senza cercarlo, e lo
+   distingue da tutto ciò che invece si può premere. */
+
 .voto-riga {
     flex: none;
     min-width: 2.5rem;
     text-align: right;
-    color: var(--testo);
+    color: var(--secondario);
     font-size: var(--t-md);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -827,7 +957,8 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     font-size: var(--t-3xl);
     font-weight: 700;
     line-height: 1;
-    color: var(--accento);
+    letter-spacing: -.03em;
+    color: var(--secondario);
     font-variant-numeric: tabular-nums;
 }
 
@@ -850,7 +981,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     width: auto;
     margin: var(--s1) 0;
     text-align: left;
-    color: var(--testo);
+    color: var(--secondario);
     font-weight: 600;
 }
 
@@ -860,15 +991,17 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
        cifra per cifra e il cursore accanto salta mentre lo si trascina. */
     width: 3.4rem;
     text-align: center;
-    color: var(--testo-tenue);
+    color: var(--secondario);
     font-size: var(--t-md);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
 /* Il cursore del voto ricostruito a mano. Con -webkit-appearance: none la
    traccia sparisce del tutto, quindi vanno ridefiniti sia traccia sia
    pomello — e il pomello va portato a misura di dito: quello di sistema è
-   largo una decina di pixel. */
+   largo una decina di pixel. Il pomello è verde e non blu perché quello che si
+   trascina qui è un valore, non un comando: al rilascio resta un numero. */
 /* L'etichetta "Voto" prende una riga tutta sua, e non un posto in fila accanto al cursore: su
    360px, etichetta + cursore + cifre + pastiglia "Nessun voto" lasciavano al cursore una corsa di
    una manciata di pixel, cioè un controllo con venti posizioni da azzeccare col dito. */
@@ -907,7 +1040,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
        che su WebKit non lo fa da sé. */
     margin-top: -10px;
     border-radius: 50%;
-    background: var(--accento);
+    background: var(--secondario);
     border: 2px solid var(--sfondo);
     box-shadow: var(--ombra);
     cursor: pointer;
@@ -917,13 +1050,154 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: var(--accento);
+    background: var(--secondario);
     border: 2px solid var(--sfondo);
     cursor: pointer;
 }
 
 .voto-input input[type=range]:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 4px var(--accento-tenue);
+    box-shadow: 0 0 0 4px var(--secondario-tenue);
 }
 
 .voto-input input[type=range]:disabled { opacity: .5; }
+
+/* ============================================================ schermo largo ===
+   Da qui in giù cambia la disposizione, non il linguaggio: stessi colori,
+   stesse forme, stesse classi. Un telefono non deve leggere nemmeno una di
+   queste regole, ed è il motivo per cui stanno tutte in fondo e non sparse
+   dentro i blocchi qui sopra: mobile-first significa che la versione base è
+   quella del telefono e il resto è aggiunta.
+   ============================================================================ */
+
+/* --- tavoletta: il contenuto respira, la barra resta in basso --- */
+@media (min-width: 40rem) {
+    .app-layout { padding: var(--s6) var(--s5); padding-bottom: calc(var(--s8) + var(--s5)); }
+    h1 { font-size: var(--t-3xl); }
+}
+
+/* --- schermo largo: la barra diventa una colonna --- */
+@media (min-width: 64rem) {
+    .area-contenuto { padding-left: var(--barra); }
+
+    .app-layout {
+        max-width: 1080px;
+        padding: var(--s7) var(--s6);
+        /* Niente più scavalco della barra in basso: qui la barra è a sinistra e
+           non copre niente. Restava altrimenti un buco di 7 rem in fondo a ogni
+           pagina. */
+        padding-bottom: var(--s7);
+    }
+
+    .nav-app {
+        /* Da striscia orizzontale in fondo a colonna verticale a sinistra. Le
+           quattro coordinate cambiano tutte: right diventa auto (la barra non
+           arriva più al bordo destro), top diventa 0 (parte dall'alto). */
+        top: 0;
+        right: auto;
+        bottom: 0;
+        width: var(--barra);
+        flex-direction: column;
+        gap: var(--s2);
+        padding: var(--s5) var(--s3) var(--s4);
+        background: var(--sfondo-alt);
+        border-top: none;
+        border-right: 1px solid var(--bordo);
+        /* Su schermo largo non c'è niente che scorra sotto la barra: la sfocatura
+           costerebbe un livello di composizione per non mostrare nulla. */
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .nav-marchio {
+        display: flex;
+        align-items: center;
+        gap: var(--s3);
+        padding: 0 var(--s3) var(--s5);
+        font-size: var(--t-lg);
+        font-weight: 700;
+        letter-spacing: -.03em;
+        color: var(--testo);
+    }
+
+    /* Il punto del marchio: un quadratino con lo stesso gradiente dei due
+       accenti, che è il modo più breve di dire che qui dentro convivono. */
+    .nav-marchio::before {
+        content: "";
+        width: 26px;
+        height: 26px;
+        flex: none;
+        border-radius: 7px;
+        background: linear-gradient(135deg, var(--accento), var(--secondario));
+        box-shadow: 0 4px 14px rgba(76, 141, 255, .35);
+    }
+
+    .nav-voci {
+        flex-direction: column;
+        gap: var(--s1);
+        /* Spinge il piede (il selettore dello spazio) in fondo alla colonna,
+           qualunque sia il numero di voci. */
+        flex: 1;
+    }
+
+    .nav-app .voce {
+        flex: none;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: var(--s3);
+        min-height: 44px;
+        padding: 0 var(--s3);
+        border-radius: var(--raggio-s);
+        font-size: var(--t-md);
+        font-weight: 500;
+        color: var(--testo-tenue);
+        transition: background var(--transizione), color var(--transizione);
+    }
+
+    .nav-app .voce:hover { background: var(--superficie); color: var(--testo); }
+
+    /* Sul telefono la voce attiva si segnala con la pastiglia dietro l'icona;
+       qui la riga intera si accende, e la pastiglia dietro l'icona diventa di
+       troppo — due sfondi sovrapposti sullo stesso elemento. */
+    .nav-app .voce.attiva {
+        background: var(--accento-tenue);
+        color: var(--accento);
+    }
+
+    .nav-app .voce.attiva .icona { background: none; }
+
+    .nav-app .icona { width: 22px; height: 22px; }
+
+    .nav-piede {
+        display: block;
+        padding: var(--s4) var(--s3) 0;
+        border-top: 1px solid var(--bordo);
+    }
+
+    /* Il selettore dello spazio vive in due posti: qui in fondo alla colonna, e
+       in cima alla Home per chi sta sul telefono. Su schermo largo quello della
+       Home sparisce — averli tutti e due significherebbe due controlli identici
+       nella stessa schermata, e nessuno dei due sembrerebbe quello giusto. */
+    .solo-stretto { display: none; }
+
+    /* Due colonne dove il contenuto è fatto di riquadri indipendenti: sotto i
+       1024px questa regola non esiste e le schede restano impilate. */
+    .griglia-due {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--s4);
+        /* Senza, la scheda più corta si stira fino all'altezza della più lunga e
+           il suo bordo inferiore resta appeso nel vuoto. */
+        align-items: start;
+    }
+
+    .griglia-due > .scheda { margin-bottom: 0; }
+
+    /* Il banner di aggiornamento su schermo largo non è più una fascia a tutta
+       larghezza in fondo: si accosta in basso a destra, come una notifica. */
+    #aggiornamento-pwa {
+        left: auto;
+        right: var(--s5);
+        bottom: var(--s5);
+        max-width: 26rem;
+    }
+}
