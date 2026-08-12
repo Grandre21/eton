@@ -4,7 +4,7 @@
 -- Perche' esiste: v. verifica-rls.sql, verifica-rls-note.sql, verifica-rls-collezioni.sql e
 -- verifica-rls-recensioni.sql. In piu', qui si collauda la funzionalita' aggiunta da
 -- 20260812230000_voto_al_buio.sql: su un elemento di una collezione cieca non si vedono le
--- recensioni altrui finche' non si e' messa la propria, ma si vede sempre QUANTI hanno votato.
+-- recensioni altrui finche' non si e' messa la propria, ma si vede sempre QUANTI hanno recensito.
 --
 -- Errori SQL attesi in tutto questo script: 1 (sezione 8, anon non puo eseguire review_counts).
 -- Ogni altro esito atteso e' un conteggio di righe, non un errore -- lo dice l'intestazione di

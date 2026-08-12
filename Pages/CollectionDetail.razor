@@ -77,7 +77,10 @@ else
                     <span class="etichetta-piccola">Ordina per</span>
                     <select value="@ordine" @onchange="CambiaOrdine">
                         <option value="@Ordine.Nome">Nome</option>
-                        <option value="@Ordine.Media">Voto più alto</option>
+                        @if (OrdinePerVotoPossibile)
+                        {
+                            <option value="@Ordine.Media">Voto più alto</option>
+                        }
                     </select>
                 </label>
                 <button class="pastiglia @(soloDaProvare ? "accesa" : "")" @onclick="() => soloDaProvare = !soloDaProvare">
@@ -111,7 +114,30 @@ else
                                "nessuno ha votato", che qui non sappiamo. *@
                             @if (!votiMancanti)
                             {
-                                <span class="voto-riga">@CalcoliVoti.Testo(Voti(e.Id).Media)</span>
+                                @if (collezione!.Blind && !Voti(e.Id).HaiRecensito && (Recensori(e.Id) > 0 || conteggiMancanti))
+                                {
+                                    @* Un numero al posto della media si legge come un voto se non lo si
+                                       distingue: "3" dove prima c'era "7,5" sembra un tre su dieci. La
+                                       pastiglia (bordo, sfondo, niente verde) più la parola "recensioni"
+                                       dicono che è un conteggio di persone, non un giudizio — non si riusa
+                                       .voto-riga, che è la classe dei voti veri. "Recensioni" e non "voti"
+                                       perché il conteggio comprende chi ha lasciato solo un commento: v.
+                                       CalcoliVoti.TestoRecensioni. Sotto zero si cade nel ramo else:
+                                       "nessuna recensione" è la stessa verità cieca o no, e va detta allo
+                                       stesso modo.
+
+                                       Col conteggio illeggibile si scrive "coperto" e nient'altro: non
+                                       sappiamo quanti abbiano recensito, ma sappiamo che qui una media non
+                                       la si può mostrare, ed è meglio dirlo che ricadere sul "—" del ramo
+                                       sotto, che significherebbe "nessuno ha votato". *@
+                                    <span class="pastiglia">
+                                        @(conteggiMancanti ? "coperto" : CalcoliVoti.TestoRecensioni(Recensori(e.Id)))
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="voto-riga">@CalcoliVoti.Testo(Voti(e.Id).Media)</span>
+                                }
                             }
                         </a>
                     </li>
@@ -133,11 +159,32 @@ else
 
     private IReadOnlyDictionary<Guid, RiepilogoVoti> voti =
         new Dictionary<Guid, RiepilogoVoti>();
+
+    // Solo per le collezioni alla cieca: quante persone hanno recensito ciascun elemento, letto da
+    // ConteggiPerSpazioAsync perché su un elemento che io non ho ancora recensito le righe vere
+    // non arrivano affatto (RLS). Su una collezione normale resta vuoto e non si legge mai.
+    // Recensioni, non voti: comprende chi ha lasciato solo un commento (v. CalcoliVoti.TestoRecensioni).
+    private IReadOnlyDictionary<Guid, int> conteggiRecensori = new Dictionary<Guid, int>();
+
+    // Il conteggio dei recensori non si è potuto leggere. Distinto da votiMancanti perché è molto meno
+    // grave — le medie ci sono e la pagina funziona — ma non si può ignorare: senza, un elemento
+    // coperto ricadrebbe sul ramo della media e mostrerebbe "—", cioè "nessuno ha votato", che è
+    // esattamente la bugia che il conteggio esiste per evitare.
+    private bool conteggiMancanti;
+
     private Guid? io;
     private bool soloDaProvare;
     private bool votiMancanti;
     private Ordine ordine = Ordine.Nome;
     private enum Ordine { Nome, Media }
+
+    // Su una collezione cieca la media della maggior parte degli elementi non è conoscibile: le
+    // righe altrui non arrivano finché non hai votato tu. «Voto più alto» ordinerebbe quindi per un
+    // valore che per quasi tutti vale null, mettendo in fondo — insieme a quelli che nessuno ha
+    // giudicato — anche gli elementi con tre voti alti che semplicemente non puoi ancora vedere.
+    // L'opzione sparisce, come già spariscono i comandi quando i voti non si sono letti: un comando
+    // che risponde senza fare quello che promette è peggio di un comando assente.
+    private bool OrdinePerVotoPossibile => collezione is not null && !collezione.Blind;
 
     // Come in NoteEdit: Id cambia navigando fra collezioni senza smontare il componente, quindi il
     // ricaricamento va agganciato a OnParametersSetAsync e non a OnInitializedAsync, e due
@@ -198,7 +245,9 @@ else
         // un fatto che in realtà non conosciamo: è lo stesso errore già corretto in Home.razor:71-73
         // e nei rami di Notes.razor.
         voti = new Dictionary<Guid, RiepilogoVoti>();
+        conteggiRecensori = new Dictionary<Guid, int>();
         votiMancanti = false;
+        conteggiMancanti = false;
         io = null;
 
         if (collezione is not null)
@@ -212,6 +261,38 @@ else
                 if (mia != generazione) return;
 
                 voti = CalcoliVoti.Riepiloghi(recensioni, io);
+
+                // Solo alla cieca: su una collezione normale il conteggio si legge già dalle righe
+                // appena scaricate (Voti sopra), e questa sarebbe una richiesta di rete in più per
+                // un numero che si ha già.
+                if (collezione.Blind)
+                {
+                    // Try annidato, non nello stesso try esterno: un fallimento qui riguarda solo il
+                    // conteggio delle recensioni coperte, non le medie appena lette sopra. Nello stesso
+                    // try l'eccezione salirebbe al catch esterno e accenderebbe votiMancanti, facendo
+                    // sparire medie lette benissimo per colpa di una seconda chiamata accessoria.
+                    try
+                    {
+                        var conteggi = await Recensioni.ConteggiPerSpazioAsync(collezione.SpaceId);
+                        if (mia != generazione) return;
+
+                        conteggiRecensori = conteggi;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (mia != generazione) return;
+
+                        // Nessun votiMancanti: le medie restano valide e il resto della pagina
+                        // funziona. Serve però un flag suo, perché senza il markup ricadrebbe sul
+                        // ramo della media e scriverebbe "—" su un elemento coperto — cioè "nessuno
+                        // ha votato" proprio nel caso in cui i voti esistono e non si sono potuti
+                        // contare. È lo scenario più concreto che ci sia: se la migrazione del voto
+                        // al buio non è ancora stata applicata al database, la funzione review_counts
+                        // non esiste e ogni chiamata finisce qui.
+                        conteggiMancanti = true;
+                        Console.Error.WriteLine($"[Collezione] Conteggi voti al buio non disponibili: {ex.Message}");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -260,7 +341,12 @@ else
             // Il ramo Ordine.Nome non riordina niente: gli elementi arrivano già ordinati per nome
             // dal database (indice collection_items (collection_id, name)), quindi riordinarli
             // sarebbe lavoro sprecato che produce lo stesso risultato.
-            return ordine == Ordine.Media
+            // La seconda condizione non è ridondante col markup che nasconde l'opzione: 'ordine' è
+            // stato del componente e sopravvive alla navigazione fra collezioni (Id cambia senza
+            // smontare nulla, v. OnParametersSetAsync). Chi ha scelto «Voto più alto» su una
+            // collezione normale e passa a una cieca porterebbe con sé un ordinamento che lì non ha
+            // più significato, e non avrebbe nemmeno il comando per toglierlo.
+            return ordine == Ordine.Media && OrdinePerVotoPossibile
                 ? elenco.OrderByDescending(e => Voti(e.Id).Media ?? decimal.MinValue)
                         .ThenBy(e => e.Name, StringComparer.Ordinal)
                 : elenco;
@@ -269,6 +355,9 @@ else
 
     private RiepilogoVoti Voti(Guid elementoId) =>
         voti.TryGetValue(elementoId, out var r) ? r : new RiepilogoVoti(null, 0, null, false);
+
+    private int Recensori(Guid elementoId) =>
+        conteggiRecensori.TryGetValue(elementoId, out var n) ? n : 0;
 
     // L'URL lo scrive un altro membro dello spazio: uno schema come data: o javascript: dentro un
     // src non è un semplice link rotto, va bonificato come in MarkdownRenderer.

@@ -12,6 +12,9 @@ lì in poi note, collezioni e voti appartengono a chi ci sta dentro.
   e un elenco di elementi che li compilano.
 - **Recensioni**: un voto da 0,5 a 10 e un commento per persona, con media, ordinamento per voto
   e filtro «da provare».
+- **Voto al buio**: una collezione può nascondere le recensioni altrui finché non hai messo la tua
+  — resta visibile solo quante persone hanno recensito. Non è l'interfaccia a coprirle: è la policy
+  di `reviews` a non lasciarle uscire dal database.
 
 ---
 
@@ -114,23 +117,36 @@ passaggi del workflow non sono ovvi e non vanno tolti:
 ```
 Pages/          una pagina per rotta (@page)
 Shared/         componenti riusabili
-Layout/         MainLayout (privato, con la barra in basso) e VetrinaLayout (pubblico)
+Layout/         MainLayout (privato) e VetrinaLayout (pubblico)
 Models/         le righe del database, come le vede Postgrest
 Services/       accesso ai dati, sessione, helper puri
 Eton.Tests/     xUnit — solo logica pura, nessun database
 supabase/       migration e script di verifica delle policy
 docs/           design e piani
 wwwroot/css/    app.css: foglio unico, tutto costruito sulle variabili di :root
+wwwroot/fonts/  Inter, un solo woff2 variabile per tutti i pesi
 ```
+
+La navigazione è **un solo componente** (`Shared/Navigazione.razor`) in due forme: barra in fondo
+allo schermo sul telefono, colonna a sinistra da 64rem in su. A cambiare è solo il CSS — due
+componenti separati sarebbero due elenchi di voci da tenere allineati a mano.
+
+I due colori d'accento non sono intercambiabili, ed è scritto in testa ad `app.css`: il **blu** è
+dove si preme (pulsanti, collegamenti, voce attiva, campo a fuoco), il **verde acido** è dove si
+constata (voti, medie, conteggi). Usare il verde per un pulsante toglie all'interfaccia
+un'informazione che oggi trasmette senza parole.
 
 Alcune regole che il codice dà per acquisite:
 
 - **`InvariantGlobalization` è attivo** (`Eton.csproj`). `new CultureInfo("it-IT")` lancia a runtime:
   le date e i numeri si formattano con `CultureInfo.InvariantCulture` e, dove serve la virgola
   decimale, la si scrive a mano (v. `Services/CalcoliVoti.Testo`).
-- **Nessun asset esterno.** Niente font scaricati, niente CDN, niente immagini remote: l'applicazione
-  deve funzionare offline una volta installata. Le icone della barra di navigazione sono SVG
-  disegnati in `Shared/Icona.razor`.
+- **Nessun asset remoto.** Niente CDN, niente `@import`, niente immagini o font caricati da altri
+  domini: l'applicazione deve funzionare offline una volta installata. Il font (Inter) è servito da
+  noi, in `wwwroot/fonts/`, in un unico file variabile che copre tutti i pesi; le icone della
+  navigazione sono SVG disegnati in `Shared/Icona.razor`. Se aggiungi un formato di file nuovo,
+  ricordati di elencarlo in `offlineAssetsInclude` dentro `wwwroot/service-worker.published.js`,
+  altrimenti offline non c'è.
 - **In `Release` il trimming è `full`.** I tipi di Gotrue e Postgrest sono costruiti per reflection
   da Newtonsoft, quindi i loro assembly sono dichiarati `TrimmerRootAssembly`: senza, l'applicazione
   compila, passa i test, e fallisce **solo da pubblicata** con «Unable to find a constructor to use».
@@ -141,8 +157,8 @@ Alcune regole che il codice dà per acquisite:
 ## Stato
 
 Funzionano: accesso con Google, spazi personali e condivisi con codice d'invito, note in Markdown,
-collezioni a campi liberi con i loro elementi, recensioni con media e filtri, vetrina pubblica
-prima dell'accesso.
+collezioni a campi liberi con i loro elementi, recensioni con media e filtri, voto al buio, vetrina
+pubblica prima dell'accesso, interfaccia a colonna su schermo largo.
 
 Non ci sono ancora: allegati e immagini caricate, ricerca, notifiche, passaggio di proprietà di uno
 spazio, applicazione sul Play Store (prevista come TWA attorno a questa stessa PWA).

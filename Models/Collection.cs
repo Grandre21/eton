@@ -27,7 +27,7 @@ public class Collection : BaseModel
     [Column("rating_max")] public short RatingMax { get; set; } = 10;
 
     /// <summary>Voto al buio: finché non hai messo la tua recensione, su un elemento di questa
-    /// collezione non vedi quelle degli altri — solo quante persone hanno votato.
+    /// collezione non vedi quelle degli altri — solo quante persone hanno recensito.
     /// <para>
     /// Modificabile dopo la creazione, a differenza di <c>SpaceId</c> e <c>OwnerId</c>: è una
     /// regola del gioco, e ci si può ripensare. A farla rispettare non è questa proprietà ma la

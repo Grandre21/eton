@@ -221,6 +221,39 @@ public class CalcoliVotiTests
     public void Il_voto_massimo_si_mostra_senza_decimali()
         => Assert.Equal("10", CalcoliVoti.Testo(10.0m));
 
+    // ---------- TestoVoti ----------
+
+    // Le tre forme compaiono nell'intestazione di un elemento e nell'elenco di una collezione: se
+    // una di esse cambia senza volerlo, il singolare sbagliato compare in entrambi i punti insieme.
+    [Fact]
+    public void Nessun_votante_si_dice_a_parole_e_non_con_uno_zero()
+        => Assert.Equal("nessun voto", CalcoliVoti.TestoVoti(0));
+
+    [Fact]
+    public void Un_solo_votante_va_al_singolare()
+        => Assert.Equal("1 voto", CalcoliVoti.TestoVoti(1));
+
+    [Fact]
+    public void Piu_votanti_vanno_al_plurale()
+        => Assert.Equal("4 voti", CalcoliVoti.TestoVoti(4));
+
+    // ---------- TestoRecensioni ----------
+
+    // Conta una cosa diversa da TestoVoti — le recensioni, comprese quelle di solo commento — e i
+    // due non vanno confusi: dove si mostra un conteggio di righe la parola deve essere "recensioni",
+    // altrimenti lo stesso elemento dichiara "2 voti" da coperto e "1 voto, 2 commenti" da scoperto.
+    [Fact]
+    public void Nessuna_recensione_si_dice_a_parole_e_non_con_uno_zero()
+        => Assert.Equal("nessuna recensione", CalcoliVoti.TestoRecensioni(0));
+
+    [Fact]
+    public void Una_sola_recensione_va_al_singolare()
+        => Assert.Equal("1 recensione", CalcoliVoti.TestoRecensioni(1));
+
+    [Fact]
+    public void Piu_recensioni_vanno_al_plurale()
+        => Assert.Equal("4 recensioni", CalcoliVoti.TestoRecensioni(4));
+
     // ---------- comportamento su dati che il database non permette ----------
 
     [Fact]

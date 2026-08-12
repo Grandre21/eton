@@ -92,9 +92,9 @@ create policy reviews_select on public.reviews
             -- il caso più frequente — ogni utente controlla la propria recensione a ogni
             -- caricamento — e il più economico da valutare, e perché senza di esso chi ha votato
             -- non vedrebbe la propria recensione nel momento esatto in cui la salva.
-            user_id = auth.uid()                        -- la tua la vedi sempre
-            or not public.item_is_blind(item_id)    -- collezione normale: tutto visibile
-            or public.has_reviewed(item_id)               -- hai votato: si apre
+            user_id = auth.uid()                 -- la tua la vedi sempre
+            or not public.item_is_blind(item_id) -- collezione normale: tutto visibile
+            or public.has_reviewed(item_id)      -- hai votato: si apre
         )
     );
 

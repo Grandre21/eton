@@ -312,6 +312,12 @@ Tutte con **`set search_path = public`**; le prime tre dichiarate **`stable`**.
 | `generate_invite_code() → text` | Codice a 8 caratteri, alfabeto senza ambigui, riprovando in caso di collisione. |
 | `join_space(text) → uuid` | Valida il codice invito e crea la membership. **Unico modo** di entrare. |
 | `handle_new_user() → trigger` | Su `insert` in `auth.users`: crea profilo, spazio personale e membership, in una transazione. |
+| `item_is_blind(uuid) → boolean` | L'elemento appartiene a una collezione col voto al buio? |
+| `has_reviewed(uuid) → boolean` | Hai già recensito quell'elemento? Spezza la ricorsione RLS su `reviews`, come `is_space_member` fa su `space_members`. |
+| `review_counts(uuid) → table` | Quante persone hanno recensito ciascun elemento dello spazio — righe, non voti. L'unico modo di contare ciò che la policy copre; verifica l'appartenenza al proprio interno (v. §5.2). |
+
+> Le prime tre sono quelle citate nella riga sopra la tabella; `item_is_blind`, `has_reviewed` e
+> `review_counts`, aggiunte con il voto al buio, sono anch'esse `stable`.
 
 **Perché `create_space` è una funzione e non una `INSERT` diretta.** Le due scritture — la riga
 in `spaces` e quella in `space_members` — devono avvenire insieme: se la seconda fallisce, chi ha
@@ -406,7 +412,41 @@ RLS abilitata su **tutte** le tabelle. Nessun accesso al ruolo `anon` oltre l'au
 | `notes` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `owner_id = auth.uid()` | `owner_id = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
 | `collections` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `owner_id = auth.uid()` | `owner_id = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
 | `collection_items` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `added_by = auth.uid()` | `added_by = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
-| `reviews` | `is_space_member(space_id)` | `user_id = auth.uid()` ∧ `is_space_member(space_id)` | **solo** `user_id = auth.uid()` | **solo** `user_id = auth.uid()` |
+| `reviews` | `is_space_member(space_id)` ∧ ( `user_id = auth.uid()` ∨ `not item_is_blind(item_id)` ∨ `has_reviewed(item_id)` ) | `user_id = auth.uid()` ∧ `is_space_member(space_id)` | **solo** `user_id = auth.uid()` | **solo** `user_id = auth.uid()` |
+
+**Il voto al buio, e perché sta nella SELECT di `reviews`.** Una collezione con `blind = true`
+copre le recensioni altrui su un elemento finché non hai messo la tua. La regola vive **solo** qui:
+il client non nasconde niente, perché non riceve niente. Su una collezione normale il secondo
+disgiunto è sempre vero e la policy si riduce a quella di prima — è ciò che ha reso la migrazione
+retrocompatibile senza toccare un solo dato.
+
+`has_reviewed` **deve** essere `security definer`, e non per igiene: interroga `reviews` e viene
+valutata dentro la policy di `reviews`. A diritti dell'invocatore rientrerebbe nella RLS che si sta
+ancora valutando, e Postgres risponde `infinite recursion detected in policy`. È lo stesso motivo
+per cui esiste `is_space_member` invece di una sottoquery su `space_members` (§5.1).
+
+**La conseguenza meno ovvia riguarda il conteggio.** Nascondendo le righe si nasconde anche il modo
+in cui il client contava chi si era espresso: un elemento coperto direbbe «nessun voto» avendone tre
+— una bugia, non un dato mancante. Per questo esiste `review_counts(p_space)`, che scavalca la RLS di
+proposito e proprio per questo verifica `is_space_member` **al proprio interno**: ogni funzione
+`security definer` è anche una RPC pubblica su `/rest/v1/rpc`, raggiungibile da chiunque conosca un
+UUID. Restituisce identificatori e conteggi, mai un voto, mai un commento, mai un nome.
+
+Conta le **righe**, comprese quelle di solo commento, e l'interfaccia lo chiama di conseguenza
+«recensioni», non «voti». Non è una sfumatura di lessico: il conteggio deve combaciare con la regola
+che scopre le recensioni, e quella regola — `has_reviewed` — guarda se una tua riga esiste, non se
+contiene un voto. Contare i soli voti numerici direbbe «nessuno ha ancora votato» su un elemento con
+due recensioni coperte pronte a sbloccarsi; chiamarli «voti» li farebbe divergere dal riepilogo che
+compare un istante dopo, dove i voti sono i soli valori numerici e i commenti si contano a parte.
+Delle due rappresentazioni si tiene quella ancorata all'invariante, e si adegua la parola.
+
+**Il residuo accettato**, scritto anche nella migrazione: `item_is_blind` è revocata ad `anon` ma
+resta eseguibile da `authenticated` — le policy la invocano a nome di chi interroga, quindi
+revocarla farebbe fallire ogni lettura di `reviews` con `permission denied for function` invece di
+restituire zero righe. Ne segue che un utente autenticato qualunque, con l'UUID di un elemento di
+uno spazio a cui non appartiene, può sapere se quella collezione è cieca. È un flag di
+configurazione, non un dato, e chiuderlo costerebbe un accesso a `space_members` per **ogni
+recensione letta**, dato che la policy valuta quella funzione riga per riga.
 
 **Sul `WITH CHECK`, e su cosa non fa.** Tranne che per `spaces`, ogni `UPDATE` ripete in
 `WITH CHECK` lo stesso predicato del `USING`, e lo fa per sola leggibilità: omettendolo, Postgres
@@ -602,8 +642,35 @@ disegnati in `Shared/Icona.razor`: un'emoji la disegna il sistema operativo, qui
 allineamento fra Windows, Android e iPhone, e cinque icone sembrano una famiglia solo se le disegna
 la stessa mano.
 
-Lo spazio attivo è tenuto e persistito da `SpaceStateService`; ogni pagina legge il contesto da
-`CurrentUserService.EnsureLoadedAsync()`.
+**Da 64rem in su la stessa barra diventa una colonna a sinistra**, con il marchio in cima e il
+selettore dello spazio in fondo:
+
+```
+  ┌──────────┬──────────────────────────────────┐
+  │ ▪ Eton   │                                  │
+  │          │      contenuto della pagina       │
+  │ ⌂ Home   │      (max 1080px, centrato)       │
+  │ ▤ Note   │                                  │
+  │ ☰ Coll.  │   ┌─────────┐  ┌─────────┐        │
+  │ ⚇ Spazi  │   │  Note   │  │ Collez. │        │
+  │ ⚈ Profilo│   └─────────┘  └─────────┘        │
+  │          │                                  │
+  │ ─────────│                                  │
+  │ 👥 Spazio│                                  │
+  └──────────┴──────────────────────────────────┘
+```
+
+È **un solo componente** (`Shared/Navigazione.razor`) in due forme, e a cambiare è solo il CSS: due
+componenti separati sarebbero due elenchi di voci da tenere allineati a mano, e la voce aggiunta a
+uno solo dei due è la svista che non si nota finché qualcuno non usa l'altro schermo.
+
+Lo spazio attivo è tenuto e persistito da `SpaceStateService`. Il selettore è stato estratto in
+`Shared/SelettoreSpazio.razor` proprio perché ora vive in due posti — in fondo alla colonna sul PC,
+in cima alla Home sul telefono, dove la barra in basso non ha spazio per contenerlo — e su schermo
+largo quello della Home sparisce. Ne è seguita una correzione che non era voluta ma era dovuta: la
+Home non reagisce più al gesto sul menù a tendina ma all'**evento** del servizio, perché il cambio
+di spazio può ora arrivare da un componente che lei non conosce. Prima, uno spazio cambiato altrove
+le avrebbe lasciato a schermo le note del precedente sotto il nome del nuovo.
 
 | Rotta | Contenuto |
 |---|---|
@@ -614,8 +681,8 @@ Lo spazio attivo è tenuto e persistito da `SpaceStateService`; ogni pagina legg
 | `/notes` · `/notes/new` · `/notes/{id}` | Elenco ed editor Markdown con anteprima e checklist |
 | `/collections` | Elenco collezioni |
 | `/collections/new` · `/collections/{id}/edit` | Editor dei campi, con modelli |
-| `/collections/{id}` | Elementi, ordinamento per media voto, filtro «da provare» |
-| `/collections/{id}/items/new` · `/collections/{id}/items/{itemId}` | Scheda elemento, recensioni di tutti, il tuo voto |
+| `/collections/{id}` | Elementi, ordinamento per media voto, filtro «da provare». Alla cieca l'ordinamento per voto non viene offerto: ordinerebbe per un valore che non si può vedere |
+| `/collections/{id}/items/new` · `/collections/{id}/items/{itemId}` | Scheda elemento, recensioni di tutti, il tuo voto. Alla cieca, finché non voti, solo quante persone hanno recensito |
 | `/profile` | Nome visualizzato, logout |
 
 `/benvenuto` è l'unica rotta pubblica, e sta lì e non sulla radice per una ragione precisa: il
@@ -730,8 +797,13 @@ Il rischio per primo; ogni fetta lascia l'app usabile.
 3. ✅ **Note** — Markdown, checklist, concorrenza ottimistica.
 4. ✅ **Collezioni** — editor dei campi, modelli pronti, elementi.
 5. ✅ **Recensioni** — voto personale, medie, ordinamenti, filtro «da provare».
-6. **Rifinitura** — in corso: vetrina pubblica, sistema di stili su variabili, icone disegnate,
-   ripristino della rotta dopo l'accesso.
+6. ✅ **Rifinitura** — vetrina pubblica, sistema di stili su variabili, icone disegnate, ripristino
+   della rotta dopo l'accesso, banner di aggiornamento della PWA.
+7. ✅ **Identità e schermo largo** — tavolozza rifatta (nero neutro, blu per ciò che si preme, verde
+   acido per ciò che si constata), Inter servito da noi, e la barra di navigazione che su schermo
+   largo diventa una colonna a sinistra restando **un solo componente**.
+8. **Voto al buio** — in corso: una collezione può coprire le recensioni altrui finché non hai messo
+   la tua (v. §5.2).
 
 Dopo la fetta 3 l'app ha già senso da usare; dopo la 5 fa quello che il progetto si proponeva.
 
@@ -743,3 +815,13 @@ toccare le recensioni altrui, perché un voto è un'opinione personale e cancell
 falsificarlo, non moderarlo (v. §5.2). La fetta 6 si è allargata a includere la vetrina pubblica,
 che il piano non prevedeva: l'applicazione è raggiungibile da browser prima ancora che come app,
 e chi arriva da un link deve capire cos'è prima di decidere se entrarci.
+
+Le fette 7 e 8 non erano in questo elenco. La 7 nasce da una constatazione banale — su un monitor
+l'applicazione restava una colonna stretta in mezzo al vuoto — e la 8 dalla domanda opposta a
+quella che il progetto si era posto fin qui: non «come conservo dei voti», ma «che cosa rende
+diverso votare qui invece che su un foglio condiviso». La risposta è che si può togliere a un voto
+la cosa che lo falsa di più, cioè sapere cosa hanno votato gli altri. Vale la pena ricordare il
+limite, dichiarato quando la funzionalità è stata scelta: il voto al buio brilla quando un gruppo
+giudica **insieme**, e infastidisce in un catalogo lento a riempirsi, dove si aspetta a lungo prima
+di poter vedere qualcosa. Per questo è un interruttore per collezione e non una regola del
+prodotto.

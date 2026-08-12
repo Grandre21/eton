@@ -5,7 +5,8 @@ using Supabase.Postgrest;
 namespace Eton.Services;
 
 /// <summary>
-/// Una riga di <c>review_counts</c>: quante persone hanno votato un elemento.
+/// Una riga di <c>review_counts</c>: quante persone hanno recensito un elemento — righe, comprese
+/// quelle di solo commento, non voti numerici (v. <see cref="CalcoliVoti.TestoRecensioni"/>).
 /// <para>
 /// Gli attributi sono <c>[JsonProperty]</c> di Newtonsoft e non <c>[Column]</c> come nei modelli di
 /// tabella, e non è una svista: <c>Rpc&lt;T&gt;</c> deserializza con un <c>JsonConvert.DeserializeObject</c>
@@ -74,8 +75,8 @@ public class ReviewRepository
         return risposta.Models;
     }
 
-    /// <summary>Quante persone hanno votato ciascun elemento dello spazio, per identificatore di
-    /// elemento. Gli elementi che nessuno ha ancora votato non compaiono affatto.
+    /// <summary>Quante persone hanno recensito ciascun elemento dello spazio, per identificatore di
+    /// elemento. Gli elementi che nessuno ha ancora recensito non compaiono affatto.
     /// <para>
     /// Serve solo alle collezioni <b>alla cieca</b>, e solo lì va chiamato: su una collezione
     /// normale il conteggio si ricava dalle recensioni già scaricate (v. <see cref="CalcoliVoti"/>),

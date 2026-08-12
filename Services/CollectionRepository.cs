@@ -56,7 +56,7 @@ public class CollectionRepository
     /// dedotto qui: la policy di INSERT pretende owner_id = auth.uid(), quindi sbagliarlo produce
     /// un rifiuto netto invece di una collezione firmata male.</summary>
     public async Task<Collection> CreaAsync(Guid spazioId, Guid autoreId, string nome, string? icona,
-        IReadOnlyList<CampoDefinizione> campi, short votoMassimo)
+        IReadOnlyList<CampoDefinizione> campi, short votoMassimo, bool allaCieca)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<Collection>().Insert(new Collection
@@ -66,7 +66,8 @@ public class CollectionRepository
             Name      = nome.Trim(),
             Icon      = string.IsNullOrWhiteSpace(icona) ? null : icona,
             Fields    = campi.ToList(),
-            RatingMax = votoMassimo
+            RatingMax = votoMassimo,
+            Blind     = allaCieca
         });
 
         return risposta.Models.FirstOrDefault()
@@ -81,7 +82,7 @@ public class CollectionRepository
     /// non serve.
     /// </summary>
     public async Task<RisultatoSalvataggio<Collection>> SalvaAsync(Guid collezioneId, int versioneLetta,
-        string nome, string? icona, IReadOnlyList<CampoDefinizione> campi, short votoMassimo)
+        string nome, string? icona, IReadOnlyList<CampoDefinizione> campi, short votoMassimo, bool allaCieca)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<Collection>()
@@ -90,6 +91,7 @@ public class CollectionRepository
             .Set(c => c.Icon!, string.IsNullOrWhiteSpace(icona) ? null : icona)
             .Set(c => c.Fields, campi.ToList())
             .Set(c => c.RatingMax, votoMassimo)
+            .Set(c => c.Blind, allaCieca)
             .Update();
 
         if (risposta.Models.Count > 0)

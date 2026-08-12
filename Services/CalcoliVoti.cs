@@ -41,6 +41,46 @@ public static class CalcoliVoti
         return new RiepilogoVoti(media, voti.Count, mia?.Rating, mia is not null);
     }
 
+    /// <summary>Quanti hanno votato, in parole: «nessun voto», «1 voto», «7 voti».
+    /// <para>
+    /// Sta qui e non in una pagina perché la stessa frase serve all'intestazione di un elemento e
+    /// all'elenco di una collezione, e due copie divergono al primo che le ritocca. Il numero arriva
+    /// già contato: da <see cref="RiepilogoVoti.Voti"/> quando le recensioni sono visibili, dalla
+    /// funzione <c>review_counts</c> quando sono coperte dal voto al buio e contarle lato client
+    /// direbbe zero.
+    /// </para>
+    /// <para>
+    /// Il riquadro del voto al buio NON usa questo metodo, ed è deliberato: lì si contano persone
+    /// («3 persone hanno recensito») e attorno al numero si accordano pronomi e verbi, che in un
+    /// conteggio secco non avrebbero dove appoggiarsi.
+    /// </para>
+    /// </summary>
+    public static string TestoVoti(int quanti) => quanti switch
+    {
+        0 => "nessun voto",
+        1 => "1 voto",
+        _ => $"{quanti} voti"
+    };
+
+    /// <summary>Quante recensioni ci sono, in parole: «nessuna recensione», «1 recensione», «7 recensioni».
+    /// <para>
+    /// Distinto da <see cref="TestoVoti"/> perché conta una cosa diversa, non perché suoni meglio:
+    /// una recensione di solo commento è una recensione ma non è un voto. Il conteggio che arriva da
+    /// <c>review_counts</c> — l'unico dato visibile su un elemento coperto — conta le RIGHE, perché
+    /// deve combaciare con la regola che scopre le recensioni: <c>has_reviewed</c> guarda se una tua
+    /// riga esiste, non se contiene un voto. Chiamare «voti» quel numero lo farebbe divergere dal
+    /// riepilogo che compare appena l'elemento si scopre, dove i voti sono i soli valori numerici e
+    /// i commenti si contano a parte: lo stesso elemento direbbe «2 voti» da coperto e «1 voto,
+    /// 2 commenti» un istante dopo, sulle stesse due persone.
+    /// </para>
+    /// </summary>
+    public static string TestoRecensioni(int quante) => quante switch
+    {
+        0 => "nessuna recensione",
+        1 => "1 recensione",
+        _ => $"{quante} recensioni"
+    };
+
     /// <summary>Un voto reso leggibile: "7,5", "8", oppure "—" se non c'è.</summary>
     public static string Testo(decimal? voto)
         // Stesso approccio di ValoriElemento.FormattaNumero: pattern esplicito e

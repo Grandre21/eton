@@ -30,8 +30,25 @@
         }
 
         <p>
-            <span class="voto-grande">@CalcoliVoti.Testo(Riepilogo.Media)</span>
-            <span class="testo-tenue">/ @VotoMassimo — @TestoConteggio()</span>
+            @if (Coperto)
+            {
+                <span class="voto-coperto">?</span>
+                <span class="testo-tenue">/ @VotoMassimo — coperto finché non voti</span>
+            }
+            else if (altreNonLette)
+            {
+                @* Stesso "?" del caso coperto, e per la stessa ragione: la media calcolabile adesso
+                   sarebbe quella della sola recensione appena scritta, indistinguibile a schermo da
+                   una media di tutti. Un voto proprio mostrato come giudizio collettivo è peggio di
+                   un punto interrogativo. *@
+                <span class="voto-coperto">?</span>
+                <span class="testo-tenue">/ @VotoMassimo — le altre recensioni non si sono lette</span>
+            }
+            else
+            {
+                <span class="voto-grande">@CalcoliVoti.Testo(Riepilogo.Media)</span>
+                <span class="testo-tenue">/ @VotoMassimo — @TestoConteggio()</span>
+            }
         </p>
 
         <div class="scheda">
@@ -65,36 +82,61 @@
             </div>
         </div>
 
-        <h3>Altre recensioni</h3>
-
-        @* Ordine così com'è tornato da ElencaPerElementoAsync, cioè dalla prima recensione
-           all'ultima: come una conversazione, non "le più recenti in cima" (v. il commento sul
-           metodo in Services/ReviewRepository.cs). *@
-        var altre = recensioni.Where(r => mia is null || r.Id != mia.Id).ToList();
-
-        @if (altre.Count == 0)
+        @if (Coperto)
         {
+            <div class="alla-cieca">
+                <span class="quanti">@(recensori?.ToString() ?? "?")</span>
+                <p>@TestoAllaCieca()</p>
+            </div>
+        }
+        else if (altreNonLette)
+        {
+            <h3>Altre recensioni</h3>
+
+            @* Un errore con Riprova, non un elenco vuoto: qui "vuoto" non significa "non c'è
+               nessuno", significa "non lo so", e il vuoto muto dell'altro ramo direbbe la prima cosa
+               al posto della seconda. Riprova ricarica tutto (v. Carica) — anche i nomi e il
+               conteggio, che possono essere caduti insieme alle recensioni. *@
             <div class="vuoto">
-                <p>Ancora nessun'altra recensione.</p>
+                <div class="errore" role="alert">
+                    La tua recensione è salvata, ma le altre non si sono lette.
+                </div>
+                <button class="btn" @onclick="Riprova">Riprova</button>
             </div>
         }
         else
         {
-            @foreach (var r in altre)
-            {
-                <div class="riga-recensione">
-                    <span class="etichetta-piccola">@NomeAutore(r) · @Data(r)</span>
-                    <span class="voto-cifre">@CalcoliVoti.Testo(r.Rating) / @VotoMassimo</span>
+            <h3>Altre recensioni</h3>
 
-                    @* Testo semplice, non Markdown: a differenza delle note, un commento di recensione non
-                       ha un editor con anteprima e non ci si aspetta formattazione — è un'opinione breve, non
-                       un documento. @r.Comment dentro un elemento normale è già sicuro: Blazor lo codifica da
-                       sé, senza bisogno di MarkdownRenderer né di un MarkupString. *@
-                    @if (!string.IsNullOrWhiteSpace(r.Comment))
-                    {
-                        <p>@r.Comment</p>
-                    }
+            @* Ordine così com'è tornato da ElencaPerElementoAsync, cioè dalla prima recensione
+               all'ultima: come una conversazione, non "le più recenti in cima" (v. il commento sul
+               metodo in Services/ReviewRepository.cs). *@
+            var altre = recensioni.Where(r => mia is null || r.Id != mia.Id).ToList();
+
+            @if (altre.Count == 0)
+            {
+                <div class="vuoto">
+                    <p>Ancora nessun'altra recensione.</p>
                 </div>
+            }
+            else
+            {
+                @foreach (var r in altre)
+                {
+                    <div class="riga-recensione">
+                        <span class="etichetta-piccola">@NomeAutore(r) · @Data(r)</span>
+                        <span class="voto-cifre">@CalcoliVoti.Testo(r.Rating) / @VotoMassimo</span>
+
+                        @* Testo semplice, non Markdown: a differenza delle note, un commento di recensione non
+                           ha un editor con anteprima e non ci si aspetta formattazione — è un'opinione breve, non
+                           un documento. @r.Comment dentro un elemento normale è già sicuro: Blazor lo codifica da
+                           sé, senza bisogno di MarkdownRenderer né di un MarkupString. *@
+                        @if (!string.IsNullOrWhiteSpace(r.Comment))
+                        {
+                            <p>@r.Comment</p>
+                        }
+                    </div>
+                }
             }
         }
     }
@@ -104,6 +146,7 @@
     [Parameter, EditorRequired] public Guid ElementoId { get; set; }
     [Parameter, EditorRequired] public Guid SpazioId { get; set; }
     [Parameter] public short VotoMassimo { get; set; } = 10;
+    [Parameter] public bool AllaCieca { get; set; }
 
     private Guid? io;
     private IReadOnlyList<Review> recensioni = [];
@@ -111,6 +154,24 @@
     private Review? mia;
     private decimal? mioVoto;
     private string mioCommento = "";
+
+    // Quante persone hanno recensito questo elemento, letto solo quando si è coperti (v. Coperto).
+    // Null finché non lo si sa (non ancora chiesto, o chiesto e non riuscito): un intero, anche 0,
+    // solo dopo una lettura andata a buon fine — per non confondere "non lo so" con "nessuno".
+    //
+    // "Recensori" e non "votanti" perché review_counts conta le righe, comprese quelle di solo
+    // commento: è lo stesso insieme di persone che la propria recensione scopre (v. has_reviewed
+    // nella migrazione), ed è per questo che il conteggio è fatto così. Il nome sbagliato inviterebbe
+    // il prossimo a "correggerlo" verso i soli voti numerici, rompendo la corrispondenza.
+    private int? recensori;
+
+    // Distingue "questo elemento non ha altre recensioni" da "le altre non si sono rilette dopo che
+    // la mia le ha scoperte". Su una collezione cieca la differenza è tutta: prima di votare
+    // 'recensioni' è vuota PER REGOLA, quindi una rilettura fallita lascia in mano la sola recensione
+    // appena scritta — che a schermo diventerebbe una media di tutti e un "ancora nessun'altra
+    // recensione", entrambi falsi e indistinguibili dal vero. Stesso ragionamento di
+    // recensioniNonLette, ma su una lettura che avviene a componente già caricato.
+    private bool altreNonLette;
 
     private bool caricato, occupato, confermaEliminazione;
 
@@ -124,6 +185,11 @@
     private int generazione;
 
     private RiepilogoVoti Riepilogo => CalcoliVoti.PerElemento(recensioni, io);
+
+    // Non un campo: 'mia' cambia durante la vita del componente (si vota, si toglie il voto) e un
+    // campo si dimenticherebbe di seguirla. Coperti solo su una collezione alla cieca, e solo finché
+    // non si è lasciata la propria recensione.
+    private bool Coperto => AllaCieca && mia is null;
 
     // Il pulsante Salva resta spento finché non c'è niente da salvare, come in NoteEdit.Cambiata:
     // senza recensione propria, "cambiata" significa aver scritto qualcosa; con una recensione
@@ -145,6 +211,7 @@
         caricato = false;
         errore = avviso = null;
         recensioniNonLette = false;
+        altreNonLette = false;
 
         io = null;
         recensioni = [];
@@ -152,6 +219,7 @@
         mia = null;
         mioVoto = null;
         mioCommento = "";
+        recensori = null;
 
         // Anche lo stato di interazione, non solo i dati: 'occupato' lasciato acceso da un
         // salvataggio partito sull'elemento precedente terrebbe il pulsante su "Salvo…" per un
@@ -214,7 +282,38 @@
             Console.Error.WriteLine($"[RecensioniElemento] Nomi degli autori non disponibili: {ex.Message}");
         }
 
+        await LeggiRecensori(miaGenerazione);
+
         caricato = true;
+    }
+
+    // Quante persone hanno recensito questo elemento. In un try tutto suo, come il blocco dei nomi
+    // qui sopra: un conteggio mancante non merita un banner rosso sopra recensioni che si leggono
+    // benissimo. Chiesto solo quando si è coperti — su una collezione normale il numero si ricava
+    // già dalle recensioni scaricate, e chiederlo sarebbe una richiesta di rete per un dato che si
+    // ha in mano.
+    private async Task LeggiRecensori(int miaGenerazione)
+    {
+        if (!Coperto) return;
+
+        // Azzerato PRIMA di rileggere, non solo in cima a Carica(): questo metodo viene richiamato
+        // anche dopo aver tolto la propria recensione, quando in 'recensori' c'è il numero letto
+        // prima del voto. Se la lettura qui sotto fallisce, senza questa riga resterebbe a schermo
+        // quel numero vecchio — un dato falso mostrato come vero, invece del "?" che dice "non lo so".
+        recensori = null;
+
+        try
+        {
+            var conteggi = await Repository.ConteggiPerSpazioAsync(SpazioId);
+            if (miaGenerazione != generazione) return;
+
+            recensori = conteggi.TryGetValue(ElementoId, out var n) ? n : 0;
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            Console.Error.WriteLine($"[RecensioniElemento] Conteggio dei recensori non disponibile: {ex.Message}");
+        }
     }
 
     private Task Riprova() => Carica();
@@ -248,8 +347,22 @@
         occupato = true;
         try
         {
+            // Catturato prima di Crea/Modifica: dopo, 'Coperto' riflette già l'esito, e il confronto
+            // non direbbe più se qualcosa è cambiato.
+            var eroCoperto = Coperto;
+
             if (mia is null) await Crea(miaGenerazione);
             else await Modifica(miaGenerazione);
+
+            // Si rilegge quando la COPERTURA è cambiata, non quando è comparsa una recensione: sono
+            // due condizioni che coincidono nel caso comune e divergono in quello che conta. La prima
+            // recensione apre le altre; ma anche l'esito Sparita di Modifica — la propria recensione
+            // cancellata da un altro dispositivo mentre la si stava modificando — riporta coperti, e
+            // lascia in mano un elenco letto quando si era scoperti. Guardando "ho recensito adesso"
+            // quel secondo caso sfuggiva. Una modifica riuscita non muove niente: coperto prima,
+            // coperto dopo, o scoperto in entrambi i momenti.
+            if (miaGenerazione == generazione && Coperto != eroCoperto)
+                await RileggiSeCieca(miaGenerazione);
         }
         finally
         {
@@ -359,6 +472,41 @@
         }
     }
 
+    // Su una collezione cieca la propria recensione è l'interruttore di ciò che si vede: metterla apre
+    // le altre, toglierla le richiude. In entrambi i casi l'elenco in memoria è quello di prima, letto
+    // sotto una regola che nel frattempo è cambiata.
+    private async Task RileggiSeCieca(int miaGenerazione)
+    {
+        if (!AllaCieca) return;
+
+        var elencate = await RiletturaSilenziosa();
+        if (miaGenerazione != generazione) return;
+
+        // Il fallimento va registrato, non ignorato: senza, si uscirebbe lasciando a schermo
+        // l'elenco di prima come se fosse quello di adesso. È l'unica lettura del componente che,
+        // fallendo, produce un contenuto plausibile invece di un contenuto assente — v. altreNonLette.
+        // Non azzerato in un finally: quando la generazione è cambiata questo stato non è più nostro,
+        // l'ha già rimesso a posto il caricamento nuovo.
+        if (elencate is null)
+        {
+            altreNonLette = true;
+
+            // Decade anche il conteggio, che non viene riletto qui sotto: quello in mano è il numero
+            // di prima del voto. Dopo un'eliminazione — che riporta coperti, e il conteggio torna
+            // l'unica cosa a schermo — resterebbe lì come se fosse fresco.
+            recensori = null;
+            return;
+        }
+
+        altreNonLette = false;
+        recensioni = elencate;
+
+        // Dopo un'eliminazione si torna coperti, e il conteggio è di nuovo l'unica cosa visibile: va
+        // riletto. Dopo una prima recensione si è appena scoperti, e LeggiRecensori esce da sé senza
+        // toccare la rete.
+        await LeggiRecensori(miaGenerazione);
+    }
+
     // Sostituisce la riga se c'è già, la aggiunge se non c'è: dopo una modifica la recensione è
     // nell'elenco caricato, dopo una creazione no, e senza il ramo dell'aggiunta la propria
     // recensione appena creata non comparirebbe nella media né nel conteggio finché non si ricarica.
@@ -397,6 +545,8 @@
                 mioVoto = null;
                 mioCommento = "";
                 avviso = "Recensione eliminata.";
+
+                await RileggiSeCieca(miaGenerazione);
             }
             else
             {
@@ -424,13 +574,7 @@
 
     private string TestoConteggio()
     {
-        var voti = Riepilogo.Voti;
-        var votoParte = voti switch
-        {
-            0 => "nessun voto",
-            1 => "1 voto",
-            _ => $"{voti} voti",
-        };
+        var votoParte = CalcoliVoti.TestoVoti(Riepilogo.Voti);
 
         // I commenti si contano sempre, non solo quando nessuno ha votato: con tre voti e due
         // recensioni di solo commento, fermarsi a "3 voti" tace metà di chi si è espresso, e il
@@ -444,4 +588,26 @@
         var commenti = recensioni.Count(r => !string.IsNullOrWhiteSpace(r.Comment));
         return commenti == 0 ? votoParte : $"{votoParte}, {commenti} {(commenti == 1 ? "commento" : "commenti")}";
     }
+
+    // Testo del riquadro alla cieca: dice che le altre recensioni esistono ma restano coperte, e cosa
+    // fare per scoprirle. Con zero non c'è niente di coperto — non è un errore, è il caso più comune
+    // all'inizio, e dirlo come se ci fosse sarebbe falso. Con il conteggio non arrivato (v.
+    // LeggiRecensori) il numero non si cita: uno indovinato sarebbe peggio di nessuno.
+    //
+    // "Hanno recensito", non "hanno votato": il conteggio comprende chi ha lasciato solo un commento
+    // (v. CalcoliVoti.TestoRecensioni). Chiamarlo voto direbbe una cosa che il riepilogo smentisce un
+    // istante dopo, quando l'elemento si scopre e quella persona finisce fra i commenti.
+    //
+    // Non usa CalcoliVoti.TestoRecensioni, che pure conta la stessa cosa: quello dice «3 recensioni»,
+    // qui si contano PERSONE, e attorno al numero si accordano tre parole — «la sua recensione»
+    // contro «le loro recensioni», «scoprirla» contro «scoprirle». Riusarlo significherebbe
+    // incastrare «3 recensioni» dentro una frase che poi va comunque declinata a parte: una
+    // duplicazione tolta a metà, in cambio di un testo peggiore.
+    private string TestoAllaCieca() => recensori switch
+    {
+        null => "Le altre recensioni sono coperte finché non lasci la tua: vota per scoprirle.",
+        0 => "Nessuno ha ancora recensito questo elemento.",
+        1 => "1 persona ha recensito, ma la sua recensione resta coperta finché non lasci la tua: vota per scoprirla.",
+        _ => $"{recensori} persone hanno recensito, ma le loro recensioni restano coperte finché non lasci la tua: vota per scoprirle.",
+    };
 }

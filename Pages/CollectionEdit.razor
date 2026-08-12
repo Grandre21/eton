@@ -87,6 +87,21 @@ else
         </select>
     </label>
 
+    @* La spiegazione è lunga apposta: chi accende l'interruttore non subisce la conseguenza, la
+       subiscono gli altri membri dello spazio quando aprono un elemento. Due parole non
+       basterebbero a far capire a chi lo accende cosa cambia per qualcun altro. *@
+    <label class="interruttore">
+        <input type="checkbox" @bind="allaCieca" disabled="@occupato" />
+        <span class="testi">
+            <span class="titolo">Voto al buio</span>
+            <span class="spiega">
+                Chi apre un elemento non vede i voti degli altri finché non mette il suo: vede solo
+                quante persone hanno recensito. Si può accendere e spegnere quando si vuole, e vale
+                da subito su tutti gli elementi della collezione.
+            </span>
+        </span>
+    </label>
+
     <div class="scheda">
         <h2>Campi</h2>
         <p class="testo-tenue">Le colonne che ogni elemento di questa collezione avrà.</p>
@@ -200,6 +215,7 @@ else
     private string nome = "";
     private string icona = "";
     private short votoMassimo = 10;
+    private bool allaCieca;
     private List<CampoDefinizione> campi = [];
     private IReadOnlyList<string> erroriValidazione = [];
     private bool caricato, occupato, sparita, confermaEliminazione;
@@ -224,6 +240,7 @@ else
             nome != collezione.Name ||
             icona != (collezione.Icon ?? "") ||
             votoMassimo != collezione.RatingMax ||
+            allaCieca != collezione.Blind ||
             !CampiUguali(campi, collezione.Fields));
 
     protected override void OnInitialized()
@@ -250,6 +267,7 @@ else
             collezione = null;
             nome = icona = "";
             votoMassimo = 10;
+            allaCieca = false;
             campi = [];
             caricato = true;
             return;
@@ -288,6 +306,7 @@ else
         nome = c.Name;
         icona = c.Icon ?? "";
         votoMassimo = c.RatingMax;
+        allaCieca = c.Blind;
         // Ordina come fanno CollectionDetail e ItemEdit quando leggono lo stesso schema: se il jsonb
         // arriva con l'array fuori sequenza rispetto a Order — cosa che grant update(fields)
         // permette a chiunque scriva via PostgREST — l'editor mostrerebbe i campi in un ordine
@@ -467,7 +486,7 @@ else
             return;
         }
 
-        var creata = await Repository.CreaAsync(attivo.Id, autore, nome, icona, campi, votoMassimo);
+        var creata = await Repository.CreaAsync(attivo.Id, autore, nome, icona, campi, votoMassimo, allaCieca);
 
         // replace: true per lo stesso motivo di NoteEdit.razor:209-212: /collections/new non è un
         // posto in cui tornare col tasto Indietro — la collezione ormai esiste, e ripresentare la
@@ -479,7 +498,7 @@ else
 
     private async Task SalvaCon(int versione)
     {
-        var esito = await Repository.SalvaAsync(Id!.Value, versione, nome, icona, campi, votoMassimo);
+        var esito = await Repository.SalvaAsync(Id!.Value, versione, nome, icona, campi, votoMassimo, allaCieca);
 
         switch (esito.Esito)
         {
