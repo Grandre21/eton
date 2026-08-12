@@ -26,6 +26,19 @@ public class Collection : BaseModel
 
     [Column("rating_max")] public short RatingMax { get; set; } = 10;
 
+    /// <summary>Voto al buio: finché non hai messo la tua recensione, su un elemento di questa
+    /// collezione non vedi quelle degli altri — solo quante persone hanno votato.
+    /// <para>
+    /// Modificabile dopo la creazione, a differenza di <c>SpaceId</c> e <c>OwnerId</c>: è una
+    /// regola del gioco, e ci si può ripensare. A farla rispettare non è questa proprietà ma la
+    /// policy di SELECT su <c>reviews</c> (v. supabase/migrations/20260812230000_voto_al_buio.sql):
+    /// qui serve solo a sapere cosa scrivere a schermo, perché le recensioni nascoste non arrivano
+    /// affatto al client e senza questo flag l'interfaccia non saprebbe distinguere "nessuno ha
+    /// ancora votato" da "non puoi ancora vedere chi ha votato".
+    /// </para>
+    /// </summary>
+    [Column("blind")] public bool Blind { get; set; }
+
     // Mai scritte dal client, in nessun momento: version e updated_at le calcola un trigger, e
     // created_at nasce da un default. Marcarle qui evita che una Update() le rispedisca indietro
     // facendo fallire l'intera riga per permessi.

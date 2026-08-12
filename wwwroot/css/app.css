@@ -598,6 +598,82 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     color: var(--accento);
 }
 
+/* ------------------------------------------------------- interruttori --- */
+
+/* Una scelta binaria con la sua spiegazione accanto. La casella da sola, con
+   un'etichetta di due parole, costringe a indovinare che cosa succede
+   accendendola — e quando la conseguenza è "gli altri non vedranno più i voti
+   finché non votano", indovinare non basta. */
+.interruttore {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s3);
+    padding: var(--s4);
+    margin-bottom: var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    cursor: pointer;
+    transition: border-color var(--transizione);
+}
+
+.interruttore input[type=checkbox] {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    /* Allineata alla prima riga di testo e non al centro del blocco: con due
+       righe di spiegazione sotto, il centro cade fra il titolo e la spiegazione
+       e la casella sembra appartenere a nessuno dei due. */
+    margin: 3px 0 0;
+    cursor: pointer;
+}
+
+.interruttore .testi { display: flex; flex-direction: column; gap: var(--s1); }
+.interruttore .titolo { font-weight: 600; }
+.interruttore .spiega { color: var(--testo-tenue); font-size: var(--t-sm); }
+
+/* Acceso si vede anche con la coda dell'occhio, senza dover cercare la casella. */
+.interruttore:has(input:checked) { border-color: var(--accento-scuro); }
+
+/* --------------------------------------------------------- alla cieca --- */
+
+/* Il riquadro che prende il posto delle recensioni altrui finché non hai messo
+   la tua. Non è un errore e non è un vuoto: è una regola del gioco, quindi non
+   usa né .errore né .vuoto — il primo allarmerebbe, il secondo direbbe "non c'è
+   niente" proprio dove invece c'è qualcosa che non si può ancora vedere. */
+.alla-cieca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s6) var(--s4);
+    margin-bottom: var(--s4);
+    text-align: center;
+    background: var(--sfondo-alt);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+}
+
+.alla-cieca .quanti {
+    font-size: var(--t-2xl);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1;
+    color: var(--secondario);
+    font-variant-numeric: tabular-nums;
+}
+
+.alla-cieca p { margin: 0; color: var(--testo-tenue); font-size: var(--t-md); }
+
+/* Al posto della media, finché è coperta. Grande come il numero che sostituisce,
+   così l'intestazione non cambia altezza nel momento in cui il voto si scopre. */
+.voto-coperto {
+    font-size: var(--t-3xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--testo-fioco);
+}
+
 /* ------------------------------------------------------------ elenchi --- */
 
 .elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .editor-campi {

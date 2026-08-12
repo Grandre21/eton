@@ -1,7 +1,28 @@
 using Eton.Models;
+using Newtonsoft.Json;
 using Supabase.Postgrest;
 
 namespace Eton.Services;
+
+/// <summary>
+/// Una riga di <c>review_counts</c>: quante persone hanno votato un elemento.
+/// <para>
+/// Gli attributi sono <c>[JsonProperty]</c> di Newtonsoft e non <c>[Column]</c> come nei modelli di
+/// tabella, e non è una svista: <c>Rpc&lt;T&gt;</c> deserializza con un <c>JsonConvert.DeserializeObject</c>
+/// nudo, senza le impostazioni che insegnano a Postgrest a leggere <c>[Column]</c>. Con l'attributo
+/// sbagliato non ci sarebbe nessun errore — solo un <c>ItemId</c> vuoto e uno zero al posto del
+/// conteggio, cioè esattamente ciò che questa classe esiste per evitare.
+/// </para>
+/// <para>
+/// Classe con setter e non record posizionale: Newtonsoft aggancerebbe i parametri del costruttore
+/// per nome, e <c>item_id</c> non combacia con <c>itemId</c>.
+/// </para>
+/// </summary>
+public sealed class ConteggioRecensioni
+{
+    [JsonProperty("item_id")] public Guid ItemId { get; set; }
+    [JsonProperty("voters")]  public int  Voters { get; set; }
+}
 
 /// <summary>
 /// Accesso alle recensioni. Come <see cref="CollectionItemRepository"/>: ogni metodo riparte da
@@ -51,6 +72,38 @@ public class ReviewRepository
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<Review>().Where(r => r.SpaceId == spazioId).Get();
         return risposta.Models;
+    }
+
+    /// <summary>Quante persone hanno votato ciascun elemento dello spazio, per identificatore di
+    /// elemento. Gli elementi che nessuno ha ancora votato non compaiono affatto.
+    /// <para>
+    /// Serve solo alle collezioni <b>alla cieca</b>, e solo lì va chiamato: su una collezione
+    /// normale il conteggio si ricava dalle recensioni già scaricate (v. <see cref="CalcoliVoti"/>),
+    /// e questa sarebbe una seconda chiamata per un numero che si ha già. Su una collezione cieca,
+    /// invece, le recensioni altrui non arrivano affatto — la policy di SELECT le nasconde — quindi
+    /// contarle lato client direbbe "nessun voto" mentre i voti esistono.
+    /// </para>
+    /// <para>
+    /// La funzione dietro è <c>security definer</c>, cioè scavalca la RLS per costruzione: verifica
+    /// l'appartenenza allo spazio al proprio interno e restituisce zero righe a chi non ne fa parte
+    /// (v. supabase/migrations/20260812230000_voto_al_buio.sql). Restituisce solo identificatori e
+    /// conteggi — mai un voto, mai un commento, mai il nome di chi ha votato.
+    /// </para>
+    /// </summary>
+    public async Task<IReadOnlyDictionary<Guid, int>> ConteggiPerSpazioAsync(Guid spazioId)
+    {
+        var client = await _supabase.GetClientAsync();
+
+        // Il Guid si passa così com'è: Newtonsoft lo serializza nella forma testuale che Postgres
+        // si aspetta per un uuid.
+        var righe = await client.Rpc<List<ConteggioRecensioni>>("review_counts",
+            new Dictionary<string, object> { ["p_space"] = spazioId });
+
+        // Null solo a corpo di risposta vuoto: una funzione che non trova niente risponde "[]", che
+        // diventa una lista vuota.
+        return righe is null
+            ? new Dictionary<Guid, int>()
+            : righe.ToDictionary(r => r.ItemId, r => r.Voters);
     }
 
     public async Task<Review?> LeggiAsync(Guid recensioneId)

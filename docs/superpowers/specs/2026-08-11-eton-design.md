@@ -540,8 +540,8 @@ Questo era il piano. Sotto, la struttura **come è venuta** a fine fetta 5, che 
 ```
 G:\Sviluppo\Eton\
   Eton.sln · Eton.csproj · Program.cs · App.razor · _Imports.razor
-  Layout\    MainLayout (privato, con la barra in basso) · VetrinaLayout (pubblico)
-  Shared\    AuthRedirect · BottomNav · Icona · MarkdownView
+  Layout\    MainLayout (privato) · VetrinaLayout (pubblico)
+  Shared\    AuthRedirect · Navigazione · SelettoreSpazio · Icona · MarkdownView
              CampoInput · VotoInput · RecensioniElemento
   Pages\     Benvenuto (vetrina + accesso) · Home · Spaces · SpaceDetail
              Notes · NoteEdit
