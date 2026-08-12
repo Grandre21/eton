@@ -161,7 +161,7 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 }
 
 /* ---- elenchi ---- */
-.elenco-spazi, .elenco-membri { list-style: none; padding: 0; margin: 0 0 1rem; }
+.elenco-spazi, .elenco-membri, .elenco-note { list-style: none; padding: 0; margin: 0 0 1rem; }
 
 .riga-spazio {
     display: flex;
@@ -231,3 +231,144 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 .azioni { display: flex; gap: .5rem; flex-wrap: wrap; }
 .btn.piccolo { padding: .3rem .6rem; font-size: .78rem; }
 .btn.rosso { border-color: #6b2b2b; color: #ff9b9b; }
+
+/* ---- elenco delle note ---- */
+/* .elenco-note condivide le proprie regole di base col selettore di .elenco-spazi più in alto. */
+
+.riga-nota {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    padding: .8rem 1rem;
+    margin-bottom: .5rem;
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    color: var(--testo);
+    text-decoration: none;
+}
+
+.riga-nota .titolo  { font-weight: 600; }
+.riga-nota .estratto,
+.riga-nota .meta    { color: var(--testo-tenue); font-size: .82rem; }
+
+/* L'estratto sta su una riga sola: una nota lunga non deve allungare la propria riga d'elenco. */
+.riga-nota .estratto {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dentro la scheda della Home l'elenco è solo una lista di titoli. */
+.elenco-note.compatto li { padding: .3rem 0; border-bottom: 1px solid var(--bordo); }
+.elenco-note.compatto li:last-child { border-bottom: none; }
+.elenco-note.compatto a { color: var(--testo); text-decoration: none; }
+
+/* ---- editor ---- */
+.titolo-nota {
+    width: 100%;
+    box-sizing: border-box;
+    padding: .6rem .7rem;
+    margin-bottom: .6rem;
+    background: var(--superficie);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.schede-testo { display: flex; gap: .3rem; margin-bottom: .6rem; }
+
+.schede-testo button {
+    flex: 1;
+    /* Stessa soglia di .btn, e per la stessa ragione: sotto i 44px si sbaglia a toccare. Questi
+       due pulsanti non usano .btn perché sono un selettore a segmenti e non azioni, ma il
+       bersaglio tattile non dipende da cosa il pulsante significa — dipende dal dito. */
+    min-height: 48px;
+    padding: .45rem;
+    background: transparent;
+    color: var(--testo-tenue);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-size: .9rem;
+    cursor: pointer;
+}
+
+.schede-testo button.attiva { color: var(--accento); border-color: var(--accento); }
+
+.corpo-nota {
+    width: 100%;
+    box-sizing: border-box;
+    padding: .7rem;
+    margin-bottom: 1rem;
+    background: var(--superficie);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: .92rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/* ---- Markdown reso ---- */
+.markdown {
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: .8rem 1rem;
+    margin-bottom: 1rem;
+    /* Una nota la scrive qualcun altro: senza questo, una parola lunghissima o un URL nudo
+       sfondano la larghezza e fanno scorrere l'intera pagina in orizzontale. */
+    overflow-wrap: anywhere;
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child  { margin-bottom: 0; }
+
+.markdown h1 { font-size: 1.3rem; margin: 1.2rem 0 .5rem; }
+.markdown h2 { font-size: 1.15rem; margin: 1.1rem 0 .45rem; }
+.markdown h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
+.markdown p  { margin: 0 0 .7rem; }
+.markdown ul, .markdown ol { margin: 0 0 .7rem; padding-left: 1.3rem; }
+.markdown li { margin-bottom: .2rem; }
+
+.markdown a { color: var(--accento); }
+
+.markdown code {
+    background: var(--sfondo);
+    border: 1px solid var(--bordo);
+    border-radius: 4px;
+    padding: .1rem .3rem;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+}
+
+.markdown pre {
+    background: var(--sfondo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: .7rem;
+    /* Il codice non si spezza a metà parola: scorre nel proprio riquadro, non nella pagina. */
+    overflow-x: auto;
+}
+
+.markdown pre code { background: none; border: none; padding: 0; }
+
+.markdown blockquote {
+    margin: 0 0 .7rem;
+    padding-left: .8rem;
+    border-left: 3px solid var(--bordo);
+    color: var(--testo-tenue);
+}
+
+.markdown img { max-width: 100%; height: auto; border-radius: var(--raggio); }
+
+.markdown table { border-collapse: collapse; width: 100%; margin-bottom: .7rem; }
+.markdown th, .markdown td { border: 1px solid var(--bordo); padding: .35rem .5rem; text-align: left; }
+
+/* Le caselle delle checklist arrivano da Markdig già disabilitate: sono un promemoria visivo, e
+   per spuntarle si modifica il testo della nota. */
+.markdown .task-list-item { list-style: none; margin-left: -1.1rem; }
+.markdown .task-list-item input { margin-right: .4rem; }

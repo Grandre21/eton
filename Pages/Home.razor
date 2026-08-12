@@ -3,6 +3,7 @@
 @inject AuthStateService AuthState
 @inject SpaceStateService Spazi
 @inject SpaceRepository Repository
+@inject NoteRepository NoteRepository
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -28,7 +29,7 @@ else if (Spazi.Attivo is null)
 }
 else
 {
-    @* Se lo spazio c'è, l'errore è di un caricamento secondario (il conteggio dei membri): va
+    @* Se lo spazio c'è, l'errore è di un caricamento secondario (i dettagli dello spazio): va
        segnalato SOPRA il contenuto, non al posto suo. Prendersi tutta la pagina per un dettaglio
        mancante nasconderebbe uno spazio caricato benissimo. Stessa forma di SpaceDetail. *@
     @if (errore is not null)
@@ -54,6 +55,10 @@ else
         {
             <text>Il tuo spazio personale: quello che ci metti lo vedi solo tu.</text>
         }
+        else if (dettagliMancanti)
+        {
+            <text>Membri non disponibili.</text>
+        }
         else
         {
             <text>@membri membri.</text>
@@ -62,7 +67,32 @@ else
 
     <div class="scheda">
         <h2>Note</h2>
-        <p class="testo-tenue">Non ancora disponibili: arrivano nella prossima parte.</p>
+        @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'note.Count == 0', perché
+           l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono note" da "non
+           sono riuscito a leggerle". *@
+        @if (dettagliMancanti)
+        {
+            <p class="testo-tenue">Non sono riuscito a leggere le note di questo spazio.</p>
+        }
+        else if (note.Count == 0)
+        {
+            <p class="testo-tenue">Ancora nessuna nota in questo spazio.</p>
+        }
+        else
+        {
+            <ul class="elenco-note compatto">
+                @foreach (var n in note)
+                {
+                    <li>
+                        <a href="notes/@n.Id">@n.TitoloVisibile()</a>
+                    </li>
+                }
+            </ul>
+        }
+        <div class="azioni">
+            <a class="btn" href="notes">Tutte le note</a>
+            <a class="btn primary" href="notes/new">Nuova nota</a>
+        </div>
     </div>
 
     <div class="scheda">
@@ -78,7 +108,15 @@ else
 @code {
     private bool caricato;
     private int membri;
+    private IReadOnlyList<Note> note = [];
     private string? errore;
+    private int generazione;
+
+    // Vero quando i dettagli non si sono potuti leggere. Serve al markup per non affermare cose
+    // che non sa: azzerare membri/note prima di leggere evita di mostrare quelli dello spazio
+    // precedente, ma "0 membri" e "Ancora nessuna nota" sono affermazioni precise su uno spazio di
+    // cui non abbiamo letto niente. Accanto a un banner d'errore si contraddicono a vicenda.
+    private bool dettagliMancanti;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,16 +141,9 @@ else
             return;
         }
 
-        // Il conteggio dei membri ha il proprio try, separato: è un dettaglio accessorio, e un suo
-        // fallimento non deve far sparire uno spazio che si è caricato benissimo.
-        try
-        {
-            await ContaMembri();
-        }
-        catch (Exception ex)
-        {
-            errore = $"Spazio caricato, ma non ho potuto contare i membri: {ex.Message}";
-        }
+        // I dettagli si gestiscono l'errore da soli, dentro CaricaDettagli: sono accessori, e un
+        // loro fallimento non deve far sparire uno spazio che si è caricato benissimo.
+        await CaricaDettagli("Spazio caricato");
 
         caricato = true;
     }
@@ -123,26 +154,63 @@ else
         await Carica();
     }
 
-    private async Task ContaMembri()
+    // Membri e note insieme: sono entrambi dettagli dello spazio attivo, entrambi accessori
+    // rispetto al fatto che lo spazio si sia caricato. Il metodo gestisce anche il proprio errore,
+    // perché solo qui si sa se la risposta arrivata è ancora quella buona: un fallimento già
+    // sorpassato da una lettura più recente non deve piantare un banner rosso sopra dati giusti.
+    private async Task CaricaDettagli(string premessa)
     {
-        membri = Spazi.Attivo is null || Spazi.Attivo.IsPersonal
-            ? 0
-            : (await Repository.MembriAsync(Spazi.Attivo.Id)).Count;
+        // Contatore di generazione, come in NoteEdit.razor:119 e in SpaceDetail. Dal <select> si
+        // può cambiare spazio due volte prima che la prima lettura torni, e su rete mobile la
+        // seconda risposta può benissimo arrivare per prima: senza guardia la continuazione più
+        // lenta scrive per ultima e lascia il nome di uno spazio accanto ai dettagli di un altro.
+        // Nessun errore comparirebbe, perché entrambe le letture sono riuscite.
+        var mia = ++generazione;
+
+        // Azzerati PRIMA di leggere, e non dopo. Se la lettura fallisce, mostrare le note dello
+        // spazio precedente sotto il nome di quello nuovo sarebbe peggio che non mostrarne nessuna:
+        // sembrerebbero note di questo spazio, e non c'è niente a schermo che smentisca.
+        membri = 0;
+        note = [];
+        dettagliMancanti = false;
+
+        if (Spazi.Attivo is null) return;
+
+        // L'id si cattura UNA volta sola. Rileggere Spazi.Attivo dopo un await interrogherebbe lo
+        // spazio nel frattempo diventato attivo invece di quello per cui la lettura è partita, e
+        // dopo un logout — Dimentica() azzera Attivo — sarebbe direttamente un riferimento nullo.
+        var spazio = Spazi.Attivo;
+
+        try
+        {
+            var quantiMembri = spazio.IsPersonal ? 0 : (await Repository.MembriAsync(spazio.Id)).Count;
+            if (mia != generazione) return;
+
+            // Solo le tre più recenti: la Home è un riepilogo, l'elenco completo sta in /notes.
+            // Il limite arriva fino alla query, così non si scaricano mille note per mostrarne tre.
+            var ultime = await NoteRepository.ElencaAsync(spazio.Id, 3);
+            if (mia != generazione) return;
+
+            // Scritte insieme e solo alla fine: assegnarle man mano lascerebbe a schermo, per tutta
+            // la durata della seconda lettura, il conteggio nuovo accanto alle note vecchie.
+            membri = quantiMembri;
+            note = ultime;
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            errore = $"{premessa}, ma non ho potuto leggerne i dettagli: {ex.Message}";
+            dettagliMancanti = true;
+        }
     }
 
     private async Task Cambia(ChangeEventArgs e)
     {
         if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+
         Spazi.Imposta(id);
         errore = null;
-        try
-        {
-            await ContaMembri();
-        }
-        catch (Exception ex)
-        {
-            errore = $"Spazio cambiato, ma non ho potuto contare i membri: {ex.Message}";
-        }
+        await CaricaDettagli("Spazio cambiato");
     }
 
     // L'evento arriva da un servizio, cioè fuori dal ciclo di rendering di questo componente:

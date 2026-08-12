@@ -1,0 +1,32 @@
+@inject MarkdownRenderer Markdown
+
+@* MarkupString inserisce l'HTML SENZA escape: normalmente è la porta d'ingresso dello stored XSS.
+   Qui è sicuro per una ragione precisa e non per fiducia — MarkdownRenderer.InHtml disattiva
+   l'HTML grezzo e riscrive le URL con schema pericoloso. Se un domani quel metodo cambiasse,
+   questa riga diventerebbe una vulnerabilità: è l'unico punto dell'app che si fida di una stringa
+   prodotta altrove. *@
+<div class="markdown">@reso</div>
+
+@code {
+    [Parameter] public string? Testo { get; set; }
+
+    private string? ultimoTesto;
+    private MarkupString reso;
+    private bool calcolato;
+
+    // Il rendering è memoizzato perché non è gratis: analizza il Markdown e ricostruisce l'HTML da
+    // capo. Se stesse nell'espressione di markup rigirerebbe a ogni ridisegno del padre, anche a
+    // testo immutato — e in NoteEdit il titolo resta modificabile con l'anteprima aperta, quindi
+    // ogni tasto premuto nel titolo rifarebbe il parsing dell'intero corpo. Nel browser, su un
+    // telefono.
+    // Il flag separato serve al primo giro: con Testo null e ultimoTesto null il confronto da solo
+    // direbbe "già fatto" e non calcolerebbe mai niente.
+    protected override void OnParametersSet()
+    {
+        if (calcolato && Testo == ultimoTesto) return;
+
+        ultimoTesto = Testo;
+        reso = (MarkupString)Markdown.InHtml(Testo);
+        calcolato = true;
+    }
+}

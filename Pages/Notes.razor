@@ -1,0 +1,254 @@
+@page "/notes"
+@using Eton.Models
+@inject NoteRepository Repository
+@inject SpaceRepository SpaziRepository
+@inject SpaceStateService Spazi
+@inject MarkdownRenderer Markdown
+@implements IDisposable
+
+<PageTitle>Note — Eton</PageTitle>
+
+<h1>Note</h1>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Serve uno spazio prima di poter scrivere note.</p>
+        <a class="btn primary" href="spaces">Vai agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+
+    <div class="azioni">
+        <a class="btn primary" href="notes/new">Nuova nota</a>
+    </div>
+
+    @* L'ordine conta: 'noteNonLette' va provato PRIMA di 'note.Count == 0', perché l'elenco è vuoto
+       in entrambi i casi e solo il flag distingue "non ci sono note" da "non ho potuto leggerle". *@
+    @if (noteNonLette)
+    {
+        <div class="vuoto">
+            <p>Non sono riuscito a leggere le note di questo spazio.</p>
+            <button class="btn" @onclick="Riprova">Riprova</button>
+        </div>
+    }
+    else if (note.Count == 0)
+    {
+        <div class="vuoto">
+            <p>Ancora nessuna nota qui.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="elenco-note">
+            @foreach (var n in note)
+            {
+                <li>
+                    <a class="riga-nota" href="notes/@n.Id">
+                        <span class="titolo">@n.TitoloVisibile()</span>
+                        @if (Estratto(n) is { Length: > 0 } estratto)
+                        {
+                            <span class="estratto">@estratto</span>
+                        }
+                        <span class="meta">@Meta(n)</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private IReadOnlyList<Note> note = [];
+    private IReadOnlyList<Membro> membri = [];
+    private bool caricato;
+    private string? errore;
+    private Guid spazioMostrato;
+
+    // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
+    // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /notes l'evento arriva
+    // mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto fra un
+    // id vero e uno vuoto lascia passare tutto. Il risultato sarebbe una seconda lettura identica
+    // alla prima, in parallelo. Scartare l'evento non perde niente: il caricamento in corso lo
+    // spazio aggiornato lo legge comunque.
+    private bool inCaricamento;
+
+    // Distingue "questo spazio non ha note" da "le note non sono riuscito a leggerle": l'elenco è
+    // vuoto in entrambi i casi, ma dire "ancora nessuna nota qui" quando la lettura è fallita è
+    // un'affermazione precisa su uno spazio di cui non sappiamo niente.
+    private bool noteNonLette;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Spazi.Cambiato += SuCambioSpazio;
+        await Carica();
+    }
+
+    private async Task Carica()
+    {
+        inCaricamento = true;
+        try
+        {
+            // Ciclo e non chiamata singola: SuCambioSpazio SCARTA gli eventi che arrivano mentre
+            // questo metodo è in volo, e scartarli senza rileggere dopo li perderebbe per sempre.
+            // Resterebbero l'intestazione di uno spazio e le note di un altro, senza che nulla lo
+            // corregga finché l'utente non esce dalla pagina e rientra.
+            while (true)
+            {
+                // Catturato PRIMA del giro, ed è il punto delicato di tutto il metodo. Il confronto
+                // finale si fa contro questo, non soltanto contro spazioMostrato: se il caricamento
+                // fallisce, spazioMostrato non viene aggiornato: guardare solo quello lascerebbe la
+                // condizione vera per sempre, e la pagina rifarebbe all'infinito una lettura che
+                // fallisce sempre allo stesso modo. Confrontare lo spazio attivo di adesso con
+                // quello di partenza distingue "è cambiato davvero" da "non è cambiato niente e la
+                // lettura è andata male".
+                var partenza = Spazi.Attivo?.Id;
+
+                await CaricaUnGiro();
+
+                var adesso = Spazi.Attivo?.Id;
+                if (adesso is null || adesso == partenza || adesso == spazioMostrato) break;
+            }
+        }
+        finally
+        {
+            caricato = true;
+            inCaricamento = false;
+        }
+    }
+
+    private async Task CaricaUnGiro()
+    {
+        errore = null;
+        noteNonLette = false;
+
+        Space? attivo;
+        try
+        {
+            attivo = await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Qui a mancare sono gli SPAZI, non le note — e il markup reagisce diversamente:
+            // senza spazio attivo l'errore si prende tutta la pagina, col pulsante Riprova,
+            // invece di essere una riga sopra un elenco che comunque esiste.
+            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            return;
+        }
+
+        if (attivo is null) return;
+
+        // Azzerate PRIMA di leggere, come in Home.CaricaDettagli. L'intestazione stampa già
+        // @Spazi.Attivo.Name, cioè il nome NUOVO: lasciare a schermo le note del vecchio spazio
+        // le farebbe passare per note di questo, e non c'è niente che smentisca.
+        note = [];
+        membri = [];
+        spazioMostrato = attivo.Id;
+
+        try
+        {
+            note = await Repository.ElencaAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Spazio caricato, ma non ho potuto leggerne le note: {ex.Message}";
+            noteNonLette = true;
+            return;
+        }
+
+        // Solo negli spazi condivisi: in quello personale l'autore è sempre chi guarda, e
+        // scriverne il nome accanto a ogni nota sarebbe rumore.
+        if (attivo.IsPersonal) return;
+
+        // Try separato, e non insieme alle note: i membri servono soltanto a scrivere il nome
+        // dell'autore accanto a ogni nota. Metterli nello stesso catch faceva sì che un timeout su
+        // questa seconda chiamata dichiarasse illeggibili delle note già lette benissimo, e le
+        // nascondesse dietro un messaggio d'errore falso. Un fallimento qui degrada Meta() al solo
+        // orario, che è comunque l'informazione principale — non è un errore da mostrare, ma va
+        // detto in console, altrimenti resta invisibile.
+        try
+        {
+            membri = await SpaziRepository.MembriAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Note] Nomi degli autori non disponibili: {ex.Message}");
+        }
+    }
+
+    private async Task Riprova()
+    {
+        caricato = false;
+        await Carica();
+    }
+
+    // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
+    // logico: se cambia mentre siamo qui, le note a schermo sono di un altro spazio.
+    private void SuCambioSpazio() => _ = InvokeAsync(async () =>
+    {
+        if (inCaricamento) return;
+        if (Spazi.Attivo?.Id == spazioMostrato) return;
+
+        caricato = false;
+        StateHasChanged();
+        try
+        {
+            await Carica();
+        }
+        catch (Exception ex)
+        {
+            // Carica() cattura già le proprie eccezioni, quindi qui si arriva solo per qualcosa che
+            // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
+            // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
+            // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
+            errore = $"Non è stato possibile aggiornare le note: {ex.Message}";
+            caricato = true;
+        }
+        StateHasChanged();
+    });
+
+    private string Estratto(Note n)
+    {
+        var testo = Markdown.InTestoSemplice(n.Body).ReplaceLineEndings(" ").Trim();
+
+        // Il ciclo non è quadratico: Replace sostituisce tutte le occorrenze non sovrapposte in un
+        // passaggio solo, quindi ogni giro dimezza la lunghezza delle sequenze di spazi. Su 100.000
+        // spazi consecutivi bastano 17 iterazioni.
+        while (testo.Contains("  ")) testo = testo.Replace("  ", " ");
+
+        if (testo.Length <= 120) return testo;
+
+        // 120 sono unità UTF-16, non caratteri: un'emoji ne occupa due, e tagliare fra le due metà
+        // di una coppia surrogata lascia mezzo carattere, che il browser disegna come glifo rotto.
+        // Quando il taglio cadrebbe lì in mezzo si arretra di uno e si perde l'emoji intera.
+        var fine = char.IsHighSurrogate(testo[119]) ? 119 : 120;
+        return testo[..fine] + "…";
+    }
+
+    private string Meta(Note n)
+    {
+        var quando = n.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+        var autore = membri.FirstOrDefault(m => m.UtenteId == n.OwnerId)?.Nome;
+        return autore is null ? quando : $"{autore} · {quando}";
+    }
+
+    public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
+}

@@ -12,5 +12,7 @@ builder.Services.AddSingleton<SupabaseService>();
 builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddSingleton<SpaceRepository>();
 builder.Services.AddSingleton<SpaceStateService>();
+builder.Services.AddSingleton<MarkdownRenderer>();
+builder.Services.AddSingleton<NoteRepository>();
 
 await builder.Build().RunAsync();
