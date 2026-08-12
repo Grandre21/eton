@@ -113,7 +113,9 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
     padding: .55rem 0;
     text-decoration: none;
     color: var(--testo-tenue);
-    font-size: .7rem;
+    /* Ridotto da .7rem: con cinque voci invece di quattro, a 360px "Collezioni" non ci stava
+       su una riga sola. */
+    font-size: .62rem;
 }
 
 .barra-basso .voce.attiva { color: var(--accento); }
@@ -161,7 +163,7 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 }
 
 /* ---- elenchi ---- */
-.elenco-spazi, .elenco-membri, .elenco-note { list-style: none; padding: 0; margin: 0 0 1rem; }
+.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi { list-style: none; padding: 0; margin: 0 0 1rem; }
 
 .riga-spazio {
     display: flex;
@@ -260,12 +262,12 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 }
 
 /* Dentro la scheda della Home l'elenco è solo una lista di titoli. */
-.elenco-note.compatto li { padding: .3rem 0; border-bottom: 1px solid var(--bordo); }
-.elenco-note.compatto li:last-child { border-bottom: none; }
-.elenco-note.compatto a { color: var(--testo); text-decoration: none; }
+.elenco-note.compatto li, .elenco-collezioni.compatto li { padding: .3rem 0; border-bottom: 1px solid var(--bordo); }
+.elenco-note.compatto li:last-child, .elenco-collezioni.compatto li:last-child { border-bottom: none; }
+.elenco-note.compatto a, .elenco-collezioni.compatto a { color: var(--testo); text-decoration: none; }
 
 /* ---- editor ---- */
-.titolo-nota {
+.titolo-nota, .titolo-grande {
     width: 100%;
     box-sizing: border-box;
     padding: .6rem .7rem;
@@ -372,3 +374,79 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
    per spuntarle si modifica il testo della nota. */
 .markdown .task-list-item { list-style: none; margin-left: -1.1rem; }
 .markdown .task-list-item input { margin-right: .4rem; }
+
+/* ---- righe cliccabili: collezioni ed elementi ---- */
+.riga-collezione, .riga-elemento {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-height: 48px;
+    padding: .8rem 1rem;
+    margin-bottom: .5rem;
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    color: var(--testo);
+    text-decoration: none;
+}
+
+.riga-collezione .testi, .riga-elemento .testi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+.riga-collezione .nome, .riga-elemento .nome { font-weight: 600; }
+.riga-collezione .meta, .riga-elemento .meta { color: var(--testo-tenue); font-size: .82rem; }
+
+.icona-collezione { flex: none; font-size: 1.4rem; line-height: 1; }
+
+.miniatura {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    object-fit: cover;
+    border-radius: var(--raggio);
+    background: var(--bordo);
+}
+
+.anteprima-immagine {
+    display: block;
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: var(--raggio);
+    margin-bottom: .6rem;
+}
+
+/* ---- editor di collezione ---- */
+.icona-input {
+    width: 3.5rem;
+    flex: none;
+    text-align: center;
+    padding: .6rem .4rem;
+    background: var(--sfondo);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    font-size: 1.1rem;
+}
+
+.editor-campi { list-style: none; padding: 0; margin: 0 0 1rem; }
+
+.riga-campo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    margin-bottom: .5rem;
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+}
+
+.campo-opzioni {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    width: 100%;
+    padding-left: 1.2rem;
+}
+
+.campo-dinamico { margin-bottom: .6rem; }

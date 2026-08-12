@@ -1,0 +1,170 @@
+@page "/collections/{Id:guid}"
+@using Eton.Models
+@using Eton.Services
+@inject CollectionRepository Repository
+@inject CollectionItemRepository Elementi
+@inject NavigationManager Navigation
+
+<PageTitle>@(collezione?.Name ?? "Collezione") — Eton</PageTitle>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (sparita)
+{
+    <div class="vuoto">
+        <p>Questa collezione non esiste più, o non fai più parte dello spazio che la conteneva.</p>
+        <a class="btn" href="collections">Torna alle collezioni</a>
+    </div>
+}
+else if (collezione is null)
+{
+    @* Ramo distinto da 'sparita', e non lo stesso flag: qui il primo caricamento è fallito, quindi
+       NON sappiamo se la collezione esista. Dire "non esiste più" per una rete caduta sarebbe
+       un'affermazione falsa su un fatto che non conosciamo, e lascerebbe l'utente col solo
+       "Torna alle collezioni" invece che con un pulsante che ritenta. Stessa forma di
+       Home.razor:16-22. *@
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <div class="intestazione">
+        <span class="icona-collezione">@(string.IsNullOrWhiteSpace(collezione!.Icon) ? "📋" : collezione.Icon)</span>
+        <h1>@collezione.Name</h1>
+    </div>
+
+    <div class="azioni">
+        <a class="btn" href="collections/@Id/edit">Modifica collezione</a>
+        <a class="btn primary" href="collections/@Id/items/new">Nuovo elemento</a>
+    </div>
+
+    @if (elementi.Count == 0)
+    {
+        <div class="vuoto">
+            <p>Ancora nessun elemento in questa collezione.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="elenco-elementi">
+            @foreach (var e in elementi)
+            {
+                <li>
+                    <a class="riga-elemento" href="collections/@Id/items/@e.Id">
+                        @if (Miniatura(e) is string src)
+                        {
+                            <img class="miniatura" src="@src" alt="" loading="lazy" />
+                        }
+                        <span class="testi">
+                            <span class="nome">@e.Name</span>
+                            <span class="meta">@Riepilogo(e)</span>
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Collection? collezione;
+    private IReadOnlyList<CollectionItem> elementi = [];
+    private IReadOnlyList<CampoDefinizione> campi = [];
+    private bool caricato, sparita;
+    private string? errore;
+    private int generazione;
+
+    // Come in NoteEdit: Id cambia navigando fra collezioni senza smontare il componente, quindi il
+    // ricaricamento va agganciato a OnParametersSetAsync e non a OnInitializedAsync, e due
+    // caricamenti possono sovrapporsi con quello partito prima che risponde per ultimo.
+    protected override Task OnParametersSetAsync() => Carica();
+
+    // Estratto da OnParametersSetAsync per poterlo richiamare da Riprova: un primo caricamento
+    // fallito deve poter essere ritentato senza costringere l'utente a ricaricare la pagina.
+    private async Task Carica()
+    {
+        var mia = ++generazione;
+
+        caricato = false;
+        errore = null;
+        sparita = false;
+
+        try
+        {
+            var letta = await Repository.LeggiAsync(Id);
+            if (mia != generazione) return;
+
+            collezione = letta;
+            if (collezione is null)
+            {
+                sparita = true;
+                caricato = true;
+                return;
+            }
+
+            campi = SchemaCampi.Ordina(collezione.Fields);
+
+            var elencati = await Elementi.ElencaAsync(Id);
+            if (mia != generazione) return;
+
+            elementi = elencati;
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            errore = $"Non è stato possibile aprire la collezione: {ex.Message}";
+
+            // NON si accende 'sparita': quello significa "il database ha risposto che non c'è", e
+            // qui il database non ha risposto affatto. Si azzera invece tutto ciò che era a schermo,
+            // come fa NoteEdit.razor:161: se il caricamento fallito è quello della collezione B
+            // raggiunta da /collections/A, tenere i dati precedenti mostrerebbe il nome e gli
+            // elementi di A sotto l'indirizzo di B, con i link delle righe che puntano a elementi
+            // di un'altra collezione. Meglio nessun dato che dati attribuiti alla cosa sbagliata.
+            collezione = null;
+            elementi = [];
+            campi = [];
+        }
+
+        caricato = true;
+    }
+
+    private Task Riprova() => Carica();
+
+    // L'URL lo scrive un altro membro dello spazio: uno schema come data: o javascript: dentro un
+    // src non è un semplice link rotto, va bonificato come in MarkdownRenderer.
+    private static string? Miniatura(CollectionItem e)
+        => e.ImageUrl is { Length: > 0 } url && MarkdownRenderer.UrlAmmessa(url) ? url : null;
+
+    // I valori dei primi due campi non vuoti, resi con Testo perché qui è testo da leggere, non da
+    // rimettere in un input.
+    private string Riepilogo(CollectionItem e)
+    {
+        var pezzi = new List<string>();
+
+        foreach (var campo in campi)
+        {
+            if (pezzi.Count >= 2) break;
+
+            // '?.' su Data: il vincolo collection_items_data_shape rifiuta un data che non sia un
+            // oggetto, quindi Newtonsoft non dovrebbe mai sovrascrivere l'inizializzatore con null —
+            // ma qui siamo dentro il @foreach dell'elenco, e una NullReferenceException romperebbe
+            // la pagina di chiunque stia in quello spazio, non solo la riga malformata. È lo stesso
+            // ragionamento del try/catch di ValoriElemento.Testo.
+            var testo = ValoriElemento.Testo(e.Data?.GetValueOrDefault(campo.Key), campo.Type);
+            if (testo.Length > 0) pezzi.Add(testo);
+        }
+
+        return string.Join(" · ", pezzi);
+    }
+}

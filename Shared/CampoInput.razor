@@ -1,0 +1,70 @@
+@using Eton.Models
+
+<label class="campo campo-dinamico">
+    <span class="etichetta-piccola">@Campo.Label</span>
+
+    @switch (Campo.Type)
+    {
+        case "text":
+            <input type="text" maxlength="500" value="@Valore" @oninput="Cambia" disabled="@Disabilitato" />
+            break;
+
+        case "url":
+            <input type="url" maxlength="2000" value="@Valore" @oninput="Cambia" disabled="@Disabilitato" />
+            break;
+
+        case "number":
+            @* Non type="number": la nostra interfaccia accetta la virgola come separatore decimale,
+               e un input numerico HTML la considera invalida — il browser restituisce stringa
+               vuota e il valore digitato sparisce al salvataggio. inputmode="decimal" dà comunque
+               la tastiera numerica su mobile. *@
+            <input type="text" inputmode="decimal" value="@Valore" @oninput="Cambia" disabled="@Disabilitato" />
+            break;
+
+        case "date":
+            @* Il valore HTML di type="date" è sempre yyyy-MM-dd per specifica, indipendentemente
+               da come il browser lo mostra: combacia con ValoriElemento.PerModifica, che per
+               questo normalizza in ISO — quindi nessuna conversione qui dentro. *@
+            <input type="date" value="@Valore" @onchange="Cambia" disabled="@Disabilitato" />
+            break;
+
+        case "bool":
+            <select value="@Valore" @onchange="Cambia" disabled="@Disabilitato">
+                <option value="">—</option>
+                <option value="true">Sì</option>
+                <option value="false">No</option>
+            </select>
+            break;
+
+        case "select":
+            <select value="@Valore" @onchange="Cambia" disabled="@Disabilitato">
+                <option value="">—</option>
+                @foreach (var opzione in Campo.Options ?? [])
+                {
+                    <option value="@opzione">@opzione</option>
+                }
+                @* Se il valore attuale non è fra le opzioni — succede quando un'opzione viene
+                   tolta dalla collezione dopo che qualcuno l'aveva scelta — il browser mostrerebbe
+                   la prima voce dell'elenco, e al primo salvataggio il valore dell'utente
+                   verrebbe sostituito da quello visualizzato per caso. Questa voce in coda lo
+                   tiene visibile e non riscritto a sua insaputa. *@
+                @if (!string.IsNullOrEmpty(Valore) && !(Campo.Options ?? []).Contains(Valore))
+                {
+                    <option value="@Valore">@($"{Valore} (opzione rimossa)")</option>
+                }
+            </select>
+            break;
+    }
+</label>
+
+@code {
+    [Parameter, EditorRequired] public CampoDefinizione Campo { get; set; } = default!;
+    [Parameter] public string Valore { get; set; } = "";
+    [Parameter] public EventCallback<string> ValoreChanged { get; set; }
+    [Parameter] public bool Disabilitato { get; set; }
+
+    // Propaga esplicitamente il Task restituito da InvokeAsync: una proprietà con setter che fa
+    // '_ = InvokeAsync(...)' scarterebbe il Task e con esso ogni eccezione, che sparirebbe senza
+    // traccia.
+    private Task Cambia(ChangeEventArgs e) => ValoreChanged.InvokeAsync(e.Value?.ToString() ?? "");
+}

@@ -4,6 +4,7 @@
 @inject SpaceStateService Spazi
 @inject SpaceRepository Repository
 @inject NoteRepository NoteRepository
+@inject CollectionRepository CollectionRepository
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -97,7 +98,32 @@ else
 
     <div class="scheda">
         <h2>Collezioni</h2>
-        <p class="testo-tenue">Non ancora disponibili: arrivano dopo le note.</p>
+        @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'collezioni.Count == 0',
+           perché l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono
+           collezioni" da "non sono riuscito a leggerle". *@
+        @if (dettagliMancanti)
+        {
+            <p class="testo-tenue">Non sono riuscito a leggere le collezioni di questo spazio.</p>
+        }
+        else if (collezioni.Count == 0)
+        {
+            <p class="testo-tenue">Ancora nessuna collezione in questo spazio.</p>
+        }
+        else
+        {
+            <ul class="elenco-collezioni compatto">
+                @foreach (var c in collezioni)
+                {
+                    <li>
+                        <a href="collections/@c.Id">@(string.IsNullOrWhiteSpace(c.Icon) ? "" : c.Icon + " ")@c.Name</a>
+                    </li>
+                }
+            </ul>
+        }
+        <div class="azioni">
+            <a class="btn" href="collections">Tutte le collezioni</a>
+            <a class="btn primary" href="collections/new">Nuova collezione</a>
+        </div>
     </div>
 
     <div class="azioni">
@@ -109,6 +135,7 @@ else
     private bool caricato;
     private int membri;
     private IReadOnlyList<Note> note = [];
+    private IReadOnlyList<Collection> collezioni = [];
     private string? errore;
     private int generazione;
 
@@ -172,6 +199,7 @@ else
         // sembrerebbero note di questo spazio, e non c'è niente a schermo che smentisca.
         membri = 0;
         note = [];
+        collezioni = [];
         dettagliMancanti = false;
 
         if (Spazi.Attivo is null) return;
@@ -191,10 +219,14 @@ else
             var ultime = await NoteRepository.ElencaAsync(spazio.Id, 3);
             if (mia != generazione) return;
 
+            var ultimeCollezioni = await CollectionRepository.ElencaAsync(spazio.Id, 3);
+            if (mia != generazione) return;
+
             // Scritte insieme e solo alla fine: assegnarle man mano lascerebbe a schermo, per tutta
             // la durata della seconda lettura, il conteggio nuovo accanto alle note vecchie.
             membri = quantiMembri;
             note = ultime;
+            collezioni = ultimeCollezioni;
         }
         catch (Exception ex)
         {

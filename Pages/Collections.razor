@@ -1,0 +1,223 @@
+@page "/collections"
+@using Eton.Models
+@using System.Globalization
+@inject CollectionRepository Repository
+@inject SpaceStateService Spazi
+@implements IDisposable
+
+<PageTitle>Collezioni — Eton</PageTitle>
+
+<h1>Collezioni</h1>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Serve uno spazio prima di poter creare collezioni.</p>
+        <a class="btn primary" href="spaces">Vai agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+
+    <div class="azioni">
+        <a class="btn primary" href="collections/new">Nuova collezione</a>
+    </div>
+
+    @* L'ordine conta: 'collezioniNonLette' va provato PRIMA di 'collezioni.Count == 0', perché
+       l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono collezioni" da
+       "non ho potuto leggerle". *@
+    @if (collezioniNonLette)
+    {
+        <div class="vuoto">
+            <p>Non sono riuscito a leggere le collezioni di questo spazio.</p>
+            <button class="btn" @onclick="Riprova">Riprova</button>
+        </div>
+    }
+    else if (collezioni.Count == 0)
+    {
+        <div class="vuoto">
+            <p>Ancora nessuna collezione qui.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="elenco-collezioni">
+            @foreach (var c in collezioni)
+            {
+                <li>
+                    <a class="riga-collezione" href="collections/@c.Id">
+                        <span class="icona-collezione">@(string.IsNullOrWhiteSpace(c.Icon) ? "📋" : c.Icon)</span>
+                        @* Nome e meta vanno avvolti insieme, non messi come figli diretti: la riga è
+                           un flex orizzontale, quindi senza questo contenitore finirebbero affiancati
+                           all'icona invece che impilati, e un nome lungo spingerebbe la data fuori
+                           dal riquadro invece di troncarsi. Stessa struttura di .riga-elemento. *@
+                        <span class="testi">
+                            <span class="nome">@c.Name</span>
+                            <span class="meta">@Meta(c)</span>
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private IReadOnlyList<Collection> collezioni = [];
+    private bool caricato;
+    private string? errore;
+    private Guid spazioMostrato;
+
+    // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
+    // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /collections l'evento
+    // arriva mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto
+    // fra un id vero e uno vuoto lascia passare tutto. Il risultato sarebbe una seconda lettura
+    // identica alla prima, in parallelo. Scartare l'evento non perde niente: il caricamento in
+    // corso lo spazio aggiornato lo legge comunque.
+    private bool inCaricamento;
+
+    // Distingue "questo spazio non ha collezioni" da "le collezioni non sono riuscito a
+    // leggerle": l'elenco è vuoto in entrambi i casi, ma dire "ancora nessuna collezione qui"
+    // quando la lettura è fallita è un'affermazione precisa su uno spazio di cui non sappiamo
+    // niente.
+    private bool collezioniNonLette;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Spazi.Cambiato += SuCambioSpazio;
+        await Carica();
+    }
+
+    private async Task Carica()
+    {
+        inCaricamento = true;
+        try
+        {
+            // Ciclo e non chiamata singola: SuCambioSpazio SCARTA gli eventi che arrivano mentre
+            // questo metodo è in volo, e scartarli senza rileggere dopo li perderebbe per sempre.
+            // Resterebbero l'intestazione di uno spazio e le collezioni di un altro, senza che
+            // nulla lo corregga finché l'utente non esce dalla pagina e rientra.
+            while (true)
+            {
+                // Catturato PRIMA del giro, ed è il punto delicato di tutto il metodo. Il confronto
+                // finale si fa contro questo, non soltanto contro spazioMostrato: se il caricamento
+                // fallisce, spazioMostrato non viene aggiornato: guardare solo quello lascerebbe la
+                // condizione vera per sempre, e la pagina rifarebbe all'infinito una lettura che
+                // fallisce sempre allo stesso modo. Confrontare lo spazio attivo di adesso con
+                // quello di partenza distingue "è cambiato davvero" da "non è cambiato niente e la
+                // lettura è andata male".
+                var partenza = Spazi.Attivo?.Id;
+
+                await CaricaUnGiro();
+
+                var adesso = Spazi.Attivo?.Id;
+                if (adesso is null || adesso == partenza || adesso == spazioMostrato) break;
+            }
+        }
+        finally
+        {
+            caricato = true;
+            inCaricamento = false;
+        }
+    }
+
+    private async Task CaricaUnGiro()
+    {
+        errore = null;
+        collezioniNonLette = false;
+
+        Space? attivo;
+        try
+        {
+            attivo = await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Qui a mancare sono gli SPAZI, non le collezioni — e il markup reagisce
+            // diversamente: senza spazio attivo l'errore si prende tutta la pagina, col pulsante
+            // Riprova, invece di essere una riga sopra un elenco che comunque esiste.
+            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            return;
+        }
+
+        if (attivo is null) return;
+
+        // Azzerate PRIMA di leggere, come in Home.CaricaDettagli. L'intestazione stampa già
+        // @Spazi.Attivo.Name, cioè il nome NUOVO: lasciare a schermo le collezioni del vecchio
+        // spazio le farebbe passare per collezioni di questo, e non c'è niente che smentisca.
+        collezioni = [];
+        spazioMostrato = attivo.Id;
+
+        try
+        {
+            collezioni = await Repository.ElencaAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Spazio caricato, ma non ho potuto leggerne le collezioni: {ex.Message}";
+            collezioniNonLette = true;
+        }
+    }
+
+    private async Task Riprova()
+    {
+        caricato = false;
+        await Carica();
+    }
+
+    // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
+    // logico: se cambia mentre siamo qui, le collezioni a schermo sono di un altro spazio.
+    private void SuCambioSpazio() => _ = InvokeAsync(async () =>
+    {
+        if (inCaricamento) return;
+        if (Spazi.Attivo?.Id == spazioMostrato) return;
+
+        caricato = false;
+        StateHasChanged();
+        try
+        {
+            await Carica();
+        }
+        catch (Exception ex)
+        {
+            // Carica() cattura già le proprie eccezioni, quindi qui si arriva solo per qualcosa che
+            // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
+            // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
+            // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
+            errore = $"Non è stato possibile aggiornare le collezioni: {ex.Message}";
+            caricato = true;
+        }
+        StateHasChanged();
+    });
+
+    private string Meta(Collection c)
+    {
+        var campi = c.Fields.Count switch
+        {
+            0 => "nessun campo",
+            1 => "1 campo",
+            var n => $"{n} campi"
+        };
+        var quando = c.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+        return $"{campi} · {quando}";
+    }
+
+    public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
+}

@@ -1,0 +1,410 @@
+@page "/collections/{Id:guid}/items/new"
+@page "/collections/{Id:guid}/items/{ItemId:guid}"
+@using Eton.Models
+@using Eton.Services
+@inject CollectionRepository CollectionRepository
+@inject CollectionItemRepository Repository
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>@(string.IsNullOrWhiteSpace(nome) ? "Elemento" : nome) — Eton</PageTitle>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (sparito)
+{
+    <div class="vuoto">
+        <p>Questo elemento non esiste più, o non fai più parte dello spazio che conteneva la collezione.</p>
+        <a class="btn" href="collections/@Id">Torna alla collezione</a>
+    </div>
+}
+else if (collezione is null)
+{
+    @* Ramo distinto da 'sparito', e non lo stesso flag: qui il primo caricamento è fallito, quindi
+       NON sappiamo se l'elemento esista. Dire "non esiste più" per una rete caduta sarebbe
+       un'affermazione falsa su un fatto che non conosciamo, e lascerebbe l'utente col solo
+       "Torna alla collezione" invece che con un pulsante che ritenta. È anche questo ramo — non un
+       flag nel catch — a impedire che Crea() parta con 'collezione' nulla: senza il contenuto a
+       schermo, il pulsante Salva non esiste. Stessa forma di Home.razor:16-22. *@
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
+    @if (conflitto is not null)
+    {
+        <div class="scheda pericolo">
+            <h2>Qualcun altro ha salvato prima di te</h2>
+            <p class="testo-tenue">
+                Mentre modificavi, questo elemento è cambiato. Sovrascrivendo si perde il lavoro
+                dell'altra persona; ricaricando si perde il tuo.
+            </p>
+            <div class="azioni">
+                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
+                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@occupato">Sovrascrivi con la mia</button>
+            </div>
+        </div>
+    }
+
+    <input class="titolo-grande" type="text" placeholder="Nome dell'elemento" maxlength="200"
+           @bind="nome" @bind:event="oninput" disabled="@occupato" />
+
+    <label class="campo">
+        <span class="etichetta-piccola">Immagine (indirizzo)</span>
+        <input type="url" maxlength="2000" @bind="immagine" @bind:event="oninput" disabled="@occupato" />
+    </label>
+
+    @if (MarkdownRenderer.UrlAmmessa(immagine))
+    {
+        <img class="anteprima-immagine" src="@immagine" alt="" />
+    }
+    else if (!string.IsNullOrWhiteSpace(immagine))
+    {
+        <p class="testo-tenue">Indirizzo non utilizzabile: servono http o https.</p>
+    }
+
+    @if (campi.Count == 0)
+    {
+        <p class="testo-tenue">Questa collezione non ha ancora campi. <a href="collections/@Id/edit">Aggiungine</a>.</p>
+    }
+    else
+    {
+        @foreach (var campo in campi)
+        {
+            @* @key sull'oggetto e non su campo.Key: CampoDefinizione è una class senza override di
+               Equals, quindi Blazor la confronta per riferimento e due campi restano distinti anche
+               se il jsonb 'fields' porta due volte la stessa chiave — cosa che il vincolo SQL non
+               impedisce. Con la chiave duplicata, @key="campo.Key" farebbe fallire il render
+               dell'intera pagina. *@
+            <CampoInput @key="campo" Campo="campo" Valore="@valori.GetValueOrDefault(campo.Key, "")"
+                        ValoreChanged="@(v => valori[campo.Key] = v)" Disabilitato="occupato" />
+        }
+    }
+
+    <div class="azioni">
+        @* Anche 'conflitto is null', per lo stesso motivo di NoteEdit.razor:79-82: con la scheda del
+           conflitto aperta il pulsante resterebbe acceso, perché lo stato è davvero diverso da
+           quello di 'elemento'. Ripremerlo risalverebbe con la versione vecchia — stesso conflitto,
+           altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e Sovrascrivi,
+           che è l'unico modo di uscirne. *@
+        <button class="btn primary" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+            @(occupato ? "Salvo…" : "Salva")
+        </button>
+        <a class="btn" href="collections/@Id">Chiudi</a>
+
+        @if (!Nuovo)
+        {
+            @if (confermaEliminazione)
+            {
+                <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
+                <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
+            }
+            else
+            {
+                <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Parameter] public Guid? ItemId { get; set; }
+
+    private Collection? collezione;
+    private CollectionItem? elemento;   // l'ultima versione conosciuta dal server: da qui esce la versione
+    private CollectionItem? conflitto;  // la versione altrui, quando il salvataggio si è scontrato
+    private string nome = "";
+    private string immagine = "";
+    private readonly Dictionary<string, string> valori = new();
+    private Dictionary<string, string> valoriIniziali = new();
+    private IReadOnlyList<CampoDefinizione> campi = [];
+    private bool caricato, occupato, sparito, confermaEliminazione;
+    private string? errore, avviso;
+    private int generazione;
+
+    private bool Nuovo => ItemId is null;
+
+    // Come il pulsante Salva di NoteEdit e CollectionEdit: resta spento finché non c'è niente da
+    // salvare. Per un elemento nuovo basta il nome, come negli altri due editor.
+    private bool Cambiata => Nuovo
+        ? !string.IsNullOrWhiteSpace(nome)
+        : elemento is not null && (
+            nome != elemento.Name ||
+            immagine != (elemento.ImageUrl ?? "") ||
+            campi.Any(c => valori.GetValueOrDefault(c.Key, "") != valoriIniziali.GetValueOrDefault(c.Key, "")));
+
+    // Come in NoteEdit e CollectionEdit: passando da .../items/new a .../items/{id} dopo la
+    // creazione Blazor riusa QUESTA istanza e cambia solo il parametro, quindi due caricamenti
+    // possono sovrapporsi e quello partito prima può rispondere per ultimo.
+    protected override Task OnParametersSetAsync() => Carica();
+
+    // Estratto da OnParametersSetAsync per poterlo richiamare da Riprova: un primo caricamento
+    // fallito deve poter essere ritentato senza costringere l'utente a ricaricare la pagina.
+    private async Task Carica()
+    {
+        var mia = ++generazione;
+
+        caricato = false;
+        errore = avviso = null;
+        conflitto = null;
+        sparito = confermaEliminazione = false;
+
+        try
+        {
+            // Prima la collezione: servono i suoi campi per sapere cosa mostrare, e ordina anche
+            // quando è la stessa che era già mostrata, così un campo aggiunto o tolto nel frattempo
+            // si riflette anche riaprendo lo stesso elemento.
+            var lettaCollezione = await CollectionRepository.LeggiAsync(Id);
+            if (mia != generazione) return;
+
+            collezione = lettaCollezione;
+            if (collezione is null)
+            {
+                sparito = true;
+                caricato = true;
+                return;
+            }
+
+            campi = SchemaCampi.Ordina(collezione.Fields);
+
+            if (Nuovo)
+            {
+                elemento = null;
+                nome = immagine = "";
+                CaricaValori(null);
+            }
+            else
+            {
+                var lettoElemento = await Repository.LeggiAsync(ItemId!.Value);
+                if (mia != generazione) return;
+
+                elemento = lettoElemento;
+                if (elemento is null)
+                {
+                    sparito = true;
+                    caricato = true;
+                    return;
+                }
+
+                nome = elemento.Name;
+                immagine = elemento.ImageUrl ?? "";
+                CaricaValori(elemento);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            errore = $"Non è stato possibile aprire l'elemento: {ex.Message}";
+
+            // NON si accende 'sparito': quello significa "il database ha risposto che non c'è", e
+            // qui il database non ha risposto affatto. Si azzera invece tutto ciò che era a schermo,
+            // come fa NoteEdit.razor:161 — e non per simmetria, ma perché tenere i dati precedenti
+            // è attivamente pericoloso su questa pagina. Se il caricamento fallito è quello
+            // dell'elemento B raggiunto da /items/A, 'elemento' resterebbe A mentre ItemId ormai
+            // vale B: SalvaAsync riga 304 usa ItemId, non elemento.Id, quindi salvare scriverebbe i
+            // dati di A dentro B. Il conflitto ottimistico non lo ferma, perché confronta versioni
+            // di due righe diverse: se coincidono per caso — due elementi appena creati sono
+            // entrambi a version 1 — la scrittura passa e l'utente non vede nessun errore.
+            collezione = null;
+            elemento = null;
+            campi = [];
+            valori.Clear();
+        }
+
+        caricato = true;
+    }
+
+    private Task Riprova() => Carica();
+
+    // PerModifica, non Testo: Testo("Sì"/"No", ...) non è ciò che DaTesto sa rileggere, e caricare
+    // così ogni casella Sì/No la azzererebbe al primo salvataggio (v. il commento di PerModifica).
+    private void CaricaValori(CollectionItem? item)
+    {
+        valori.Clear();
+        foreach (var campo in campi)
+            // '?.' su Data e non solo su item: il vincolo collection_items_data_shape rifiuta un
+            // data che non sia un oggetto, quindi Newtonsoft non dovrebbe mai sovrascrivere
+            // l'inizializzatore con null — ma la difesa costa un carattere e l'alternativa è una
+            // NullReferenceException dentro il ciclo, cioè la pagina rotta invece di un campo vuoto.
+            valori[campo.Key] = ValoriElemento.PerModifica(item?.Data?.GetValueOrDefault(campo.Key), campo.Type);
+
+        valoriIniziali = new Dictionary<string, string>(valori);
+    }
+
+    // Si parte da una copia di elemento.Data, non da un dizionario vuoto: se un campo viene tolto
+    // dalla collezione, i valori già inseriti restano nel jsonb degli elementi — è la promessa che
+    // CollectionEdit fa all'utente ("I valori già inseriti restano salvati ma non si vedranno
+    // più"). Ricostruire 'data' dai soli campi attuali tradirebbe quella promessa al primo
+    // salvataggio di un elemento qualunque, cancellando dati che si era detto di conservare.
+    private Dictionary<string, object> CostruisciDati()
+    {
+        var dati = elemento is null
+            ? new Dictionary<string, object>()
+            : new Dictionary<string, object>(elemento.Data);
+
+        foreach (var campo in campi)
+        {
+            // DaTesto restituisce null sia per un campo vuoto sia per uno non interpretabile (una
+            // data scritta male, un numero con lettere dentro): in entrambi i casi la chiave viene
+            // tolta. È coerente — non si salva un valore che non si è capito — ma vuol dire che
+            // digitare "ieri" in un campo data non dà errore, semplicemente non salva niente.
+            var valore = ValoriElemento.DaTesto(valori.GetValueOrDefault(campo.Key), campo.Type);
+            if (valore is null) dati.Remove(campo.Key); else dati[campo.Key] = valore;
+        }
+
+        return dati;
+    }
+
+    private async Task Salva()
+    {
+        occupato = true; errore = avviso = null; conflitto = null;
+        try
+        {
+            // Come in CollectionEdit.Salva: su un elemento esistente, svuotare il nome lo rende
+            // diverso da quello salvato, quindi il pulsante Salva si accende. Senza questo
+            // controllo il vincolo check (length(btrim(name)) between 1 and 200) respingerebbe la
+            // scrittura e l'utente leggerebbe un messaggio di Postgres invece di una frase.
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                errore = "Il nome dell'elemento non può essere vuoto.";
+                return;
+            }
+
+            if (Nuovo)
+            {
+                await Crea();
+                return;
+            }
+
+            await SalvaCon(elemento!.Version);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile salvare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Crea()
+    {
+        if (!Guid.TryParse(await AuthState.GetUserIdAsync(), out var autore))
+        {
+            errore = "La sessione non è più valida: esci e rientra.";
+            return;
+        }
+
+        var creato = await Repository.CreaAsync(Id, collezione!.SpaceId, autore, nome, immagine, CostruisciDati());
+
+        // replace: true per lo stesso motivo di NoteEdit.razor:209-212: .../items/new non è un
+        // posto in cui tornare col tasto Indietro — l'elemento ormai esiste, e ripresentare la
+        // schermata vuota ne farebbe creare uno secondo. Il cambio di rotta rilancia
+        // OnParametersSetAsync su questa stessa istanza, che rilegge l'elemento: solo da quel
+        // momento c'è una versione con cui fare concorrenza ottimistica.
+        Navigation.NavigateTo($"collections/{Id}/items/{creato.Id}", replace: true);
+    }
+
+    private async Task SalvaCon(int versione)
+    {
+        var esito = await Repository.SalvaAsync(ItemId!.Value, versione, nome, immagine, CostruisciDati());
+
+        switch (esito.Esito)
+        {
+            case EsitoSalvataggio.Salvata:
+                elemento = esito.Aggiornata;
+                nome = elemento!.Name;
+                immagine = elemento.ImageUrl ?? "";
+                CaricaValori(elemento);
+                avviso = "Salvato.";
+                break;
+
+            case EsitoSalvataggio.Conflitto:
+                conflitto = esito.Aggiornata;
+                break;
+
+            case EsitoSalvataggio.Rifiutata:
+                errore = "Il database ha rifiutato la modifica: questo elemento può cambiarlo solo chi l'ha aggiunto, o chi possiede lo spazio.";
+                break;
+
+            case EsitoSalvataggio.Sparita:
+                sparito = true;
+                break;
+        }
+    }
+
+    private void Ricarica()
+    {
+        if (conflitto is null) return;
+
+        elemento = conflitto;
+        nome = conflitto.Name;
+        immagine = conflitto.ImageUrl ?? "";
+        CaricaValori(conflitto);
+        conflitto = null;
+        avviso = "Caricata la versione più recente.";
+    }
+
+    private async Task Sovrascrivi()
+    {
+        if (conflitto is null) return;
+
+        occupato = true; errore = null;
+        try
+        {
+            // Si risalva con la versione DEL SERVER, non con quella che si aveva in mano: è
+            // esattamente ciò che "sovrascrivi" vuol dire — prendere atto che l'altro ha scritto
+            // e scriverci sopra lo stesso. Se nel frattempo arriva un terzo salvataggio questo
+            // fallisce di nuovo con Conflitto, ed è il comportamento giusto.
+            var versione = conflitto.Version;
+            conflitto = null;
+            await SalvaCon(versione);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile sovrascrivere: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Elimina()
+    {
+        occupato = true; errore = null;
+        try
+        {
+            if (await Repository.EliminaAsync(ItemId!.Value))
+            {
+                Navigation.NavigateTo($"collections/{Id}");
+                return;
+            }
+            errore = "Il database ha rifiutato l'eliminazione.";
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile eliminare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+            confermaEliminazione = false;
+        }
+    }
+}

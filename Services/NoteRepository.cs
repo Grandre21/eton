@@ -3,25 +3,6 @@ using Supabase.Postgrest;
 
 namespace Eton.Services;
 
-/// <summary>Come è finito un salvataggio. Non è un booleano perché i tre modi di fallire
-/// vogliono tre rimedi diversi, e confonderli produrrebbe messaggi bugiardi.</summary>
-public enum EsitoSalvataggio
-{
-    /// <summary>Scritta.</summary>
-    Salvata,
-    /// <summary>Qualcun altro ha salvato dopo che tu avevi aperto la nota. Il testo suo è in
-    /// <c>Aggiornata</c>: si chiede a chi scrive se ricaricare o sovrascrivere.</summary>
-    Conflitto,
-    /// <summary>La RLS ha detto di no: non sei né l'autore né il proprietario dello spazio.
-    /// Riprovare non serve a niente.</summary>
-    Rifiutata,
-    /// <summary>La nota non c'è più: cancellata da qualcun altro, o non sei più nello spazio.</summary>
-    Sparita
-}
-
-/// <summary>L'esito, con la versione del server quando serve per decidere il da farsi.</summary>
-public sealed record RisultatoSalvataggio(EsitoSalvataggio Esito, Note? Aggiornata);
-
 /// <summary>
 /// Accesso alle note. Come <see cref="SpaceRepository"/>: ogni metodo riparte da
 /// <see cref="SupabaseService.GetClientAsync"/> e non tiene mai il client in un campo.
@@ -95,7 +76,7 @@ public class NoteRepository
     /// sono tre e vanno distinti, altrimenti si dice all'utente di riprovare quando riprovare
     /// non serve.
     /// </summary>
-    public async Task<RisultatoSalvataggio> SalvaAsync(Guid notaId, int versioneLetta, string titolo, string corpo)
+    public async Task<RisultatoSalvataggio<Note>> SalvaAsync(Guid notaId, int versioneLetta, string titolo, string corpo)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<Note>()
@@ -105,14 +86,14 @@ public class NoteRepository
             .Update();
 
         if (risposta.Models.Count > 0)
-            return new RisultatoSalvataggio(EsitoSalvataggio.Salvata, risposta.Models[0]);
+            return new RisultatoSalvataggio<Note>(EsitoSalvataggio.Salvata, risposta.Models[0]);
 
         // Una seconda lettura per capire QUALE dei tre casi è: la prima query non lo dice, perché
         // "filtrata dalla RLS" e "versione non combacia" producono entrambe zero righe.
         var attuale = await LeggiAsync(notaId);
 
         if (attuale is null)
-            return new RisultatoSalvataggio(EsitoSalvataggio.Sparita, null);
+            return new RisultatoSalvataggio<Note>(EsitoSalvataggio.Sparita, null);
 
         // La distinzione è quasi sempre esatta, ma non del tutto, e conviene saperlo: se chi salva
         // non ha diritto di scrittura E nell'intervallo fra l'UPDATE e questa rilettura l'autore
@@ -125,8 +106,8 @@ public class NoteRepository
         // all'esito, e non vale il costo per una finestra di pochi millisecondi che si chiude da
         // sola al clic successivo.
         return attuale.Version != versioneLetta
-            ? new RisultatoSalvataggio(EsitoSalvataggio.Conflitto, attuale)
-            : new RisultatoSalvataggio(EsitoSalvataggio.Rifiutata, attuale);
+            ? new RisultatoSalvataggio<Note>(EsitoSalvataggio.Conflitto, attuale)
+            : new RisultatoSalvataggio<Note>(EsitoSalvataggio.Rifiutata, attuale);
     }
 
     /// <summary>Elimina. False se la RLS ha rifiutato — non sei né l'autore né il proprietario

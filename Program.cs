@@ -14,5 +14,7 @@ builder.Services.AddSingleton<SpaceRepository>();
 builder.Services.AddSingleton<SpaceStateService>();
 builder.Services.AddSingleton<MarkdownRenderer>();
 builder.Services.AddSingleton<NoteRepository>();
+builder.Services.AddSingleton<CollectionRepository>();
+builder.Services.AddSingleton<CollectionItemRepository>();
 
 await builder.Build().RunAsync();
