@@ -196,6 +196,44 @@ a { color: var(--accento); }
     color: #202020;
 }
 
+/* Proposta di aggiornamento della PWA. Vive in index.html, fuori dall'applicazione, quindi si veste
+   qui: sta sopra la barra di navigazione (z-index maggiore di .barra-basso) e le si appoggia sopra
+   invece di coprirla. L'attributo 'hidden' basta a nasconderlo — display:flex lo rimetterebbe in
+   scena, quindi va escluso esplicitamente. */
+#aggiornamento-pwa {
+    position: fixed;
+    z-index: 30;
+    left: var(--s3);
+    right: var(--s3);
+    bottom: calc(var(--s8) + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+    background: var(--superficie-alta);
+    border: 1px solid var(--accento-caldo);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+    font-size: var(--t-md);
+}
+
+#aggiornamento-pwa[hidden] { display: none; }
+#aggiornamento-pwa span { flex: 1; }
+
+#aggiornamento-pwa button {
+    flex: none;
+    min-height: var(--tocco);
+    padding: 0 var(--s4);
+    background: var(--accento);
+    color: var(--su-accento);
+    border: none;
+    border-radius: var(--raggio-s);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
 /* ------------------------------------------------ navigazione in basso --- */
 
 .barra-basso {

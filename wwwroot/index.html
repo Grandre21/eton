@@ -54,13 +54,62 @@
         <span class="dismiss">🗙</span>
     </div>
 
+    <!-- Sta qui e non dentro l'applicazione, come #blazor-error-ui qui sopra e per la stessa
+         ragione: deve poter comparire anche quando Blazor non è in condizione di disegnare
+         niente. Nasce nascosto; lo mostra lo script in fondo alla pagina. -->
+    <div id="aggiornamento-pwa" hidden>
+        <span>È disponibile una versione nuova di Eton.</span>
+        <button type="button" id="aggiorna-ora">Aggiorna</button>
+    </div>
+
     <!-- Il segnaposto #[.{fingerprint}] non è decorativo: da .NET 9 questo script viene
          pubblicato con un'impronta nel nome (blazor.webassembly.w3qd1tpl0e.js), e riferirlo
          come "blazor.webassembly.js" dà 404 sul sito pubblicato — cioè un'applicazione che
          non si avvia. Il segnaposto viene risolto sia in pubblicazione sia in sviluppo. -->
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
-        navigator.serviceWorker?.register('service-worker.js');
+        // Il service worker pubblicato NON si attiva da sé quando arriva una versione nuova: aspetta
+        // un messaggio SKIP_WAITING (v. il commento in service-worker.published.js), perché attivarsi
+        // sotto i piedi di una sessione aperta mescolerebbe codice vecchio e nuovo nella stessa
+        // pagina. Finché nessuno gliel'ha mandato, quel messaggio non arrivava mai: chi ha installato
+        // l'app sul telefono restava sulla versione vecchia finché non chiudeva TUTTE le schede
+        // aperte — cioè, in pratica, all'infinito. Questo è chi glielo manda.
+        navigator.serviceWorker?.register('service-worker.js').then(function (registrazione) {
+            if (!registrazione) return;
+
+            var aggiornamentoRichiesto = false;
+
+            function proponi(worker) {
+                var banner = document.getElementById('aggiornamento-pwa');
+                banner.hidden = false;
+                document.getElementById('aggiorna-ora').onclick = function () {
+                    banner.hidden = true;
+                    aggiornamentoRichiesto = true;
+                    worker.postMessage({ type: 'SKIP_WAITING' });
+                };
+            }
+
+            // Una versione nuova può essere già lì ad aspettare da una visita precedente.
+            if (registrazione.waiting) proponi(registrazione.waiting);
+
+            registrazione.addEventListener('updatefound', function () {
+                var nuovo = registrazione.installing;
+                if (!nuovo) return;
+                nuovo.addEventListener('statechange', function () {
+                    // 'controller' distingue l'aggiornamento dalla PRIMA installazione: alla prima non
+                    // c'è niente da proporre, la versione appena scaricata è già quella in uso.
+                    if (nuovo.state === 'installed' && navigator.serviceWorker.controller) proponi(nuovo);
+                });
+            });
+
+            // Il ricaricamento avviene solo se l'aggiornamento l'ha chiesto l'utente. Senza questa
+            // guardia, il clients.claim() della PRIMA installazione — che serve a far funzionare
+            // l'app offline da subito — scatenerebbe un controllerchange e quindi un reload della
+            // pagina appena aperta, senza che nessuno abbia aggiornato niente.
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+                if (aggiornamentoRichiesto) location.reload();
+            });
+        });
     </script>
 </body>
 </html>
