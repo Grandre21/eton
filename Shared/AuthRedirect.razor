@@ -1,6 +1,7 @@
 @inject AuthStateService AuthState
 @inject SupabaseService SupabaseService
 @inject NavigationManager Navigation
+@inject RottaRichiesta RottaRichiesta
 
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -12,6 +13,42 @@
         await SupabaseService.GetClientAsync();
 
         if (!await AuthState.IsLoggedInAsync())
+        {
+            var rotta = Navigation.ToBaseRelativePath(Navigation.Uri);
+            var separatoreQuery = rotta.IndexOf('?');
+            var rottaSenzaQuery = separatoreQuery >= 0 ? rotta[..separatoreQuery] : rotta;
+
+            // Il controllo si fa sulla rotta PRIVATA della query, non sulla stringa intera: un
+            // ritorno da Google (?code=… o ?error=…, v. Services/OAuthCallback.cs) ha la parte
+            // privata della query vuota e ricade già qui sotto — se si guardasse la stringa
+            // intera, "?code=…" sembrerebbe una rotta non vuota e verrebbe salvata, cioè si
+            // conserverebbe un codice di autorizzazione monouso per ritentarlo più tardi, quando
+            // è già stato consumato. La radice vuota non si salva perché è già la destinazione
+            // predefinita, e "benvenuto" non si salva perché è la vetrina stessa: salvarla
+            // farebbe ripartire il rimbalzo su se stesso.
+            // OrdinalIgnoreCase e non Ordinal: il router di Blazor riconosce i segmenti letterali
+            // senza distinguere le maiuscole, quindi "/Benvenuto" apre la vetrina esattamente come
+            // "/benvenuto". Con un confronto sensibile alle maiuscole quella variante sfuggirebbe
+            // alla guardia, verrebbe salvata come destinazione, e dopo l'accesso si tornerebbe sulla
+            // vetrina — che rimanda subito alla Home: un salto in più, proprio quello che la guardia
+            // esiste per evitare.
+            if (!string.IsNullOrEmpty(rottaSenzaQuery)
+                && !rottaSenzaQuery.StartsWith("benvenuto", StringComparison.OrdinalIgnoreCase))
+                RottaRichiesta.Salva(rotta);
+
             Navigation.NavigateTo("benvenuto", forceLoad: false, replace: true);
+        }
+        else
+        {
+            // Consuma cancella nello stesso gesto in cui legge: se la rotta restasse salvata dopo
+            // averla letta, un rimontaggio successivo la ritroverebbe e il rimbalzo ripartirebbe
+            // da capo verso una destinazione già raggiunta.
+            var rottaInAttesa = RottaRichiesta.Consuma();
+
+            // Navigarci solo se è diversa da dove si è già: altrimenti si otterrebbe soltanto un
+            // giro di render inutile verso la pagina corrente.
+            if (rottaInAttesa is not null && rottaInAttesa != Navigation.ToBaseRelativePath(Navigation.Uri))
+                Navigation.NavigateTo(rottaInAttesa, forceLoad: false, replace: true);
+        }
     }
 }

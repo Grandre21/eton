@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using Eton;
 using Eton.Services;
 
@@ -17,5 +18,6 @@ builder.Services.AddSingleton<NoteRepository>();
 builder.Services.AddSingleton<CollectionRepository>();
 builder.Services.AddSingleton<CollectionItemRepository>();
 builder.Services.AddSingleton<ReviewRepository>();
+builder.Services.AddSingleton(sp => new RottaRichiesta((IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>()));
 
 await builder.Build().RunAsync();
