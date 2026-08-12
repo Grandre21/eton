@@ -4,22 +4,24 @@
     @foreach (var voce in Voci)
     {
         <a href="@voce.Rotta" class="voce @(EAttiva(voce.Rotta) ? "attiva" : "")">
-            <span class="icona" aria-hidden="true">@voce.Icona</span>
+            <span class="icona"><Icona Nome="@voce.Icona" /></span>
             <span class="etichetta">@voce.Testo</span>
         </a>
     }
 </nav>
 
 @code {
+    // Icona è il nome di un disegno di Shared/Icona.razor, non più un'emoji: v. il commento in
+    // testa a quel file per il perché.
     private sealed record Voce(string Rotta, string Icona, string Testo);
 
     private static readonly Voce[] Voci =
     [
-        new("", "🏠", "Home"),
-        new("notes", "📝", "Note"),
-        new("collections", "📋", "Collezioni"),
-        new("spaces", "👥", "Spazi"),
-        new("profile", "👤", "Profilo"),
+        new("", "casa", "Home"),
+        new("notes", "note", "Note"),
+        new("collections", "collezioni", "Collezioni"),
+        new("spaces", "gruppo", "Spazi"),
+        new("profile", "persona", "Profilo"),
     ];
 
     private bool EAttiva(string rotta)

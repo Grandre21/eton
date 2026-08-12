@@ -1,0 +1,380 @@
+/* ---------- Struttura comune alle sezioni ---------- */
+
+section,
+footer.piede {
+    padding: var(--s7) 1.25rem;
+}
+
+.hero-contenuto,
+.schede > h2,
+.schede .elenco-schede,
+.spazi,
+.riservatezza,
+.chiusura {
+    max-width: 60rem;
+    margin: 0 auto;
+}
+
+.hero-contenuto {
+    max-width: 46rem;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+    position: relative;
+    padding-top: var(--s8);
+    padding-bottom: var(--s8);
+    text-align: center;
+    overflow: hidden;
+    background:
+        radial-gradient(60% 50% at 50% 0%, var(--accento-tenue) 0%, transparent 70%),
+        var(--sfondo);
+}
+
+.marchio {
+    margin: 0 0 var(--s4);
+    font-size: var(--t-md);
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accento);
+}
+
+.hero h1 {
+    margin: 0 0 var(--s5);
+    font-size: clamp(var(--t-2xl), 6vw, var(--t-3xl));
+    line-height: 1.15;
+    color: var(--testo);
+}
+
+.hero .sottotitolo {
+    margin: 0 0 var(--s6);
+    font-size: var(--t-base);
+    line-height: 1.55;
+    color: var(--testo-tenue);
+}
+
+.nota-hero {
+    margin: var(--s3) 0 0;
+    font-size: var(--t-xs);
+    color: var(--testo-fioco);
+}
+
+/* ---------- Assaggio dell'interfaccia ---------- */
+
+/* Ricalca le proporzioni vere di .riga-elemento (48px di riga, voto a destra in
+   cifre tabellari): serve a far riconoscere l'applicazione, quindi se un domani
+   le righe vere cambiassero forma, questa va cambiata con loro. */
+.anteprima {
+    max-width: 22rem;
+    margin: var(--s7) auto 0;
+    text-align: left;
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+    overflow: hidden;
+}
+
+.anteprima-testata {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--bordo);
+    background: var(--superficie-alta);
+}
+
+.anteprima-icona { font-size: var(--t-lg); line-height: 1; }
+.anteprima-titolo { font-weight: 600; }
+
+.anteprima-conteggio {
+    margin-left: auto;
+    font-size: var(--t-xs);
+    color: var(--testo-fioco);
+}
+
+.anteprima-righe {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.anteprima-righe li {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-height: var(--tocco);
+    padding: 0 var(--s4);
+    border-bottom: 1px solid var(--bordo);
+    font-size: var(--t-md);
+}
+
+.anteprima-righe li:last-child { border-bottom: none; }
+
+.anteprima-voto {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--accento);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Pulsanti ---------- */
+
+.azione {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tocco);
+    height: 52px;
+    padding: 0 var(--s6);
+    border: none;
+    border-radius: var(--raggio-pieno);
+    font-size: var(--t-md);
+    cursor: pointer;
+    /* Toglie il ritardo di 300ms che i browser mobili si tengono per capire se
+       il tocco fosse un doppio tocco per ingrandire. */
+    touch-action: manipulation;
+    transition: background-color var(--transizione), transform var(--transizione), opacity var(--transizione);
+}
+
+/* Su un telefono il rimpicciolimento è l'unico segnale che il dito ha preso:
+   qui serve più che altrove, perché il tocco avvia un salto a un altro sito e
+   fino al redirect non succede visibilmente nulla. */
+.azione:active { transform: scale(.97); }
+.azione:disabled:active { transform: none; }
+
+.azione.primaria {
+    background: var(--accento);
+    color: var(--su-accento);
+    font-weight: 600;
+}
+
+.azione.primaria:hover {
+    background: var(--accento-caldo);
+}
+
+.azione:focus-visible {
+    outline: 2px solid var(--accento);
+    outline-offset: 2px;
+}
+
+.azione:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+/* ---------- Schede ---------- */
+
+.schede {
+    background: var(--sfondo-alt);
+}
+
+.schede h2 {
+    margin: 0 0 var(--s6);
+    font-size: var(--t-xl);
+    text-align: center;
+    color: var(--testo);
+}
+
+.elenco-schede {
+    display: grid;
+    gap: var(--s5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.scheda {
+    padding: var(--s6);
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+}
+
+.icona-scheda {
+    display: block;
+    margin-bottom: var(--s3);
+    font-size: var(--t-2xl);
+    line-height: 1;
+}
+
+.scheda h3 {
+    margin: 0 0 var(--s2);
+    font-size: var(--t-lg);
+    color: var(--testo);
+}
+
+.scheda p {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: 1.5;
+    color: var(--testo-tenue);
+}
+
+/* ---------- Spazi (passi numerati) ---------- */
+
+.spazi h2 {
+    margin: 0 0 var(--s4);
+    font-size: var(--t-xl);
+    color: var(--testo);
+}
+
+.spazi > p {
+    margin: 0 0 var(--s6);
+    font-size: var(--t-base);
+    line-height: 1.55;
+    color: var(--testo-tenue);
+}
+
+.passi {
+    display: grid;
+    gap: var(--s5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: passo;
+}
+
+.passi li {
+    position: relative;
+    padding-left: var(--s7);
+}
+
+.passi li::before {
+    counter-increment: passo;
+    content: counter(passo);
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--s6);
+    height: var(--s6);
+    border-radius: var(--raggio-pieno);
+    background: var(--accento-tenue);
+    color: var(--accento);
+    font-weight: 600;
+    font-size: var(--t-sm);
+}
+
+.passi h3 {
+    margin: 0 0 var(--s1);
+    font-size: var(--t-base);
+    color: var(--testo);
+}
+
+.passi p {
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--testo-tenue);
+}
+
+/* ---------- Riservatezza ---------- */
+
+.riservatezza {
+    background: var(--sfondo-alt);
+}
+
+.riservatezza h2 {
+    margin: 0 0 var(--s4);
+    font-size: var(--t-xl);
+    color: var(--testo);
+}
+
+.riservatezza > p {
+    margin: 0 0 var(--s5);
+    font-size: var(--t-base);
+    line-height: 1.55;
+    color: var(--testo-tenue);
+}
+
+.voci-riservatezza {
+    display: grid;
+    gap: var(--s3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--t-sm);
+    color: var(--testo);
+}
+
+.voci-riservatezza li {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+}
+
+.voci-riservatezza span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--s5);
+    height: var(--s5);
+    border-radius: var(--raggio-pieno);
+    background: var(--accento-tenue);
+    color: var(--accento);
+    font-weight: 700;
+    font-size: var(--t-xs);
+}
+
+/* ---------- Chiusura ---------- */
+
+.chiusura {
+    text-align: center;
+}
+
+.chiusura h2 {
+    margin: 0 0 var(--s3);
+    font-size: var(--t-xl);
+    color: var(--testo);
+}
+
+.chiusura p {
+    margin: 0 0 var(--s6);
+    font-size: var(--t-base);
+    color: var(--testo-tenue);
+}
+
+/* ---------- Piede ---------- */
+
+.piede {
+    padding-top: var(--s5);
+    padding-bottom: var(--s5);
+    text-align: center;
+    border-top: 1px solid var(--bordo);
+}
+
+.piede p {
+    margin: 0;
+    font-size: var(--t-xs);
+    color: var(--testo-fioco);
+}
+
+/* ---------- Viewport più larghi ---------- */
+
+@media (min-width: 40rem) {
+    .elenco-schede {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 64rem) {
+    .elenco-schede {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .passi {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .azione {
+        transition: none;
+    }
+}

@@ -26,7 +26,13 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="css/app.css" />
-    <meta name="theme-color" content="#1f2933" />
+    <!-- Bundle degli stili isolati per componente (Benvenuto.razor.css e simili): lo genera la
+         build a partire dai file .razor.css, e senza questo <link> nessuno lo carica. -->
+    <link rel="stylesheet" href="Eton.styles.css" />
+    <!-- Stesso valore di --sfondo in css/app.css e di background_color nel manifest: è il colore
+         con cui il sistema tinge la barra di stato e la schermata d'avvio dell'app installata.
+         Discordare significa un lampo di un altro colore a ogni apertura. -->
+    <meta name="theme-color" content="#0e1317" />
 
     <!-- Sembra un elemento vuoto dimenticato, ed è invece indispensabile: la pubblicazione lo
          riempie con la traduzione fra i nomi logici dei file del runtime e i nomi con impronta

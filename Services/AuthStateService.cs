@@ -82,6 +82,6 @@ public class AuthStateService
     {
         var uscito = await _supabase.SignOutAsync();
         _spazi.Dimentica();
-        _navigation.NavigateTo("login", forceLoad: !uscito, replace: true);
+        _navigation.NavigateTo("benvenuto", forceLoad: !uscito, replace: true);
     }
 }

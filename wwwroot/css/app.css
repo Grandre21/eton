@@ -1,12 +1,83 @@
+/* =========================================================================
+   Eton — foglio di stile unico dell'applicazione.
+
+   Non ci sono asset esterni, e non è una dimenticanza: il sito sta su GitHub
+   Pages e deve funzionare offline come PWA. Niente @import, niente font
+   scaricati, niente CDN. Solo font di sistema, colori e forme.
+
+   Le pagine usano SOLO i nomi di classe definiti qui e le variabili di :root.
+   Un colore scritto a mano dentro una regola è un colore che non seguirà il
+   giorno in cui la tavolozza cambia.
+   ========================================================================= */
+
 :root {
-    --sfondo: #12171c;
-    --superficie: #1b2229;
-    --testo: #e8edf2;
-    --testo-tenue: #9aa8b5;
-    --accento: #4a9d7f;
-    --bordo: #2b343d;
-    --raggio: 12px;
+    /* --- superfici, dalla più profonda alla più in rilievo --- */
+    --sfondo: #0e1317;
+    --sfondo-alt: #131a20;
+    --superficie: #171f26;
+    --superficie-alta: #1e272f;
+    --bordo: #29333c;
+    --bordo-forte: #38444f;
+
+    /* --- testo: tre livelli, non di più. Il quarto livello non si legge --- */
+    --testo: #e9eef3;
+    --testo-tenue: #94a3b1;
+    --testo-fioco: #6b7a88;
+
+    /* --- accento --- */
+    --accento: #35c99a;
+    --accento-caldo: #2ba884;
+    --accento-tenue: rgba(53, 201, 154, .14);
+    --su-accento: #04140e;      /* testo sopra il colore d'accento pieno */
+
+    /* --- stati --- */
+    --errore: #ff9b9b;
+    --errore-sfondo: #2a1618;
+    --errore-bordo: #6d2b2b;
+
+    /* --- forma --- */
+    --raggio: 14px;
+    --raggio-s: 9px;
+    --raggio-pieno: 999px;
+    --ombra: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 30px -18px rgba(0, 0, 0, .9);
+
+    /* --- ritmo verticale: si usano questi, non rem sparsi --- */
+    --s1: .25rem;
+    --s2: .5rem;
+    --s3: .75rem;
+    --s4: 1rem;
+    --s5: 1.5rem;
+    --s6: 2rem;
+    --s7: 3rem;
+    --s8: 4.5rem;
+
+    /* --- scala tipografica --- */
+    --t-xs: .72rem;
+    --t-sm: .82rem;
+    --t-md: .92rem;
+    --t-base: 1rem;
+    --t-lg: 1.15rem;
+    --t-xl: 1.4rem;
+    --t-2xl: 1.8rem;
+    --t-3xl: 2.3rem;
+
+    --transizione: 150ms ease;
+
+    /* Bersaglio tattile minimo. Sotto i 44px si sbaglia a toccare; 48 è la
+       soglia che usano sia Material sia le linee guida di accessibilità. */
+    --tocco: 48px;
+
+    /* Dice al browser che la pagina è scura: da qui in poi le barre di
+       scorrimento, i menù dei <select>, i selettori di data e le caselle di
+       spunta nativi nascono scuri invece che bianchi. Una riga sola, e
+       sistema tutti i controlli che il CSS non può raggiungere. */
+    color-scheme: dark;
+
+    /* Colora caselle di spunta e cursori nativi senza doverli ricostruire. */
+    accent-color: var(--accento);
 }
+
+/* ---------------------------------------------------------------- base --- */
 
 * { box-sizing: border-box; }
 
@@ -17,90 +88,130 @@ html, body {
     color: var(--testo);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 1.55;
+    /* Su fondo scuro il testo non antialiasato appare più grasso di quanto
+       sia: questo lo riporta al peso giusto su WebKit. */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
-.app-layout, .login-layout {
+/* Il contenuto lo scrivono gli utenti: un URL nudo o una parola lunghissima
+   non deve poter allargare la pagina e farla scorrere in orizzontale. */
+body { overflow-wrap: break-word; }
+
+/* Messa a fuoco da tastiera: senza questa regola chi naviga con Tab non vede
+   dove si trova, perché l'outline di sistema su fondo scuro è quasi invisibile.
+   :focus-visible e non :focus — così il contorno non compare a ogni tocco del
+   dito, solo quando serve davvero. */
+:focus-visible {
+    outline: 2px solid var(--accento);
+    outline-offset: 2px;
+    border-radius: var(--raggio-s);
+}
+
+/* Il riquadro grigio che iOS disegna sopra ogni elemento toccato arriva in
+   ritardo e resta appiccicato: lo si toglie e si risponde al tocco con gli
+   stati :active definiti più sotto, che sono immediati. */
+a, button, select, input, textarea, [role=button] {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Chi ha chiesto meno animazioni al sistema operativo non deve vederne
+   nessuna: qui si spegne tutto in un colpo solo, invece di ricordarsene
+   regola per regola. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+/* --------------------------------------------------------- tipografia --- */
+
+h1, h2, h3 {
+    /* I titoli di sistema, a corpo grande, risultano slegati: stringerli di un
+       filo li ricompatta in una parola sola invece che in lettere allineate. */
+    letter-spacing: -.015em;
+    text-wrap: balance;
+}
+
+h1 { font-size: var(--t-2xl); font-weight: 700; margin: 0 0 var(--s4); line-height: 1.2; }
+h2 { font-size: var(--t-lg); font-weight: 650; margin: 0 0 var(--s3); }
+h3 { font-size: var(--t-base); font-weight: 600; margin: 0 0 var(--s2); }
+
+a { color: var(--accento); }
+
+.sottotitolo { color: var(--testo-tenue); margin: 0 0 var(--s4); }
+.testo-tenue { color: var(--testo-tenue); font-size: var(--t-sm); margin: 0 0 var(--s3); }
+.nome-grande { font-size: var(--t-lg); font-weight: 600; margin: 0 0 var(--s1); }
+
+.etichetta-piccola {
+    display: block;
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--testo-fioco);
+    margin-bottom: var(--s1);
+}
+
+/* ------------------------------------------------------------- guscio --- */
+
+.app-layout {
     max-width: 720px;
     margin: 0 auto;
-    padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    padding: var(--s5) var(--s4);
+    /* La barra fissa in basso non deve coprire il contenuto. env() va
+       risommato e non ereditato: la barra stessa se ne allarga (v. .barra-basso),
+       quindi su un iPhone con l'home indicator un valore secco non basterebbe
+       a scavalcarla. */
+    padding-bottom: calc(var(--s8) + var(--s5) + env(safe-area-inset-bottom));
 }
 
-.login-layout {
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Il testo di attesa pulsa piano invece di stare fermo: un'attesa immobile su una connessione
+   lenta è indistinguibile da una pagina piantata. Nessun elemento in più nel markup — l'animazione
+   sta sul testo che c'era già, e chi ha chiesto meno movimento al sistema non la vede (v. la regola
+   prefers-reduced-motion in testa al file). */
+.avvio {
+    padding: var(--s7) var(--s4);
+    color: var(--testo-tenue);
+    text-align: center;
+    animation: respiro 1.6s ease-in-out infinite;
 }
 
-h1 { font-size: 1.5rem; margin: 0 0 1rem; }
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .5rem;
-    min-height: 48px;            /* bersaglio tattile: sotto i 44px si sbaglia a toccare */
-    padding: 0 1.25rem;
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    background: var(--superficie);
-    color: var(--testo);
-    font: inherit;
-    cursor: pointer;
+@keyframes respiro {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .45; }
 }
 
-.btn.primary { background: var(--accento); border-color: var(--accento); color: #06120d; font-weight: 600; }
-.btn:disabled { opacity: .6; cursor: default; }
-
-.errore {
-    border: 1px solid #6d2b2b;
-    background: #2a1616;
-    border-radius: var(--raggio);
-    padding: .75rem 1rem;
-    margin-bottom: 1rem;
-}
-
-.avvio { padding: 2rem; color: var(--testo-tenue); }
-
+/* Il riquadro di crash di Blazor: giallo e in fondo, sopra ogni cosa. */
 #blazor-error-ui {
     display: none;
     position: fixed;
     inset: auto 0 0 0;
-    padding: .75rem 1rem;
+    z-index: 100;
+    padding: var(--s3) var(--s4);
     background: #ffe08a;
     color: #202020;
 }
 
-.login-card {
-    width: 100%;
-    max-width: 380px;
-    background: var(--superficie);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    padding: 2rem 1.5rem;
-    text-align: center;
-}
-
-.login-card .sottotitolo { color: var(--testo-tenue); margin: 0 0 1.5rem; }
-.login-card .btn { width: 100%; }
-
-/* ---- guscio: la barra fissa in basso non deve coprire il contenuto ---- */
-/* env() va risommato, non ereditato: questa dichiarazione vince per cascata su quella di .app-layout
-   più in alto, quindi scriverne solo "5.5rem" butterebbe via il safe-area-inset-bottom che c'era lì.
-   Va risommato anche perché la barra stessa se ne allarga (v. .barra-basso qui sotto): su un iPhone
-   con l'home indicator, 5.5rem secchi non basterebbero a scavalcarla. */
-.app-layout { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+/* ------------------------------------------------ navigazione in basso --- */
 
 .barra-basso {
     position: fixed;
     left: 0; right: 0; bottom: 0;
+    z-index: 20;
     display: flex;
-    background: var(--superficie);
+    background: color-mix(in srgb, var(--superficie) 88%, transparent);
+    /* Il contenuto che scorre sotto la barra si vede sfocato invece che
+       tagliato di netto. Dove non è supportato resta il colore pieno qui sopra,
+       che è comunque quasi opaco: nessuna leggibilità dipende da questo. */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--bordo);
-    /* Su iPhone la barra di sistema mangia il fondo dello schermo: senza questo, l'ultima voce
-       finisce sotto la tacca. La variabile vale 0 ovunque non serva. */
+    /* Su iPhone la barra di sistema mangia il fondo dello schermo: senza
+       questo, l'ultima voce finisce sotto la tacca. Vale 0 dove non serve. */
     padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
@@ -109,290 +220,313 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .15rem;
-    padding: .55rem 0;
+    justify-content: center;
+    gap: var(--s1);
+    min-height: var(--tocco);
+    padding: var(--s2) var(--s1) var(--s3);
     text-decoration: none;
-    color: var(--testo-tenue);
-    /* Ridotto da .7rem: con cinque voci invece di quattro, a 360px "Collezioni" non ci stava
-       su una riga sola. */
-    font-size: .62rem;
+    color: var(--testo-fioco);
+    /* Con cinque voci, a 360px "Collezioni" su una riga sola non ci sta a
+       corpo più grande di così. */
+    font-size: var(--t-xs);
+    transition: color var(--transizione);
 }
 
 .barra-basso .voce.attiva { color: var(--accento); }
-.barra-basso .icona { font-size: 1.25rem; line-height: 1; }
+.barra-basso .voce:active { color: var(--testo); }
 
-/* ---- schede e testo ---- */
+.barra-basso .voce .etichetta { line-height: 1.2; }
+
+.barra-basso .icona {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 1.75rem;
+    border-radius: var(--raggio-pieno);
+    transition: background var(--transizione);
+}
+
+/* Le icone sono SVG disegnati in Shared/Icona.razor: ereditano il colore dal testo della voce,
+   quindi la voce attiva si colora senza una regola dedicata. */
+.icona-svg { display: block; width: 22px; height: 22px; }
+
+/* La voce attiva si riconosce anche senza distinguere i colori: sotto
+   l'icona compare una pastiglia piena. Il colore da solo non basta a chi non
+   lo vede. */
+.barra-basso .voce.attiva .icona { background: var(--accento-tenue); }
+
+/* ----------------------------------------------------------- superfici --- */
+
 .scheda {
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
-    padding: 1rem;
-    margin-bottom: 1rem;
+    padding: var(--s4);
+    margin-bottom: var(--s4);
+    box-shadow: var(--ombra);
 }
 
-.scheda h2 { font-size: 1rem; margin: 0 0 .35rem; }
-.scheda.pericolo { border-color: #6b2b2b; }
-.testo-tenue { color: var(--testo-tenue); font-size: .85rem; margin: 0 0 .75rem; }
-.sottotitolo { color: var(--testo-tenue); margin: 0 0 1rem; }
-.nome-grande { font-size: 1.15rem; margin: 0 0 .25rem; }
-.etichetta-piccola { display: block; font-size: .7rem; color: var(--testo-tenue); margin-bottom: .2rem; }
+.scheda h2 { font-size: var(--t-base); margin: 0 0 var(--s2); }
+.scheda.pericolo { border-color: var(--errore-bordo); }
 
-.vuoto { text-align: center; padding: 2.5rem 1rem; color: var(--testo-tenue); }
-.vuoto .btn { margin-top: 1rem; }
+.vuoto {
+    text-align: center;
+    padding: var(--s7) var(--s4);
+    color: var(--testo-tenue);
+    border: 1px dashed var(--bordo);
+    border-radius: var(--raggio);
+    margin-bottom: var(--s4);
+}
+
+.vuoto p { margin: 0; }
+.vuoto .btn { margin-top: var(--s4); }
+
+.errore {
+    border: 1px solid var(--errore-bordo);
+    background: var(--errore-sfondo);
+    color: var(--errore);
+    border-radius: var(--raggio);
+    padding: var(--s3) var(--s4);
+    margin-bottom: var(--s4);
+    font-size: var(--t-md);
+}
 
 .avviso {
-    background: #1d3a2e;
-    border: 1px solid var(--accento);
+    border: 1px solid var(--accento-caldo);
+    background: var(--accento-tenue);
     border-radius: var(--raggio);
-    padding: .6rem .8rem;
-    margin-bottom: 1rem;
-    font-size: .9rem;
+    padding: var(--s3) var(--s4);
+    margin-bottom: var(--s4);
+    font-size: var(--t-md);
 }
 
-/* ---- selettore dello spazio attivo ---- */
-.intestazione { margin-bottom: 1rem; }
+/* ---------------------------------------------------------- pulsanti --- */
 
-.selettore select {
-    width: 100%;
-    padding: .6rem .7rem;
-    background: var(--superficie);
-    color: var(--testo);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-size: 1rem;
-}
-
-/* ---- elenchi ---- */
-.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi { list-style: none; padding: 0; margin: 0 0 1rem; }
-
-.riga-spazio {
-    display: flex;
+.btn {
+    display: inline-flex;
     align-items: center;
-    gap: .5rem;
-    padding: .8rem 1rem;
-    margin-bottom: .5rem;
-    background: var(--superficie);
-    border: 1px solid var(--bordo);
+    justify-content: center;
+    gap: var(--s2);
+    min-height: var(--tocco);
+    padding: 0 var(--s5);
+    border: 1px solid var(--bordo-forte);
     border-radius: var(--raggio);
+    background: var(--superficie-alta);
     color: var(--testo);
+    font: inherit;
+    font-weight: 500;
     text-decoration: none;
+    cursor: pointer;
+    /* Toglie il ritardo di 300ms che i browser mobili si tengono per capire
+       se il tocco fosse un doppio tocco per ingrandire. */
+    touch-action: manipulation;
+    transition: background var(--transizione), border-color var(--transizione),
+                transform var(--transizione), opacity var(--transizione);
 }
 
-.riga-spazio .nome { flex: 1; }
+.btn:hover { background: var(--bordo); border-color: var(--bordo-forte); }
 
-.pastiglia {
-    font-size: .68rem;
-    padding: .15rem .45rem;
-    border-radius: 999px;
-    border: 1px solid var(--bordo);
-    color: var(--testo-tenue);
-    white-space: nowrap;
+/* Il tocco deve rispondere subito e in modo visibile: su un telefono è
+   l'unico segnale che il dito ha preso. */
+.btn:active { transform: scale(.97); }
+
+.btn.primary {
+    background: var(--accento);
+    border-color: var(--accento);
+    color: var(--su-accento);
+    font-weight: 600;
 }
 
-.pastiglia.accesa { border-color: var(--accento); color: var(--accento); }
+.btn.primary:hover { background: var(--accento-caldo); border-color: var(--accento-caldo); }
 
-.membro { display: flex; align-items: center; gap: .6rem; padding: .45rem 0; }
-.membro .nome { flex: 1; }
+.btn.rosso { border-color: var(--errore-bordo); color: var(--errore); background: var(--errore-sfondo); }
+.btn.rosso:hover { background: #351b1d; }
 
-.avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex: none; }
-
-.avatar.segnaposto {
-    display: grid;
-    place-items: center;
-    background: var(--bordo);
-    color: var(--testo-tenue);
-    font-size: .85rem;
+.btn.piccolo {
+    min-height: 2.2rem;
+    padding: 0 var(--s3);
+    font-size: var(--t-sm);
+    border-radius: var(--raggio-s);
 }
 
-/* ---- campi e pulsanti ---- */
-.campo { display: flex; gap: .5rem; align-items: center; }
-.campo input { flex: 1; min-width: 0; }
+.btn:disabled {
+    opacity: .5;
+    cursor: default;
+    transform: none;
+}
 
-.campo input[type=text] {
-    padding: .6rem .7rem;
+.azioni {
+    display: flex;
+    gap: var(--s2);
+    flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------- campi --- */
+
+/* Un'unica dichiarazione per tutti i campi di testo: prima ce n'erano quattro
+   quasi uguali, e "quasi" significa che bordi e spaziature non combaciavano
+   fra una pagina e l'altra.
+
+   Avvolta in :where() per azzerarne la specificità. Senza, questo selettore
+   varrebbe 0-1-1 (elemento + attributo) e batterebbe ogni classe che prova a
+   discostarsene: .icona-input (0-1-0) si allargherebbe a tutta riga invece di
+   restare larga 3.5rem, e .titolo-nota perderebbe corpo e sfondo. :where() vale
+   zero, quindi qualunque classe qui sotto lo sovrascrive senza rincorrerlo con
+   selettori sempre più lunghi. */
+:where(input[type=text], input[type=number], input[type=date], input[type=url], textarea, select) {
+    width: 100%;
+    min-height: var(--tocco);
+    padding: var(--s3);
     background: var(--sfondo);
     color: var(--testo);
     border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-size: 1rem;
+    border-radius: var(--raggio-s);
+    font: inherit;
+    font-size: var(--t-base);   /* sotto i 16px iOS ingrandisce la pagina al fuoco */
+    transition: border-color var(--transizione), box-shadow var(--transizione);
 }
+
+input:focus, textarea:focus, select:focus {
+    outline: none;              /* sostituito dall'anello qui sotto, non tolto */
+    border-color: var(--accento);
+    box-shadow: 0 0 0 3px var(--accento-tenue);
+}
+
+input::placeholder, textarea::placeholder { color: var(--testo-fioco); }
+
+textarea { resize: vertical; }
+
+.campo { display: flex; gap: var(--s2); align-items: center; }
+.campo input { flex: 1; min-width: 0; }
+
+/* Una label che avvolge etichetta e controllo: vanno impilati, non affiancati. */
+label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
+
+.campo-dinamico { margin-bottom: var(--s3); }
+
+.selettore select { width: 100%; }
 
 .codice-invito { text-transform: uppercase; letter-spacing: .12em; }
 
 .codice-grande {
     flex: 1;
-    font-size: 1.3rem;
+    font-size: var(--t-xl);
+    font-weight: 600;
     letter-spacing: .18em;
-    padding: .5rem .7rem;
+    padding: var(--s3);
     background: var(--sfondo);
-    border: 1px solid var(--bordo);
+    border: 1px dashed var(--bordo-forte);
     border-radius: var(--raggio);
     text-align: center;
 }
 
-.azioni { display: flex; gap: .5rem; flex-wrap: wrap; }
-.btn.piccolo { padding: .3rem .6rem; font-size: .78rem; }
-.btn.rosso { border-color: #6b2b2b; color: #ff9b9b; }
+/* ------------------------------------------------- intestazioni pagina --- */
 
-/* ---- elenco delle note ---- */
-/* .elenco-note condivide le proprie regole di base col selettore di .elenco-spazi più in alto. */
-
-.riga-nota {
+.intestazione {
     display: flex;
-    flex-direction: column;
-    gap: .2rem;
-    padding: .8rem 1rem;
-    margin-bottom: .5rem;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+}
+
+.intestazione h1 { margin: 0; }
+
+/* Nella Home l'intestazione contiene il selettore dello spazio attivo invece di
+   un titolo: senza flex:1 il <label> si stringerebbe al proprio contenuto e il
+   menù a tendina resterebbe largo quanto il nome più corto. */
+.intestazione .selettore { flex: 1; min-width: 0; }
+
+/* ---------------------------------------------------------- pastiglie --- */
+
+.pastiglia {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--t-xs);
+    font-weight: 600;
+    padding: var(--s1) var(--s3);
+    border-radius: var(--raggio-pieno);
+    border: 1px solid var(--bordo);
+    background: var(--sfondo);
+    color: var(--testo-tenue);
+    white-space: nowrap;
+}
+
+.pastiglia.accesa {
+    border-color: var(--accento-caldo);
+    background: var(--accento-tenue);
+    color: var(--accento);
+}
+
+/* ------------------------------------------------------------ elenchi --- */
+
+.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .editor-campi {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--s4);
+}
+
+/* Tutte le righe cliccabili degli elenchi hanno la stessa base: cambia solo
+   cosa ci sta dentro. Tenerle separate le faceva divergere di mezzo pixel per
+   volta. */
+.riga-spazio, .riga-nota, .riga-collezione, .riga-elemento {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-height: var(--tocco);
+    padding: var(--s3) var(--s4);
+    margin-bottom: var(--s2);
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
     color: var(--testo);
     text-decoration: none;
+    transition: background var(--transizione), border-color var(--transizione), transform var(--transizione);
 }
 
-.riga-nota .titolo  { font-weight: 600; }
-.riga-nota .estratto,
-.riga-nota .meta    { color: var(--testo-tenue); font-size: .82rem; }
+.riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover {
+    background: var(--superficie-alta);
+    border-color: var(--bordo-forte);
+}
 
-/* L'estratto sta su una riga sola: una nota lunga non deve allungare la propria riga d'elenco. */
+.riga-spazio:active, .riga-nota:active, .riga-collezione:active, .riga-elemento:active {
+    transform: scale(.99);
+}
+
+/* La riga di una nota impila titolo, estratto e data; le altre affiancano. */
+.riga-nota { flex-direction: column; align-items: stretch; gap: var(--s1); }
+
+.riga-spazio .nome { flex: 1; }
+.riga-nota .titolo { font-weight: 600; }
+.riga-nota .estratto, .riga-nota .meta { color: var(--testo-tenue); font-size: var(--t-sm); }
+
+/* L'estratto sta su una riga sola: una nota lunga non deve allungare la
+   propria riga d'elenco. */
 .riga-nota .estratto {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Dentro la scheda della Home l'elenco è solo una lista di titoli. */
-.elenco-note.compatto li, .elenco-collezioni.compatto li { padding: .3rem 0; border-bottom: 1px solid var(--bordo); }
-.elenco-note.compatto li:last-child, .elenco-collezioni.compatto li:last-child { border-bottom: none; }
-.elenco-note.compatto a, .elenco-collezioni.compatto a { color: var(--testo); text-decoration: none; }
-
-/* ---- editor ---- */
-.titolo-nota, .titolo-grande {
-    width: 100%;
-    box-sizing: border-box;
-    padding: .6rem .7rem;
-    margin-bottom: .6rem;
-    background: var(--superficie);
-    color: var(--testo);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.schede-testo { display: flex; gap: .3rem; margin-bottom: .6rem; }
-
-.schede-testo button {
+.riga-collezione .testi, .riga-elemento .testi {
     flex: 1;
-    /* Stessa soglia di .btn, e per la stessa ragione: sotto i 44px si sbaglia a toccare. Questi
-       due pulsanti non usano .btn perché sono un selettore a segmenti e non azioni, ma il
-       bersaglio tattile non dipende da cosa il pulsante significa — dipende dal dito. */
-    min-height: 48px;
-    padding: .45rem;
-    background: transparent;
-    color: var(--testo-tenue);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-size: .9rem;
-    cursor: pointer;
-}
-
-.schede-testo button.attiva { color: var(--accento); border-color: var(--accento); }
-
-.corpo-nota {
-    width: 100%;
-    box-sizing: border-box;
-    padding: .7rem;
-    margin-bottom: 1rem;
-    background: var(--superficie);
-    color: var(--testo);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-    font-size: .92rem;
-    line-height: 1.5;
-    resize: vertical;
-}
-
-/* ---- Markdown reso ---- */
-.markdown {
-    background: var(--superficie);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    padding: .8rem 1rem;
-    margin-bottom: 1rem;
-    /* Una nota la scrive qualcun altro: senza questo, una parola lunghissima o un URL nudo
-       sfondano la larghezza e fanno scorrere l'intera pagina in orizzontale. */
-    overflow-wrap: anywhere;
-}
-
-.markdown > :first-child { margin-top: 0; }
-.markdown > :last-child  { margin-bottom: 0; }
-
-.markdown h1 { font-size: 1.3rem; margin: 1.2rem 0 .5rem; }
-.markdown h2 { font-size: 1.15rem; margin: 1.1rem 0 .45rem; }
-.markdown h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
-.markdown p  { margin: 0 0 .7rem; }
-.markdown ul, .markdown ol { margin: 0 0 .7rem; padding-left: 1.3rem; }
-.markdown li { margin-bottom: .2rem; }
-
-.markdown a { color: var(--accento); }
-
-.markdown code {
-    background: var(--sfondo);
-    border: 1px solid var(--bordo);
-    border-radius: 4px;
-    padding: .1rem .3rem;
-    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-    font-size: .88em;
-}
-
-.markdown pre {
-    background: var(--sfondo);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    padding: .7rem;
-    /* Il codice non si spezza a metà parola: scorre nel proprio riquadro, non nella pagina. */
-    overflow-x: auto;
-}
-
-.markdown pre code { background: none; border: none; padding: 0; }
-
-.markdown blockquote {
-    margin: 0 0 .7rem;
-    padding-left: .8rem;
-    border-left: 3px solid var(--bordo);
-    color: var(--testo-tenue);
-}
-
-.markdown img { max-width: 100%; height: auto; border-radius: var(--raggio); }
-
-.markdown table { border-collapse: collapse; width: 100%; margin-bottom: .7rem; }
-.markdown th, .markdown td { border: 1px solid var(--bordo); padding: .35rem .5rem; text-align: left; }
-
-/* Le caselle delle checklist arrivano da Markdig già disabilitate: sono un promemoria visivo, e
-   per spuntarle si modifica il testo della nota. */
-.markdown .task-list-item { list-style: none; margin-left: -1.1rem; }
-.markdown .task-list-item input { margin-right: .4rem; }
-
-/* ---- righe cliccabili: collezioni ed elementi ---- */
-.riga-collezione, .riga-elemento {
+    min-width: 0;
     display: flex;
-    align-items: center;
-    gap: .6rem;
-    min-height: 48px;
-    padding: .8rem 1rem;
-    margin-bottom: .5rem;
-    background: var(--superficie);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    color: var(--testo);
-    text-decoration: none;
+    flex-direction: column;
+    gap: var(--s1);
 }
 
-.riga-collezione .testi, .riga-elemento .testi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
 .riga-collezione .nome, .riga-elemento .nome { font-weight: 600; }
-.riga-collezione .meta, .riga-elemento .meta { color: var(--testo-tenue); font-size: .82rem; }
+
+.riga-collezione .meta, .riga-elemento .meta {
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+    /* Il riepilogo dei primi campi può essere lungo quanto vuole: qui si
+       taglia, non si manda a capo, altrimenti le righe dell'elenco hanno
+       altezze diverse a seconda di cosa c'è scritto dentro. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 .icona-collezione { flex: none; font-size: 1.4rem; line-height: 1; }
 
@@ -401,7 +535,7 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
     height: 48px;
     flex: none;
     object-fit: cover;
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-s);
     background: var(--bordo);
 }
 
@@ -411,31 +545,131 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
     max-height: 200px;
     object-fit: contain;
     border-radius: var(--raggio);
-    margin-bottom: .6rem;
+    margin-bottom: var(--s3);
 }
 
-/* ---- editor di collezione ---- */
+/* Dentro le schede della Home l'elenco è solo una lista di titoli. */
+.elenco-note.compatto li, .elenco-collezioni.compatto li {
+    padding: 0;
+    border-bottom: 1px solid var(--bordo);
+}
+
+.elenco-note.compatto li:last-child, .elenco-collezioni.compatto li:last-child { border-bottom: none; }
+
+.elenco-note.compatto a, .elenco-collezioni.compatto a {
+    /* Anche in forma compatta la riga resta un bersaglio da dito: è un blocco
+       alto quanto serve, non una parola sottolineata da centrare. */
+    display: flex;
+    align-items: center;
+    min-height: var(--tocco);
+    color: var(--testo);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elenco-note.compatto a:hover, .elenco-collezioni.compatto a:hover { color: var(--accento); }
+
+/* ------------------------------------------------------------- membri --- */
+
+.membro { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; }
+.membro .nome { flex: 1; }
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+    background: var(--bordo);
+}
+
+.avatar.segnaposto {
+    display: grid;
+    place-items: center;
+    background: var(--accento-tenue);
+    color: var(--accento);
+    font-size: var(--t-sm);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------- editor --- */
+
+.titolo-nota, .titolo-grande {
+    width: 100%;
+    padding: var(--s3);
+    margin-bottom: var(--s3);
+    background: var(--superficie);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio-s);
+    font-size: var(--t-lg);
+    font-weight: 600;
+}
+
+/* Selettore a segmenti (Scrivi / Anteprima): non usa .btn perché non sono
+   azioni ma stati, però il bersaglio tattile non dipende da cosa il pulsante
+   significa — dipende dal dito. */
+.schede-testo {
+    display: flex;
+    gap: var(--s1);
+    padding: var(--s1);
+    margin-bottom: var(--s3);
+    background: var(--sfondo-alt);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+}
+
+.schede-testo button {
+    flex: 1;
+    min-height: calc(var(--tocco) - var(--s2));
+    padding: var(--s2);
+    background: transparent;
+    color: var(--testo-tenue);
+    border: none;
+    border-radius: var(--raggio-s);
+    font: inherit;
+    font-size: var(--t-md);
+    font-weight: 500;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background var(--transizione), color var(--transizione);
+}
+
+.schede-testo button.attiva { background: var(--superficie-alta); color: var(--testo); }
+
+.corpo-nota {
+    width: 100%;
+    min-height: 40vh;
+    padding: var(--s3);
+    margin-bottom: var(--s4);
+    background: var(--superficie);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio-s);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: var(--t-md);
+    line-height: 1.6;
+}
+
+/* -------------------------------------------------- editor di collezione --- */
+
 .icona-input {
     width: 3.5rem;
     flex: none;
     text-align: center;
-    padding: .6rem .4rem;
-    background: var(--sfondo);
-    color: var(--testo);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    font-size: 1.1rem;
+    padding: var(--s3) var(--s2);
+    font-size: var(--t-lg);
 }
-
-.editor-campi { list-style: none; padding: 0; margin: 0 0 1rem; }
 
 .riga-campo {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: .5rem;
-    padding: .8rem 1rem;
-    margin-bottom: .5rem;
+    gap: var(--s2);
+    padding: var(--s3) var(--s4);
+    margin-bottom: var(--s2);
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
@@ -444,80 +678,214 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 .campo-opzioni {
     display: flex;
     flex-direction: column;
-    gap: .4rem;
+    gap: var(--s2);
     width: 100%;
-    padding-left: 1.2rem;
+    padding-left: var(--s5);
 }
 
-.campo-dinamico { margin-bottom: .6rem; }
+/* ---------------------------------------------------- Markdown reso --- */
 
-/* ---- barra di controlli sopra l'elenco degli elementi: ordina, filtra ---- */
+.markdown {
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: var(--s4);
+    margin-bottom: var(--s4);
+    /* Una nota la scrive qualcun altro: senza questo, una parola lunghissima o
+       un URL nudo sfondano la larghezza e fanno scorrere l'intera pagina. */
+    overflow-wrap: anywhere;
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child  { margin-bottom: 0; }
+
+.markdown h1 { font-size: var(--t-xl); margin: var(--s5) 0 var(--s2); }
+.markdown h2 { font-size: var(--t-lg); margin: var(--s5) 0 var(--s2); }
+.markdown h3 { font-size: var(--t-base); margin: var(--s4) 0 var(--s2); }
+.markdown p  { margin: 0 0 var(--s3); }
+.markdown ul, .markdown ol { margin: 0 0 var(--s3); padding-left: var(--s5); }
+.markdown li { margin-bottom: var(--s1); }
+
+.markdown code {
+    background: var(--sfondo);
+    border: 1px solid var(--bordo);
+    border-radius: 5px;
+    padding: .1rem .3rem;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+}
+
+.markdown pre {
+    background: var(--sfondo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio-s);
+    padding: var(--s3);
+    /* Il codice non si spezza a metà parola: scorre nel proprio riquadro, non
+       nella pagina. */
+    overflow-x: auto;
+}
+
+.markdown pre code { background: none; border: none; padding: 0; }
+
+.markdown blockquote {
+    margin: 0 0 var(--s3);
+    padding: var(--s1) 0 var(--s1) var(--s4);
+    border-left: 3px solid var(--accento-caldo);
+    color: var(--testo-tenue);
+}
+
+.markdown img { max-width: 100%; height: auto; border-radius: var(--raggio-s); }
+
+.markdown table { border-collapse: collapse; width: 100%; margin-bottom: var(--s3); }
+.markdown th, .markdown td { border: 1px solid var(--bordo); padding: var(--s2) var(--s3); text-align: left; }
+.markdown th { background: var(--sfondo-alt); }
+
+/* Le caselle delle checklist arrivano da Markdig già disabilitate: sono un
+   promemoria visivo, e per spuntarle si modifica il testo della nota. */
+.markdown .task-list-item { list-style: none; margin-left: -1.3rem; }
+.markdown .task-list-item input { width: auto; min-height: 0; margin-right: var(--s2); }
+
+/* ------------------------------------- barra di ordinamento e filtri --- */
+
 .barra-elenco {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: .6rem;
-    margin-bottom: .8rem;
+    align-items: flex-end;
+    gap: var(--s2);
+    margin-bottom: var(--s4);
 }
 
 .barra-elenco .selettore {
     flex: 1;
-    /* Sotto i 360px selettore e pastiglia non ci stanno più affiancati: il min-width forza
-       flex-wrap a mandare la pastiglia a capo, invece di stringere il select fino a illeggibile. */
+    /* Sotto i 360px selettore e pastiglia non ci stanno affiancati: il
+       min-width forza flex-wrap a mandare la pastiglia a capo, invece di
+       stringere il select fino a renderlo illeggibile. */
     min-width: 10rem;
 }
 
 .barra-elenco .pastiglia {
     flex: none;
-    display: inline-flex;
-    align-items: center;
-    /* Stessa soglia di .btn: sotto i 44px si sbaglia a toccare. Le pastiglie altrove sono
-       etichette non cliccabili, qui invece è un filtro a tutti gli effetti. */
-    min-height: 48px;
-    padding: 0 .9rem;
+    min-height: var(--tocco);
+    padding: 0 var(--s4);
+    font-size: var(--t-sm);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background var(--transizione), border-color var(--transizione), color var(--transizione);
 }
 
-/* ---- voti ---- */
+/* --------------------------------------------------------------- voti --- */
+
 .voto-riga {
     flex: none;
-    color: var(--testo-tenue);
-    font-size: .9rem;
-    font-weight: 600;
+    min-width: 2.5rem;
+    text-align: right;
+    color: var(--testo);
+    font-size: var(--t-md);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
-.voto-grande { font-size: 1.6rem; font-weight: 700; }
+.voto-grande {
+    font-size: var(--t-3xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accento);
+    font-variant-numeric: tabular-nums;
+}
 
 .blocco-recensioni {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    margin-top: var(--s6);
+    padding-top: var(--s5);
     border-top: 1px solid var(--bordo);
 }
 
 .riga-recensione {
-    padding: .7rem 0;
+    padding: var(--s3) 0;
     border-bottom: 1px solid var(--bordo);
 }
 
 .riga-recensione:last-child { border-bottom: none; }
+.riga-recensione p { margin: var(--s1) 0 0; }
 
-.riga-recensione .voto-cifre { display: block; margin: .2rem 0 .4rem; text-align: left; width: auto; }
-
-.riga-recensione p { margin: 0; }
-
-.voto-input input[type=range] {
-    /* Il cursore occupa la larghezza disponibile: .campo input già mette flex:1, qui si fissa
-       anche un'area toccabile esplicita — per input[type=range] conta l'altezza della casella,
-       non lo spessore della traccia. */
-    min-height: 48px;
+.riga-recensione .voto-cifre {
+    display: block;
+    width: auto;
+    margin: var(--s1) 0;
+    text-align: left;
+    color: var(--testo);
+    font-weight: 600;
 }
 
 .voto-cifre {
     flex: none;
-    /* Larghezza fissa: senza, il numero cambia di ampiezza cifra per cifra e il cursore accanto
-       salta mentre lo si trascina. */
-    width: 3.2rem;
+    /* Larghezza fissa e cifre a passo fisso: senza, il numero cambia ampiezza
+       cifra per cifra e il cursore accanto salta mentre lo si trascina. */
+    width: 3.4rem;
     text-align: center;
     color: var(--testo-tenue);
-    font-size: .9rem;
+    font-size: var(--t-md);
+    font-variant-numeric: tabular-nums;
 }
+
+/* Il cursore del voto ricostruito a mano. Con -webkit-appearance: none la
+   traccia sparisce del tutto, quindi vanno ridefiniti sia traccia sia
+   pomello — e il pomello va portato a misura di dito: quello di sistema è
+   largo una decina di pixel. */
+/* L'etichetta "Voto" prende una riga tutta sua, e non un posto in fila accanto al cursore: su
+   360px, etichetta + cursore + cifre + pastiglia "Nessun voto" lasciavano al cursore una corsa di
+   una manciata di pixel, cioè un controllo con venti posizioni da azzeccare col dito. */
+.voto-input { flex-wrap: wrap; }
+.voto-input > .etichetta-piccola { flex-basis: 100%; }
+
+.voto-input input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-height: var(--tocco);
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.voto-input input[type=range]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: var(--raggio-pieno);
+    background: var(--bordo-forte);
+}
+
+.voto-input input[type=range]::-moz-range-track {
+    height: 6px;
+    border-radius: var(--raggio-pieno);
+    background: var(--bordo-forte);
+}
+
+.voto-input input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    /* (altezza traccia - altezza pomello) / 2: centra il pomello sulla traccia,
+       che su WebKit non lo fa da sé. */
+    margin-top: -10px;
+    border-radius: 50%;
+    background: var(--accento);
+    border: 2px solid var(--sfondo);
+    box-shadow: var(--ombra);
+    cursor: pointer;
+}
+
+.voto-input input[type=range]::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accento);
+    border: 2px solid var(--sfondo);
+    cursor: pointer;
+}
+
+.voto-input input[type=range]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--accento-tenue);
+}
+
+.voto-input input[type=range]:disabled { opacity: .5; }

@@ -12,6 +12,6 @@
         await SupabaseService.GetClientAsync();
 
         if (!await AuthState.IsLoggedInAsync())
-            Navigation.NavigateTo("login", forceLoad: false, replace: true);
+            Navigation.NavigateTo("benvenuto", forceLoad: false, replace: true);
     }
 }

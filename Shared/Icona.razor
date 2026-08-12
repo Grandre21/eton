@@ -1,0 +1,56 @@
+@* Icone disegnate qui dentro, non scaricate e non prese da una libreria: il sito sta su GitHub
+   Pages e deve funzionare offline come PWA, quindi ogni file in più è un file da servire, da mettere
+   in cache e da tenere aggiornato nel service worker.
+
+   Erano emoji fino a ieri, ed è il motivo per cui non lo sono più: un'emoji la disegna il sistema
+   operativo, quindi cambia forma, colore e allineamento fra Windows, Android e iPhone — su una barra
+   di navigazione, dove le cinque icone devono sembrare una famiglia, la differenza si vede tutta.
+   Queste ereditano il colore da chi le contiene (stroke="currentColor"), quindi la voce attiva si
+   colora da sé senza una riga di CSS in più.
+
+   aria-hidden: l'icona accompagna sempre un'etichetta di testo, e farsela leggere due volte sarebbe
+   rumore per chi ascolta la pagina. *@
+<svg class="icona-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false">
+    @switch (Nome)
+    {
+        case "casa":
+            <path d="M4 11 12 4l8 7" />
+            <path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9" />
+            break;
+
+        case "note":
+            <rect x="5" y="3" width="14" height="18" rx="2" />
+            <path d="M9 8h6M9 12h6M9 16h3" />
+            break;
+
+        case "collezioni":
+            <rect x="3" y="4" width="6" height="6" rx="1.5" />
+            <rect x="3" y="14" width="6" height="6" rx="1.5" />
+            <path d="M13 6h8M13 9h5M13 16h8M13 19h5" />
+            break;
+
+        case "gruppo":
+            <circle cx="9" cy="8" r="3" />
+            <path d="M3 20c0-3 2.7-5 6-5s6 2 6 5" />
+            <circle cx="17.5" cy="9" r="2.2" />
+            <path d="M16.5 14c2.8 0 4.5 1.9 4.5 4.2" />
+            break;
+
+        case "persona":
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" />
+            break;
+    }
+</svg>
+
+@code {
+    /// <summary>Nome dell'icona: casa, note, collezioni, gruppo, persona.</summary>
+    /// <remarks>
+    /// Una stringa e non un enum: le icone si citano solo dal markup, dove un enum andrebbe
+    /// comunque scritto per esteso, e un nome sconosciuto qui non rompe niente — lo switch non
+    /// trova il caso e l'elemento &lt;svg&gt; resta vuoto, cioè invisibile.
+    /// </remarks>
+    [Parameter, EditorRequired] public string Nome { get; set; } = "";
+}

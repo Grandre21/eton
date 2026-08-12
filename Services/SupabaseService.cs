@@ -28,7 +28,7 @@ public class SupabaseService
     private bool _initialized;
     private DateTime? _ultimoRefreshFallito;
 
-    /// <summary>Messaggio dell'ultimo rifiuto del provider, letto da <c>Login.razor</c>.</summary>
+    /// <summary>Messaggio dell'ultimo rifiuto del provider, letto da <c>Benvenuto.razor</c>.</summary>
     public string? ErroreAccesso { get; private set; }
 
     public SupabaseService(IConfiguration configuration, IJSRuntime js, NavigationManager navigation)
