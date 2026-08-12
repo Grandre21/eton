@@ -1,0 +1,447 @@
+@using System.Globalization
+@using Eton.Models
+@inject ReviewRepository Repository
+@inject SpaceRepository SpaziRepository
+@inject AuthStateService AuthState
+
+<section class="blocco-recensioni">
+    <h2>Recensioni</h2>
+
+    @if (!caricato)
+    {
+        <p class="avvio">Caricamento…</p>
+    }
+    else if (recensioniNonLette)
+    {
+        <div class="vuoto">
+            <div class="errore" role="alert">@errore</div>
+            <button class="btn" @onclick="Riprova">Riprova</button>
+        </div>
+    }
+    else
+    {
+        @if (errore is not null)
+        {
+            <div class="errore" role="alert">@errore</div>
+        }
+        @if (avviso is not null)
+        {
+            <div class="avviso" role="status">@avviso</div>
+        }
+
+        <p>
+            <span class="voto-grande">@CalcoliVoti.Testo(Riepilogo.Media)</span>
+            <span class="testo-tenue">/ @VotoMassimo — @TestoConteggio()</span>
+        </p>
+
+        <div class="scheda">
+            <h3>La tua recensione</h3>
+
+            <VotoInput @bind-Voto="mioVoto" Massimo="VotoMassimo" Disabilitato="occupato" />
+
+            <label class="campo">
+                <span class="etichetta-piccola">Commento</span>
+                <textarea maxlength="4000" rows="3" placeholder="Cosa ne pensi?"
+                          @bind="mioCommento" @bind:event="oninput" disabled="@occupato"></textarea>
+            </label>
+
+            <div class="azioni">
+                <button class="btn primary" @onclick="Salva" disabled="@(occupato || !Cambiata)">
+                    @(occupato ? "Salvo…" : "Salva")
+                </button>
+
+                @if (mia is not null)
+                {
+                    @if (confermaEliminazione)
+                    {
+                        <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, togli</button>
+                        <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
+                    }
+                    else
+                    {
+                        <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Togli la mia recensione</button>
+                    }
+                }
+            </div>
+        </div>
+
+        <h3>Altre recensioni</h3>
+
+        @* Ordine così com'è tornato da ElencaPerElementoAsync, cioè dalla prima recensione
+           all'ultima: come una conversazione, non "le più recenti in cima" (v. il commento sul
+           metodo in Services/ReviewRepository.cs). *@
+        var altre = recensioni.Where(r => mia is null || r.Id != mia.Id).ToList();
+
+        @if (altre.Count == 0)
+        {
+            <div class="vuoto">
+                <p>Ancora nessun'altra recensione.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var r in altre)
+            {
+                <div class="riga-recensione">
+                    <span class="etichetta-piccola">@NomeAutore(r) · @Data(r)</span>
+                    <span class="voto-cifre">@CalcoliVoti.Testo(r.Rating) / @VotoMassimo</span>
+
+                    @* Testo semplice, non Markdown: a differenza delle note, un commento di recensione non
+                       ha un editor con anteprima e non ci si aspetta formattazione — è un'opinione breve, non
+                       un documento. @r.Comment dentro un elemento normale è già sicuro: Blazor lo codifica da
+                       sé, senza bisogno di MarkdownRenderer né di un MarkupString. *@
+                    @if (!string.IsNullOrWhiteSpace(r.Comment))
+                    {
+                        <p>@r.Comment</p>
+                    }
+                </div>
+            }
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Guid ElementoId { get; set; }
+    [Parameter, EditorRequired] public Guid SpazioId { get; set; }
+    [Parameter] public short VotoMassimo { get; set; } = 10;
+
+    private Guid? io;
+    private IReadOnlyList<Review> recensioni = [];
+    private Dictionary<Guid, string> nomiMembri = new();
+    private Review? mia;
+    private decimal? mioVoto;
+    private string mioCommento = "";
+
+    private bool caricato, occupato, confermaEliminazione;
+
+    // Distingue "questo elemento non ha ancora recensioni" da "le recensioni non sono riuscito a
+    // leggerle": in entrambi i casi la lista è vuota, ma solo nel secondo va mostrato un errore
+    // bloccante con un pulsante Riprova invece del contenuto. Stesso ragionamento di
+    // Pages/Notes.razor (noteNonLette).
+    private bool recensioniNonLette;
+
+    private string? errore, avviso;
+    private int generazione;
+
+    private RiepilogoVoti Riepilogo => CalcoliVoti.PerElemento(recensioni, io);
+
+    // Il pulsante Salva resta spento finché non c'è niente da salvare, come in NoteEdit.Cambiata:
+    // senza recensione propria, "cambiata" significa aver scritto qualcosa; con una recensione
+    // propria, significa essersi discostati da ciò che il server ha in mano.
+    private bool Cambiata => mia is null
+        ? mioVoto is not null || !string.IsNullOrWhiteSpace(mioCommento)
+        : mioVoto != mia.Rating || mioCommento != (mia.Comment ?? "");
+
+    // Come in CollectionDetail: ElementoId cambia navigando da un elemento all'altro senza smontare
+    // questo componente, quindi il ricaricamento va agganciato a OnParametersSetAsync e non a
+    // OnInitializedAsync, e due caricamenti possono sovrapporsi con quello partito prima che
+    // risponde per ultimo.
+    protected override Task OnParametersSetAsync() => Carica();
+
+    private async Task Carica()
+    {
+        var miaGenerazione = ++generazione;
+
+        caricato = false;
+        errore = avviso = null;
+        recensioniNonLette = false;
+
+        io = null;
+        recensioni = [];
+        nomiMembri = new Dictionary<Guid, string>();
+        mia = null;
+        mioVoto = null;
+        mioCommento = "";
+
+        // Anche lo stato di interazione, non solo i dati: 'occupato' lasciato acceso da un
+        // salvataggio partito sull'elemento precedente terrebbe il pulsante su "Salvo…" per un
+        // elemento su cui non sta salvando niente, e 'confermaEliminazione' lasciata accesa
+        // mostrerebbe "Sì, togli"/"Annulla" già aperti sulla recensione di un altro elemento, senza
+        // che nessuno abbia chiesto di toglierla — un clic distratto la cancellerebbe.
+        occupato = false;
+        confermaEliminazione = false;
+
+        try
+        {
+            var idTesto = await AuthState.GetUserIdAsync();
+            if (miaGenerazione != generazione) return;
+
+            if (Guid.TryParse(idTesto, out var utente)) io = utente;
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            errore = $"Non è stato possibile identificare l'utente corrente: {ex.Message}";
+        }
+
+        try
+        {
+            var elencate = await Repository.ElencaPerElementoAsync(ElementoId);
+            if (miaGenerazione != generazione) return;
+
+            recensioni = elencate;
+            mia = io is null ? null : recensioni.FirstOrDefault(r => r.UserId == io);
+            if (mia is not null)
+            {
+                mioVoto = mia.Rating;
+                mioCommento = mia.Comment ?? "";
+            }
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            errore = $"Non è stato possibile leggere le recensioni: {ex.Message}";
+            recensioniNonLette = true;
+            caricato = true;
+            return;
+        }
+
+        // Try separato, e non insieme alle recensioni: i nomi dei membri servono soltanto a scrivere
+        // l'autore accanto a ogni recensione altrui. Un fallimento qui degrada silenziosamente a "Un
+        // membro" (v. NomeAutore) invece di un banner rosso, perché le recensioni restano perfettamente
+        // leggibili senza — non è un errore da mostrare, ma va tracciato, altrimenti sparisce senza
+        // lasciare traccia. Stesso ragionamento di Pages/Notes.razor.
+        try
+        {
+            var membri = await SpaziRepository.MembriAsync(SpazioId);
+            if (miaGenerazione != generazione) return;
+
+            nomiMembri = membri.ToDictionary(m => m.UtenteId, m => m.Nome);
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            Console.Error.WriteLine($"[RecensioniElemento] Nomi degli autori non disponibili: {ex.Message}");
+        }
+
+        caricato = true;
+    }
+
+    private Task Riprova() => Carica();
+
+    // La generazione si cattura anche qui, non solo in Carica: una risposta di salvataggio che arriva
+    // dopo che l'utente è passato a un altro elemento non deve scrivere niente. Senza queste guardie,
+    // la risposta per l'elemento A imposterebbe 'mia', 'mioVoto' e 'mioCommento' con i dati di A
+    // mentre a schermo c'è B — e il Salva successivo, che usa mia.Id, modificherebbe in silenzio la
+    // recensione di A credendo di scrivere quella di B.
+    private async Task Salva()
+    {
+        var miaGenerazione = generazione;
+        errore = avviso = null;
+
+        // Voto e commento entrambi vuoti: il database rifiuterebbe la riga (vincolo
+        // reviews_non_vuota). Se esiste già una recensione, salvarla vuota equivarrebbe comunque a
+        // cancellarla — meglio farlo esplicitamente. Se non esiste, non c'è niente da fare. In
+        // nessuno dei due casi è un errore: è esattamente ciò che l'utente sta chiedendo.
+        if (mioVoto is null && string.IsNullOrWhiteSpace(mioCommento))
+        {
+            if (mia is not null) await Elimina();
+            return;
+        }
+
+        if (mia is null && io is null)
+        {
+            errore = "La sessione non è più valida: esci e rientra.";
+            return;
+        }
+
+        occupato = true;
+        try
+        {
+            if (mia is null) await Crea(miaGenerazione);
+            else await Modifica(miaGenerazione);
+        }
+        finally
+        {
+            // Se nel frattempo si è passati a un altro elemento, 'occupato' non è più nostro:
+            // appartiene al caricamento nuovo, che l'ha già azzerato da sé in Carica().
+            if (miaGenerazione == generazione) occupato = false;
+        }
+    }
+
+    private async Task Crea(int miaGenerazione)
+    {
+        try
+        {
+            var creata = await Repository.CreaAsync(ElementoId, SpazioId, io!.Value, mioVoto, CommentoOrNull());
+            if (miaGenerazione != generazione) return;
+
+            Aggiorna(creata);
+            avviso = "Salvata.";
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+
+            // Il vincolo unique (item_id, user_id) vieta una seconda recensione della stessa persona
+            // sullo stesso elemento: se questa INSERT è fallita perché una c'era già — scritta da te
+            // da un'altra scheda dopo che questa pagina aveva caricato — il messaggio grezzo di
+            // Postgres non aiuterebbe nessuno, e ripremere Salva ripeterebbe lo stesso errore
+            // all'infinito, perché 'mia' resterebbe null e si tenterebbe di nuovo una INSERT. Una
+            // seconda lettura dice quale dei due casi è, come fa ReviewRepository.SalvaAsync per
+            // distinguere conflitto, rifiuto e riga sparita.
+            var elencate = await RiletturaSilenziosa();
+            if (miaGenerazione != generazione) return;
+
+            var esistente = elencate?.FirstOrDefault(r => r.UserId == io);
+            if (esistente is null)
+            {
+                errore = $"Non è stato possibile salvare: {ex.Message}";
+                return;
+            }
+
+            // Voto e commento appena digitati NON si sovrascrivono con quelli letti: quello che
+            // l'utente ha scritto non va perso per un salvataggio fallito. Si aggiorna solo 'mia',
+            // così il prossimo Salva è una modifica di quella riga invece di un'altra INSERT
+            // destinata a fallire allo stesso modo.
+            recensioni = elencate!;
+            mia = esistente;
+            avviso = "Avevi già recensito questo elemento altrove: ho caricato quella recensione senza toccare ciò che hai appena scritto. Premi Salva di nuovo per sostituirla.";
+        }
+    }
+
+    private async Task Modifica(int miaGenerazione)
+    {
+        try
+        {
+            var esito = await Repository.SalvaAsync(mia!.Id, mia.Version, mioVoto, CommentoOrNull());
+            if (miaGenerazione != generazione) return;
+
+            switch (esito.Esito)
+            {
+                case EsitoSalvataggio.Salvata:
+                    Aggiorna(esito.Aggiornata!);
+                    avviso = "Salvata.";
+                    break;
+
+                case EsitoSalvataggio.Conflitto:
+                    // A differenza di Note e Collezioni, qui un conflitto non può nascere da un altro
+                    // utente: la policy reviews_update permette di modificare solo la propria riga.
+                    // Un conflitto significa quindi che l'hai salvata TU da un altro dispositivo — non
+                    // c'è una scelta da fare fra "ricarica" e "sovrascrivi", si ricarica e basta.
+                    Aggiorna(esito.Aggiornata!);
+                    avviso = "La tua recensione era stata modificata altrove: ho caricato la versione più recente.";
+                    break;
+
+                case EsitoSalvataggio.Rifiutata:
+                    errore = "Il database ha rifiutato la modifica.";
+                    break;
+
+                case EsitoSalvataggio.Sparita:
+                    mia = null;
+                    mioVoto = null;
+                    mioCommento = "";
+                    errore = "La tua recensione non c'è più.";
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            errore = $"Non è stato possibile salvare: {ex.Message}";
+        }
+    }
+
+    // Rilettura di servizio, usata solo per capire com'è finita una scrittura fallita: un errore qui
+    // non va mostrato, perché il messaggio che l'utente legge è quello della scrittura, non quello
+    // del tentativo di spiegarla. Va però tracciato, altrimenti una rilettura che fallisce sempre
+    // resterebbe indistinguibile da "nessuna recensione trovata".
+    private async Task<IReadOnlyList<Review>?> RiletturaSilenziosa()
+    {
+        try
+        {
+            return await Repository.ElencaPerElementoAsync(ElementoId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[RecensioniElemento] Rilettura dopo una scrittura fallita non riuscita: {ex.Message}");
+            return null;
+        }
+    }
+
+    // Sostituisce la riga se c'è già, la aggiunge se non c'è: dopo una modifica la recensione è
+    // nell'elenco caricato, dopo una creazione no, e senza il ramo dell'aggiunta la propria
+    // recensione appena creata non comparirebbe nella media né nel conteggio finché non si ricarica.
+    private void Aggiorna(Review aggiornata)
+    {
+        recensioni = recensioni.Any(r => r.Id == aggiornata.Id)
+            ? recensioni.Select(r => r.Id == aggiornata.Id ? aggiornata : r).ToList()
+            : [.. recensioni, aggiornata];
+
+        mia = aggiornata;
+        mioVoto = aggiornata.Rating;
+        mioCommento = aggiornata.Comment ?? "";
+    }
+
+    private string? CommentoOrNull() => string.IsNullOrWhiteSpace(mioCommento) ? null : mioCommento;
+
+    private async Task Elimina()
+    {
+        if (mia is null) return;
+
+        // Stesse guardie di Salva, e per lo stesso motivo: un'eliminazione partita sull'elemento A che
+        // risponde dopo il passaggio a B azzererebbe voto e commento che l'utente sta scrivendo per B.
+        var miaGenerazione = generazione;
+        var id = mia.Id;
+
+        occupato = true; errore = null;
+        try
+        {
+            var eliminata = await Repository.EliminaAsync(id);
+            if (miaGenerazione != generazione) return;
+
+            if (eliminata)
+            {
+                recensioni = recensioni.Where(r => r.Id != id).ToList();
+                mia = null;
+                mioVoto = null;
+                mioCommento = "";
+                avviso = "Recensione eliminata.";
+            }
+            else
+            {
+                errore = "Il database ha rifiutato l'eliminazione.";
+            }
+        }
+        catch (Exception ex)
+        {
+            if (miaGenerazione != generazione) return;
+            errore = $"Non è stato possibile eliminare: {ex.Message}";
+        }
+        finally
+        {
+            if (miaGenerazione == generazione)
+            {
+                occupato = false;
+                confermaEliminazione = false;
+            }
+        }
+    }
+
+    private string NomeAutore(Review r) => nomiMembri.TryGetValue(r.UserId, out var nome) ? nome : "Un membro";
+
+    private static string Data(Review r) => r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private string TestoConteggio()
+    {
+        var voti = Riepilogo.Voti;
+        var votoParte = voti switch
+        {
+            0 => "nessun voto",
+            1 => "1 voto",
+            _ => $"{voti} voti",
+        };
+
+        // I commenti si contano sempre, non solo quando nessuno ha votato: con tre voti e due
+        // recensioni di solo commento, fermarsi a "3 voti" tace metà di chi si è espresso, e il
+        // riepilogo diventa asimmetrico — lo stesso dato comparirebbe o sparirebbe a seconda che
+        // esista o no un voto.
+        //
+        // Si contano i commenti veri, non le righe senza voto: una recensione può avere entrambi, e
+        // contare solo quelle senza voto sotto-stimerebbe i commenti ogni volta che qualcuno ha
+        // votato E scritto. Nel caso "nessun voto" i due conteggi coincidono comunque, perché il
+        // vincolo reviews_non_vuota impedisce una riga senza voto e senza commento.
+        var commenti = recensioni.Count(r => !string.IsNullOrWhiteSpace(r.Comment));
+        return commenti == 0 ? votoParte : $"{votoParte}, {commenti} {(commenti == 1 ? "commento" : "commenti")}";
+    }
+}

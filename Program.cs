@@ -16,5 +16,6 @@ builder.Services.AddSingleton<MarkdownRenderer>();
 builder.Services.AddSingleton<NoteRepository>();
 builder.Services.AddSingleton<CollectionRepository>();
 builder.Services.AddSingleton<CollectionItemRepository>();
+builder.Services.AddSingleton<ReviewRepository>();
 
 await builder.Build().RunAsync();

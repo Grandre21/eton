@@ -450,3 +450,74 @@ h1 { font-size: 1.5rem; margin: 0 0 1rem; }
 }
 
 .campo-dinamico { margin-bottom: .6rem; }
+
+/* ---- barra di controlli sopra l'elenco degli elementi: ordina, filtra ---- */
+.barra-elenco {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    margin-bottom: .8rem;
+}
+
+.barra-elenco .selettore {
+    flex: 1;
+    /* Sotto i 360px selettore e pastiglia non ci stanno più affiancati: il min-width forza
+       flex-wrap a mandare la pastiglia a capo, invece di stringere il select fino a illeggibile. */
+    min-width: 10rem;
+}
+
+.barra-elenco .pastiglia {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    /* Stessa soglia di .btn: sotto i 44px si sbaglia a toccare. Le pastiglie altrove sono
+       etichette non cliccabili, qui invece è un filtro a tutti gli effetti. */
+    min-height: 48px;
+    padding: 0 .9rem;
+}
+
+/* ---- voti ---- */
+.voto-riga {
+    flex: none;
+    color: var(--testo-tenue);
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.voto-grande { font-size: 1.6rem; font-weight: 700; }
+
+.blocco-recensioni {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--bordo);
+}
+
+.riga-recensione {
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--bordo);
+}
+
+.riga-recensione:last-child { border-bottom: none; }
+
+.riga-recensione .voto-cifre { display: block; margin: .2rem 0 .4rem; text-align: left; width: auto; }
+
+.riga-recensione p { margin: 0; }
+
+.voto-input input[type=range] {
+    /* Il cursore occupa la larghezza disponibile: .campo input già mette flex:1, qui si fissa
+       anche un'area toccabile esplicita — per input[type=range] conta l'altezza della casella,
+       non lo spessore della traccia. */
+    min-height: 48px;
+}
+
+.voto-cifre {
+    flex: none;
+    /* Larghezza fissa: senza, il numero cambia di ampiezza cifra per cifra e il cursore accanto
+       salta mentre lo si trascina. */
+    width: 3.2rem;
+    text-align: center;
+    color: var(--testo-tenue);
+    font-size: .9rem;
+}

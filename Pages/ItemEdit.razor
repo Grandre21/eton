@@ -118,6 +118,15 @@ else
             }
         }
     </div>
+
+    @* !Nuovo, non cosmetico: su /items/new l'elemento non esiste ancora, quindi ItemId è null e non
+       c'è niente da recensire. Senza la guardia, ItemId!.Value lancerebbe. *@
+    @if (!Nuovo && collezione is not null)
+    {
+        <RecensioniElemento ElementoId="ItemId!.Value"
+                            SpazioId="collezione.SpaceId"
+                            VotoMassimo="collezione.RatingMax" />
+    }
 }
 
 @code {

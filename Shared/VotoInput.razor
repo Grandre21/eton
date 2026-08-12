@@ -1,0 +1,52 @@
+@using System.Globalization
+
+<div class="campo voto-input">
+    <span class="etichetta-piccola">Voto</span>
+
+    @* min, max, step e value sono attributi HTML: la specifica li vuole SEMPRE col punto come
+       separatore decimale, indipendentemente dalla lingua dell'interfaccia — usare la virgola li
+       renderebbe invalidi e il browser azzererebbe il controllo in silenzio. La virgola è solo per
+       il testo mostrato in @voto-cifre, che produce CalcoliVoti.Testo. Con InvariantGlobalization
+       attivo CultureInfo.InvariantCulture è l'unica cultura disponibile: new CultureInfo(...)
+       lancerebbe a runtime. *@
+    <input type="range" min="0.5" max="@Massimo.ToString(CultureInfo.InvariantCulture)" step="0.5"
+           value="@ValoreCursore.ToString("0.#", CultureInfo.InvariantCulture)"
+           @oninput="Cambia" disabled="@Disabilitato" />
+
+    <span class="voto-cifre">@CalcoliVoti.Testo(Voto)</span>
+
+    @* Un <input type="range"> non può rappresentare "nessun voto": ha sempre un valore, e con Voto
+       null il browser lo mostra a metà corsa — sembrerebbe un voto medio mai dato. Questo pulsante
+       è l'unico modo di dichiarare esplicitamente l'assenza di voto, e resta "acceso" finché lo è:
+       il cursore da solo non può dirlo. *@
+    <button type="button" class="pastiglia @(Voto is null ? "accesa" : "")"
+            @onclick="Azzera" disabled="@Disabilitato">
+        Nessun voto
+    </button>
+</div>
+
+@code {
+    [Parameter] public decimal? Voto { get; set; }
+    [Parameter] public EventCallback<decimal?> VotoChanged { get; set; }
+    [Parameter] public short Massimo { get; set; } = 10;
+    [Parameter] public bool Disabilitato { get; set; }
+
+    // Il cursore non ha una posizione per "nessun voto": quando Voto è null lo si mostra al minimo
+    // della corsa, e il pulsante "Nessun voto" (sopra) rende esplicito che non è un voto vero.
+    private decimal ValoreCursore => Voto ?? 0.5m;
+
+    // Come CampoInput.Cambia: restituisce esplicitamente il Task di InvokeAsync, perché uno
+    // scarterebbe ogni eccezione sollevata da chi ascolta VotoChanged.
+    private Task Cambia(ChangeEventArgs e)
+    {
+        // NumberStyles.Number e CultureInfo.InvariantCulture: il valore arriva dall'input HTML, che
+        // usa sempre il punto. Se il parsing fallisce non si emette niente, invece di propagare uno
+        // zero o un valore a caso che l'utente non ha scelto.
+        if (decimal.TryParse(e.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var valore))
+            return VotoChanged.InvokeAsync(valore);
+
+        return Task.CompletedTask;
+    }
+
+    private Task Azzera() => VotoChanged.InvokeAsync(null);
+}

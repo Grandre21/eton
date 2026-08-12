@@ -3,6 +3,8 @@
 @using Eton.Services
 @inject CollectionRepository Repository
 @inject CollectionItemRepository Elementi
+@inject ReviewRepository Recensioni
+@inject AuthStateService AuthState
 @inject NavigationManager Navigation
 
 <PageTitle>@(collezione?.Name ?? "Collezione") — Eton</PageTitle>
@@ -55,23 +57,67 @@ else
     }
     else
     {
-        <ul class="elenco-elementi">
-            @foreach (var e in elementi)
-            {
-                <li>
-                    <a class="riga-elemento" href="collections/@Id/items/@e.Id">
-                        @if (Miniatura(e) is string src)
-                        {
-                            <img class="miniatura" src="@src" alt="" loading="lazy" />
-                        }
-                        <span class="testi">
-                            <span class="nome">@e.Name</span>
-                            <span class="meta">@Riepilogo(e)</span>
-                        </span>
-                    </a>
-                </li>
-            }
-        </ul>
+        @* votiMancanti dice al markup che i voti non si sono potuti leggere: senza questo, ogni riga
+           mostrerebbe "—" come se nessuno avesse ancora votato, che è un'affermazione falsa su un
+           fatto che non conosciamo — stessa distinzione di dettagliMancanti in Home.razor:71-73. *@
+        @* I comandi che dipendono dai voti spariscono, non si limitano a convivere con l'avviso:
+           «Voto più alto» ordinerebbe tutti gli elementi a pari merito e sembrerebbe aver ordinato,
+           e «Da provare» filtrerebbe su un HaiRecensito sempre falso, cioè non nasconderebbe niente
+           pur risultando acceso. Un comando che risponde senza fare quello che promette è peggio di
+           un comando assente. È la forma dei rami di Home.razor:74-92 e Notes.razor:46-58, dove il
+           flag SOSTITUISCE la sezione che dipende dal dato mancante invece di aggiungersi sopra. *@
+        @if (votiMancanti)
+        {
+            <p class="testo-tenue">Non sono riuscito a leggere i voti di questa collezione: le medie e il filtro «Da provare» non sono disponibili.</p>
+        }
+        else
+        {
+            <div class="barra-elenco">
+                <label class="selettore">
+                    <span class="etichetta-piccola">Ordina per</span>
+                    <select value="@ordine" @onchange="CambiaOrdine">
+                        <option value="@Ordine.Nome">Nome</option>
+                        <option value="@Ordine.Media">Voto più alto</option>
+                    </select>
+                </label>
+                <button class="pastiglia @(soloDaProvare ? "accesa" : "")" @onclick="() => soloDaProvare = !soloDaProvare">
+                    Da provare
+                </button>
+            </div>
+        }
+
+        @if (!Mostrati.Any())
+        {
+            <div class="vuoto">
+                <p>Hai già provato tutto quello che c'è qui.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="elenco-elementi">
+                @foreach (var e in Mostrati)
+                {
+                    <li>
+                        <a class="riga-elemento" href="collections/@Id/items/@e.Id">
+                            @if (Miniatura(e) is string src)
+                            {
+                                <img class="miniatura" src="@src" alt="" loading="lazy" />
+                            }
+                            <span class="testi">
+                                <span class="nome">@e.Name</span>
+                                <span class="meta">@Riepilogo(e)</span>
+                            </span>
+                            @* Omessa del tutto quando i voti non si sono letti: "—" significa
+                               "nessuno ha votato", che qui non sappiamo. *@
+                            @if (!votiMancanti)
+                            {
+                                <span class="voto-riga">@CalcoliVoti.Testo(Voti(e.Id).Media)</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
     }
 }
 
@@ -84,6 +130,14 @@ else
     private bool caricato, sparita;
     private string? errore;
     private int generazione;
+
+    private IReadOnlyDictionary<Guid, RiepilogoVoti> voti =
+        new Dictionary<Guid, RiepilogoVoti>();
+    private Guid? io;
+    private bool soloDaProvare;
+    private bool votiMancanti;
+    private Ordine ordine = Ordine.Nome;
+    private enum Ordine { Nome, Media }
 
     // Come in NoteEdit: Id cambia navigando fra collezioni senza smontare il componente, quindi il
     // ricaricamento va agganciato a OnParametersSetAsync e non a OnInitializedAsync, e due
@@ -136,10 +190,85 @@ else
             campi = [];
         }
 
+        // Try separato, non "in sequenza nello stesso try": i voti sono un dettaglio accessorio
+        // rispetto all'elenco degli elementi appena caricato sopra, e un loro fallimento non deve
+        // far sparire un elenco caricato benissimo — stessa scelta di CaricaDettagli in
+        // Home.razor:184-188. 'votiMancanti' (non un dizionario vuoto lasciato lì) dice al markup
+        // che le medie non si sono potute leggere, invece di lasciarlo affermare "nessun voto" su
+        // un fatto che in realtà non conosciamo: è lo stesso errore già corretto in Home.razor:71-73
+        // e nei rami di Notes.razor.
+        voti = new Dictionary<Guid, RiepilogoVoti>();
+        votiMancanti = false;
+        io = null;
+
+        if (collezione is not null)
+        {
+            try
+            {
+                if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var utente))
+                    io = utente;
+
+                var recensioni = await Recensioni.ElencaPerSpazioAsync(collezione.SpaceId);
+                if (mia != generazione) return;
+
+                voti = CalcoliVoti.Riepiloghi(recensioni, io);
+            }
+            catch (Exception ex)
+            {
+                if (mia != generazione) return;
+                votiMancanti = true;
+
+                // Il dettaglio non finisce a schermo — il markup dice già all'utente cosa manca, e
+                // un messaggio di rete non lo aiuterebbe — ma non va nemmeno buttato via: senza una
+                // traccia, un fallimento sistematico dei voti resterebbe indistinguibile da uno
+                // spazio in cui nessuno ha ancora votato. Stesso formato di Notes.razor:187-194 e
+                // SpaceDetail.
+                Console.Error.WriteLine($"[Collezione] Voti non disponibili: {ex.Message}");
+            }
+        }
+
         caricato = true;
     }
 
     private Task Riprova() => Carica();
+
+    private void CambiaOrdine(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<Ordine>(e.Value?.ToString(), out var scelto))
+            ordine = scelto;
+    }
+
+    // Non filtra e riordina 'elementi' sul posto: 'elementi' resta l'elenco vero, così soloDaProvare
+    // e ordine si possono cambiare avanti e indietro senza dover ricaricare nulla dal server.
+    private IEnumerable<CollectionItem> Mostrati
+    {
+        get
+        {
+            var elenco = soloDaProvare
+                ? elementi.Where(e => !Voti(e.Id).HaiRecensito)
+                : elementi;
+
+            // Media ?? decimal.MinValue: gli elementi senza voti finiscono in fondo invece che in
+            // cima. OrderByDescending su un decimal? metterebbe i null in testa, cioè presenterebbe
+            // come "voto più alto" proprio quelli che nessuno ha giudicato.
+            // ThenBy sul nome: senza, due elementi con la stessa media si ordinano in modo stabile
+            // ma apparentemente casuale, e l'elenco sembra cambiare senza motivo fra un
+            // caricamento e l'altro.
+            // StringComparer.Ordinal: sotto InvariantGlobalization=true non esistono confronti
+            // culture-aware; l'ordinamento alfabetico è comunque quello che fa già il database su
+            // 'name'.
+            // Il ramo Ordine.Nome non riordina niente: gli elementi arrivano già ordinati per nome
+            // dal database (indice collection_items (collection_id, name)), quindi riordinarli
+            // sarebbe lavoro sprecato che produce lo stesso risultato.
+            return ordine == Ordine.Media
+                ? elenco.OrderByDescending(e => Voti(e.Id).Media ?? decimal.MinValue)
+                        .ThenBy(e => e.Name, StringComparer.Ordinal)
+                : elenco;
+        }
+    }
+
+    private RiepilogoVoti Voti(Guid elementoId) =>
+        voti.TryGetValue(elementoId, out var r) ? r : new RiepilogoVoti(null, 0, null, false);
 
     // L'URL lo scrive un altro membro dello spazio: uno schema come data: o javascript: dentro un
     // src non è un semplice link rotto, va bonificato come in MarkdownRenderer.
