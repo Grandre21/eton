@@ -89,8 +89,17 @@ public class SpaceRepository
     }
 
     /// <summary>I membri dello spazio, col nome preso dal profilo.
-    /// Due query invece di una join: la RLS su <c>profiles</c> lascia vedere solo chi condivide
-    /// uno spazio con te, quindi la seconda restituisce già l'insieme giusto.</summary>
+    /// <para>
+    /// Query separate invece di una join: PostgREST le farebbe volentieri, ma la join andrebbe
+    /// dichiarata nel modello e qui non serve. La lettura dello spazio non è di troppo — serve
+    /// <c>owner_id</c> per dire chi è il proprietario, e <c>space_members</c> non ce l'ha.
+    /// </para>
+    /// La lettura dei profili non si filtra per identificatore: la RLS su <c>profiles</c> lascia
+    /// già vedere solo chi condivide almeno uno spazio con te. È un <b>sovrainsieme</b> di quello
+    /// che serve, non l'insieme esatto — chi sta in altri spazi con te arriva comunque, e viene
+    /// scartato qui sotto. Va bene finché gli spazi sono pochi; se un giorno diventassero tanti,
+    /// il posto giusto dove stringere è un filtro <c>id=in.(…)</c> sugli identificatori dei membri.
+    /// </summary>
     public async Task<IReadOnlyList<Membro>> MembriAsync(Guid spazioId)
     {
         var client = await _supabase.GetClientAsync();

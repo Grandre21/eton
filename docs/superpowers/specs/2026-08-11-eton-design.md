@@ -113,6 +113,10 @@ Markdig la necessità va accertata al primo collaudo in Release, non presunta.
 
 `CampaignStateService` diventa `SpaceStateService` (spazio attivo persistito).
 
+> Di questo elenco è stato portato meno di metà: `ToastService`, `ConfirmService`,
+> `PwaUpdateService`, `AccessControl` e i loro componenti non esistono, e `Login.razor` è stato
+> assorbito dalla vetrina. Il perché sta in §6, sotto «Divergenze dal piano».
+
 ---
 
 ## 4. Modello dati
@@ -396,7 +400,7 @@ RLS abilitata su **tutte** le tabelle. Nessun accesso al ruolo `anon` oltre l'au
 
 | Tabella | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| `spaces` | `is_space_member(id)` | **nessuna policy** — solo via `create_space` | `is_space_owner(id)` | `is_space_owner(id)` ∧ `not is_personal` |
+| `spaces` | `is_space_member(id)` | **nessuna policy** — solo via `create_space` | `is_space_owner(id)`, e in `WITH CHECK` anche `owner_id = auth.uid()` | `is_space_owner(id)` ∧ `not is_personal` |
 | `space_members` | `is_space_member(space_id)` | **nessuna policy** — solo via `create_space` / `join_space` | nessuna | `not is_personal(space)` ∧ ( `user_id = auth.uid()` — uscire — ∨ `is_space_owner(space_id)` — espellere ) |
 | `profiles` | `id = auth.uid()` ∨ `shares_space_with(id)` | `id = auth.uid()` | `id = auth.uid()` | **nessuna policy** — vedi sotto |
 | `notes` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `owner_id = auth.uid()` | `owner_id = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
@@ -404,9 +408,23 @@ RLS abilitata su **tutte** le tabelle. Nessun accesso al ruolo `anon` oltre l'au
 | `collection_items` | `is_space_member(space_id)` | `is_space_member(space_id)` ∧ `added_by = auth.uid()` | `added_by = auth.uid()` ∨ `is_space_owner(space_id)` | idem UPDATE |
 | `reviews` | `is_space_member(space_id)` | `user_id = auth.uid()` ∧ `is_space_member(space_id)` | **solo** `user_id = auth.uid()` | **solo** `user_id = auth.uid()` |
 
-Ogni `UPDATE` porta lo stesso predicato sia in `USING` sia in `WITH CHECK`, come nelle migration
-del D&D: senza `WITH CHECK` si potrebbe modificare una riga *spostandola* fuori dal proprio
-spazio.
+**Sul `WITH CHECK`, e su cosa non fa.** Tranne che per `spaces`, ogni `UPDATE` ripete in
+`WITH CHECK` lo stesso predicato del `USING`, e lo fa per sola leggibilità: omettendolo, Postgres
+riuserebbe comunque il `USING` per entrambe le fasi.
+
+Non è quel predicato a impedire che una riga venga *spostata* fuori dal proprio spazio, e crederlo
+è l'errore comodo da fare. `WITH CHECK` valuta la riga **proposta**, ma il predicato è una
+disgiunzione: l'autore la supera comunque, perché `owner_id = auth.uid()` resta vero anche dopo aver
+cambiato `space_id`. A impedire lo spostamento sono due cose che stanno **sotto** le policy:
+`space_id` non compare in nessuna `grant update (…)`, quindi l'istruzione che lo nomina fallisce con
+`permission denied` prima che una policy venga consultata; e il trigger `BEFORE UPDATE` rimette
+comunque la colonna al valore precedente (v. §5.4).
+
+L'unico `WITH CHECK` che lavora davvero è quello di `spaces_update`, che al `USING` aggiunge
+`owner_id = auth.uid()`. Lì la colonna è **nominata**, quindi valutata sulla riga proposta: impedisce
+di regalare uno spazio a un altro utente. È la stessa distinzione di §5.4 — in `WITH CHECK` una
+colonna si controlla solo nominandola, e incapsularla in una funzione che rilegge equivale a non
+controllarla.
 
 ### 5.3 La RLS filtra, non concede
 
@@ -517,40 +535,48 @@ matrice per non mostrare pulsanti che fallirebbero.
 
 ## 6. Struttura del progetto
 
+Questo era il piano. Sotto, la struttura **come è venuta** a fine fetta 5, che è quella da leggere:
+
 ```
 G:\Sviluppo\Eton\
-  Eton.sln
-  Eton.csproj                    Blazor WASM, net10.0, PWA
-  Program.cs                     DI: servizi + un repository per aggregato
-  App.razor · _Imports.razor
-  Layout\        MainLayout · LoginLayout
-  Shared\        BottomNav · SpaceSwitcher · ToastHost · ConfirmDialog
-                 LoadingSpinner · UpdateBanner · DbErrorBanner · AuthRedirect
-                 MarkdownView · FieldEditor · FieldInput · RatingInput    ← nuovi
-  Pages\         Login · Home · Spaces · SpaceDetail
-                 Notes · NoteEdit
-                 Collections · CollectionEdit · Items · ItemDetail · Profile
-  Models\        Space · SpaceMember · Profile · Note
-                 Collection · CollectionField · CollectionItem · Review
+  Eton.sln · Eton.csproj · Program.cs · App.razor · _Imports.razor
+  Layout\    MainLayout (privato, con la barra in basso) · VetrinaLayout (pubblico)
+  Shared\    AuthRedirect · BottomNav · Icona · MarkdownView
+             CampoInput · VotoInput · RecensioniElemento
+  Pages\     Benvenuto (vetrina + accesso) · Home · Spaces · SpaceDetail
+             Notes · NoteEdit
+             Collections · CollectionDetail · CollectionEdit · ItemEdit · Profile
+  Models\    Space · SpaceMember · Profile · Note
+             Collection · CollectionItem · Review · CampoDefinizione
   Services\
-    SupabaseService · SupabaseClient · BrowserSessionHandler   ← adattati a Gotrue 6
-    AuthStateService · CurrentUserService · AccessControl      ← portati
-    SpaceStateService                                          ← da CampaignStateService
-    ToastService · ConfirmService · PwaUpdateService           ← portati
-    MarkdownRenderer                                           ← Markdig, .DisableHtml()
-    FieldSchema · ItemDataMapper · RatingCalculations          ← logica pura
-    Repositories\  ISpace · IProfile · INote · ICollection · IItem · IReview
-  wwwroot\       index.html · manifest.webmanifest · service-worker · app.css · icone
-  supabase\migrations\           SQL versionato
+    SupabaseService · SupabaseClient · BrowserSessionHandler   accesso e sessione
+    PkceChallenge · PkceStore · OAuthCallback · SessionFreshness
+    AuthStateService · SpaceStateService · RottaRichiesta
+    SpaceRepository · NoteRepository · CollectionRepository
+    CollectionItemRepository · ReviewRepository
+    MarkdownRenderer · SchemaCampi · ValoriElemento · CalcoliVoti · RisultatoSalvataggio
+  wwwroot\   index.html · manifest.webmanifest · service-worker · css\app.css · icone
+  supabase\  migrations\ (4) e verifica-rls-*.sql (4)
   docs\superpowers\specs\ e \plans\
-Eton.Tests\              xUnit — funzioni pure
-Eton.Tests.Integration\  xUnit — policy RLS
+Eton.Tests\  xUnit — sola logica pura, 150 prove
 ```
 
-**Convenzioni**, ereditate da `DndCompanion`: identificatori C# e nomi di colonne in **inglese**;
-commenti, XML doc e interfaccia utente in **italiano**. CSS isolation per componente
-(`.razor.css`) più un `app.css`, nessun framework CSS. Un repository per aggregato dietro
-interfaccia, registrato in DI.
+**Divergenze dal piano, e perché.**
+
+- **I repository non hanno interfacce.** Erano previsti «dietro interfaccia, registrati in DI»: non
+  esiste un secondo implementatore, e non ci sono test che li sostituiscano — i test coprono la
+  logica pura, le policy le verifica il database. Un'interfaccia con un solo implementatore è un
+  livello di indirezione che si paga a ogni lettura e non restituisce niente.
+- **Niente `ToastService`, `ConfirmService`, `PwaUpdateService`, `AccessControl`.** Gli errori si
+  mostrano dentro la pagina che li ha prodotti, accanto a ciò che è fallito, con un pulsante che
+  ritenta; le conferme distruttive sono un secondo clic sulla stessa riga. `AccessControl` sarebbe
+  stato il livello che §3 dichiara impossibile: chi decide è la RLS.
+- **La lingua.** I `Models` e le colonne restano in **inglese**, perché sono le righe del database e
+  devono somigliargli. Tutto il resto — servizi, componenti, classi CSS, variabili — è passato
+  all'**italiano**, come i commenti: `CalcoliVoti`, `SchemaCampi`, `ValoriElemento`. Leggere due
+  lingue nella stessa frase costa più di quanto valga la convenzione ereditata.
+- **CSS**: un solo `app.css` costruito sulle variabili di `:root`, più CSS isolato dove un
+  componente ha uno stile tutto suo (oggi la sola vetrina). Nessun framework, nessun asset esterno.
 
 ---
 
@@ -566,27 +592,38 @@ interfaccia, registrato in DI.
   │                        │ + ││ ← azione principale, contestuale
   │                        ╰───╯│
   ├─────────────────────────────┤
-  │  🏠      📝      📊      👤 │
-  │ Home   Note  Collez.  Profilo│
+  │  ⌂     ▤     ☰     ⚇     ⚈  │
+  │ Home  Note  Coll. Spazi Prof.│
   └─────────────────────────────┘
 ```
+
+Le voci sono cinque e non quattro — gli spazi hanno una sezione propria — e le icone sono SVG
+disegnati in `Shared/Icona.razor`: un'emoji la disegna il sistema operativo, quindi cambia forma e
+allineamento fra Windows, Android e iPhone, e cinque icone sembrano una famiglia solo se le disegna
+la stessa mano.
 
 Lo spazio attivo è tenuto e persistito da `SpaceStateService`; ogni pagina legge il contesto da
 `CurrentUserService.EnsureLoadedAsync()`.
 
 | Rotta | Contenuto |
 |---|---|
-| `/login` | Accedi con Google |
+| `/benvenuto` | **Pubblica.** Vetrina: cosa fa l'applicazione, e da qui si entra con Google |
 | `/` | Home dello spazio attivo: note recenti, collezioni, membri |
 | `/spaces` | I tuoi spazi · crea · entra con un codice |
 | `/spaces/{id}` | Membri, codice invito, rinomina, esci / espelli |
-| `/notes` | Elenco note dello spazio |
-| `/notes/{id}` | Editor Markdown con anteprima e checklist |
+| `/notes` · `/notes/new` · `/notes/{id}` | Elenco ed editor Markdown con anteprima e checklist |
 | `/collections` | Elenco collezioni |
-| `/collections/new`, `/collections/{id}/edit` | Editor dei campi, con template |
-| `/collections/{id}` | Elementi, ordinamento per media voto, filtro "da provare" |
-| `/collections/{id}/items/{itemId}` | Scheda elemento, recensioni di tutti, il tuo voto |
+| `/collections/new` · `/collections/{id}/edit` | Editor dei campi, con modelli |
+| `/collections/{id}` | Elementi, ordinamento per media voto, filtro «da provare» |
+| `/collections/{id}/items/new` · `/collections/{id}/items/{itemId}` | Scheda elemento, recensioni di tutti, il tuo voto |
 | `/profile` | Nome visualizzato, logout |
+
+`/benvenuto` è l'unica rotta pubblica, e sta lì e non sulla radice per una ragione precisa: il
+ritorno da Google atterra sulla **radice** (`redirect_to = BaseUri`), quindi metterci la vetrina
+avrebbe voluto dire farle gestire lo scambio del codice PKCE. `AuthRedirect` — montato da
+`MainLayout`, cioè su ogni pagina privata — rimbalza lì chi non ha sessione, dopo aver messo da
+parte la rotta richiesta in `sessionStorage` (`RottaRichiesta`): chi apre un link profondo lo
+ritrova dopo l'accesso, invece di essere scaricato sulla Home.
 
 ---
 
@@ -594,8 +631,8 @@ Lo spazio attivo è tenuto e persistito da `SpaceStateService`; ogni pagina legg
 
 | Situazione | Comportamento |
 |---|---|
-| Rete assente / 5xx | Toast; i dati già caricati restano; **nessun logout** |
-| Sessione scaduta | Refresh automatico; se il refresh token è morto, logout pulito verso `/login` |
+| Rete assente / 5xx | Messaggio **dentro la pagina** che ha fallito, accanto a ciò che manca, con un pulsante che ritenta; i dati già caricati restano; **nessun logout** |
+| Sessione scaduta | Refresh automatico; se il refresh token è morto, logout pulito verso `/benvenuto` |
 | Conflitto di versione | Dialogo *Ricarica / Sovrascrivi*. Mai una perdita silenziosa |
 | Nuova versione della PWA | `UpdateBanner` |
 | Campo obbligatorio mancante | Validazione client + vincolo `not null` a database |
@@ -617,7 +654,8 @@ Autenticandosi come **due utenti distinti**, si asseriscono le negazioni:
 - B non modifica il voto di A, pur conoscendone l'`id`;
 - B non legge il `profile` di A se non condividono spazi;
 - B non legge le note di uno spazio a cui non appartiene;
-- B non sposta un proprio elemento in uno spazio altrui (`WITH CHECK`);
+- B non sposta un proprio elemento in uno spazio altrui — a fermarlo sono il privilegio di colonna
+  mancante su `space_id` e il trigger, **non** il `WITH CHECK` della policy (v. §5.2);
 - B non si aggiunge a uno spazio scrivendo direttamente in `space_members`;
 - B non crea uno spazio scrivendo direttamente in `spaces` (nessuna policy di `INSERT`);
 - nessuno cancella né abbandona il proprio spazio personale.
@@ -629,6 +667,20 @@ asserire da giustificarlo. Nella forma attuale ha già ripagato il costo: ha sco
 che nessuna revisione statica aveva colto — i `grant` mancanti di §5.3, e il fatto che un client
 non può cercare uno spazio dal codice invito prima di entrarci (la `select` è filtrata dalla RLS,
 quindi il codice va passato *direttamente* a `join_space`, mai usato per una ricerca preliminare).
+
+> **Come è finita.** Il progetto xUnit non è mai nato: la forma a script `psql` è rimasta per tutte
+> le fette — `verifica-rls.sql`, `verifica-rls-note.sql`, `verifica-rls-collezioni.sql`,
+> `verifica-rls-recensioni.sql` — ciascuno eseguito contro lo stack Supabase locale e ciascuno con
+> il numero di errori attesi dichiarato in testa: ottenerne un numero diverso è il fallimento.
+>
+> Non è pigrizia, ed è la ragione per cui non va convertito adesso: sono asserzioni sul *database*,
+> e in SQL si scrivono nella stessa lingua dell'oggetto che verificano — un `insert` rifiutato con
+> il suo codice d'errore **è** già l'asserzione. Un progetto xUnit avrebbe aggiunto una traduzione
+> fra il fatto e la sua verifica, cioè un posto in più dove sbagliare, e un secondo stack di
+> autenticazione da tenere allineato per impersonare i due utenti.
+>
+> Il prezzo, dichiarato: gli script si lanciano a mano e nessuna pipeline li esegue. Non stanno
+> nella CI perché richiedono Docker e un database locale — la CI pubblica soltanto file statici.
 
 **`Eton.Tests` — logica pura**, con `InternalsVisibleTo` come nel D&D: `FieldSchema` (validazione
 e serializzazione dei campi `jsonb`), `ItemDataMapper`, `RatingCalculations` (medie, conteggi,
@@ -671,13 +723,23 @@ e serializzazione dei campi `jsonb`), `ItemDataMapper`, `RatingCalculations` (me
 
 Il rischio per primo; ogni fetta lascia l'app usabile.
 
-1. **Login Google su Gotrue 6** — scheletro del progetto, `SupabaseService` adattato, PWA
+1. ✅ **Login Google su Gotrue 6** — scheletro del progetto, `SupabaseService` adattato, PWA
    minima, deploy funzionante. Fino a qui non si costruisce altro.
-2. **Spazi** — spazio personale automatico, creazione, codice invito, ingresso con codice,
+2. ✅ **Spazi** — spazio personale automatico, creazione, codice invito, ingresso con codice,
    membri. Con i test RLS.
-3. **Note** — Markdown, checklist, concorrenza ottimistica.
-4. **Collezioni** — editor dei campi, template "Liquidi svapo", elementi.
-5. **Recensioni** — voto personale, medie, ordinamenti, filtro "da provare".
-6. **Rifinitura** — icone, manifest, rifiniture mobile, deploy definitivo su GitHub Pages.
+3. ✅ **Note** — Markdown, checklist, concorrenza ottimistica.
+4. ✅ **Collezioni** — editor dei campi, modelli pronti, elementi.
+5. ✅ **Recensioni** — voto personale, medie, ordinamenti, filtro «da provare».
+6. **Rifinitura** — in corso: vetrina pubblica, sistema di stili su variabili, icone disegnate,
+   ripristino della rotta dopo l'accesso.
 
 Dopo la fetta 3 l'app ha già senso da usare; dopo la 5 fa quello che il progetto si proponeva.
+
+**Cosa è cambiato in corsa rispetto a questo elenco.** Nella fetta 4 i «template» sono diventati
+**modelli** copiati in profondità a ogni uso invece che condivisi (un modello condiviso e mutabile
+si porta dietro le modifiche fatte da un'altra collezione); nella 5 le policy delle recensioni
+**divergono di proposito** da quelle di note e collezioni — il proprietario dello spazio non può
+toccare le recensioni altrui, perché un voto è un'opinione personale e cancellarlo sarebbe
+falsificarlo, non moderarlo (v. §5.2). La fetta 6 si è allargata a includere la vetrina pubblica,
+che il piano non prevedeva: l'applicazione è raggiungibile da browser prima ancora che come app,
+e chi arriva da un link deve capire cos'è prima di decidere se entrarci.
