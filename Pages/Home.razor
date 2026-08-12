@@ -62,13 +62,23 @@ else
         }
     </p>
 
-    @* Le due schede sono riquadri indipendenti: sul telefono si impilano, su schermo largo stanno
-       affiancate (v. .griglia-due in app.css). Senza questo contenitore non ci sarebbe niente su
-       cui appoggiare la griglia, e su un monitor le due schede resterebbero una sotto l'altra in
-       una colonna stretta con metà schermo vuoto accanto. *@
+    @* Le due sezioni sono indipendenti: sul telefono si impilano, su schermo largo stanno affiancate
+       (v. .griglia-due in app.css). Senza questo contenitore non ci sarebbe niente su cui appoggiare
+       la griglia, e su un monitor resterebbero una sotto l'altra in una colonna stretta con metà
+       schermo vuoto accanto.
+
+       Gli elenchi sono gli STESSI registri delle pagine di elenco, solo più corti: prima erano una
+       lista di titoli nudi dentro una scheda, e un titolo senza data non dice se una nota è di
+       stamattina o dell'anno scorso — cioè non dice la sola cosa per cui si guarda un riepilogo.
+       "Tutte" sta nella testata e non fra i pulsanti in fondo: là sotto erano quattro pulsanti quasi
+       identici, e quello che porta all'elenco completo appartiene all'elenco, non alle azioni. *@
     <div class="griglia-due">
-        <div class="scheda">
-            <h2>Note</h2>
+        <section>
+            <div class="testa-registro">
+                <span>Note recenti</span>
+                <a href="notes">Tutte</a>
+            </div>
+
             @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'note.Count == 0', perché
                l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono note" da "non
                sono riuscito a leggerle". *@
@@ -82,23 +92,30 @@ else
             }
             else
             {
-                <ul class="elenco-note compatto">
+                <ul class="elenco-note">
                     @foreach (var n in note)
                     {
                         <li>
-                            <a href="notes/@n.Id">@n.TitoloVisibile()</a>
+                            <a class="riga-nota" href="notes/@n.Id">
+                                <span class="titolo">@n.TitoloVisibile()</span>
+                                <span class="meta dato">@Testi.Data(n.UpdatedAt)</span>
+                            </a>
                         </li>
                     }
                 </ul>
             }
+
             <div class="azioni">
-                <a class="btn" href="notes">Tutte le note</a>
                 <a class="btn primary" href="notes/new">Nuova nota</a>
             </div>
-        </div>
+        </section>
 
-        <div class="scheda">
-            <h2>Collezioni</h2>
+        <section>
+            <div class="testa-registro">
+                <span>Collezioni recenti</span>
+                <a href="collections">Tutte</a>
+            </div>
+
             @* L'ordine dei rami conta: 'dettagliMancanti' va provato PRIMA di 'collezioni.Count == 0',
                perché l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono
                collezioni" da "non sono riuscito a leggerle". *@
@@ -112,25 +129,33 @@ else
             }
             else
             {
-                <ul class="elenco-collezioni compatto">
+                <ul class="elenco-collezioni">
                     @foreach (var c in collezioni)
                     {
                         <li>
-                            <a href="collections/@c.Id">@(string.IsNullOrWhiteSpace(c.Icon) ? "" : c.Icon + " ")@c.Name</a>
+                            <a class="riga-collezione" href="collections/@c.Id">
+                                <span class="icona-collezione">@(string.IsNullOrWhiteSpace(c.Icon) ? "📋" : c.Icon)</span>
+                                <span class="testi">
+                                    <span class="nome">@c.Name</span>
+                                    <span class="meta dato">@Testi.Data(c.UpdatedAt)</span>
+                                </span>
+                            </a>
                         </li>
                     }
                 </ul>
             }
+
             <div class="azioni">
-                <a class="btn" href="collections">Tutte le collezioni</a>
                 <a class="btn primary" href="collections/new">Nuova collezione</a>
             </div>
-        </div>
+        </section>
     </div>
 
-    <div class="azioni">
-        <a class="btn" href="spaces/@Spazi.Attivo.Id">Gestisci questo spazio</a>
-    </div>
+    @* In fondo e non fra le azioni delle due sezioni: gestire lo spazio (membri, inviti) non è una
+       cosa che si fa aprendo la Home, è dove si va quando serve. *@
+    <p class="testo-tenue">
+        <a href="spaces/@Spazi.Attivo.Id">Gestisci questo spazio</a>
+    </p>
 }
 
 @code {
@@ -150,6 +175,7 @@ else
     // Lo spazio di cui i dettagli a schermo sono stati letti. Serve a distinguere un evento che
     // annuncia un cambio vero da uno che ripete quello che già si sta mostrando.
     private Guid? spazioMostrato;
+
 
     // Vero mentre è il primo caricamento a essere in corso. Quel caricamento emette esso stesso
     // l'evento Cambiato, e i dettagli li legge già Carica() subito dopo: senza questa guardia

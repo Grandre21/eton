@@ -89,7 +89,14 @@ else
             </div>
         }
 
-        @if (!Mostrati.Any())
+        @* Materializzato una volta sola: 'Mostrati' filtra e ordina a ogni accesso, e qui servirebbe
+           tre volte — il ramo vuoto, il conteggio della testata, il ciclo delle righe. La
+           dichiarazione va nuda, senza @@{ }: dentro un blocco Razor una riga che comincia con codice
+           C# è già codice, come 'var riepilogo' poco più sotto e 'var altre' in
+           Shared/RecensioniElemento.razor. *@
+        var mostrati = Mostrati.ToList();
+
+        @if (mostrati.Count == 0)
         {
             <div class="vuoto">
                 <p>Hai già provato tutto quello che c'è qui.</p>
@@ -97,9 +104,18 @@ else
         }
         else
         {
-            <ul class="elenco-elementi">
-                @foreach (var e in Mostrati)
+            <div class="testa-registro">
+                <span>@Testi.Conteggio(mostrati.Count, "elemento", "elementi")</span>
+                @if (!votiMancanti)
                 {
+                    <span class="colonna">Media</span>
+                }
+            </div>
+
+            <ul class="elenco-elementi">
+                @foreach (var e in mostrati)
+                {
+                    var riepilogo = Riepilogo(e);
                     <li>
                         <a class="riga-elemento" href="collections/@Id/items/@e.Id">
                             @if (Miniatura(e) is string src)
@@ -108,31 +124,25 @@ else
                             }
                             <span class="testi">
                                 <span class="nome">@e.Name</span>
-                                <span class="meta">@Riepilogo(e)</span>
+                                <span class="meta">
+                                    @riepilogo
+                                    @if (!votiMancanti && Coperto(e))
+                                    {
+                                        @if (riepilogo.Length > 0)
+                                        {
+                                            <text> · </text>
+                                        }
+                                        <span class="dato">@TestoCoperto(e)</span>
+                                    }
+                                </span>
                             </span>
                             @* Omessa del tutto quando i voti non si sono letti: "—" significa
                                "nessuno ha votato", che qui non sappiamo. *@
                             @if (!votiMancanti)
                             {
-                                @if (collezione!.Blind && !Voti(e.Id).HaiRecensito && (Recensori(e.Id) > 0 || conteggiMancanti))
+                                @if (Coperto(e))
                                 {
-                                    @* Un numero al posto della media si legge come un voto se non lo si
-                                       distingue: "3" dove prima c'era "7,5" sembra un tre su dieci. La
-                                       pastiglia (bordo, sfondo, niente verde) più la parola "recensioni"
-                                       dicono che è un conteggio di persone, non un giudizio — non si riusa
-                                       .voto-riga, che è la classe dei voti veri. "Recensioni" e non "voti"
-                                       perché il conteggio comprende chi ha lasciato solo un commento: v.
-                                       CalcoliVoti.TestoRecensioni. Sotto zero si cade nel ramo else:
-                                       "nessuna recensione" è la stessa verità cieca o no, e va detta allo
-                                       stesso modo.
-
-                                       Col conteggio illeggibile si scrive "coperto" e nient'altro: non
-                                       sappiamo quanti abbiano recensito, ma sappiamo che qui una media non
-                                       la si può mostrare, ed è meglio dirlo che ricadere sul "—" del ramo
-                                       sotto, che significherebbe "nessuno ha votato". *@
-                                    <span class="pastiglia">
-                                        @(conteggiMancanti ? "coperto" : CalcoliVoti.TestoRecensioni(Recensori(e.Id)))
-                                    </span>
+                                    <span class="voto-riga coperto">?</span>
                                 }
                                 else
                                 {
@@ -358,6 +368,27 @@ else
 
     private int Recensori(Guid elementoId) =>
         conteggiRecensori.TryGetValue(elementoId, out var n) ? n : 0;
+
+    // Vero quando un elemento alla cieca è coperto per me: non l'ho ancora recensito, e o so già che
+    // qualcun altro l'ha fatto (Recensori(e.Id) > 0, letto da ConteggiPerSpazioAsync perché su un
+    // elemento non mio le righe vere non arrivano affatto per via delle RLS), oppure non lo so perché
+    // proprio quel conteggio non si è potuto leggere (conteggiMancanti): in quest'ultimo caso si
+    // presume coperto, perché è l'ipotesi che non rischia di mostrare come "nessuno ha votato" un
+    // elemento che invece ha già recensioni.
+    //
+    // In colonna va solo un "?" e non più il conteggio di chi ha già recensito: la colonna dei voti
+    // è larga esattamente 3.5rem, e una pastiglia con dentro "coperto" o "3 recensioni" è larga il
+    // doppio e sfonda l'incolonnamento di tutte le righe. Il "?" è lo stesso segno che si trova
+    // aprendo l'elemento (RecensioniElemento.razor, .voto-coperto).
+    private bool Coperto(CollectionItem e) =>
+        collezione is not null && collezione.Blind && !Voti(e.Id).HaiRecensito
+        && (Recensori(e.Id) > 0 || conteggiMancanti);
+
+    // Quante recensioni ci sono già su un elemento che non hai ancora aperto, e il fatto che siano
+    // coperte. Sta nella riga di meta e non nella colonna dei voti: lì dentro ci va solo qualcosa di
+    // largo 3.5rem (v. Coperto).
+    private string TestoCoperto(CollectionItem e) =>
+        conteggiMancanti ? "coperte" : $"{CalcoliVoti.TestoRecensioni(Recensori(e.Id))}, coperte";
 
     // L'URL lo scrive un altro membro dello spazio: uno schema come data: o javascript: dentro un
     // src non è un semplice link rotto, va bonificato come in MarkdownRenderer.

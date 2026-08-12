@@ -58,6 +58,9 @@ else
     }
     else
     {
+        <div class="testa-registro">
+            <span>@Testi.Conteggio(note.Count, "nota", "note")</span>
+        </div>
         <ul class="elenco-note">
             @foreach (var n in note)
             {
@@ -68,7 +71,13 @@ else
                         {
                             <span class="estratto">@estratto</span>
                         }
-                        <span class="meta">@Meta(n)</span>
+                        <span class="meta">
+                            @if (Autore(n) is string autore)
+                            {
+                                <text>@autore · </text>
+                            }
+                            <span class="dato">@Testi.DataOra(n.UpdatedAt)</span>
+                        </span>
                     </a>
                 </li>
             }
@@ -181,9 +190,9 @@ else
         // Try separato, e non insieme alle note: i membri servono soltanto a scrivere il nome
         // dell'autore accanto a ogni nota. Metterli nello stesso catch faceva sì che un timeout su
         // questa seconda chiamata dichiarasse illeggibili delle note già lette benissimo, e le
-        // nascondesse dietro un messaggio d'errore falso. Un fallimento qui degrada Meta() al solo
-        // orario, che è comunque l'informazione principale — non è un errore da mostrare, ma va
-        // detto in console, altrimenti resta invisibile.
+        // nascondesse dietro un messaggio d'errore falso. Un fallimento qui lascia Autore() a null,
+        // e la riga mostra la sola data — che è comunque l'informazione principale: non è un errore
+        // da mostrare, ma va detto in console, altrimenti resta invisibile.
         try
         {
             membri = await SpaziRepository.MembriAsync(attivo.Id);
@@ -243,12 +252,11 @@ else
         return testo[..fine] + "…";
     }
 
-    private string Meta(Note n)
-    {
-        var quando = n.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
-        var autore = membri.FirstOrDefault(m => m.UtenteId == n.OwnerId)?.Nome;
-        return autore is null ? quando : $"{autore} · {quando}";
-    }
+    // Separato dalla data perché nel markup quella va in un <span class="dato"> a sé, per renderla
+    // in carattere monospaziato: il nome di una persona non è un dato e non ci va. La data la scrive
+    // Testi.DataOra — con l'ora, che qui serve: due modifiche nello stesso giorno sono la norma, e
+    // la sola data non direbbe quale sia l'ultima.
+    private string? Autore(Note n) => membri.FirstOrDefault(m => m.UtenteId == n.OwnerId)?.Nome;
 
     public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
 }

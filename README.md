@@ -124,17 +124,30 @@ Eton.Tests/     xUnit — solo logica pura, nessun database
 supabase/       migration e script di verifica delle policy
 docs/           design e piani
 wwwroot/css/    app.css: foglio unico, tutto costruito sulle variabili di :root
-wwwroot/fonts/  Inter, un solo woff2 variabile per tutti i pesi
+wwwroot/fonts/  Inter (variabile) e IBM Plex Mono (due pesi)
 ```
 
 La navigazione è **un solo componente** (`Shared/Navigazione.razor`) in due forme: barra in fondo
 allo schermo sul telefono, colonna a sinistra da 64rem in su. A cambiare è solo il CSS — due
 componenti separati sarebbero due elenchi di voci da tenere allineati a mano.
 
-I due colori d'accento non sono intercambiabili, ed è scritto in testa ad `app.css`: il **blu** è
-dove si preme (pulsanti, collegamenti, voce attiva, campo a fuoco), il **verde acido** è dove si
-constata (voti, medie, conteggi). Usare il verde per un pulsante toglie all'interfaccia
-un'informazione che oggi trasmette senza parole.
+Tre regole di stile che il foglio dà per acquisite, tutte scritte in testa ad `app.css`:
+
+**I due accenti non sono intercambiabili.** Il **blu** è dove si preme (pulsanti, collegamenti, voce
+attiva, campo a fuoco), il **verde acido** è dove si constata (voti, medie, conteggi). Usare il verde
+per un pulsante toglie all'interfaccia un'informazione che oggi trasmette senza parole.
+
+**Le due voci tipografiche seguono lo stesso discrimine.** Inter scrive la prosa, Plex Mono scrive i
+dati: voti, medie, conteggi, date, codici, micro-etichette. È la differenza fra i due modi di usare
+Eton — una nota si scrive, una collezione si giudica — resa visibile senza spiegarla. Il mono su una
+frase intera è sempre un errore.
+
+**Gli elenchi sono registri, non pile di riquadri.** Il contenitore porta il bordo, le righe sono
+separate da un filo, e i voti stanno in una colonna larga `3.5rem` in cui le cifre si incolonnano —
+si leggono in verticale, come una classifica. Da qui una conseguenza non ovvia: **qualunque cosa
+occupi quella colonna deve stare in 3.5rem**. Un elemento coperto dal voto al buio mostra `?` e sposta
+il conteggio nella riga di meta proprio per questo (v. `Coperto` in `Pages/CollectionDetail.razor`);
+una pastiglia con dentro «2 recensioni» sfondava l'incolonnamento di tutte le altre righe.
 
 Alcune regole che il codice dà per acquisite:
 
@@ -142,8 +155,10 @@ Alcune regole che il codice dà per acquisite:
   le date e i numeri si formattano con `CultureInfo.InvariantCulture` e, dove serve la virgola
   decimale, la si scrive a mano (v. `Services/CalcoliVoti.Testo`).
 - **Nessun asset remoto.** Niente CDN, niente `@import`, niente immagini o font caricati da altri
-  domini: l'applicazione deve funzionare offline una volta installata. Il font (Inter) è servito da
-  noi, in `wwwroot/fonts/`, in un unico file variabile che copre tutti i pesi; le icone della
+  domini: l'applicazione deve funzionare offline una volta installata. I font sono serviti da noi, in
+  `wwwroot/fonts/` — Inter in un unico file variabile che copre tutti i pesi, Plex Mono in due file
+  statici (400 e 600, sottoinsieme latino: le accentate italiane stanno lì, il latin-ext sarebbe 13 KB
+  di glifi che non scriviamo mai). Le licenze dei due font stanno accanto ai file. Le icone della
   navigazione sono SVG disegnati in `Shared/Icona.razor`. Se aggiungi un formato di file nuovo,
   ricordati di elencarlo in `offlineAssetsInclude` dentro `wwwroot/service-worker.published.js`,
   altrimenti offline non c'è.

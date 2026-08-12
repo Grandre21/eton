@@ -29,7 +29,7 @@
             <div class="avviso" role="status">@avviso</div>
         }
 
-        <p>
+        <p class="riepilogo-voto">
             @if (Coperto)
             {
                 <span class="voto-coperto">?</span>
@@ -125,7 +125,12 @@
                 {
                     <div class="riga-recensione">
                         <span class="etichetta-piccola">@NomeAutore(r) · @Data(r)</span>
-                        <span class="voto-cifre">@CalcoliVoti.Testo(r.Rating) / @VotoMassimo</span>
+
+                        @* Senza "/ @VotoMassimo": la scala si dichiara una volta sola, in cima alla scheda
+                           accanto alla media, e ripeterla su ogni riga la trasforma in rumore. Qui i voti
+                           stanno incolonnati e devono restare larghi quanto la colonna (3.5rem), dove un
+                           "/ 10" in più non ci sta. *@
+                        <span class="voto-cifre">@CalcoliVoti.Testo(r.Rating)</span>
 
                         @* Testo semplice, non Markdown: a differenza delle note, un commento di recensione non
                            ha un editor con anteprima e non ci si aspetta formattazione — è un'opinione breve, non

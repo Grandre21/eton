@@ -19,6 +19,19 @@
    Il discrimine non è "numero contro non numero" ma "premibile contro
    constatato": un ✓ accanto a "non vendiamo i tuoi dati" è verde perché è un
    fatto, e blu suggerirebbe che ci si possa cliccare sopra.
+
+   DUE VOCI TIPOGRAFICHE, E LO STESSO DISCRIMINE. Inter scrive la PROSA: titoli,
+   frasi, etichette di campo, tutto ciò che si legge. Plex Mono scrive i DATI:
+   voti, medie, conteggi, date, codici, micro-etichette. Non è un vezzo da
+   terminale — è la differenza fra i due modi di usare Eton (una nota si scrive,
+   una collezione si giudica) resa visibile senza spiegarla. Il mono su una frase
+   intera è sempre un errore: non è "il font bello", è il font dei numeri.
+
+   GERARCHIA DI SUPERFICIE, TRE LIVELLI. Il fondo non ha bordi e ospita quasi
+   tutto. Il livello 1 (.scheda, .registro) è un piano rialzato con un filo di
+   bordo. Il livello 2 (.superficie-alta più ombra tinta) è per ciò che deve
+   staccarsi davvero, ed è raro. Quando ogni cosa è un riquadro, nessuna lo è: la
+   piattezza nasce da lì, non dai colori.
    ========================================================================= */
 
 /* Inter, in un unico file variabile: un solo woff2 da 48 KB copre tutti i pesi
@@ -33,6 +46,30 @@
     font-family: "Inter";
     src: url("../fonts/inter.woff2") format("woff2");
     font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* IBM Plex Mono, due pesi e non uno solo: 400 per i dati minori (date, righe di
+   meta) e 600 per quelli che devono farsi leggere da lontano (voti, medie,
+   micro-etichette). A differenza di Inter non è un file variabile, quindi ogni
+   peso costa un file — due sono il minimo per avere una gerarchia, e il terzo
+   non servirebbe a niente che questi due non facciano già.
+   Solo il sottoinsieme latino: le accentate italiane stanno tutte in U+00E0-00F9,
+   dentro il blocco base. Il latin-ext (ceco, polacco, turco) sarebbero 13 KB per
+   glifi che questa applicazione non scrive mai. */
+@font-face {
+    font-family: "Plex Mono";
+    src: url("../fonts/plex-mono-400.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Plex Mono";
+    src: url("../fonts/plex-mono-600.woff2") format("woff2");
+    font-weight: 600;
     font-style: normal;
     font-display: swap;
 }
@@ -73,7 +110,19 @@
     --errore-sfondo: #241416;
     --errore-bordo: #5e2b2e;
 
-    /* --- forma --- */
+    /* --- le due voci ---
+       Il fallback del mono non è generico: se il woff2 non arriva, ui-monospace
+       sceglie il mono di sistema (SF Mono, Cascadia, Menlo) invece del Courier
+       che il browser userebbe per "monospace" nudo. */
+    --prosa: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+    /* --- forma ---
+       Tre raggi e non due, perché ora le superfici sono annidate: il contenitore
+       (--raggio-l) deve essere PIÙ tondo di ciò che contiene, altrimenti gli
+       angoli interni sembrano sbagliati. Le righe dentro un registro hanno raggio
+       zero: sono divisioni di un oggetto, non oggetti. */
+    --raggio-l: 16px;
     --raggio: 12px;
     --raggio-s: 8px;
     --raggio-pieno: 999px;
@@ -97,15 +146,23 @@
     --s7: 3rem;
     --s8: 4.5rem;
 
-    /* --- scala tipografica --- */
-    --t-xs: .72rem;
-    --t-sm: .82rem;
-    --t-md: .92rem;
-    --t-base: 1rem;
-    --t-lg: 1.15rem;
-    --t-xl: 1.4rem;
-    --t-2xl: 1.8rem;
-    --t-3xl: 2.3rem;
+    /* --- scala tipografica ---
+       I gradini vanno a salti che l'occhio distingue. Nella versione precedente
+       tre valori stavano fra .82 e 1 rem: undici per cento di differenza, cioè
+       un pixel e mezzo, che nessuno vede — e un'interfaccia dove "piccolo" e
+       "normale" sembrano uguali non ha gerarchia, ha solo testo. Da --t-base in
+       su il rapporto è circa 1,3: ogni gradino è un salto dichiarato.
+       Sotto --t-base restano due soli gradini, ed è voluto: servono per i dati e
+       le micro-etichette, che sono in mono e a corpo piccolo si distinguono già
+       per famiglia prima che per dimensione. */
+    --t-xs: .6875rem;   /* 11px — micro-etichette maiuscole, sempre in mono */
+    --t-sm: .8125rem;   /* 13px — dati secondari, righe di meta */
+    --t-md: .9375rem;   /* 15px — testi di servizio: avvisi, errori, corpo nota */
+    --t-base: 1rem;     /* 16px — la prosa */
+    --t-lg: 1.25rem;    /* 20px — nomi in evidenza, voto di riga */
+    --t-xl: 1.625rem;   /* 26px */
+    --t-2xl: 2.25rem;   /* 36px */
+    --t-3xl: 3.25rem;   /* 52px — la cifra grande, il solo corpo davvero display */
 
     --transizione: 150ms ease;
 
@@ -141,7 +198,7 @@ html, body {
     /* Inter prima, poi i font di sistema: se il woff2 non arriva — offline alla
        primissima visita, o bloccato — la pagina resta leggibile e cambia solo di
        carattere. */
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--prosa);
     font-size: 16px;
     line-height: 1.55;
     /* Su fondo scuro il testo non antialiasato appare più grasso di quanto
@@ -195,12 +252,15 @@ h1, h2, h3 {
     text-wrap: balance;
 }
 
+/* Il titolo di pagina è l'unico elemento a peso 800 di tutta l'applicazione, ed è
+   così che si riconosce senza leggerlo. La crenatura negativa cresce col corpo:
+   a 36px il -.03em di prima lasciava ancora le lettere staccate. */
 h1 {
     font-size: var(--t-2xl);
-    font-weight: 700;
-    letter-spacing: -.03em;
-    margin: 0 0 var(--s4);
-    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -.035em;
+    margin: 0 0 var(--s2);
+    line-height: 1.08;
 }
 
 h2 { font-size: var(--t-lg); font-weight: 650; margin: 0 0 var(--s3); }
@@ -208,18 +268,49 @@ h3 { font-size: var(--t-base); font-weight: 600; margin: 0 0 var(--s2); }
 
 a { color: var(--accento); }
 
-.sottotitolo { color: var(--testo-tenue); margin: 0 0 var(--s4); }
+/* Il sottotitolo segue subito il titolo e lo spiega: sta più vicino a lui che al
+   contenuto sotto, altrimenti si legge come una frase a sé. */
+.sottotitolo { color: var(--testo-tenue); margin: 0 0 var(--s6); font-size: var(--t-md); }
 .testo-tenue { color: var(--testo-tenue); font-size: var(--t-sm); margin: 0 0 var(--s3); }
+
+/* Un collegamento dentro un testo di servizio non è un invito: è una porta per chi
+   la sta già cercando. Blu e sottolineato pieno peserebbe più della frase che lo
+   contiene — e in fondo a una pagina, accanto a un pulsante primario, due cose che
+   chiamano l'attenzione fanno sì che non la chiami nessuna delle due. Qui prende il
+   colore del testo attorno e si accende solo quando ci si passa sopra. */
+.testo-tenue a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--bordo-forte);
+    text-underline-offset: 3px;
+}
+
+.testo-tenue a:hover { color: var(--accento); text-decoration-color: currentColor; }
 .nome-grande { font-size: var(--t-lg); font-weight: 600; letter-spacing: -.02em; margin: 0 0 var(--s1); }
 
+/* In mono, e non è indifferente: una micro-etichetta maiuscola spaziata è un
+   segnale di struttura, non una frase, e il mono lo dichiara al primo sguardo.
+   La spaziatura scende da .18em a .12em perché il mono ha già le lettere a passo
+   fisso: sommando le due spaziature la parola si sfilaccia. */
 .etichetta-piccola {
     display: block;
+    font-family: var(--mono);
     font-size: var(--t-xs);
     font-weight: 600;
-    letter-spacing: .18em;
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--testo-fioco);
     margin-bottom: var(--s2);
+}
+
+/* Il dato in mezzo alla prosa: date, conteggi, tutto ciò che è un valore e non
+   una frase. Una classe sola, così il mono non finisce sparso a mano nelle
+   pagine — dove finirebbe anche su ciò che frase è. */
+.dato {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: .95em;
+    letter-spacing: -.01em;
 }
 
 /* ------------------------------------------------------------- guscio --- */
@@ -233,7 +324,7 @@ a { color: var(--accento); }
 .app-layout {
     max-width: 720px;
     margin: 0 auto;
-    padding: var(--s5) var(--s4);
+    padding: var(--s6) var(--s4);
     /* La barra fissa in basso non deve coprire il contenuto. env() va
        risommato e non ereditato: la barra stessa se ne allarga (v. .nav-app),
        quindi su un iPhone con l'home indicator un valore secco non basterebbe
@@ -381,9 +472,9 @@ a { color: var(--accento); }
 .scheda {
     background: var(--superficie);
     border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
-    padding: var(--s5) var(--s4);
-    margin-bottom: var(--s4);
+    border-radius: var(--raggio-l);
+    padding: var(--s5);
+    margin-bottom: var(--s5);
     /* Il filo chiaro in cima non è un vezzo: su fondo nero una superficie appena
        più chiara del fondo non si stacca, e il bordo da solo la fa sembrare un
        riquadro disegnato invece che un piano rialzato. Una riga di luce sul
@@ -392,11 +483,14 @@ a { color: var(--accento); }
 }
 
 /* Il titolo di una scheda è un sopratitolo, non un titolo: dice di che cosa è
-   l'elenco che segue, e deve pesare meno del contenuto che introduce. */
+   l'elenco che segue, e deve pesare meno del contenuto che introduce. Stesso
+   trattamento di .etichetta-piccola, mono compreso: sono la stessa cosa in due
+   posti diversi, e vederle diverse farebbe sembrare che dicano cose diverse. */
 .scheda h2 {
+    font-family: var(--mono);
     font-size: var(--t-xs);
     font-weight: 600;
-    letter-spacing: .18em;
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--testo-fioco);
     margin: 0 0 var(--s3);
@@ -404,13 +498,14 @@ a { color: var(--accento); }
 
 .scheda.pericolo { border-color: var(--errore-bordo); }
 
+/* Uno schermo vuoto è un invito ad agire, non un avviso: niente bordo tratteggiato
+   attorno al nulla — che disegna una scatola per dire che la scatola è vuota — ma
+   spazio, un testo tenue e il pulsante che porta fuori di lì. */
 .vuoto {
     text-align: center;
-    padding: var(--s7) var(--s4);
+    padding: var(--s8) var(--s4);
     color: var(--testo-tenue);
-    border: 1px dashed var(--bordo);
-    border-radius: var(--raggio);
-    margin-bottom: var(--s4);
+    margin-bottom: var(--s5);
 }
 
 .vuoto p { margin: 0; }
@@ -465,12 +560,16 @@ a { color: var(--accento); }
    l'unico segnale che il dito ha preso. */
 .btn:active { transform: scale(.97); }
 
+/* L'alone sotto il pulsante primario resta, ma appena accennato: a .55 di opacità
+   sembrava che il pulsante emettesse luce, e un'interfaccia in cui un elemento
+   brilla è un'interfaccia in cui quello è l'unico elemento che si guarda. Qui il
+   pulsante deve farsi trovare, non chiamare. */
 .btn.primary {
     background: var(--accento);
     border-color: var(--accento);
     color: var(--su-accento);
     font-weight: 600;
-    box-shadow: 0 6px 20px -8px rgba(76, 141, 255, .55);
+    box-shadow: 0 4px 14px -8px rgba(76, 141, 255, .35);
 }
 
 .btn.primary:hover { background: var(--accento-scuro); border-color: var(--accento-scuro); }
@@ -497,6 +596,12 @@ a { color: var(--accento); }
     gap: var(--s2);
     flex-wrap: wrap;
 }
+
+/* Una fila di azioni che apre una pagina (il "Nuova collezione" sopra l'elenco)
+   ha bisogno di stacco da ciò che segue; la stessa fila in fondo a una scheda no,
+   perché il fondo della scheda glielo dà già. Una regola sola per i due casi,
+   invece di due classi che chi scrive il markup deve ricordarsi di scegliere. */
+.azioni:not(:last-child) { margin-bottom: var(--s5); }
 
 /* ------------------------------------------------------------- campi --- */
 
@@ -547,16 +652,18 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 .codice-grande {
     flex: 1;
-    font-size: var(--t-xl);
+    /* Un codice d'invito si legge carattere per carattere e spesso si detta ad
+       alta voce: il mono è nato per questo, e a passo fisso non si perde il segno
+       fra una lettera e la successiva. */
+    font-family: var(--mono);
+    font-size: var(--t-lg);
     font-weight: 600;
-    letter-spacing: .18em;
-    padding: var(--s3);
+    letter-spacing: .16em;
+    padding: var(--s4) var(--s3);
     background: var(--sfondo);
     border: 1px dashed var(--bordo-forte);
     border-radius: var(--raggio);
     text-align: center;
-    /* Un codice d'invito si legge carattere per carattere e spesso si detta ad
-       alta voce: a passo fisso le cifre non ballano e non si perde il segno. */
     font-variant-numeric: tabular-nums;
 }
 
@@ -568,6 +675,12 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     gap: var(--s3);
     margin-bottom: var(--s4);
 }
+
+/* Su schermo stretto .griglia-due non è una griglia: le sezioni si impilano e
+   niente le separa, così il pulsante dell'una finisce appiccicato alla testata
+   dell'altra e le due sembrano un blocco solo. Su schermo largo lo stacco lo fa
+   già il gap della griglia, e questo margine viene azzerato più sotto. */
+.griglia-due > section { margin-bottom: var(--s7); }
 
 .intestazione h1 { margin: 0; }
 
@@ -655,21 +768,34 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 }
 
 .alla-cieca .quanti {
+    font-family: var(--mono);
     font-size: var(--t-2xl);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -.03em;
     line-height: 1;
     color: var(--secondario);
     font-variant-numeric: tabular-nums;
 }
 
-.alla-cieca p { margin: 0; color: var(--testo-tenue); font-size: var(--t-md); }
+.alla-cieca p { margin: 0; color: var(--testo-tenue); font-size: var(--t-md); max-width: 34ch; }
 
-/* Al posto della media, finché è coperta. Grande come il numero che sostituisce,
-   così l'intestazione non cambia altezza nel momento in cui il voto si scopre. */
+/* Al posto della media, finché è coperta. Stessa famiglia, stesso corpo e stessa
+   linea di base del numero che sostituisce: l'intestazione non cambia altezza né
+   allineamento nel momento in cui il voto si scopre.
+
+   Il punto interrogativo NON eredita la crenatura stretta del voto: lì serviva a
+   recuperare lo spazio attorno alla virgola, e qui non c'è nessuna virgola —
+   applicarla stringerebbe soltanto un glifo solo contro il testo che segue.
+
+   Un gradino sotto il voto vero, e non per un dettaglio tipografico: a corpo
+   display il punto interrogativo di un carattere a passo fisso ha il puntino
+   molto staccato dal gancio e a 52px sembra un glifo rotto. Ma soprattutto una
+   schermata coperta deve invitare a votare, non celebrare il dato che manca:
+   l'assenza non merita il corpo più grande dell'applicazione. */
 .voto-coperto {
-    font-size: var(--t-3xl);
-    font-weight: 700;
+    font-family: var(--mono);
+    font-size: var(--t-2xl);
+    font-weight: 600;
     line-height: 1;
     color: var(--testo-fioco);
 }
@@ -679,7 +805,29 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 .elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .editor-campi {
     list-style: none;
     padding: 0;
-    margin: 0 0 var(--s4);
+    margin: 0 0 var(--s5);
+}
+
+/* IL REGISTRO. Un elenco di cose confrontabili è UN oggetto con delle divisioni,
+   non una pila di riquadri: il riquadro attorno a ogni riga mette un muro fra una
+   cosa e l'altra proprio dove il confronto è il punto, e dodici bordi identici
+   uno sotto l'altro non sono dodici informazioni, sono rumore ripetuto dodici
+   volte. Il contenitore porta il bordo, le righe portano un filo di separazione.
+
+   .elenco-membri e .editor-campi restano fuori dall'elenco dei selettori: il primo
+   è un elenco di persone dentro una scheda, il secondo un editor le cui righe si
+   aggiungono e si tolgono, e nessuno dei due si scorre per confrontare. */
+.elenco-spazi,
+.elenco-note,
+.elenco-collezioni,
+.elenco-elementi {
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio-l);
+    /* Le righe hanno raggio zero: senza questo, la prima e l'ultima sborderebbero
+       oltre gli angoli tondi del contenitore. */
+    overflow: hidden;
+    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
 }
 
 /* Tutte le righe cliccabili degli elenchi hanno la stessa base: cambia solo
@@ -688,55 +836,105 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 .riga-spazio, .riga-nota, .riga-collezione, .riga-elemento {
     display: flex;
     align-items: center;
-    gap: var(--s3);
-    min-height: var(--tocco);
+    gap: var(--s4);
+    /* Più alta del bersaglio minimo: in un registro la riga deve poter contenere
+       nome e meta su due righe senza stringersi, e l'aria fra una riga e l'altra
+       è ciò che rende scorrevole la lettura in colonna. */
+    min-height: 66px;
     padding: var(--s3) var(--s4);
-    margin-bottom: var(--s2);
-    background: var(--superficie);
-    border: 1px solid var(--bordo);
-    border-radius: var(--raggio);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--bordo);
+    border-radius: 0;
+    margin: 0;
     color: var(--testo);
     text-decoration: none;
-    transition: background var(--transizione), border-color var(--transizione), transform var(--transizione);
+    transition: background var(--transizione), box-shadow var(--transizione);
 }
 
+/* L'ultimo filo va tolto: cadrebbe sopra il bordo del contenitore e si vedrebbe
+   una doppia linea in fondo all'elenco. */
+li:last-child > .riga-spazio,
+li:last-child > .riga-nota,
+li:last-child > .riga-collezione,
+li:last-child > .riga-elemento { border-bottom: none; }
+
+/* La riga puntata si accende e si fa marcare a sinistra. Il filo verticale
+   sostituisce la freccia che stava in fondo a ogni riga: dice la stessa cosa —
+   qui si entra — ma solo sulla riga che interessa adesso, invece di ripetersi
+   identico su tutte. inset e non un bordo vero: un bordo sposterebbe il contenuto
+   di tre pixel al passaggio del mouse. */
 .riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover {
     background: var(--superficie-alta);
-    border-color: var(--bordo-forte);
+    box-shadow: inset 3px 0 0 var(--accento);
 }
 
+/* Sul telefono non esiste il passaggio del mouse: il tocco deve rispondere da sé,
+   e deve farlo con qualcosa di visibile sotto un dito che copre metà riga — lo
+   sfondo, non un dettaglio di tre pixel. Niente scale: dentro un contenitore con
+   overflow nascosto una riga che si rimpicciolisce mostra il fondo agli angoli. */
 .riga-spazio:active, .riga-nota:active, .riga-collezione:active, .riga-elemento:active {
-    transform: scale(.99);
-}
-
-/* La freccia in fondo alla riga: due bordi di un quadrato vuoto, ruotati di 45
-   gradi. Disegnata così e non con un carattere (›) né con un'immagine perché
-   deve essere identica su ogni sistema — la punta di un glifo cambia forma e
-   allineamento a seconda del font installato — e non deve costare una richiesta.
-   Sulle righe delle note non c'è: quelle impilano titolo, estratto e data in
-   colonna, e una freccia finirebbe sotto il testo invece che accanto. */
-.riga-spazio::after, .riga-collezione::after, .riga-elemento::after {
-    content: "";
-    flex: none;
-    width: 7px;
-    height: 7px;
-    margin-left: auto;
-    border-right: 2px solid var(--testo-fioco);
-    border-bottom: 2px solid var(--testo-fioco);
-    transform: rotate(-45deg);
-    transition: border-color var(--transizione);
-}
-
-.riga-spazio:hover::after, .riga-collezione:hover::after, .riga-elemento:hover::after {
-    border-color: var(--accento);
+    background: var(--bordo);
 }
 
 /* La riga di una nota impila titolo, estratto e data; le altre affiancano. */
-.riga-nota { flex-direction: column; align-items: stretch; gap: var(--s1); }
+.riga-nota { flex-direction: column; align-items: stretch; justify-content: center; gap: var(--s1); }
 
 .riga-spazio .nome { flex: 1; font-weight: 500; }
 .riga-nota .titolo { font-weight: 600; letter-spacing: -.01em; }
 .riga-nota .estratto, .riga-nota .meta { color: var(--testo-tenue); font-size: var(--t-sm); }
+
+/* L'intestazione del registro: dice cosa si sta guardando e cosa c'è nella
+   colonna di destra, come la testata di una tabella. Fuori dal contenitore e non
+   dentro, così non diventa una riga fra le righe. */
+.testa-registro {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s3);
+    padding: 0 var(--s4) var(--s2);
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--testo-fioco);
+}
+
+/* Allineata alla colonna dei voti: stessa larghezza di .voto-riga, così la parola
+   sta esattamente sopra le cifre che intesta. */
+.testa-registro .colonna {
+    margin-left: auto;
+    flex: none;
+    width: 3.5rem;
+    text-align: right;
+}
+
+/* L'unica animazione orchestrata dell'applicazione, e sta qui perché qui c'è una
+   sequenza vera: le righe arrivano dall'alto una dopo l'altra, come si posa un
+   elenco. Il ritardo si ferma alla sesta riga — su una collezione da quaranta
+   elementi, quaranta ritardi progressivi diventerebbero due secondi di attesa per
+   vedere il fondo, cioè un'animazione che si mette in mezzo invece di accompagnare.
+
+   Chi ha chiesto meno movimento al sistema non vede niente di tutto questo: la
+   regola prefers-reduced-motion in testa al file azzera la durata, e both porta
+   comunque le righe allo stato finale.
+
+   :is() per non ripetere quattro selettori sei volte; la specificità resta quella
+   di una classe, quindi tutto ciò che sta qui sotto continua a sovrascriverla. */
+@keyframes riga-entra {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li {
+    animation: riga-entra 380ms cubic-bezier(.2, .7, .3, 1) both;
+}
+
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(2) { animation-delay: 45ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(3) { animation-delay: 90ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(4) { animation-delay: 135ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(5) { animation-delay: 180ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(n+6) { animation-delay: 220ms; }
 
 /* L'estratto sta su una riga sola: una nota lunga non deve allungare la
    propria riga d'elenco. */
@@ -787,28 +985,28 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     margin-bottom: var(--s3);
 }
 
-/* Dentro le schede della Home l'elenco è solo una lista di titoli. */
-.elenco-note.compatto li, .elenco-collezioni.compatto li {
-    padding: 0;
-    border-bottom: 1px solid var(--bordo);
-}
+/* La Home non ha più un elenco "compatto" tutto suo: mostra gli stessi registri
+   delle pagine di elenco, solo più corti (le tre voci più recenti). Un secondo
+   modo di disegnare una lista di note esisteva per stare dentro una scheda, e la
+   scheda non c'è più — teneva due trattamenti diversi per la stessa cosa, ed è
+   esattamente il genere di doppione che fa divergere le pagine col tempo. */
 
-.elenco-note.compatto li:last-child, .elenco-collezioni.compatto li:last-child { border-bottom: none; }
-
-.elenco-note.compatto a, .elenco-collezioni.compatto a {
-    /* Anche in forma compatta la riga resta un bersaglio da dito: è un blocco
-       alto quanto serve, non una parola sottolineata da centrare. */
-    display: flex;
-    align-items: center;
-    min-height: var(--tocco);
-    color: var(--testo);
+/* Il collegamento nella testata di un registro ("Tutte"): sta in fondo alla riga,
+   dove finirebbe la colonna dei voti se ci fosse. Non è una micro-etichetta come
+   il resto della testata — è l'unica cosa premibile lì dentro, quindi non eredita
+   né il maiuscolo né il colore fioco, altrimenti sembrerebbe un'intestazione. */
+.testa-registro a {
+    margin-left: auto;
+    color: var(--accento);
     text-decoration: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--prosa);
+    font-size: var(--t-sm);
+    font-weight: 500;
 }
 
-.elenco-note.compatto a:hover, .elenco-collezioni.compatto a:hover { color: var(--accento); }
+.testa-registro a:hover { text-decoration: underline; }
 
 /* ------------------------------------------------------------- membri --- */
 
@@ -1001,6 +1199,10 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
        min-width forza flex-wrap a mandare la pastiglia a capo, invece di
        stringere il select fino a renderlo illeggibile. */
     min-width: 10rem;
+    /* E sopra non cresce oltre: un menù a tendina con dentro tre parole, steso su
+       settecento pixel, sembra un campo di ricerca. Il tetto lo tiene della
+       larghezza del suo contenuto anche quando la riga è mezza vuota. */
+    max-width: 20rem;
 }
 
 .barra-elenco .pastiglia {
@@ -1019,44 +1221,103 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
    colorarlo di verde acido lo rende leggibile in diagonale, senza cercarlo, e lo
    distingue da tutto ciò che invece si può premere. */
 
+/* La colonna delle cifre, ed è la firma di questo stile. Larghezza FISSA e non
+   minima: con min-width un "10" e un "7,5" occupano ampiezze diverse e la colonna
+   si sfilaccia riga per riga: allineate, invece, le cifre si leggono in verticale
+   come una classifica, che è il modo in cui un elenco di cose votate si guarda
+   davvero. Il mono fa il resto — con Inter, anche a tabular-nums, la virgola
+   resta più stretta delle cifre e i decimali non si incolonnano. */
 .voto-riga {
     flex: none;
-    min-width: 2.5rem;
+    width: 3.5rem;
     text-align: right;
+    font-family: var(--mono);
+    font-size: var(--t-lg);
+    font-weight: 600;
+    letter-spacing: -.04em;
     color: var(--secondario);
-    font-size: var(--t-md);
-    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
+/* Un elemento ancora coperto dal voto al buio: il posto nella colonna resta, la
+   cifra no. Grigio e non verde perché non è un voto ma la sua assenza
+   temporanea — lo stesso "?" che si trova aprendo l'elemento, così le due
+   schermate si riconoscono l'una nell'altra.
+   Quante persone hanno già recensito si legge nella riga di meta, non qui: una
+   pastiglia con dentro "2 recensioni" è larga il doppio della colonna e sfonda
+   l'incolonnamento di tutte le righe, che è l'unica cosa che rende leggibile un
+   registro. */
+.voto-riga.coperto { color: var(--testo-fioco); }
+
+/* Il solo corpo davvero display dell'applicazione, e sta sul voto: in una
+   collezione la media è il dato che dà senso a tutto il resto, e merita di essere
+   la prima cosa che si vede entrando in un elemento.
+
+   La crenatura è molto più stretta che altrove (-.09em contro -.02em) e non è un
+   gusto: in un carattere a passo fisso la virgola occupa la stessa cassa di un
+   otto, quindi le sta attorno lo spazio di mezzo glifo per parte. A 13px non si
+   nota; a 52px "9,5" si legge "9 , 5". Stringere recupera quello spazio senza
+   toccare le cifre, che restano larghe uguali e quindi ancora incolonnabili. */
 .voto-grande {
+    font-family: var(--mono);
     font-size: var(--t-3xl);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
-    letter-spacing: -.03em;
+    letter-spacing: -.09em;
     color: var(--secondario);
     font-variant-numeric: tabular-nums;
 }
 
+/* La media e la scala che la accompagna ("/ 10 — 4 voti"): allineate sulla stessa
+   linea di base, non impilate a caso dentro un paragrafo. Senza, il testo piccolo
+   si appoggia al fondo della cifra e sembra caduto lì. */
+.riepilogo-voto {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0 0 var(--s6);
+}
+
+.riepilogo-voto .testo-tenue { margin: 0; }
+
+/* Le recensioni sono un capitolo a parte della scheda, non la sua continuazione:
+   lo stacco lo fa lo spazio, e il filo in cima serve solo a dire dove comincia. */
 .blocco-recensioni {
-    margin-top: var(--s6);
+    margin-top: var(--s7);
     padding-top: var(--s5);
     border-top: 1px solid var(--bordo);
 }
 
+/* La recensione di un'altra persona: il voto sta a sinistra in colonna, il testo
+   accanto. Incolonnati come nel registro, i voti degli altri si confrontano fra
+   loro invece di andare cercati in mezzo alle frasi. */
 .riga-recensione {
-    padding: var(--s3) 0;
+    display: grid;
+    grid-template-columns: 3.5rem 1fr;
+    gap: var(--s2) var(--s4);
+    padding: var(--s4) 0;
     border-bottom: 1px solid var(--bordo);
 }
 
 .riga-recensione:last-child { border-bottom: none; }
-.riga-recensione p { margin: var(--s1) 0 0; }
 
+/* Nome e data in cima alla colonna di destra, il commento sotto: la griglia le
+   mette entrambe nella seconda colonna, allineate al voto che sta a sinistra. */
+.riga-recensione .etichetta-piccola { grid-column: 2; margin: 0; }
+.riga-recensione p { grid-column: 2; margin: 0; }
+
+/* Colonna e riga esplicite, non lasciate all'auto-placement: con la sola riga
+   dichiarata il posizionamento dipenderebbe dall'ordine degli elementi nel
+   markup, e basterebbe spostare il commento sopra il nome per far saltare tutto. */
 .riga-recensione .voto-cifre {
+    grid-column: 1;
+    grid-row: 1 / span 2;
     display: block;
-    width: auto;
-    margin: var(--s1) 0;
-    text-align: left;
+    width: 3.5rem;
+    margin: 0;
+    text-align: right;
+    font-size: var(--t-lg);
     color: var(--secondario);
     font-weight: 600;
 }
@@ -1067,8 +1328,9 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
        cifra per cifra e il cursore accanto salta mentre lo si trascina. */
     width: 3.4rem;
     text-align: center;
+    font-family: var(--mono);
     color: var(--secondario);
-    font-size: var(--t-md);
+    font-size: var(--t-base);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
@@ -1156,7 +1418,13 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     .area-contenuto { padding-left: var(--barra); }
 
     .app-layout {
-        max-width: 1080px;
+        /* 860 e non 1080. Un registro largo mille pixel mette la cifra a un
+           palmo dal nome che descrive, e l'occhio deve attraversare il vuoto per
+           ricongiungerli: la colonna dei voti si legge bene proprio perché sta
+           vicina a ciò che giudica. Ottocentosessanta bastano ancora alle due
+           colonne della Home, ed è anche la larghezza giusta per leggere una nota
+           — oltre i settanta caratteri per riga si perde il segno tornando a capo. */
+        max-width: 860px;
         padding: var(--s7) var(--s6);
         /* Niente più scavalco della barra in basso: qui la barra è a sinistra e
            non copre niente. Restava altrimenti un buco di 7 rem in fondo a ogni
@@ -1266,7 +1534,10 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
         align-items: start;
     }
 
-    .griglia-due > .scheda { margin-bottom: 0; }
+    /* Vale per qualunque figlio, non solo per .scheda: nella Home le due colonne
+       sono sezioni con dentro un registro, e la regola scritta sulla scheda le
+       avrebbe lasciate fuori proprio nel punto in cui serve. */
+    .griglia-due > * { margin-bottom: 0; }
 
     /* Il banner di aggiornamento su schermo largo non è più una fascia a tutta
        larghezza in fondo: si accosta in basso a destra, come una notifica. */

@@ -19,6 +19,9 @@ else
         <div class="errore" role="alert">@errore</div>
     }
 
+    <div class="testa-registro">
+        <span>@Testi.Conteggio(Spazi.Elenco.Count, "spazio", "spazi")</span>
+    </div>
     <ul class="elenco-spazi">
         @foreach (var s in Spazi.Elenco)
         {

@@ -1,6 +1,5 @@
 @page "/collections"
 @using Eton.Models
-@using System.Globalization
 @inject CollectionRepository Repository
 @inject SpaceStateService Spazi
 @implements IDisposable
@@ -58,6 +57,9 @@ else
     }
     else
     {
+        <div class="testa-registro">
+            <span>@Testi.Conteggio(collezioni.Count, "collezione", "collezioni")</span>
+        </div>
         <ul class="elenco-collezioni">
             @foreach (var c in collezioni)
             {
@@ -70,7 +72,7 @@ else
                            dal riquadro invece di troncarsi. Stessa struttura di .riga-elemento. *@
                         <span class="testi">
                             <span class="nome">@c.Name</span>
-                            <span class="meta">@Meta(c)</span>
+                            <span class="meta">@Meta(c) · <span class="dato">@Testi.Data(c.UpdatedAt)</span></span>
                         </span>
                     </a>
                 </li>
@@ -207,17 +209,19 @@ else
         StateHasChanged();
     });
 
-    private string Meta(Collection c)
+    // Separato dalla data perché nel markup quella va in un <span class="dato"> a sé, per renderla
+    // in carattere monospaziato: il conteggio dei campi no, quindi non possono restare un unico
+    // testo. La data la scrive Testi.Data, che è la stessa in tutte le pagine.
+    //
+    // Il conteggio dei campi resta qui e non passa da Testi.Conteggio: lo zero non dice "0 campi"
+    // ma "nessun campo", che è una frase e non un conteggio — la stessa distinzione per cui esiste
+    // CalcoliVoti.TestoVoti accanto a Testi.Conteggio.
+    private string Meta(Collection c) => c.Fields.Count switch
     {
-        var campi = c.Fields.Count switch
-        {
-            0 => "nessun campo",
-            1 => "1 campo",
-            var n => $"{n} campi"
-        };
-        var quando = c.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
-        return $"{campi} · {quando}";
-    }
+        0 => "nessun campo",
+        1 => "1 campo",
+        var n => $"{n} campi"
+    };
 
     public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
 }

@@ -34,6 +34,12 @@
          scaricherebbe il file due volte — una per il preload e una per il @font-face, che per lui
          sono richieste diverse. -->
     <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Dei due tagli del mono si precarica solo il 600, ed è una scelta: disegna i voti e le
+         medie, cioè le cose più grandi e più guardate dell'applicazione, dove la sostituzione
+         del font a pagina già disegnata si vede eccome. Il 400 scrive righe di meta a 13px e può
+         permettersi di arrivare con calma. Precaricare tutto non è precaricare: sono richieste
+         che si contendono la stessa banda, e la più importante arriverebbe più tardi. -->
+    <link rel="preload" href="fonts/plex-mono-600.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="css/app.css" />
     <!-- Bundle degli stili isolati per componente (Benvenuto.razor.css e simili): lo genera la
          build a partire dai file .razor.css, e senza questo <link> nessuno lo carica. -->

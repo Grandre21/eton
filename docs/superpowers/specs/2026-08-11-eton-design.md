@@ -649,12 +649,12 @@ selettore dello spazio in fondo:
   ┌──────────┬──────────────────────────────────┐
   │ ▪ Eton   │                                  │
   │          │      contenuto della pagina       │
-  │ ⌂ Home   │      (max 1080px, centrato)       │
+  │ ⌂ Home   │      (max 860px, centrato)        │
   │ ▤ Note   │                                  │
-  │ ☰ Coll.  │   ┌─────────┐  ┌─────────┐        │
-  │ ⚇ Spazi  │   │  Note   │  │ Collez. │        │
-  │ ⚈ Profilo│   └─────────┘  └─────────┘        │
-  │          │                                  │
+  │ ☰ Coll.  │   NOTE RECENTI   COLLEZIONI       │
+  │ ⚇ Spazi  │   ┌─────────┐   ┌─────────┐       │
+  │ ⚈ Profilo│   ├─────────┤   ├─────────┤       │
+  │          │   └─────────┘   └─────────┘       │
   │ ─────────│                                  │
   │ 👥 Spazio│                                  │
   └──────────┴──────────────────────────────────┘
@@ -663,6 +663,50 @@ selettore dello spazio in fondo:
 È **un solo componente** (`Shared/Navigazione.razor`) in due forme, e a cambiare è solo il CSS: due
 componenti separati sarebbero due elenchi di voci da tenere allineati a mano, e la voce aggiunta a
 uno solo dei due è la svista che non si nota finché qualcuno non usa l'altro schermo.
+
+### 7.1 Il registro
+
+Gli elenchi non sono pile di riquadri: sono **registri**. Il contenitore porta un bordo solo, le
+righe sono divisioni separate da un filo, e a destra corre una colonna di voti larga `3.5rem` in cui
+le cifre — in carattere a passo fisso — si incolonnano.
+
+```
+  12 ELEMENTI                       MEDIA     ← testata, come in una tabella
+  ┌────────────────────────────────────────┐
+  │ Barolo Cannubi 2016              9,5   │
+  │ Piemonte · Nebbiolo · 4 voti           │
+  ├────────────────────────────────────────┤
+  │ Chianti Classico Riserva         7,5   │
+  │ Toscana · Sangiovese · 6 voti          │
+  ├────────────────────────────────────────┤
+  │ Franciacorta Satèn                 ?   │  ← coperto dal voto al buio
+  │ Lombardia · 2 recensioni, coperte      │
+  └────────────────────────────────────────┘
+```
+
+Il riquadro attorno a ogni riga è proprio ciò che impediva il confronto — mette un muro fra una cosa
+e l'altra dove il confronto è il punto — e dodici bordi identici uno sotto l'altro non sono dodici
+informazioni, sono rumore ripetuto dodici volte. Incolonnate, le cifre si leggono in verticale come
+una classifica, che è il modo in cui un elenco di cose votate si guarda davvero.
+
+Da qui una conseguenza che vincola il markup: **qualunque cosa occupi quella colonna deve stare in
+3.5rem**. È il motivo per cui un elemento coperto mostra `?` e sposta il conteggio nella riga di meta
+(v. `Coperto` in `Pages/CollectionDetail.razor`): la pastiglia con dentro «2 recensioni» che c'era
+prima era larga il doppio e sfondava l'incolonnamento di tutte le altre righe.
+
+Su schermo largo il contenuto si ferma a **860px** e non più a 1080: oltre, la cifra finisce a un
+palmo dal nome che giudica e l'occhio deve attraversare il vuoto per ricongiungerli.
+
+### 7.2 Le due voci tipografiche
+
+Inter scrive la **prosa**, IBM Plex Mono scrive i **dati**: voti, medie, conteggi, date, codici,
+micro-etichette. È lo stesso discrimine dei due accenti, applicato al carattere invece che al colore,
+e rende visibile la differenza fra i due modi di usare Eton — una nota si scrive, una collezione si
+giudica. Il mono su una frase intera è sempre un errore: non è «il font bello», è il font dei numeri.
+
+Il mono serve anche a qualcosa di più concreto dell'identità: con Inter, anche chiedendo `tabular-nums`,
+la virgola resta più stretta delle cifre e i decimali non si incolonnano. Senza passo fisso la colonna
+del registro si sfilaccia riga per riga.
 
 Lo spazio attivo è tenuto e persistito da `SpaceStateService`. Il selettore è stato estratto in
 `Shared/SelettoreSpazio.razor` proprio perché ora vive in due posti — in fondo alla colonna sul PC,
