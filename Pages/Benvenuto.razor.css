@@ -1,22 +1,95 @@
+/* =========================================================================
+   La vetrina, e le sue regole non sono quelle dell'applicazione.
+
+   Dentro Eton il movimento è attrito: si apre quaranta volte al mese per
+   aggiungere una riga a una collezione, e un'interfaccia che si mette in scena
+   ogni volta stanca alla terza. Qui è l'opposto — questa pagina si guarda una
+   volta sola e deve convincere, quindi la luce e il movimento SONO il contenuto.
+   È il motivo per cui questo foglio esiste separato invece di finire in app.css.
+
+   Ciò che NON cambia è la grammatica: il blu resta dove si preme, il verde dove
+   si constata, Inter scrive la prosa e Plex Mono i dati. Cambia come sono resi.
+
+   NERO PURO, non il #0d0d0d dell'applicazione. Su uno schermo OLED il nero vero
+   non emette luce affatto, quindi un alone colorato sopra sembra davvero acceso
+   invece che schiarito: è il contrasto a fare la luminosità, non la saturazione.
+   ========================================================================= */
+
+/* Il nero pieno di questa pagina. Sta qui e non in :root perché è una scelta
+   della vetrina: l'applicazione resta sul grigio molto scuro, dove una superficie
+   appena più chiara del fondo deve ancora potersi distinguere. */
+.hero,
+.schede,
+.alla-cieca-vetrina,
+.riservatezza,
+.chiusura,
+.piede {
+    background: #000;
+}
+
 /* ---------- Struttura comune alle sezioni ---------- */
 
+/* Il centraggio è fatto con una GRIGLIA e non con 'margin-inline: auto' sui figli,
+   ed è una lezione pagata: il fondo delle sezioni arriva a tutta larghezza, quindi la
+   colonna leggibile va imposta ai figli — ma ogni regola che poi scriva
+   'margin: 0 0 var(--s5)' su un titolo azzera anche i margini orizzontali, e quel
+   figlio si sposta a sinistra da solo. Con una colonna di griglia il centraggio non
+   dipende più dai margini: le regole possono continuare a usare lo shorthand per lo
+   spazio verticale senza far saltare l'allineamento. */
 section,
 footer.piede {
+    display: grid;
+    grid-template-columns: min(60rem, 100%);
+    justify-content: center;
     padding: var(--s7) 1.25rem;
 }
 
-.hero-contenuto,
-.schede > h2,
-.schede .elenco-carte,
-.spazi,
-.riservatezza,
-.chiusura {
-    max-width: 60rem;
-    margin: 0 auto;
+/* Più stretto della colonna, e centrato dentro di essa: un titolo di apertura non si
+   legge bene su sessanta rem.
+
+   'width: 100%' accanto al max-width non è ridondante, ed è la seconda lezione della
+   griglia: un elemento a blocco con margini automatici si stira e POI si centra, ma un
+   figlio di griglia con margini automatici non si stira affatto — i margini 'auto'
+   assorbono lo spazio libero e la larghezza collassa al contenuto. Senza questa riga
+   l'anteprima si stringeva a un terzo della sua misura, restando perfettamente
+   centrata. */
+.hero-contenuto {
+    width: 100%;
+    max-width: 46rem;
+    margin-inline: auto;
 }
 
-.hero-contenuto {
-    max-width: 46rem;
+/* L'occhiello che apre ogni sezione: dice di cosa si sta per parlare prima del
+   titolo. In mono maiuscolo spaziato, come ogni micro-etichetta dell'applicazione
+   (.etichetta-piccola in app.css).
+
+   NON è blu, e la prima stesura sbagliava: in Eton il blu è dove si preme, e un
+   occhiello non si preme. Resta quindi del grigio delle micro-etichette, e l'identità
+   gliela dà il trattino sfumato fra i due accenti — lo stesso gradiente del marchio,
+   che è un segno grafico e non una promessa di interazione. */
+.occhiello {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-bottom: var(--s3);
+    color: var(--testo-fioco);
+}
+
+.occhiello::before {
+    content: "";
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accento), var(--secondario));
+}
+
+/* Nelle sezioni a testo centrato l'occhiello va centrato a sua volta, e 'text-align'
+   del contenitore qui non basta: essendo figlio diretto della griglia, l'occhiello si
+   stira per tutta la colonna e il suo contenuto si appoggia a sinistra. Nella sezione
+   degli spazi, dove il testo è allineato a sinistra, resta invece dov'è. */
+.schede .occhiello,
+.alla-cieca-vetrina .occhiello {
+    justify-self: center;
 }
 
 /* ---------- Hero ---------- */
@@ -24,36 +97,86 @@ footer.piede {
 .hero {
     position: relative;
     padding-top: var(--s8);
-    padding-bottom: var(--s8);
+    /* Meno del padding superiore: sotto c'è già lo stacco di 3rem dell'anteprima, e
+       sommandoli si apriva un buco di otto rem che faceva sembrare la pagina finita
+       prima di cominciare. */
+    padding-bottom: var(--s6);
     text-align: center;
     overflow: hidden;
-    background:
-        radial-gradient(60% 50% at 50% 0%, rgba(76, 141, 255, .10), transparent 70%),
-        var(--sfondo);
 }
 
-/* Il marchio fa da sopratitolo al titolo: micro-etichetta, non colore d'accento,
-   perché qui non è un'azione da premere. */
-.marchio {
+/* L'alone dietro il marchio, ed è la sola sorgente di luce della pagina. Due
+   gradienti e non uno: il blu largo dà l'atmosfera, il verde stretto e più in basso
+   impedisce che l'alone sembri una macchia monocroma: sono gli stessi due accenti
+   dell'applicazione, qui usati come luce invece che come segnaletica.
+   Su uno pseudo-elemento e non sul background della sezione perché deve poter
+   traboccare oltre i bordi e venire tagliato da overflow: hidden. */
+.hero::before {
+    content: "";
+    position: absolute;
+    top: -20%;
+    left: 50%;
+    width: min(120rem, 190%);
+    height: 80%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background:
+        radial-gradient(45% 55% at 50% 30%, rgba(76, 141, 255, .22), transparent 70%),
+        radial-gradient(28% 40% at 62% 52%, rgba(182, 243, 106, .10), transparent 70%);
+    /* L'alone respira piano. Non è decorazione fine a sé: una pagina di apertura
+       completamente immobile sembra un'immagine, non un'applicazione. */
+    animation: respiro-alone 9s ease-in-out infinite;
+}
+
+@keyframes respiro-alone {
+    0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    50%      { opacity: .78; transform: translateX(-50%) scale(1.06); }
+}
+
+/* IL MARCHIO. Prima era una micro-etichetta grigia da 11px sopra il titolo: la
+   prima cosa che si leggeva era una frase, e l'applicazione non aveva un nome
+   visibile. Ora è il logotipo, ed è la cosa più grande della pagina.
+
+   Il gradiente fra i due accenti non è inventato qui — è già il quadratino del
+   marchio nella colonna di navigazione (app.css, .nav-marchio::before). Portarlo a
+   corpo display è il modo più breve di dire che sono lo stesso marchio.
+
+   background-clip: text riempie i glifi col gradiente, e drop-shadow ne ricava
+   l'alone: a differenza di box-shadow, che seguirebbe il rettangolo dell'elemento,
+   drop-shadow segue la forma di ciò che è stato disegnato — cioè le lettere. Due
+   passaggi, uno stretto e uno larghissimo, come la luce vera. */
+.marchio-grande {
     margin: 0 0 var(--s4);
-    font-size: var(--t-xs);
-    font-weight: 600;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--testo-fioco);
+    font-size: clamp(4.5rem, 17vw, 10rem);
+    font-weight: 800;
+    line-height: .92;
+    /* A questo corpo le lettere di Inter si slegano: la crenatura le ricompatta in
+       una parola sola invece che in una fila di caratteri. */
+    letter-spacing: -.055em;
+    background: linear-gradient(135deg, var(--accento) 15%, var(--secondario) 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter:
+        drop-shadow(0 0 28px rgba(76, 141, 255, .45))
+        drop-shadow(0 0 70px rgba(76, 141, 255, .22))
+        drop-shadow(0 0 90px rgba(182, 243, 106, .12));
 }
 
 .hero h1 {
-    margin: 0 0 var(--s5);
-    font-size: clamp(var(--t-2xl), 6vw, var(--t-3xl));
-    line-height: 1.15;
+    margin: 0 0 var(--s4);
+    /* Un gradino sotto il marchio, e non più il pezzo più grande della pagina: qui
+       il titolo spiega il nome, non lo sostituisce. */
+    font-size: clamp(var(--t-xl), 3.6vw, var(--t-2xl));
+    line-height: 1.2;
     letter-spacing: -.03em;
     font-weight: 700;
     color: var(--testo);
 }
 
 .hero .sottotitolo {
-    margin: 0 0 var(--s6);
+    margin: 0 auto var(--s6);
+    max-width: 38rem;
     font-size: var(--t-base);
     line-height: 1.55;
     color: var(--testo-tenue);
@@ -67,40 +190,63 @@ footer.piede {
 
 /* ---------- Assaggio dell'interfaccia ---------- */
 
-/* Ricalca le proporzioni vere di una riga elemento (48px di riga, voto a destra
-   in cifre tabellari): serve a far riconoscere l'applicazione, quindi se un domani
-   le righe vere cambiassero forma, questa va cambiata con loro. È anche l'unico
-   punto della vetrina dove compare il verde acido: qui il numero è un voto letto,
-   non un'azione da premere — da qui l'ombra tinta d'accento, riservata a ciò che
-   è in evidenza. */
+/* Ricalca le proporzioni vere di una riga elemento (voto a destra in cifre
+   tabellari): serve a far riconoscere l'applicazione, quindi se un domani le righe
+   vere cambiassero forma, questa va cambiata con loro. */
 .anteprima {
-    max-width: 22rem;
-    margin: var(--s7) auto 0;
+    position: relative;
+    /* width: 100% obbligatorio dentro la griglia della sezione, v. .hero-contenuto. */
+    width: 100%;
+    max-width: 24rem;
+    margin: var(--s6) auto 0;
     text-align: left;
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
-    box-shadow: var(--ombra-accento), inset 0 1px 0 rgba(255, 255, 255, .04);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, .5),
+        0 30px 60px -30px rgba(0, 0, 0, .9),
+        0 0 60px -20px rgba(76, 141, 255, .3),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
     overflow: hidden;
+    animation: anteprima-entra 900ms cubic-bezier(.2, .7, .3, 1) both;
+}
+
+@keyframes anteprima-entra {
+    from { opacity: 0; transform: translateY(24px) scale(.98); }
+    to   { opacity: 1; transform: none; }
 }
 
 .anteprima-testata {
     display: flex;
     align-items: center;
-    gap: var(--s2);
+    gap: var(--s3);
     padding: var(--s3) var(--s4);
     border-bottom: 1px solid var(--bordo);
     background: var(--superficie-alta);
 }
 
-.anteprima-icona { font-size: var(--t-lg); line-height: 1; }
+/* ::deep perché <Icona> è un componente figlio: il CSS isolato marca solo gli
+   elementi di QUESTO file, e l'<svg> nasce dentro Icona.razor — senza ::deep il
+   selettore cercherebbe un elemento con un attributo di scope che non ha. */
+.anteprima-icona {
+    display: flex;
+    color: var(--accento);
+}
+
+.anteprima-icona ::deep .icona-svg {
+    width: 18px;
+    height: 18px;
+}
+
 .anteprima-titolo { font-weight: 600; }
 
 .anteprima-conteggio {
     margin-left: auto;
+    font-family: var(--mono);
     font-size: var(--t-xs);
     font-weight: 600;
-    letter-spacing: .18em;
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--testo-fioco);
 }
@@ -119,15 +265,66 @@ footer.piede {
     padding: 0 var(--s4);
     border-bottom: 1px solid var(--bordo);
     font-size: var(--t-md);
+    /* Le righe si posano una dopo l'altra, come nel registro vero
+       (v. riga-entra in app.css): è la stessa animazione, e riconoscerla è il punto. */
+    animation: riga-anteprima 520ms cubic-bezier(.2, .7, .3, 1) both;
+}
+
+.anteprima-righe li:nth-child(1) { animation-delay: 620ms; }
+.anteprima-righe li:nth-child(2) { animation-delay: 760ms; }
+.anteprima-righe li:nth-child(3) { animation-delay: 900ms; }
+
+@keyframes riga-anteprima {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: none; }
 }
 
 .anteprima-righe li:last-child { border-bottom: none; }
 
+.anteprima-nome { flex: 1; min-width: 0; }
+
 .anteprima-voto {
+    position: relative;
     margin-left: auto;
-    font-weight: 700;
+    /* Stessa colonna del registro vero: larghezza fissa e cifre a passo fisso,
+       altrimenti "9" e "8,5" non si incolonnano. */
+    width: 3rem;
+    text-align: right;
+    font-family: var(--mono);
+    font-weight: 600;
     color: var(--secondario);
     font-variant-numeric: tabular-nums;
+}
+
+/* IL VOTO AL BUIO, mostrato invece che raccontato. L'ultima riga resta coperta e
+   si scopre da sé dopo qualche secondo: è la sola funzionalità di Eton che nessun
+   foglio condiviso può avere, e in una vetrina fatta di paragrafi restava invisibile.
+
+   Chi ha chiesto meno animazioni al sistema non vede lo scambio: la regola
+   prefers-reduced-motion di app.css azzera la durata, e lo stato finale di
+   entrambe le animazioni è "scoperto" — cioè il voto, non il punto interrogativo. */
+.si-svela .coperto {
+    position: absolute;
+    right: 0;
+    top: 0;
+    color: var(--testo-fioco);
+    animation: copre 7s ease-in-out 1.6s infinite;
+}
+
+.si-svela .scoperto {
+    display: block;
+    animation: scopre 7s ease-in-out 1.6s infinite;
+}
+
+@keyframes copre {
+    0%, 46%   { opacity: 1; }
+    54%, 100% { opacity: 0; }
+}
+
+@keyframes scopre {
+    0%, 46%   { opacity: 0; transform: scale(.9); }
+    54%       { opacity: 1; transform: scale(1.12); }
+    62%, 100% { opacity: 1; transform: scale(1); }
 }
 
 /* ---------- Pulsanti ---------- */
@@ -146,7 +343,8 @@ footer.piede {
     /* Toglie il ritardo di 300ms che i browser mobili si tengono per capire se
        il tocco fosse un doppio tocco per ingrandire. */
     touch-action: manipulation;
-    transition: background-color var(--transizione), transform var(--transizione), opacity var(--transizione);
+    transition: background-color var(--transizione), transform var(--transizione),
+                box-shadow var(--transizione), opacity var(--transizione);
 }
 
 /* Su un telefono il rimpicciolimento è l'unico segnale che il dito ha preso:
@@ -159,11 +357,15 @@ footer.piede {
     background: var(--accento);
     color: var(--su-accento);
     font-weight: 600;
-    box-shadow: var(--ombra-accento);
+    /* Qui l'alone è ammesso, e forte: nell'applicazione un pulsante che brilla
+       diventa l'unica cosa che si guarda, ma in una vetrina è esattamente ciò che
+       deve succedere — c'è una sola azione in tutta la pagina. */
+    box-shadow: 0 6px 20px -6px rgba(76, 141, 255, .6), 0 0 40px -12px rgba(76, 141, 255, .5);
 }
 
 .azione.primaria:hover {
     background: var(--accento-scuro);
+    box-shadow: 0 8px 26px -6px rgba(76, 141, 255, .7), 0 0 56px -12px rgba(76, 141, 255, .6);
 }
 
 /* Nessun :focus-visible qui: la regola globale di app.css lo dà già identico a tutto ciò che si
@@ -176,45 +378,73 @@ footer.piede {
 /* ---------- Schede ---------- */
 
 .schede {
-    background: var(--sfondo-alt);
+    text-align: center;
 }
 
-.schede h2 {
+.schede h2,
+.alla-cieca-vetrina h2,
+.chiusura h2 {
     margin: 0 0 var(--s6);
-    font-size: var(--t-xl);
-    letter-spacing: -.02em;
-    font-weight: 600;
-    text-align: center;
+    font-size: clamp(var(--t-lg), 3vw, var(--t-xl));
+    letter-spacing: -.025em;
+    font-weight: 650;
     color: var(--testo);
 }
 
 .elenco-carte {
     display: grid;
-    gap: var(--s5);
+    gap: var(--s4);
     list-style: none;
     margin: 0;
     padding: 0;
+    text-align: left;
 }
 
 .carta {
-    padding: var(--s6);
+    position: relative;
+    padding: var(--s5);
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
     box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
+    transition: border-color var(--transizione), transform var(--transizione),
+                box-shadow var(--transizione);
 }
 
+/* La carta si solleva appena e il bordo si accende: sul telefono non si vede mai,
+   ed è giusto così — è un premio per chi sta esplorando col mouse, non
+   un'informazione che manchi a chi non ce l'ha. */
+.carta:hover {
+    transform: translateY(-3px);
+    border-color: var(--accento-scuro);
+    box-shadow: var(--ombra), 0 0 40px -18px rgba(76, 141, 255, .8),
+                inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* Le icone erano 📝📋⭐: emoji, cioè disegni del sistema operativo, diversi su
+   Windows, Android e iPhone. Sono le stesse SVG della barra di navigazione
+   (Shared/Icona.razor), così le tre carte sembrano finalmente una famiglia. */
 .icona-carta {
-    display: block;
-    margin-bottom: var(--s3);
-    font-size: var(--t-2xl);
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: var(--s4);
+    border-radius: var(--raggio-s);
+    background: var(--accento-tenue);
+    color: var(--accento);
+}
+
+.icona-carta ::deep .icona-svg {
+    width: 24px;
+    height: 24px;
 }
 
 .carta h3 {
     margin: 0 0 var(--s2);
-    font-size: var(--t-lg);
-    letter-spacing: -.02em;
+    font-size: var(--t-base);
+    letter-spacing: -.015em;
     font-weight: 600;
     color: var(--testo);
 }
@@ -222,24 +452,47 @@ footer.piede {
 .carta p {
     margin: 0;
     font-size: var(--t-sm);
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--testo-tenue);
 }
 
-/* ---------- Spazi (passi numerati) ---------- */
+/* ---------- La sezione chiara ---------- */
 
-.spazi h2 {
-    margin: 0 0 var(--s4);
-    font-size: var(--t-xl);
-    letter-spacing: -.02em;
-    font-weight: 600;
+/* Cinque sezioni sullo stesso nero non si distinguono l'una dall'altra: una pagina
+   senza stacchi si legge come un blocco unico e lunghissimo. Qui il fondo si
+   ribalta, ed è l'unico punto dell'applicazione in cui succede.
+
+   Il testo non viene riscritto colore per colore: si ridefiniscono le VARIABILI sul
+   contenitore, e tutto ciò che sta dentro — titoli, paragrafi, .testo-tenue, i
+   numeri dei passi — si adegua da sé. È il dividendo di non aver mai scritto un
+   colore a mano dentro una regola.
+   L'unico valore che va davvero cambiato è l'accento: #4c8dff su fondo chiaro sta
+   sotto 3:1, quindi qui il blu è quello scuro. */
+.chiara {
+    --testo: #101010;
+    --testo-tenue: #4d4d4d;
+    --testo-fioco: #6b6b6b;
+    --accento: #1a55c8;
+    --accento-tenue: rgba(26, 85, 200, .10);
+    --bordo: #d8d8d8;
+
+    background: #ececec;
     color: var(--testo);
 }
 
-.spazi > p {
+.spazi h2 {
+    margin: 0 0 var(--s4);
+    font-size: clamp(var(--t-lg), 3.4vw, var(--t-2xl));
+    letter-spacing: -.03em;
+    font-weight: 700;
+    color: var(--testo);
+}
+
+.apertura {
     margin: 0 0 var(--s6);
+    max-width: 46rem;
     font-size: var(--t-base);
-    line-height: 1.55;
+    line-height: 1.6;
     color: var(--testo-tenue);
 }
 
@@ -254,32 +507,29 @@ footer.piede {
 
 .passi li {
     position: relative;
-    padding-left: var(--s7);
+    padding-top: var(--s5);
+    /* Il filo sopra ogni passo li fa leggere come tre colonne di una tabella invece
+       che come tre paragrafi affiancati. */
+    border-top: 1px solid var(--bordo);
 }
 
 .passi li::before {
     counter-increment: passo;
-    content: counter(passo);
+    content: "0" counter(passo);
     position: absolute;
+    top: var(--s3);
     left: 0;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--s6);
-    height: var(--s6);
-    border-radius: var(--raggio-pieno);
-    background: var(--accento-tenue);
-    color: var(--accento);
+    font-family: var(--mono);
+    font-size: var(--t-xs);
     font-weight: 600;
-    font-size: var(--t-sm);
-    font-variant-numeric: tabular-nums;
+    letter-spacing: .12em;
+    color: var(--accento);
 }
 
 .passi h3 {
-    margin: 0 0 var(--s1);
+    margin: var(--s4) 0 var(--s1);
     font-size: var(--t-base);
-    letter-spacing: -.02em;
+    letter-spacing: -.015em;
     font-weight: 600;
     color: var(--testo);
 }
@@ -287,28 +537,46 @@ footer.piede {
 .passi p {
     margin: 0;
     font-size: var(--t-sm);
+    line-height: 1.55;
     color: var(--testo-tenue);
+}
+
+/* ---------- Voto al buio ---------- */
+
+.alla-cieca-vetrina {
+    text-align: center;
+}
+
+.alla-cieca-vetrina h2 {
+    margin: 0 0 var(--s4);
+}
+
+/* width: 100% per la stessa ragione di .hero-contenuto: sono figli di una griglia, e
+   con i soli margini automatici si stringerebbero al contenuto. */
+.alla-cieca-vetrina > p {
+    width: 100%;
+    max-width: 42rem;
+    margin: 0 auto var(--s4);
+    font-size: var(--t-base);
+    line-height: 1.6;
+    color: var(--testo-tenue);
+}
+
+.alla-cieca-vetrina .testo-tenue {
+    width: 100%;
+    max-width: 42rem;
+    margin: 0 auto;
+    color: var(--testo-fioco);
 }
 
 /* ---------- Riservatezza ---------- */
 
-.riservatezza {
-    background: var(--sfondo-alt);
-}
-
 .riservatezza h2 {
     margin: 0 0 var(--s4);
-    font-size: var(--t-xl);
-    letter-spacing: -.02em;
-    font-weight: 600;
+    font-size: clamp(var(--t-lg), 3vw, var(--t-xl));
+    letter-spacing: -.025em;
+    font-weight: 650;
     color: var(--testo);
-}
-
-.riservatezza > p {
-    margin: 0 0 var(--s5);
-    font-size: var(--t-base);
-    line-height: 1.55;
-    color: var(--testo-tenue);
 }
 
 .voci-riservatezza {
@@ -346,16 +614,26 @@ footer.piede {
 /* ---------- Chiusura ---------- */
 
 .chiusura {
+    position: relative;
     text-align: center;
+    overflow: hidden;
 }
 
-.chiusura h2 {
-    margin: 0 0 var(--s3);
-    font-size: var(--t-xl);
-    letter-spacing: -.02em;
-    font-weight: 600;
-    color: var(--testo);
+/* Lo stesso alone dell'apertura, ribaltato in basso: la pagina si chiude da dove
+   era cominciata. */
+.chiusura::before {
+    content: "";
+    position: absolute;
+    bottom: -60%;
+    left: 50%;
+    width: min(90rem, 160%);
+    height: 100%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: radial-gradient(45% 50% at 50% 50%, rgba(76, 141, 255, .18), transparent 70%);
 }
+
+.chiusura > * { position: relative; }
 
 .chiusura p {
     margin: 0 0 var(--s6);
@@ -387,15 +665,21 @@ footer.piede {
 }
 
 @media (min-width: 64rem) {
+    section,
+    footer.piede {
+        padding: var(--s8) 2rem;
+    }
+
     .elenco-carte {
         grid-template-columns: repeat(3, 1fr);
     }
 
     .passi {
         grid-template-columns: repeat(3, 1fr);
+        gap: var(--s6);
     }
 }
 
 /* Nessun blocco prefers-reduced-motion qui: app.css ne ha già uno con selettore universale e
-   !important, che azzera le transizioni anche di questi elementi. Una regola locale non
+   !important, che azzera durate e ripetizioni anche di queste animazioni. Una regola locale non
    aggiungerebbe niente e darebbe l'impressione che senza di lei la vetrina si muova. */

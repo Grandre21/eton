@@ -3,4 +3,10 @@
     width: 100%;
     min-height: 100dvh;
     padding-bottom: env(safe-area-inset-bottom);
+    /* Nero pieno, non il #0d0d0d dell'applicazione: la vetrina è costruita sulla luce
+       (v. il commento in testa a Pages/Benvenuto.razor.css) e un alone colorato risalta
+       davvero solo su un fondo che non emette nulla. Sta qui e non sulle singole sezioni
+       perché serve anche allo spazio che avanza sotto il piede su schermi molto alti, e
+       al rimbalzo dello scorrimento sui telefoni. */
+    background: #000;
 }

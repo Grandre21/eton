@@ -6,9 +6,17 @@
 
 <PageTitle>Eton — note e collezioni condivise</PageTitle>
 
+@* La vetrina è l'unica pagina che si guarda una volta sola, e l'unica che deve convincere: qui il
+   movimento e la luce non sono attrito ma il contenuto stesso. Dentro l'applicazione vale la regola
+   opposta — v. il commento in testa a Benvenuto.razor.css. *@
+
 <section class="hero">
     <div class="hero-contenuto">
-        <p class="marchio">Eton</p>
+        @* Il logotipo, e non più una micro-etichetta grigia sopra il titolo. Prima la prima cosa
+           che si leggeva era una frase; ora è un nome. aria-hidden perché il nome è già nel
+           <title> della pagina e nel piede: farlo leggere tre volte a chi ascolta è rumore. *@
+        <p class="marchio-grande" aria-hidden="true">Eton</p>
+
         <h1>Le tue note, le tue collezioni, i vostri voti.</h1>
         <p class="sottotitolo">
             Un quaderno che puoi tenere per te o aprire a chi vuoi: appunti in Markdown, collezioni
@@ -24,50 +32,71 @@
             @(occupato ? "Attendere…" : "Entra con Google")
         </button>
         <p class="nota-hero">Gratis. Si apre dal browser, e sul telefono diventa un'app.</p>
+    </div>
 
-        @* Un assaggio di come si vede davvero una collezione, disegnato in CSS: nessuna
-           immagine da scaricare, quindi niente da caricare e niente da tenere aggiornato
-           quando l'interfaccia cambia. aria-hidden perché i nomi sono inventati: a chi
-           ascolta la pagina non serve sentirsi leggere tre pizzerie che non esistono. *@
-        <div class="anteprima" aria-hidden="true">
-            <div class="anteprima-testata">
-                <span class="anteprima-icona">🍕</span>
-                <span class="anteprima-titolo">Pizzerie</span>
-                <span class="anteprima-conteggio">3 elementi</span>
-            </div>
-            <ul class="anteprima-righe">
-                <li><span>Da Michele</span><span class="anteprima-voto">8,5</span></li>
-                <li><span>Sorbillo</span><span class="anteprima-voto">9</span></li>
-                <li><span>L'Antica Pizzeria</span><span class="anteprima-voto">7,5</span></li>
-            </ul>
+    @* Un assaggio di come si vede davvero una collezione, disegnato in CSS: nessuna immagine da
+       scaricare, quindi niente da caricare e niente da tenere aggiornato quando l'interfaccia
+       cambia. Adesso però si MUOVE, e mostra la sola cosa che qui dentro non si può raccontare a
+       parole: l'ultima riga è coperta dal voto al buio e si scopre da sé. Chi guarda capisce la
+       funzionalità senza che nessuno gliela spieghi.
+       aria-hidden perché i nomi sono inventati: a chi ascolta la pagina non serve sentirsi leggere
+       tre pizzerie che non esistono — il paragrafo qui sotto dice la stessa cosa a parole. *@
+    <div class="anteprima" aria-hidden="true">
+        <div class="anteprima-testata">
+            <span class="anteprima-icona"><Icona Nome="collezioni" /></span>
+            <span class="anteprima-titolo">Pizzerie</span>
+            <span class="anteprima-conteggio">3 elementi</span>
         </div>
+        <ul class="anteprima-righe">
+            <li>
+                <span class="anteprima-nome">Da Michele</span>
+                <span class="anteprima-voto">8,5</span>
+            </li>
+            <li>
+                <span class="anteprima-nome">Sorbillo</span>
+                <span class="anteprima-voto">9</span>
+            </li>
+            <li class="si-svela">
+                <span class="anteprima-nome">L'Antica Pizzeria</span>
+                <span class="anteprima-voto">
+                    <span class="coperto">?</span>
+                    <span class="scoperto">7,5</span>
+                </span>
+            </li>
+        </ul>
     </div>
 </section>
 
 <section class="schede">
-    <h2>Cosa ci fai</h2>
+    <p class="etichetta-piccola occhiello">Cosa ci fai</p>
+    <h2>Tre cose, e nessuna di troppo.</h2>
     <ul class="elenco-carte">
         <li class="carta">
-            <span class="icona-carta" aria-hidden="true">📝</span>
+            <span class="icona-carta"><Icona Nome="note" /></span>
             <h3>Note in Markdown</h3>
             <p>Scrivi come ti viene: titoli, elenchi, caselle da spuntare, link. L'anteprima è lì accanto mentre scrivi.</p>
         </li>
         <li class="carta">
-            <span class="icona-carta" aria-hidden="true">📋</span>
+            <span class="icona-carta"><Icona Nome="collezioni" /></span>
             <h3>Collezioni fatte a modo tuo</h3>
             <p>Ristoranti, film, vini, attrezzi da cucina: sei tu a decidere quali campi ha ogni scheda — testo, numero, data, sì/no, elenco a scelta.</p>
         </li>
         <li class="carta">
-            <span class="icona-carta" aria-hidden="true">⭐</span>
+            <span class="icona-carta"><Icona Nome="voto" /></span>
             <h3>Voti e commenti</h3>
             <p>Ognuno dà il suo voto da 0,5 a 10 e lascia due righe. Vedi la media, ordini per voto più alto, e nascondi quello che hai già provato.</p>
         </li>
     </ul>
 </section>
 
-<section class="spazi">
+@* L'unica sezione su fondo chiaro di tutta l'applicazione, e non è un vezzo: cinque sezioni tutte
+   sullo stesso nero non si distinguono l'una dall'altra, e una pagina senza stacchi si legge come
+   un unico blocco lungo. Il colore del testo non è riscritto riga per riga — si ridefiniscono le
+   variabili sul contenitore e tutto ciò che sta dentro si adegua da sé (v. .chiara nel CSS). *@
+<section class="spazi chiara">
+    <p class="etichetta-piccola occhiello">Da soli o insieme</p>
     <h2>Ogni cosa vive in uno spazio</h2>
-    <p>
+    <p class="apertura">
         Hai uno spazio personale che vede solo tu. Poi ne crei altri e ci inviti chi vuoi con un
         codice di sei caratteri: da lì in poi note, collezioni e voti sono di tutti quelli che ci
         stanno dentro.
@@ -88,12 +117,28 @@
     </ol>
 </section>
 
-<section class="riservatezza">
-    <h2>Quello che scrivi non passa da noi</h2>
+@* Il voto al buio ha una sezione sua, ed è la ragione: è la sola cosa che Eton fa e che un foglio
+   condiviso non può fare. Fin qui stava nascosto in una riga del README. *@
+<section class="alla-cieca-vetrina">
+    <p class="etichetta-piccola occhiello">Voto al buio</p>
+    <h2>Il tuo voto prima di sapere il loro.</h2>
     <p>
+        Una collezione può tenere coperte le recensioni degli altri finché non hai messo la tua:
+        vedi solo quante persone si sono espresse. Non è l'interfaccia a nasconderle — è il
+        database a non lasciarle uscire, quindi non c'è modo di sbirciare.
+    </p>
+    <p class="testo-tenue">
+        Serve a togliere al voto la cosa che lo falsa di più: sapere cosa hanno votato gli altri.
+    </p>
+</section>
+
+<section class="riservatezza">
+    <p class="etichetta-piccola occhiello">Riservatezza</p>
+    <h2>Quello che scrivi non passa da noi</h2>
+    <p class="apertura">
         Eton gira dentro il tuo browser e parla direttamente con il database: non c'è un server in
-        mezzo che legge quello che scrivi. Chi vede cosa lo decidono le regole del database, riga per
-        riga, non il codice dell'applicazione.
+        mezzo che legge quello che scrivi. Chi vede cosa lo decidono le regole del database, riga
+        per riga, non il codice dell'applicazione.
     </p>
     <ul class="voci-riservatezza">
         <li><span aria-hidden="true">✓</span> Niente pubblicità e niente tracciamento</li>
