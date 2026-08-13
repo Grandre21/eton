@@ -221,6 +221,16 @@ body { overflow-wrap: break-word; }
     border-radius: var(--raggio-s);
 }
 
+/* Eccezione, e senza di lei ogni pagina si apre con un rettangolo blu attorno al titolo.
+   FocusOnNavigate (App.razor) sposta il fuoco sull'<h1> a ogni navigazione, perché chi usa un
+   lettore di schermo deve sapere che la pagina è cambiata; per farlo Blazor assegna all'elemento
+   un tabindex="-1", visto che un titolo non è focalizzabile di suo. Ma un tabindex negativo
+   significa esattamente "raggiungibile solo da codice, mai col Tab": disegnarci attorno l'anello
+   del fuoco annuncia una destinazione di tastiera che non esiste.
+   Non toglie nulla all'accessibilità — l'annuncio al lettore di schermo dipende dal fuoco, non dal
+   contorno — e l'anello resta ovunque ci si arrivi davvero premendo Tab. */
+[tabindex="-1"]:focus-visible { outline: none; }
+
 /* Il riquadro grigio che iOS disegna sopra ogni elemento toccato arriva in
    ritardo e resta appiccicato: lo si toglie e si risponde al tocco con gli
    stati :active definiti più sotto, che sono immediati. */

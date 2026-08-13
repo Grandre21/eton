@@ -3,11 +3,40 @@
 @inject NavigationManager Navigation
 @inject RottaRichiesta RottaRichiesta
 
-@code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
+@* Il guardiano delle pagine private. È un CONTENITORE e non un componente affiancato al contenuto,
+   e la differenza non è di stile: finché non si sa se esiste una sessione, il contenuto privato non
+   viene renderizzato affatto.
 
+   Prima stava di fianco a @Body e decideva in OnAfterRenderAsync, cioè DOPO il primo render. In
+   quella finestra il router aveva già montato la pagina privata, e la pagina aveva già interrogato
+   PostgREST da anonimo: la RLS rifiutava giustamente con «permission denied for table spaces», e la
+   barra gialla di Blazor — «Si è verificato un errore imprevisto» — compariva sopra la vetrina a
+   chiunque aprisse il sito senza essere entrato. Non era un difetto della vetrina: era la Home,
+   montata per un istante, che chiedeva dati a cui non aveva diritto.
+
+   Un try/catch in più non avrebbe risolto niente, perché i catch ci sono già (Home.razor e
+   SelettoreSpazio.razor) e infatti l'errore finiva in console. Ciò che andava tolto è la finestra
+   stessa: la decisione si prende in OnInitializedAsync, prima di qualunque render, e il contenuto
+   sta dentro il componente invece che accanto. Una pagina che non viene montata non interroga
+   niente — e vale per tutte le rotte private, non solo per la Home. *@
+@if (risolto)
+{
+    @ChildContent
+}
+else
+{
+    <p class="avvio">Caricamento…</p>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // Vero solo quando la sessione è stata verificata E si è deciso di restare qui. Chi viene
+    // rimbalzato sulla vetrina non lo vede mai diventare vero: il suo layout viene sostituito prima.
+    private bool risolto;
+
+    protected override async Task OnInitializedAsync()
+    {
         // GetClientAsync esegue tutto il bootstrap (LoadSession + eventuale scambio del codice
         // PKCE): dopo questo await la sessione è risolta, in un senso o nell'altro.
         await SupabaseService.GetClientAsync();
@@ -37,18 +66,25 @@
                 RottaRichiesta.Salva(rotta);
 
             Navigation.NavigateTo("benvenuto", forceLoad: false, replace: true);
-        }
-        else
-        {
-            // Consuma cancella nello stesso gesto in cui legge: se la rotta restasse salvata dopo
-            // averla letta, un rimontaggio successivo la ritroverebbe e il rimbalzo ripartirebbe
-            // da capo verso una destinazione già raggiunta.
-            var rottaInAttesa = RottaRichiesta.Consuma();
 
-            // Navigarci solo se è diversa da dove si è già: altrimenti si otterrebbe soltanto un
-            // giro di render inutile verso la pagina corrente.
-            if (rottaInAttesa is not null && rottaInAttesa != Navigation.ToBaseRelativePath(Navigation.Uri))
-                Navigation.NavigateTo(rottaInAttesa, forceLoad: false, replace: true);
+            // Nessun 'risolto = true', ed è il punto di tutta la correzione: il contenuto privato
+            // non deve comparire nemmeno per un fotogramma mentre il rimbalzo è in corso.
+            return;
         }
+
+        // Consuma cancella nello stesso gesto in cui legge: se la rotta restasse salvata dopo
+        // averla letta, un rimontaggio successivo la ritroverebbe e il rimbalzo ripartirebbe
+        // da capo verso una destinazione già raggiunta.
+        var rottaInAttesa = RottaRichiesta.Consuma();
+
+        // Qui invece si sblocca SEMPRE, e prima di navigare. Questo componente vive nel layout, che
+        // non si rimonta passando da una pagina privata all'altra: uscendo di qui senza alzare la
+        // guardia, il contenuto resterebbe "Caricamento…" per il resto della sessione.
+        risolto = true;
+
+        // Navigarci solo se è diversa da dove si è già: altrimenti si otterrebbe soltanto un
+        // giro di render inutile verso la pagina corrente.
+        if (rottaInAttesa is not null && rottaInAttesa != Navigation.ToBaseRelativePath(Navigation.Uri))
+            Navigation.NavigateTo(rottaInAttesa, forceLoad: false, replace: true);
     }
 }
