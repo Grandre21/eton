@@ -10,22 +10,12 @@
    Ciò che NON cambia è la grammatica: il blu resta dove si preme, il verde dove
    si constata, Inter scrive la prosa e Plex Mono i dati. Cambia come sono resi.
 
-   NERO PURO, non il #0d0d0d dell'applicazione. Su uno schermo OLED il nero vero
-   non emette luce affatto, quindi un alone colorato sopra sembra davvero acceso
-   invece che schiarito: è il contrasto a fare la luminosità, non la saturazione.
+   NERO PURO, e sotto una sola sezione chiara. Su uno schermo OLED il nero vero non
+   emette luce affatto, quindi un alone colorato sopra sembra davvero acceso invece
+   che schiarito: è il contrasto a fare la luminosità, non la saturazione. Il fondo
+   non è più dichiarato qui — arriva da --sfondo attraverso .vetrina-layout, perché
+   nel frattempo il nero pieno è diventato anche quello dell'applicazione.
    ========================================================================= */
-
-/* Il nero pieno di questa pagina. Sta qui e non in :root perché è una scelta
-   della vetrina: l'applicazione resta sul grigio molto scuro, dove una superficie
-   appena più chiara del fondo deve ancora potersi distinguere. */
-.hero,
-.schede,
-.alla-cieca-vetrina,
-.riservatezza,
-.chiusura,
-.piede {
-    background: #000;
-}
 
 /* ---------- Struttura comune alle sezioni ---------- */
 
@@ -300,9 +290,11 @@ footer.piede {
    si scopre da sé dopo qualche secondo: è la sola funzionalità di Eton che nessun
    foglio condiviso può avere, e in una vetrina fatta di paragrafi restava invisibile.
 
-   Chi ha chiesto meno animazioni al sistema non vede lo scambio: la regola
-   prefers-reduced-motion di app.css azzera la durata, e lo stato finale di
-   entrambe le animazioni è "scoperto" — cioè il voto, non il punto interrogativo. */
+   Chi ha chiesto meno animazioni al sistema non vede lo scambio e trova la riga già
+   scoperta: la regola prefers-reduced-motion di app.css azzera la durata E forza
+   fill-mode: forwards, quindi entrambe le animazioni restano sul loro ultimo
+   fotogramma — il voto visibile, il punto interrogativo trasparente. Senza quel
+   forwards i due si sovrapponevano, e il '?' finiva stampato sopra il 7,5. */
 .si-svela .coperto {
     position: absolute;
     right: 0;
@@ -539,6 +531,38 @@ footer.piede {
     font-size: var(--t-sm);
     line-height: 1.55;
     color: var(--testo-tenue);
+}
+
+/* ---------- Il grafo dello spazio ---------- */
+
+.grafo-sezione {
+    text-align: center;
+}
+
+.grafo-sezione h2 {
+    margin: 0 0 var(--s5);
+    font-size: clamp(var(--t-lg), 3vw, var(--t-xl));
+    letter-spacing: -.025em;
+    font-weight: 650;
+    color: var(--testo);
+}
+
+/* La misura del canvas NON sta qui ma in Shared/GrafoSpazio.razor.css: il <canvas> è scritto
+   dentro quel componente, quindi porta il suo attributo di scope e non questo — una regola
+   scritta qui non lo raggiungerebbe mai senza ::deep. E comunque è giusto che stia là: quanto
+   è alto un grafo non è una decisione della vetrina. */
+
+.suggerimento {
+    margin: var(--s3) 0 0;
+    color: var(--testo-fioco);
+}
+
+/* A chi ha chiesto meno movimento il grafo si presenta come un fotogramma fermo, e non
+   reagisce al puntatore: il ciclo di animazione non parte affatto (v. grafo-spazio.js).
+   L'invito a passarci sopra sarebbe l'unica frase falsa della pagina. display:none e non
+   opacity:0 — così sparisce anche per chi la pagina la ascolta invece di guardarla. */
+@media (prefers-reduced-motion: reduce) {
+    .suggerimento { display: none; }
 }
 
 /* ---------- Voto al buio ---------- */

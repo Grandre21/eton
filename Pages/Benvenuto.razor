@@ -117,6 +117,17 @@
     </ol>
 </section>
 
+@* Il grafo segue subito la sezione degli spazi perché illustra proprio quella: uno spazio non è
+   una cartella, è chi ci sta dentro più quello che ci mettete, legati dai voti. È l'unica cosa
+   della vetrina che si può toccare prima di entrare — e il gesto centrale di Eton, dare un voto,
+   è divertente di suo: farlo intravedere vale più di un paragrafo che lo descrive. *@
+<section class="grafo-sezione">
+    <p class="etichetta-piccola occhiello">Uno spazio, visto da dentro</p>
+    <h2>Chi c'è, cosa avete provato, chi ha votato cosa.</h2>
+    <GrafoSpazio Persone="@Membri" Elementi="@Votate" />
+    <p class="testo-tenue suggerimento">Passaci sopra il mouse, o toccalo.</p>
+</section>
+
 @* Il voto al buio ha una sezione sua, ed è la ragione: è la sola cosa che Eton fa e che un foglio
    condiviso non può fare. Fin qui stava nascosto in una riga del README. *@
 <section class="alla-cieca-vetrina">
@@ -162,6 +173,22 @@
 @code {
     private string? errore;
     private bool occupato;
+
+    // Dati dimostrativi del grafo: inventati, ma della forma esatta che avrebbero quelli veri —
+    // i membri di uno spazio e gli elementi di una collezione con la loro media. Stanno qui e non
+    // dentro il JavaScript proprio per questo: il componente li riceve come parametri, quindi il
+    // giorno che il grafo comparisse dentro l'applicazione basterebbe passargli lo spazio attivo.
+    private static readonly string[] Membri = ["Andrea", "Giulia", "Marco"];
+
+    private static readonly GrafoSpazio.Cosa[] Votate =
+    [
+        new("Sorbillo", "9"),
+        new("Da Michele", "8,5"),
+        new("L'Antica", "7,5"),
+        new("Starita", "8"),
+        new("Dal Presidente", "7"),
+        new("Concettina", "8,5"),
+    ];
 
     protected override async Task OnInitializedAsync()
     {

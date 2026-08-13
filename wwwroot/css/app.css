@@ -78,12 +78,17 @@
     /* --- superfici: scala di grigi NEUTRA, senza dominante di colore ---
        Un nero che tira al blu (com'era prima) litiga con un accento blu: i due
        si sommano e la pagina intera sembra virata. Su neutro l'accento resta
-       l'unica cosa colorata dello schermo, che è il punto. */
-    --sfondo: #0d0d0d;
-    --sfondo-alt: #111111;
-    --superficie: #151515;
-    --superficie-alta: #1c1c1c;
-    --bordo: #262626;
+       l'unica cosa colorata dello schermo, che è il punto.
+
+       Il fondo è nero PIENO, come la vetrina: un nero appena schiarito (#0d0d0d) su uno
+       schermo OLED non è un grigio scuro, è un grigio che si vede — e togliendo quel velo
+       le superfici sopra guadagnano stacco senza cambiare di un punto. Il salto da #000 a
+       #121212 si legge meglio di quello, numericamente uguale, da #0d0d0d a #151515. */
+    --sfondo: #000000;
+    --sfondo-alt: #0a0a0a;
+    --superficie: #121212;
+    --superficie-alta: #1b1b1b;
+    --bordo: #242424;
     --bordo-forte: #333333;
 
     /* --- testo: tre livelli, non di più. Il quarto livello non si legge --- */
@@ -164,7 +169,23 @@
     --t-2xl: 2.25rem;   /* 36px */
     --t-3xl: 3.25rem;   /* 52px — la cifra grande, il solo corpo davvero display */
 
-    --transizione: 150ms ease;
+    /* Una curva sola per tutto ciò che si muove. 'ease' parte lenta e finisce lenta, e su
+       durate brevi si legge come esitazione; questa parte subito e frena alla fine, che è
+       come si ferma una cosa che ha una massa. Era già la curva delle righe che entrano
+       (v. riga-entra): averne due significava avere due idee diverse di come si muove Eton. */
+    --curva: cubic-bezier(.2, .7, .3, 1);
+    --transizione: 160ms var(--curva);
+
+    /* --- la luce ---
+       Aloni tinti dei due accenti, per il linguaggio preso dalla vetrina. Qui però la
+       regola è opposta: la vetrina si guarda una volta e deve colpire, l'app si apre
+       quaranta volte al mese e la stessa luce diventerebbe attrito. Quindi si accende SOLO
+       ciò che è già il centro dell'attenzione della schermata — il voto, la riga che si sta
+       puntando, la voce attiva — e mai una superficie, un bordo o un pulsante qualunque.
+       Il raggio negativo tiene l'alone dentro la sagoma invece di spanderlo attorno: è una
+       cosa che emette, non una cosa con l'ombra colorata. */
+    --luce-accento: 0 0 20px -6px rgba(76, 141, 255, .5);
+    --luce-secondario: 0 0 20px -6px rgba(182, 243, 106, .4);
 
     /* Bersaglio tattile minimo. Sotto i 44px si sbaglia a toccare; 48 è la
        soglia che usano sia Material sia le linee guida di accessibilità. */
@@ -246,6 +267,15 @@ a, button, select, input, textarea, [role=button] {
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .01ms !important;
+        /* E questa riga NON è di contorno, è ciò che rende sensato lo stato che resta.
+           Azzerare la durata fa FINIRE l'animazione, e un'animazione finita senza
+           fill-mode non lascia l'ultimo fotogramma: l'elemento torna ai valori scritti
+           nelle regole. Nella vetrina il punto interrogativo del voto al buio non
+           dichiara opacity, quindi tornava a 1 e restava stampato sopra il voto che
+           avrebbe dovuto scoprire — un difetto visibile solo a chi ha chiesto meno
+           movimento, cioè proprio a chi non avrebbe potuto accorgersene guardando.
+           Con 'forwards' ogni animazione si ferma dove sarebbe finita. */
+        animation-fill-mode: forwards !important;
     }
 }
 
@@ -475,7 +505,10 @@ a { color: var(--accento); }
 /* La voce attiva si riconosce anche senza distinguere i colori: sotto
    l'icona compare una pastiglia piena. Il colore da solo non basta a chi non
    lo vede. */
-.nav-app .voce.attiva .icona { background: var(--accento-tenue); }
+.nav-app .voce.attiva .icona {
+    background: var(--accento-tenue);
+    box-shadow: var(--luce-accento);
+}
 
 /* ----------------------------------------------------------- superfici --- */
 
@@ -489,7 +522,7 @@ a { color: var(--accento); }
        più chiara del fondo non si stacca, e il bordo da solo la fa sembrare un
        riquadro disegnato invece che un piano rialzato. Una riga di luce sul
        bordo superiore è come cade la luce su un oggetto vero. */
-    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
+    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .055);
 }
 
 /* Il titolo di una scheda è un sopratitolo, non un titolo: dice di che cosa è
@@ -641,7 +674,10 @@ a { color: var(--accento); }
 input:focus, textarea:focus, select:focus {
     outline: none;              /* sostituito dall'anello qui sotto, non tolto */
     border-color: var(--accento);
-    box-shadow: 0 0 0 3px var(--accento-tenue);
+    /* L'anello dice dove si sta scrivendo, l'alone lo stacca dal fondo nero: sono due
+       cose diverse e non una sola più marcata. Il campo a fuoco è, per definizione, il
+       centro dell'attenzione della schermata — è il caso in cui la luce spetta. */
+    box-shadow: 0 0 0 3px var(--accento-tenue), var(--luce-accento);
 }
 
 input::placeholder, textarea::placeholder { color: var(--testo-fioco); }
@@ -785,6 +821,10 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     line-height: 1;
     color: var(--secondario);
     font-variant-numeric: tabular-nums;
+    /* Più tenue del voto vero: qui il numero dice quante persone hanno votato, non
+       quanto vale la cosa. Se brillasse uguale, le due schermate direbbero che il
+       conteggio è importante quanto la media, e non lo è. */
+    text-shadow: 0 0 24px rgba(182, 243, 106, .22);
 }
 
 .alla-cieca p { margin: 0; color: var(--testo-tenue); font-size: var(--t-md); max-width: 34ch; }
@@ -837,7 +877,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     /* Le righe hanno raggio zero: senza questo, la prima e l'ultima sborderebbero
        oltre gli angoli tondi del contenitore. */
     overflow: hidden;
-    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .04);
+    box-shadow: var(--ombra), inset 0 1px 0 rgba(255, 255, 255, .055);
 }
 
 /* Tutte le righe cliccabili degli elenchi hanno la stessa base: cambia solo
@@ -876,7 +916,11 @@ li:last-child > .riga-elemento { border-bottom: none; }
    di tre pixel al passaggio del mouse. */
 .riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover {
     background: var(--superficie-alta);
-    box-shadow: inset 3px 0 0 var(--accento);
+    /* Il filo, e la luce che ne esce. Il secondo inset è sfocato di 30px e rientrato di
+       altrettanti: resta un velo blu solo nel primo centimetro della riga, che è dove il
+       filo lo giustifica. Senza, il filo è un tratto disegnato; con, è acceso. */
+    box-shadow: inset 3px 0 0 var(--accento),
+                inset 30px 0 30px -30px rgba(76, 141, 255, .55);
 }
 
 /* Sul telefono non esiste il passaggio del mouse: il tocco deve rispondere da sé,
@@ -1276,6 +1320,11 @@ li:last-child > .riga-elemento { border-bottom: none; }
     letter-spacing: -.09em;
     color: var(--secondario);
     font-variant-numeric: tabular-nums;
+    /* L'unico punto dell'applicazione dove la luce sta su del testo, e ci sta perché
+       questa è la cifra per cui si è aperta la pagina. Un alone su un box si disegna con
+       box-shadow, su dei glifi serve text-shadow: il primo illuminerebbe il rettangolo
+       attorno al numero, non il numero. */
+    text-shadow: 0 0 28px rgba(182, 243, 106, .3);
 }
 
 /* La media e la scala che la accompagna ("/ 10 — 4 voti"): allineate sulla stessa
@@ -1390,7 +1439,9 @@ li:last-child > .riga-elemento { border-bottom: none; }
     border-radius: 50%;
     background: var(--secondario);
     border: 2px solid var(--sfondo);
-    box-shadow: var(--ombra);
+    /* Il pomello è la cosa che si trascina per dare un voto: il gesto centrale
+       dell'applicazione. L'alone verde lo fa trovare col pollice senza guardarlo. */
+    box-shadow: var(--ombra), var(--luce-secondario);
     cursor: pointer;
 }
 

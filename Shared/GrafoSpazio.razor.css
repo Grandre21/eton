@@ -1,0 +1,18 @@
+/* Lo stile del canvas sta qui e non nella pagina che lo ospita: un <canvas> senza CSS vale
+   300×150 pixel — è il default della specifica, non un errore — e chi riusasse il componente
+   altrove si ritroverebbe quel francobollo senza capire perché. Con le regole nel componente
+   il grafo arriva già della misura giusta ovunque lo si metta. */
+
+.grafo-spazio {
+    display: block;
+    width: 100%;
+    /* Cresce con la finestra ma non oltre: su un monitor un grafo alto seicento pixel
+       diventa un poster, e i nodi si allontanano dal centro fino a non leggersi più
+       come un insieme. */
+    height: clamp(280px, 42vw, 420px);
+    /* pan-y e non none: il canvas ascolta il puntatore, ma su un telefono il dito
+       che scorre la pagina deve continuare a scorrerla — altrimenti la vetrina si
+       inchioda proprio nel punto in cui si è deciso di metterci qualcosa da toccare. */
+    touch-action: pan-y;
+    cursor: crosshair;
+}

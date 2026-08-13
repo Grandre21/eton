@@ -1,0 +1,76 @@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@* Il grafo di uno spazio: persone, cose votate e voti in transito, disegnati su canvas.
+   Il disegno sta in wwwroot/js/grafo-spazio.js — qui c'è solo il ciclo di vita.
+
+   I dati arrivano dall'esterno e non sono cablati nel JavaScript: nella vetrina sono nomi
+   inventati, ma il giorno che questo grafo entrasse in una pagina dell'applicazione riceverebbe i
+   membri e gli elementi veri dello spazio attivo senza che il disegno cambi di una riga.
+
+   aria-hidden e nessun testo alternativo: è un'illustrazione di ciò che il paragrafo accanto dice
+   già a parole. Farla descrivere a un lettore di schermo — «grafico di sei nodi» — non
+   aggiungerebbe nulla a chi ascolta, e toglierebbe tempo. *@
+<canvas @ref="tela" class="grafo-spazio" aria-hidden="true"></canvas>
+
+@code {
+    /// <summary>I nomi di chi sta nello spazio: diventano i nodi blu, quelli che agiscono.</summary>
+    [Parameter] public IReadOnlyList<string> Persone { get; set; } = [];
+
+    /// <summary>Le cose votate, col loro voto: i nodi verdi, quelli che si constatano.</summary>
+    [Parameter] public IReadOnlyList<Cosa> Elementi { get; set; } = [];
+
+    /// <summary>Una cosa votata. Record e non tupla: le tuple si serializzano in JSON come
+    /// <c>item1</c>/<c>item2</c>, e dal JavaScript andrebbero letti così.</summary>
+    public sealed record Cosa(string Nome, string Voto);
+
+    private ElementReference tela;
+    private IJSObjectReference? modulo;
+    private IJSObjectReference? istanza;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // OnAfterRender e non OnInitialized: prima del primo render l'elemento <canvas> non
+        // esiste ancora, e il riferimento passato al JavaScript sarebbe vuoto.
+        if (!firstRender) return;
+
+        try
+        {
+            modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/grafo-spazio.js");
+            istanza = await modulo.InvokeAsync<IJSObjectReference>(
+                "avvia", tela, new { persone = Persone, elementi = Elementi });
+        }
+        catch (Exception ex)
+        {
+            // Un'illustrazione non deve poter buttare giù la pagina che la contiene. Se il modulo
+            // non si carica — file mancante, JavaScript disattivato, un browser che non conosce
+            // qualcosa che il disegno usa — resta un canvas vuoto e tutto il resto funziona.
+            // È la stessa lezione del banner di errore sulla vetrina: il difetto va contenuto dove
+            // nasce, non fatto risalire fino al riquadro di crash di Blazor.
+            Console.Error.WriteLine($"[Grafo] Non disegnato: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // ferma() toglie il ciclo di animazione, i due observer e gli ascoltatori del puntatore:
+        // senza, il requestAnimationFrame continuerebbe a girare su un canvas staccato dal
+        // documento per tutta la vita della pagina.
+        try
+        {
+            if (istanza is not null)
+            {
+                await istanza.InvokeVoidAsync("ferma");
+                await istanza.DisposeAsync();
+            }
+
+            if (modulo is not null) await modulo.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            // Smontare un componente non è un'operazione che possa fallire in faccia all'utente:
+            // se il modulo è già sparito (navigazione in corso), non c'è niente da salvare.
+            Console.Error.WriteLine($"[Grafo] Chiusura non riuscita: {ex.Message}");
+        }
+    }
+}
