@@ -35,12 +35,6 @@ export function avvia(tela, dati) {
     const verde = leggiRgb(stile.getPropertyValue("--secondario"), [182, 243, 106]);
     const grigio = [160, 160, 160];
 
-    // Chi ha chiesto meno movimento al sistema operativo non vede animazioni: si
-    // disegna un fotogramma solo, completo e fermo. Non si mostra un riquadro vuoto
-    // — il grafo è contenuto, non effetto — e non si ascolta il cambiamento della
-    // preferenza a metà sessione: si legge all'avvio, come fa il CSS.
-    const fermo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     const persone = (dati?.persone ?? []).map((nome, i) => ({ nome, i }));
     const elementi = (dati?.elementi ?? []).map((e, i) => ({ ...e, i, caldo: 0 }));
 
@@ -85,7 +79,11 @@ export function avvia(tela, dati) {
         }));
     }
 
-    const osservatoreMisura = new ResizeObserver(() => { ridimensiona(); if (fermo) disegna(performance.now()); });
+    // Solo ridimensiona(): il ridisegno immediato che stava qui serviva a chi non
+    // aveva un ciclo di animazione in corsa. Il ciclo (più sotto) ridisegna a ogni
+    // fotogramma finché la tela è in vista; fuori vista riprende al rientro, non
+    // subito — ma fuori vista non c'è nessuno che guardi la tela azzerata.
+    const osservatoreMisura = new ResizeObserver(() => ridimensiona());
     osservatoreMisura.observe(tela);
 
     // Fuori dallo schermo non si disegna niente: su una vetrina lunga il grafo
@@ -379,8 +377,7 @@ export function avvia(tela, dati) {
     }
 
     ridimensiona();
-    if (fermo) disegna(performance.now());
-    else stato.animazione = requestAnimationFrame(ciclo);
+    stato.animazione = requestAnimationFrame(ciclo);
 
     return {
         ferma() {

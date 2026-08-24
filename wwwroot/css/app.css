@@ -259,25 +259,17 @@ a, button, select, input, textarea, [role=button] {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Chi ha chiesto meno animazioni al sistema operativo non deve vederne
-   nessuna: qui si spegne tutto in un colpo solo, invece di ricordarsene
-   regola per regola. */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
-        /* E questa riga NON è di contorno, è ciò che rende sensato lo stato che resta.
-           Azzerare la durata fa FINIRE l'animazione, e un'animazione finita senza
-           fill-mode non lascia l'ultimo fotogramma: l'elemento torna ai valori scritti
-           nelle regole. Nella vetrina il punto interrogativo del voto al buio non
-           dichiara opacity, quindi tornava a 1 e restava stampato sopra il voto che
-           avrebbe dovuto scoprire — un difetto visibile solo a chi ha chiesto meno
-           movimento, cioè proprio a chi non avrebbe potuto accorgersene guardando.
-           Con 'forwards' ogni animazione si ferma dove sarebbe finita. */
-        animation-fill-mode: forwards !important;
-    }
-}
+/* Qui c'era una regola @media (prefers-reduced-motion: reduce) che azzerava
+   durate e transizioni per chi lo chiede al sistema operativo. Tolta di
+   proposito, non dimenticata: la vetrina sta acquistando animazioni legate
+   allo scorrimento (animation-timeline: view()), e su una timeline di
+   progresso durata e ritardo vengono normalizzati proporzionalmente
+   sull'intervallo della timeline. animation-duration: .01ms !important non
+   le fermava affatto — un centesimo di millisecondo occupa comunque il 100%
+   della corsa di scorrimento, come qualunque altra durata — e per fermarle
+   davvero servirebbe animation-timeline: none. Una regola che prometteva di
+   spegnere tutto in un colpo solo e non spegneva metà della pagina era una
+   bugia scritta nel codice. L'animazione c'è sempre, per tutti. */
 
 /* --------------------------------------------------------- tipografia --- */
 
@@ -374,8 +366,7 @@ a { color: var(--accento); }
 
 /* Il testo di attesa pulsa piano invece di stare fermo: un'attesa immobile su una connessione
    lenta è indistinguibile da una pagina piantata. Nessun elemento in più nel markup — l'animazione
-   sta sul testo che c'era già, e chi ha chiesto meno movimento al sistema non la vede (v. la regola
-   prefers-reduced-motion in testa al file). */
+   sta sul testo che c'era già. */
 .avvio {
     padding: var(--s7) var(--s4);
     color: var(--testo-tenue);
@@ -969,9 +960,10 @@ li:last-child > .riga-elemento { border-bottom: none; }
    elementi, quaranta ritardi progressivi diventerebbero due secondi di attesa per
    vedere il fondo, cioè un'animazione che si mette in mezzo invece di accompagnare.
 
-   Chi ha chiesto meno movimento al sistema non vede niente di tutto questo: la
-   regola prefers-reduced-motion in testa al file azzera la durata, e both porta
-   comunque le righe allo stato finale.
+   Il 'both' nella regola sotto non è di contorno: senza, durante il ritardo
+   scaglionato (nth-child) ogni riga si vedrebbe già al proprio stato finale invece
+   che a quello di partenza, e scatterebbe indietro nel momento in cui l'animazione
+   parte davvero. 'both' applica il fotogramma 'from' anche durante l'attesa.
 
    :is() per non ripetere quattro selettori sei volte; la specificità resta quella
    di una classe, quindi tutto ciò che sta qui sotto continua a sovrascriverla. */

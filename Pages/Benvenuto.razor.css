@@ -7,6 +7,14 @@
    volta sola e deve convincere, quindi la luce e il movimento SONO il contenuto.
    È il motivo per cui questo foglio esiste separato invece di finire in app.css.
 
+   Il movimento è di due famiglie, e non si mescolano. Quello dell'hero parte da
+   solo, a tempo, perché all'apertura della pagina nessuno ha ancora scorso di un
+   pixel. Il resto si rivela scorrendo — animation-timeline: view(), zero
+   JavaScript — perché da lì in poi è il gesto di chi legge a scandire quando ogni
+   pezzo compare, non un orologio. Fa eccezione solo il piede: è l'ultimo elemento
+   del documento, non ha corsa di scorrimento residua garantita dopo di sé, e un
+   intervallo entry lì sotto potrebbe non chiudersi mai — resta quindi fermo.
+
    Ciò che NON cambia è la grammatica: il blu resta dove si preme, il verde dove
    si constata, Inter scrive la prosa e Plex Mono i dati. Cambia come sono resi.
 
@@ -290,11 +298,10 @@ footer.piede {
    si scopre da sé dopo qualche secondo: è la sola funzionalità di Eton che nessun
    foglio condiviso può avere, e in una vetrina fatta di paragrafi restava invisibile.
 
-   Chi ha chiesto meno animazioni al sistema non vede lo scambio e trova la riga già
-   scoperta: la regola prefers-reduced-motion di app.css azzera la durata E forza
-   fill-mode: forwards, quindi entrambe le animazioni restano sul loro ultimo
-   fotogramma — il voto visibile, il punto interrogativo trasparente. Senza quel
-   forwards i due si sovrapponevano, e il '?' finiva stampato sopra il 7,5. */
+   Non c'è più un trattamento diverso per chi ha chiesto meno animazioni al sistema:
+   la regola prefers-reduced-motion che in app.css azzerava tutto è stata tolta, e
+   l'alternanza fra il punto interrogativo e il voto si vede allo stesso modo, alla
+   stessa velocità, per chiunque apra questa pagina. */
 .si-svela .coperto {
     position: absolute;
     right: 0;
@@ -500,9 +507,22 @@ footer.piede {
 .passi li {
     position: relative;
     padding-top: var(--s5);
-    /* Il filo sopra ogni passo li fa leggere come tre colonne di una tabella invece
-       che come tre paragrafi affiancati. */
-    border-top: 1px solid var(--bordo);
+}
+
+/* Il filo sopra ogni passo li fa leggere come tre colonne di una tabella invece
+   che come tre paragrafi affiancati. È uno pseudo-elemento e non un border-top:
+   un bordo non si anima, e più sotto (dentro @supports) questo stesso filo si
+   disegna da sinistra a destra mentre il passo entra nello schermo — qui fuori
+   resta semplicemente tracciato per intero, identico al border-top che sostituisce. */
+.passi li::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: var(--bordo);
+    transform-origin: left;
 }
 
 .passi li::before {
@@ -557,14 +577,6 @@ footer.piede {
     color: var(--testo-fioco);
 }
 
-/* A chi ha chiesto meno movimento il grafo si presenta come un fotogramma fermo, e non
-   reagisce al puntatore: il ciclo di animazione non parte affatto (v. grafo-spazio.js).
-   L'invito a passarci sopra sarebbe l'unica frase falsa della pagina. display:none e non
-   opacity:0 — così sparisce anche per chi la pagina la ascolta invece di guardarla. */
-@media (prefers-reduced-motion: reduce) {
-    .suggerimento { display: none; }
-}
-
 /* ---------- Voto al buio ---------- */
 
 .alla-cieca-vetrina {
@@ -576,8 +588,17 @@ footer.piede {
 }
 
 /* width: 100% per la stessa ragione di .hero-contenuto: sono figli di una griglia, e
-   con i soli margini automatici si stringerebbero al contenuto. */
-.alla-cieca-vetrina > p {
+   con i soli margini automatici si stringerebbero al contenuto.
+
+   Il selettore è per classe e non più per tag: '.alla-cieca-vetrina > p' prendeva
+   anche l'occhiello e la nota tenue, che sono paragrafi ma non sono QUESTO
+   paragrafo — e con l'attributo di scope che Blazor aggiunge a un selettore per
+   tag la sua specificità arrivava a battere perfino '.etichetta-piccola', lasciando
+   l'occhiello col corpo e il colore della prosa invece che delle micro-etichette.
+   Scartato ':not(.occhiello)': sarebbe salito abbastanza da battere anche
+   '.alla-cieca-vetrina .testo-tenue' e avrebbe spostato quel paragrafo
+   sull'intervallo sbagliato — si scambiava un difetto con un altro. */
+.alla-cieca-vetrina .spiegazione {
     width: 100%;
     max-width: 42rem;
     margin: 0 auto var(--s4);
@@ -704,6 +725,293 @@ footer.piede {
     }
 }
 
-/* Nessun blocco prefers-reduced-motion qui: app.css ne ha già uno con selettore universale e
-   !important, che azzera durate e ripetizioni anche di queste animazioni. Una regola locale non
-   aggiungerebbe niente e darebbe l'impressione che senza di lei la vetrina si muova. */
+/* Nessun blocco prefers-reduced-motion qui, e non per svista: su una timeline di
+   progresso animation-duration: .01ms non spegne niente, perché durata e ritardo
+   vengono normalizzati proporzionalmente sull'intervallo della timeline — un
+   centesimo di millisecondo occupa comunque il 100% della corsa di scorrimento,
+   come qualunque altra durata. Per fermare davvero queste animazioni servirebbe
+   animation-timeline: none, non una durata azzerata. Una regola che promettesse
+   di spegnere tutto in un colpo solo e non spegnesse metà della pagina sarebbe una
+   bugia scritta nel codice: qui non si scrive. Il progetto ha scelto che
+   l'animazione ci sia sempre, per tutti (v. anche app.css). */
+
+/* =========================================================================
+   LE RIVELAZIONI ALLO SCORRIMENTO.
+
+   Tutto ciò che segue vive qui dentro, e SOLO qui dentro. Firefox non supporta
+   ancora animation-timeline: view() (è dietro flag): se lo stato nascosto
+   (opacity: 0, translate, scale) fosse scritto nella regola base invece che qui
+   dentro, chi apre la vetrina con Firefox vedrebbe una pagina vuota — gli
+   elementi partirebbero invisibili e non ci sarebbe alcuna timeline a rivelarli.
+   Fuori da questo blocco la pagina è quindi già descritta intera e visibile; qui
+   dentro si ridichiara solo lo stato di partenza nascosto più l'animazione che lo
+   riporta allo stato finale, che è lo stesso già visibile fuori.
+
+   Ogni animazione ha animation-fill-mode: both: senza, fuori dal proprio
+   intervallo l'elemento tornerebbe allo stile di questa stessa regola — che qui
+   dentro è nascosto — cioè sparirebbe di nuovo dopo essere stato letto.
+
+   Ogni intervallo chiude entro entry 60% (entry 40% per la sezione di chiusura,
+   che è l'ultima della pagina e non ha corsa di scorrimento garantita dopo di sé):
+   un intervallo che chiude tardi lascia il contenuto a metà dissolvenza in mezzo
+   allo schermo a chi scorre veloce, o peggio congelato a metà se sotto non resta
+   più pagina per completarlo.
+
+   E dove un elemento ha, o potrebbe avere, un transform proprio — v. .carta:hover,
+   .azione:active — qui si anima translate o scale, mai transform: sono proprietà
+   indipendenti, e con fill-mode: both l'animazione ne trattiene il valore finale
+   per sempre. Animare transform sequestrerebbe quel valore, e l'hover o l'active
+   smetterebbero di funzionare.
+   ========================================================================= */
+@supports (animation-timeline: view()) {
+
+    /* ---------- Occhielli e titoli di sezione ---------- */
+
+    /* Un nome dichiarato su più sezioni fratelle non collide: ogni .occhiello e
+       ogni h2 risolve la timeline sull'antenato .schede/.spazi/... più vicino,
+       quindi ogni sezione ha la propria corsa pur condividendo lo stesso nome. */
+    .schede,
+    .spazi,
+    .grafo-sezione,
+    .alla-cieca-vetrina,
+    .riservatezza {
+        view-timeline-name: --sezione;
+    }
+
+    /* L'occhiello e il titolo sono le due righe che aprono ogni sezione tranne
+       l'hero: comporle nell'ordine in cui si leggono è la forma più semplice
+       della regola generale usata più sotto per le carte e per i passi.
+       .apertura si aggiunge allo stesso trattamento invece di restare ferma: un
+       paragrafo immobile incastrato fra un titolo e degli elenchi che si muovono
+       si legge come un difetto, non come una pausa. */
+    .occhiello,
+    h2,
+    .apertura {
+        opacity: 0;
+        translate: 0 14px;
+        animation-name: si-rivela;
+        animation-timeline: --sezione;
+        animation-fill-mode: both;
+    }
+
+    .occhiello { animation-range: entry 0% entry 22%; }
+    h2 { animation-range: entry 10% entry 32%; }
+    /* Dopo l'h2, che chiude a entry 32%: l'apertura del discorso viene dopo il
+       titolo che lo apre. */
+    .apertura { animation-range: entry 20% entry 42%; }
+
+    @keyframes si-rivela {
+        from { opacity: 0; translate: 0 14px; }
+        to   { opacity: 1; translate: none; }
+    }
+
+    @keyframes si-mostra {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    /* ---------- Le tre carte ---------- */
+
+    /* Quattro intervalli scaglionati sulla stessa corsa: il contenitore dichiara
+       il nome, i suoi discendenti lo referenziano, e ognuno entra un po' più tardi
+       del precedente. Impilate sul telefono si compongono da sole per effetto
+       dello scaglionamento; affiancate su schermo largo entrano tutte insieme, ed
+       è comunque il comportamento giusto in entrambi i casi. */
+    .carta {
+        view-timeline-name: --carta;
+        opacity: 0;
+        translate: 0 14px;
+        animation-name: si-rivela;
+        animation-timeline: --carta;
+        animation-range: entry 5% entry 30%;
+        animation-fill-mode: both;
+    }
+
+    .icona-carta {
+        opacity: 0;
+        scale: .8;
+        animation-name: icona-entra;
+        animation-timeline: --carta;
+        animation-range: entry 20% entry 45%;
+        animation-fill-mode: both;
+    }
+
+    @keyframes icona-entra {
+        from { opacity: 0; scale: .8; }
+        to   { opacity: 1; scale: none; }
+    }
+
+    .carta h3,
+    .carta p {
+        opacity: 0;
+        animation-name: si-mostra;
+        animation-timeline: --carta;
+        animation-fill-mode: both;
+    }
+
+    .carta h3 { animation-range: entry 30% entry 55%; }
+    .carta p  { animation-range: entry 40% entry 60%; }
+
+    /* ---------- I tre passi ---------- */
+
+    .passi li {
+        view-timeline-name: --passo;
+    }
+
+    /* Il filo si disegna da sinistra a destra mentre il passo entra nello
+       schermo: qui transform va bene, perché questo pseudo-elemento non ne ha
+       nessun altro proprio da preservare. */
+    .passi li::after {
+        transform: scaleX(0);
+        animation-name: linea-passo;
+        animation-timeline: --passo;
+        animation-range: entry 0% entry 20%;
+        animation-fill-mode: both;
+    }
+
+    @keyframes linea-passo {
+        from { transform: scaleX(0); }
+        to   { transform: scaleX(1); }
+    }
+
+    /* Il numero, il titolo e il testo si scoprono dopo il filo, scaglionati
+       sulla stessa corsa. */
+    .passi li::before,
+    .passi h3,
+    .passi p {
+        opacity: 0;
+        animation-name: si-mostra;
+        animation-timeline: --passo;
+        animation-fill-mode: both;
+    }
+
+    .passi li::before { animation-range: entry 15% entry 35%; }
+    .passi h3          { animation-range: entry 25% entry 45%; }
+    .passi p           { animation-range: entry 35% entry 55%; }
+
+    /* ---------- Il grafo dello spazio ---------- */
+
+    /* Timeline propria e anonima, non --sezione: .grafo-sezione è alta quanto il
+       canvas, quindi il suo intervallo entry si consuma quasi tutto mentre il
+       suggerimento sotto al grafo è ancora fuori dallo schermo. Una corsa
+       personale lo rivela quando è lui, e non il canvas, a entrare. */
+    .suggerimento {
+        opacity: 0;
+        animation-name: si-mostra;
+        animation-timeline: view();
+        animation-range: entry 0% entry 30%;
+        animation-fill-mode: both;
+    }
+
+    /* ---------- Voto al buio ---------- */
+
+    /* Il voto al buio è già mostrato per intero nell'anteprima dell'hero: qui
+       basta un'apparizione piatta, senza movimento, per i suoi quattro elementi
+       di testo — rifare la scena sarebbe dirla una seconda volta. */
+    .alla-cieca-vetrina .occhiello,
+    .alla-cieca-vetrina h2 {
+        translate: none;
+        animation-name: si-mostra;
+    }
+
+    .alla-cieca-vetrina .spiegazione,
+    .alla-cieca-vetrina .testo-tenue {
+        opacity: 0;
+        animation-name: si-mostra;
+        animation-timeline: --sezione;
+        animation-fill-mode: both;
+    }
+
+    .alla-cieca-vetrina .spiegazione { animation-range: entry 24% entry 44%; }
+    .alla-cieca-vetrina .testo-tenue { animation-range: entry 38% entry 58%; }
+
+    /* ---------- Riservatezza ---------- */
+
+    .voci-riservatezza {
+        view-timeline-name: --voci;
+    }
+
+    .voci-riservatezza li {
+        opacity: 0;
+        translate: 12px 0;
+        animation-name: voce-entra;
+        animation-timeline: --voci;
+        animation-range: var(--corsa);
+        animation-fill-mode: both;
+    }
+
+    @keyframes voce-entra {
+        from { opacity: 0; translate: 12px 0; }
+        to   { opacity: 1; translate: none; }
+    }
+
+    /* L'intervallo di ogni riga si dichiara una volta sola, in una proprietà
+       personalizzata sul li invece che in due liste parallele di numeri: lo
+       spunto DEVE scorrere insieme alla riga che accompagna, e due elenchi
+       separati divergono al primo che si tocca senza toccare l'altro. Le
+       proprietà personalizzate si ereditano, quindi lo span sotto riceve la
+       corsa del proprio li senza che nessuno gliela ripeta. */
+    .voci-riservatezza li:nth-child(1) { --corsa: entry 0% entry 20%; }
+    .voci-riservatezza li:nth-child(2) { --corsa: entry 15% entry 35%; }
+    .voci-riservatezza li:nth-child(3) { --corsa: entry 30% entry 50%; }
+
+    /* Il segno ✓ accompagna la propria riga con un piccolo scatto di scala,
+       sulla stessa corsa e sullo stesso intervallo del testo che lo precede. */
+    .voci-riservatezza span {
+        scale: .6;
+        animation-name: spunta-entra;
+        animation-timeline: --voci;
+        animation-range: var(--corsa);
+        animation-fill-mode: both;
+    }
+
+    @keyframes spunta-entra {
+        from { scale: .6; }
+        to   { scale: none; }
+    }
+
+    /* ---------- Chiusura ---------- */
+
+    /* Nome proprio e non --sezione: qui gli intervalli devono chiudere entro
+       entry 40% e non entry 60%, perché questa è l'ultima sezione della pagina e
+       non ha corsa di scorrimento garantita dopo di sé (v. il commento in testa
+       a questo blocco). */
+    .chiusura {
+        view-timeline-name: --chiusura;
+    }
+
+    .chiusura h2 {
+        animation-timeline: --chiusura;
+        animation-range: entry 0% entry 16%;
+    }
+
+    .chiusura p {
+        opacity: 0;
+        translate: 0 14px;
+        animation-name: si-rivela;
+        animation-timeline: --chiusura;
+        animation-range: entry 12% entry 28%;
+        animation-fill-mode: both;
+    }
+
+    .chiusura .azione {
+        opacity: 0;
+        translate: 0 14px;
+        animation-name: si-rivela;
+        animation-timeline: --chiusura;
+        animation-range: entry 24% entry 40%;
+        animation-fill-mode: both;
+    }
+
+    /* L'unico effetto scenico della pagina: la luce si accende alla fine,
+       seguendo l'ingresso della sezione. Anima solo opacity — quel
+       pseudo-elemento ha già transform: translateX(-50%) per restare centrato,
+       e animarne un altro valore lo scentrerebbe. */
+    .chiusura::before {
+        opacity: 0;
+        animation-name: si-mostra;
+        animation-timeline: --chiusura;
+        animation-range: entry 0% entry 40%;
+        animation-fill-mode: both;
+    }
+}
