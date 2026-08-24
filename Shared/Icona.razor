@@ -43,6 +43,19 @@
             <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" />
             break;
 
+        // Una banconota, non un portafoglio: un portafoglio disegnato con poche linee a 24px è
+        // un rettangolo con delle righe dentro, cioè esattamente "note" e "collezioni". Scartato
+        // anche il salvadanaio, che per leggersi come tale (corpo, muso, fessura, zampe) chiede
+        // più tracciati di quanti questa dimensione ne regga. Il rettangolo qui è orizzontale
+        // (le altre due icone sono verticali o a riquadri) e al centro c'è il cerchio del valore
+        // stampato, fiancheggiato da due trattini verticali che imitano la filigrana — è quel
+        // cerchio, non le righe, a dire "denaro" invece che "documento".
+        case "spese":
+            <rect x="3" y="6" width="18" height="12" rx="2" />
+            <circle cx="12" cy="12" r="2.5" />
+            <path d="M6 9v6M18 9v6" />
+            break;
+
         // Non sta nella barra di navigazione: la usa la vetrina, dove ha preso il posto
         // dell'emoji ⭐. Una stella e non un numero perché qui rappresenta il giudizio in
         // generale, non un voto particolare.
@@ -60,7 +73,7 @@
 </svg>
 
 @code {
-    /// <summary>Nome dell'icona: casa, note, collezioni, gruppo, persona.</summary>
+    /// <summary>Nome dell'icona: casa, note, collezioni, gruppo, persona, spese, voto, commento.</summary>
     /// <remarks>
     /// Una stringa e non un enum: le icone si citano solo dal markup, dove un enum andrebbe
     /// comunque scritto per esteso, e un nome sconosciuto qui non rompe niente — lo switch non

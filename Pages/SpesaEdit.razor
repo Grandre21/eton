@@ -1,0 +1,347 @@
+@page "/expenses/{Id:guid}"
+@using Eton.Models
+@using System.Globalization
+@inject ExpenseRepository Repository
+@inject NavigationManager Navigation
+
+<PageTitle>@(string.IsNullOrWhiteSpace(descrizione) ? "Spesa" : descrizione) — Eton</PageTitle>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (sparita)
+{
+    <div class="vuoto">
+        <p>Questa spesa non c'è più: l'ha cancellata qualcuno, oppure non fai più parte dello spazio.</p>
+        <a class="btn" href="expenses">Torna alle spese</a>
+    </div>
+}
+else if (spesa is null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <a class="btn" href="expenses">Torna alle spese</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
+    @if (conflitto is not null)
+    {
+        <div class="scheda pericolo">
+            <h2>Qualcun altro ha salvato prima di te</h2>
+            <p class="testo-tenue">
+                Mentre scrivevi, questa spesa è cambiata. Sovrascrivendo si perde il lavoro
+                dell'altra persona; ricaricando si perde il tuo.
+            </p>
+            <div class="azioni">
+                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
+                @* !ImportoValido oltre a 'occupato': anche questa azione scrive nel database, coi
+                   campi ancora modificabili a scheda aperta. Prima era protetta solo da 'occupato',
+                   ed era possibile spedire una descrizione vuota — violando il check del database,
+                   con un errore Postgres crudo al posto di un pulsante spento — o un importo non
+                   valido. Le due azioni scrivono entrambe: la soglia di validità dev'essere la
+                   stessa, non solo quella nata insieme al pulsante Salva. *@
+                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !ImportoValido)">Sovrascrivi con la mia</button>
+            </div>
+        </div>
+    }
+
+    <div class="campi-spesa">
+        <label class="campo">
+            <span class="etichetta-campo">Importo</span>
+            @* type="text" e non type="number": type="number" si comporta in modo diverso da browser a
+               browser sul separatore decimale, accetta la rotellina del mouse che cambia il valore per
+               sbaglio, e su alcuni browser rifiuta la virgola in silenzio svuotando il campo.
+               inputmode="decimal" porta la tastiera numerica sul telefono senza portarsi dietro
+               niente di tutto questo. *@
+            <input class="importo-spesa dato" type="text" inputmode="decimal"
+                   placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@occupato" />
+        </label>
+        @if (!string.IsNullOrWhiteSpace(importoTesto) && !Denaro.Prova(importoTesto, out _))
+        {
+            <p class="errore-campo">Non è un importo valido: usa la virgola o il punto, al massimo due decimali.</p>
+        }
+
+        <label class="campo">
+            <span class="etichetta-campo">Descrizione</span>
+            <input class="descrizione-spesa" type="text" maxlength="200" placeholder="Per cosa?"
+                   @bind="descrizione" @bind:event="oninput" disabled="@occupato" />
+        </label>
+
+        <label class="campo">
+            <span class="etichetta-campo">Quando</span>
+            @* min/max sono solo un aiuto per il browser: non le fa rispettare né Blazor (il
+               binder converte comunque quello che il campo restituisce) né il browser in ogni
+               percorso (un anno digitato a mano nei segmenti passa lo stesso). La guardia vera è
+               DataRagionevole, dentro ImportoValido qui sotto. *@
+            <input class="data-spesa dato" type="date" @bind="data"
+                   min="@DataMinima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                   max="@DataMassima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" disabled="@occupato" />
+        </label>
+        @if (!DataRagionevole(data))
+        {
+            <p class="errore-campo">Non è una data valida: dev'essere fra il 2000 e un anno da oggi.</p>
+        }
+    </div>
+
+    @* Bottoni e non radio nascosti: la pastiglia è già disegnata e uno stile su un radio nascosto
+       sarebbe un secondo modo di fare la stessa cosa. Il costo è di accessibilità — un gruppo di
+       bottoni non si naviga con le frecce come un gruppo di radio — e aria-pressed è il minimo che
+       rende leggibile lo stato a chi ascolta la pagina. *@
+    <fieldset class="scelta-categoria">
+        <legend class="etichetta-campo">Categoria</legend>
+        @foreach (var c in CategorieSpesa.Elenco)
+        {
+            <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
+                    aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@occupato">@c</button>
+        }
+        @* Categoria non in CategorieSpesa.Elenco — l'elenco è cambiato dopo che questa spesa è
+           stata salvata, il suo stesso commento dichiara che cambierà ancora — mostrata come
+           pastiglia in più, sempre accesa: senza, nessuna pastiglia risulterebbe accesa e chi
+           guarda non vedrebbe quale categoria è impostata. Stesso trattamento riservato da
+           CampoInput.razor a un'opzione rimossa da un elenco a scelta. *@
+        @if (!CategorieSpesa.Conosciuta(categoria))
+        {
+            <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@occupato">@categoria</button>
+        }
+    </fieldset>
+
+    <div class="azioni">
+        @* Anche 'conflitto is null': con la scheda del conflitto aperta il pulsante resterebbe
+           acceso, perché i campi sono davvero diversi da quelli di 'spesa'. Ripremerlo risalverebbe
+           con la versione vecchia — stesso conflitto, altro giro a vuoto — e scavalcherebbe in
+           silenzio la scelta fra Ricarica e Sovrascrivi, che è l'unico modo di uscirne. *@
+        <button class="btn primary" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !ImportoValido)">
+            @(occupato ? "Salvo…" : "Salva")
+        </button>
+        <a class="btn" href="expenses">Chiudi</a>
+
+        @if (confermaEliminazione)
+        {
+            <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
+            <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
+        }
+        else
+        {
+            <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Expense? spesa;      // l'ultima versione conosciuta del server: da qui esce la versione
+    private Expense? conflitto;  // la versione altrui, quando il salvataggio si è scontrato
+    private string importoTesto = "";
+    private string descrizione = "";
+    private string categoria = CategorieSpesa.Elenco[0];
+
+    // DateTime? e non DateTime: quando <input type="date"> si svuota — la "×" che Chrome mostra
+    // sul campo, o i segmenti cancellati a mano — il binder generato da Blazor, a conversione
+    // fallita e valore grezzo pari a stringa vuota, non lascia il valore invariato: chiama
+    // setter(default(T)) (verificato decompilando Microsoft.AspNetCore.Components 9.0.7). Con un
+    // DateTime non annullabile default(T) è 0001-01-01, una data legale e indistinguibile da una
+    // vera: la spesa sparirebbe da ogni riepilogo mensile senza nessun errore, perché ElencaAsync
+    // filtra per intervallo e l'anno 1 non cade in nessun mese. Con DateTime? lo stesso
+    // default(T) è null — uno stato che si può controllare, non un valore sospetto da indovinare.
+    private DateTime? data = DateTime.Today;
+
+    // Limiti arbitrari di proposito: non validano il dominio (una spesa vera può cadere in
+    // qualunque data), servono solo a intercettare una digitazione sbagliata a mano — i segmenti
+    // dell'anno riempiti con "0001" senza passare da un campo vuoto — prima che diventi la stessa
+    // spesa invisibile ai riepiloghi descritta sopra, stavolta senza nemmeno transitare da null.
+    private static readonly DateTime DataMinima = new(2000, 1, 1);
+    private static DateTime DataMassima => DateTime.Today.AddYears(1);
+    private static bool DataRagionevole(DateTime? d) => d is not null && d.Value >= DataMinima && d.Value <= DataMassima;
+
+    private bool caricato, occupato, sparita, confermaEliminazione;
+    private string? errore, avviso;
+    private int generazione;
+
+    // Il pulsante resta spento anche senza un importo valido, una descrizione o una data
+    // ragionevole. I primi due sono i vincoli che il database rifiuterebbe (amount > 0,
+    // length(btrim(description)) between 1 and 200): farli scoprire al salvataggio significherebbe
+    // un errore Postgres grezzo al posto di un pulsante spento. Il terzo non è un vincolo del
+    // database — spent_on non ha limiti — è la guardia contro l'anno 1 spiegata sopra su 'data'.
+    private bool ImportoValido => Denaro.Prova(importoTesto, out _) && !string.IsNullOrWhiteSpace(descrizione) && DataRagionevole(data);
+
+    // Il pulsante Salva resta spento finché non c'è niente da salvare: su una spesa evita il
+    // salvataggio a vuoto, che incrementerebbe comunque la versione e farebbe scattare un
+    // conflitto a chi la sta scrivendo davvero. Un 'data' azzerato a null conta come cambiato —
+    // altrimenti sparirebbe anche dal confronto — ma resta comunque bloccato dalla guardia sopra.
+    private bool Cambiata => spesa is not null && (importoTesto != Denaro.Testo(spesa.Amount) || descrizione != spesa.Description
+                                                     || categoria != spesa.Category || data?.Date != spesa.SpentOn.Date);
+
+    // Blazor riusa questa stessa istanza anche passando da una spesa a un'altra — da /expenses/{a}
+    // a /expenses/{b} — e cambia solo il parametro: due caricamenti possono sovrapporsi, e quello
+    // partito prima può rispondere per ultimo, sovrascrivendo i dati buoni con quelli vecchi.
+    protected override async Task OnParametersSetAsync()
+    {
+        var mia = ++generazione;
+
+        caricato = false;
+        errore = avviso = null;
+        conflitto = null;
+        sparita = confermaEliminazione = false;
+
+        try
+        {
+            var letta = await Repository.LeggiAsync(Id);
+            if (mia != generazione) return;
+
+            spesa = letta;
+            if (spesa is null)
+            {
+                sparita = true;
+            }
+            else
+            {
+                importoTesto = Denaro.Testo(spesa.Amount);
+                descrizione = spesa.Description;
+                categoria = spesa.Category;
+                data = spesa.SpentOn;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            spesa = null;
+            errore = $"Non è stato possibile aprire la spesa: {ex.Message}";
+        }
+
+        caricato = true;
+    }
+
+    private async Task Salva()
+    {
+        occupato = true; errore = avviso = null; conflitto = null;
+        try
+        {
+            if (!Denaro.Prova(importoTesto, out var importo)) return;
+            if (!DataRagionevole(data)) return;
+
+            await SalvaCon(spesa!.Version, importo);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile salvare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task SalvaCon(int versione, decimal importo)
+    {
+        // data!.Value: si arriva qui solo dopo la guardia DataRagionevole in Salva e Sovrascrivi,
+        // quindi non è mai null a questo punto.
+        var esito = await Repository.SalvaAsync(Id, versione, importo, descrizione, categoria, data!.Value);
+
+        switch (esito.Esito)
+        {
+            case EsitoSalvataggio.Salvata:
+                spesa = esito.Aggiornata;
+                importoTesto = Denaro.Testo(spesa!.Amount);
+                descrizione = spesa.Description;
+                categoria = spesa.Category;
+                data = spesa.SpentOn;
+                avviso = "Salvata.";
+                break;
+
+            case EsitoSalvataggio.Conflitto:
+                conflitto = esito.Aggiornata;
+                break;
+
+            case EsitoSalvataggio.Rifiutata:
+                errore = "Il database ha rifiutato la modifica: questa spesa può modificarla solo chi l'ha pagata, o chi possiede lo spazio.";
+                break;
+
+            case EsitoSalvataggio.Sparita:
+                sparita = true;
+                break;
+        }
+    }
+
+    private void Ricarica()
+    {
+        if (conflitto is null) return;
+
+        spesa = conflitto;
+        importoTesto = Denaro.Testo(conflitto.Amount);
+        descrizione = conflitto.Description;
+        categoria = conflitto.Category;
+        data = conflitto.SpentOn;
+        conflitto = null;
+        avviso = "Caricata la versione più recente.";
+    }
+
+    private async Task Sovrascrivi()
+    {
+        if (conflitto is null) return;
+
+        occupato = true; errore = null;
+        try
+        {
+            // A differenza di Salva, qui un return silenzioso lascerebbe il pulsante sembrare
+            // inerte: le due azioni scrivono entrambe nel database, quindi vanno fermate dalla
+            // stessa soglia di validità (ImportoValido, ora comprensiva della data), e chi la
+            // sbaglia va avvisato, non lasciato a chiedersi perché non è successo niente.
+            if (!Denaro.Prova(importoTesto, out var importo) || !ImportoValido)
+            {
+                errore = "Controlla importo, descrizione e data prima di sovrascrivere.";
+                return;
+            }
+
+            // Si risalva con la versione DEL SERVER, non con quella che si aveva in mano: è
+            // esattamente ciò che "sovrascrivi" vuol dire — prendere atto che l'altro ha scritto
+            // e scriverci sopra lo stesso. Se nel frattempo arriva un terzo salvataggio questo
+            // fallisce di nuovo con Conflitto, ed è il comportamento giusto.
+            var versione = conflitto.Version;
+            conflitto = null;
+            await SalvaCon(versione, importo);
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile sovrascrivere: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Elimina()
+    {
+        occupato = true; errore = null;
+        try
+        {
+            if (await Repository.EliminaAsync(Id))
+            {
+                Navigation.NavigateTo("expenses");
+                return;
+            }
+            errore = "Il database ha rifiutato l'eliminazione.";
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile eliminare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+            confermaEliminazione = false;
+        }
+    }
+}

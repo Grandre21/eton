@@ -324,7 +324,10 @@ a { color: var(--accento); }
    segnale di struttura, non una frase, e il mono lo dichiara al primo sguardo.
    La spaziatura scende da .18em a .12em perché il mono ha già le lettere a passo
    fisso: sommando le due spaziature la parola si sfilaccia. */
-.etichetta-piccola {
+/* .etichetta-campo condivide il selettore: nel modulo di modifica è la stessa
+   micro-etichetta sopra un campo invece che sopra un elenco — stesso ruolo,
+   stesso aspetto, e tenerle separate le avrebbe fatte divergere col tempo. */
+.etichetta-piccola, .etichetta-campo {
     display: block;
     font-family: var(--mono);
     font-size: var(--t-xs);
@@ -843,7 +846,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 /* ------------------------------------------------------------ elenchi --- */
 
-.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .editor-campi {
+.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese, .editor-campi {
     list-style: none;
     padding: 0;
     margin: 0 0 var(--s5);
@@ -861,7 +864,8 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 .elenco-spazi,
 .elenco-note,
 .elenco-collezioni,
-.elenco-elementi {
+.elenco-elementi,
+.elenco-spese {
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio-l);
@@ -874,7 +878,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 /* Tutte le righe cliccabili degli elenchi hanno la stessa base: cambia solo
    cosa ci sta dentro. Tenerle separate le faceva divergere di mezzo pixel per
    volta. */
-.riga-spazio, .riga-nota, .riga-collezione, .riga-elemento {
+.riga-spazio, .riga-nota, .riga-collezione, .riga-elemento, .riga-spesa {
     display: flex;
     align-items: center;
     gap: var(--s4);
@@ -898,14 +902,15 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 li:last-child > .riga-spazio,
 li:last-child > .riga-nota,
 li:last-child > .riga-collezione,
-li:last-child > .riga-elemento { border-bottom: none; }
+li:last-child > .riga-elemento,
+li:last-child > .riga-spesa { border-bottom: none; }
 
 /* La riga puntata si accende e si fa marcare a sinistra. Il filo verticale
    sostituisce la freccia che stava in fondo a ogni riga: dice la stessa cosa —
    qui si entra — ma solo sulla riga che interessa adesso, invece di ripetersi
    identico su tutte. inset e non un bordo vero: un bordo sposterebbe il contenuto
    di tre pixel al passaggio del mouse. */
-.riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover {
+.riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover, .riga-spesa:hover {
     background: var(--superficie-alta);
     /* Il filo, e la luce che ne esce. Il secondo inset è sfocato di 30px e rientrato di
        altrettanti: resta un velo blu solo nel primo centimetro della riga, che è dove il
@@ -918,7 +923,7 @@ li:last-child > .riga-elemento { border-bottom: none; }
    e deve farlo con qualcosa di visibile sotto un dito che copre metà riga — lo
    sfondo, non un dettaglio di tre pixel. Niente scale: dentro un contenitore con
    overflow nascosto una riga che si rimpicciolisce mostra il fondo agli angoli. */
-.riga-spazio:active, .riga-nota:active, .riga-collezione:active, .riga-elemento:active {
+.riga-spazio:active, .riga-nota:active, .riga-collezione:active, .riga-elemento:active, .riga-spesa:active {
     background: var(--bordo);
 }
 
@@ -972,15 +977,15 @@ li:last-child > .riga-elemento { border-bottom: none; }
     to   { opacity: 1; transform: none; }
 }
 
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li {
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li {
     animation: riga-entra 380ms cubic-bezier(.2, .7, .3, 1) both;
 }
 
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(2) { animation-delay: 45ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(3) { animation-delay: 90ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(4) { animation-delay: 135ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(5) { animation-delay: 180ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi) > li:nth-child(n+6) { animation-delay: 220ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(2) { animation-delay: 45ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(3) { animation-delay: 90ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(4) { animation-delay: 135ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(5) { animation-delay: 180ms; }
+:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(n+6) { animation-delay: 220ms; }
 
 /* L'estratto sta su una riga sola: una nota lunga non deve allungare la
    propria riga d'elenco. */
@@ -1452,6 +1457,304 @@ li:last-child > .riga-elemento { border-bottom: none; }
 
 .voto-input input[type=range]:disabled { opacity: .5; }
 
+/* --------------------------------------------------------------- spese --- */
+
+/* Il riepilogo del mese è una .scheda (v. Pages/Spese.razor, class="scheda
+   riepilogo-mese"): la superficie — sfondo, bordo, raggio, ombra — arriva già
+   da lì e stacca il pannello dalla prima riga del registro che segue, senza
+   bisogno di ridichiararla qui proprietà per proprietà. Lo faceva, prima: sei
+   dichiarazioni identiche a quelle di .scheda, lo stesso genere di doppione che
+   il file condanna altrove (v. il commento a riga 1039, sulla Home). Non resta
+   altro da aggiungere o sovrascrivere, quindi la regola sparisce: .riepilogo-mese
+   continua a esistere come selettore, per ambientare .testa-registro qui sotto. */
+
+/* .testa-registro nasce per stare FUORI da un contenitore, con un padding
+   orizzontale che allinea il testo alle righe del registro sotto. Qui invece sta
+   DENTRO una scheda che ha già il proprio padding: sommare i due sposterebbe il
+   mese più a destra della cifra grande sotto di lui. Si azzera solo l'orizzontale,
+   il verticale resta per staccarlo dal numero. */
+.riepilogo-mese .testa-registro { padding: 0 0 var(--s4); }
+
+.navigazione-mese { display: flex; gap: var(--s2); margin-left: auto; }
+
+/* Il numero più grande della pagina: è la sola cosa per cui si apre questa
+   schermata. Stesso corpo del voto (--t-3xl, il solo altro punto dell'app che lo
+   usa), ma il tracking resta moderato e non arriva ai -.09em di .voto-grande —
+   lì il problema era una cifra sola col decimale, qui sono due decimali più il
+   simbolo di valuta, e la stessa stretta li avrebbe accavallati. */
+.totale-mese {
+    font-size: var(--t-3xl);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -.03em;
+    color: var(--secondario);
+    margin: 0 0 var(--s2);
+}
+
+/* Fra il totale del mese e le barre delle categorie: .testo-tenue (v. riga 306)
+   le dà già un margine sotto, ma un valore diverso da quello con cui
+   .barre-categorie apre (margin-top: var(--s5), più sotto) lascerebbe lo stacco
+   in mano al collasso dei margini fra fratelli invece che a una scelta
+   dichiarata qui. Stesso token da entrambi i lati della riga. */
+.confronto-mese { margin: 0 0 var(--s5); }
+
+/* Su schermo stretto le quattro colonne (nome, barra, quota, totale) non ci
+   stanno: cede la barra, che scende sotto il nome. Nome e totale restano sulla
+   prima riga perché sono le due cifre da confrontare a colpo d'occhio; barra e
+   quota vanno sotto, allineate alle rispettive colonne. La griglia larga arriva
+   nella media query in fondo al file. */
+.barre-categorie {
+    list-style: none;
+    margin: var(--s5) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+}
+
+.barre-categorie > li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "nome totale"
+        "barra quota";
+    column-gap: var(--s3);
+    row-gap: var(--s1);
+    align-items: center;
+}
+
+.barre-categorie .nome-categoria { grid-area: nome; font-size: var(--t-sm); color: var(--testo-tenue); }
+.barre-categorie .barra { grid-area: barra; }
+
+/* Verdi entrambi, e non uno verde e uno grigio: la legge dei due accenti (v. la
+   testa del file) ha un solo discriminante — premibile contro constatato — non
+   "importante contro minore". Quota e totale di categoria raccontano come sono
+   andate le cose esattamente come il totale del mese sopra di loro: sono tutti
+   e tre osservazioni, quindi tutti e tre verdi. Il precedente è .alla-cieca
+   .quanti (v. sopra): un numero osservato ma secondario nella stessa schermata
+   resta nella sua famiglia di colore e si fa più quieto abbassando il corpo —
+   qui è già --t-sm, contro il --t-3xl del totale del mese — non cambiando
+   tinta. */
+.barre-categorie .quota { grid-area: quota; text-align: right; font-size: var(--t-sm); color: var(--secondario); }
+.barre-categorie .totale-categoria { grid-area: totale; text-align: right; font-size: var(--t-sm); color: var(--secondario); }
+
+.barra {
+    position: relative;
+    height: 8px;
+    border-radius: var(--raggio-pieno);
+    background: var(--bordo);
+    /* Clip-a il riempimento nella forma arrotondata della traccia: è la traccia
+       a dare gli angoli tondi alle due estremità del disegno, non il riempimento
+       (che a metà corsa dovrebbe finire con un taglio netto, non un'altra
+       curva in mezzo alla barra). */
+    overflow: hidden;
+}
+
+/* La larghezza arriva INLINE dal Razor (style="width: 38%"): non va data qui.
+   Impostarla in questa regola la sovrascriverebbe, o ne verrebbe sovrascritta a
+   seconda della specificità — in entrambi i casi qualcuno perde tempo a capire
+   perché la barra non si muove più. Questa regola veste solo colore e altezza.
+   Verde e non blu: la barra è la parte che si guarda, non quella che si preme. */
+.riempimento {
+    display: block;
+    height: 100%;
+    background: var(--secondario);
+}
+
+/* .riga-spesa entra nel gruppo condiviso delle righe di registro più sopra
+   (base, hover, active, ultimo filo, animazione d'ingresso): qui restano solo le
+   proprietà che la distinguono dalle altre righe. Su telefono le tre parti non
+   ci stanno affiancate: flex-wrap le sblocca, e .meta (sotto) sceglie di andare
+   a capo da sola. Il flatten a una riga sola arriva nella media query. */
+.riga-spesa { flex-wrap: wrap; gap: var(--s1) var(--s4); }
+
+.riga-spesa .descrizione {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* flex-basis:100% forza la riga a capo prima di questo elemento — è il modo più
+   corto per dirgli "vai da solo sulla riga sotto" senza bisogno di una seconda
+   soglia dedicata, qualunque sia la lunghezza di descrizione e importo prima di
+   lui. order la sposta anche DOPO l'importo nell'ordine di visualizzazione,
+   senza toccare l'ordine nel markup: qui non c'è nulla di premibile dentro la
+   riga (la riga intera è già il collegamento), quindi non c'è una tabulazione
+   da spezzare spostando questo blocco. */
+.riga-spesa .meta {
+    flex-basis: 100%;
+    order: 3;
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+/* L'importo è la colonna del registro: non ha una larghezza fissa (le cifre
+   delle spese, a differenza dei voti, vanno da una a più migliaia) ma
+   margin-left:auto lo tiene comunque incollato allo stesso bordo destro su ogni
+   riga, che è ciò che rende leggibile un elenco di importi — l'occhio insegue
+   un'ascissa sola, non una diversa per ogni cifra. */
+.riga-spesa .importo { flex: none; margin-left: auto; text-align: right; }
+
+/* --------------------------------------------------------- modulo spesa --- */
+
+/* La scatola che mancava: Pages/Spese.razor avvolge il modulo in <section
+   class="modulo-spesa">, ma campi, pastiglie e azioni arrivavano già vestiti —
+   mancava solo il contenitore che li tiene insieme.
+
+   È la prima cosa della pagina, sopra .riepilogo-mese e il registro: deve
+   leggersi come "qui si scrive" senza pesare più di quello che segue, o si
+   prende la schermata solo perché arriva per primo. Niente --raggio-l, niente
+   --ombra, niente --superficie: quella è la vestizione di un piano rialzato
+   (.scheda, il registro, .riepilogo-mese, tutti allo stesso livello), e usarla
+   anche qui renderebbe il modulo indistinguibile da quello che gli sta appena
+   sotto. --sfondo-alt e --raggio sono la stessa coppia di .alla-cieca e
+   .schede-testo, più sopra: una superficie che si vede ma non si impone.
+
+   Scartato un filo solo, come in .striscia-spese (due bordi e niente sfondo):
+   lì dentro c'è una riga di testo, qui una fila di campi impilati con i loro
+   spazi propri, e senza un perimetro chiuso si confonderebbero con quello che
+   c'è sopra e sotto invece di leggersi come UN modulo. */
+.modulo-spesa {
+    background: var(--sfondo-alt);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: var(--s5);
+    margin-bottom: var(--s5);
+}
+
+/* Su telefono i tre campi si impilano: .campo (già flex-column via label.campo,
+   v. sopra) fa già da blocco verticale, qui serve solo il ritmo fra un campo e
+   il successivo. La coppia affiancata arriva nella media query. */
+.campi-spesa {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    margin-bottom: var(--s2);
+}
+
+/* Il campo su cui cade l'attenzione per primo: stesso corpo del titolo di una
+   nota (.titolo-nota), ma mono e in linea con .dato invece che in prosa — è un
+   importo, non una frase. */
+.importo-spesa {
+    font-size: var(--t-2xl);
+    font-weight: 600;
+    letter-spacing: -.02em;
+}
+
+/* Un appunto accanto al campo, non un riquadro: .errore è pensato per un errore
+   di PAGINA (bordo, sfondo, padding) e qui pesarebbe più della domanda "importo
+   o descrizione?" a cui il modulo sta ancora rispondendo. Solo colore e corpo
+   ridotto. */
+.errore-campo {
+    margin: 0 0 var(--s4);
+    color: var(--errore);
+    font-size: var(--t-sm);
+}
+
+/* Il <fieldset> porta un bordo e un padding suoi che nessun'altra pagina usa:
+   si azzerano. Le pastiglie vanno a capo invece di scorrere fuori dallo
+   schermo — sono una scelta singola, non un elenco da scrollare. */
+.scelta-categoria {
+    border: none;
+    margin: 0 0 var(--s4);
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+}
+
+/* La legenda prende una riga tutta sua sopra le pastiglie, con lo stesso trucco
+   del flex-basis:100% usato per .riga-spesa .meta più sopra. */
+.scelta-categoria legend { flex-basis: 100%; }
+
+/* La pastiglia nasce come <span> nel registro delle categorie, ma qui è un
+   <button>: il browser gli darebbe un font di sistema (non Inter) invece di
+   ereditarlo, e un cursore a freccia invece che a mano — la stessa ragione per
+   cui .btn dichiara `font: inherit` fin dalla sua prima riga. Non si riscrive
+   .pastiglia: si aggiunge solo ciò che un elemento <button> porta di suo. */
+button.pastiglia {
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+}
+
+/* ------------------------------------------------------- riepilogo Home --- */
+
+/* Una riga sola fra il sottotitolo e i due registri della Home: il totale del
+   mese va detto, ma non merita il peso di una scheda — sotto ci sono già due
+   registri, e una terza superficie con bordo e ombra propri farebbe della Home
+   una pila di riquadri, cioè esattamente ciò che questo progetto ha smesso di
+   fare (v. IL REGISTRO, più sopra). Due fili, sopra e sotto, bastano a dire
+   "qui si preme" senza aggiungere un contenitore. */
+.striscia-spese {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s3);
+    padding: var(--s4) 0;
+    margin-bottom: var(--s5);
+    border-top: 1px solid var(--bordo);
+    border-bottom: 1px solid var(--bordo);
+    color: var(--testo);
+    text-decoration: none;
+    transition: background var(--transizione);
+}
+
+.striscia-spese:hover, .striscia-spese:active { background: var(--superficie); }
+
+.striscia-spese .etichetta-piccola { margin: 0; }
+.striscia-spese .totale { font-size: var(--t-xl); font-weight: 600; color: var(--secondario); }
+.striscia-spese .cime { margin-left: auto; color: var(--testo-tenue); font-size: var(--t-sm); }
+
+/* Nella testata visibile solo sul telefono, accanto al selettore di spazio: ora
+   l'icona porta anche un'etichetta visibile (v. Pages/Home.razor), quindi non è
+   più un bottone rotondo con un'icona sola al centro. width/height fissi a 44px
+   non hanno più senso — l'etichetta li farebbe uscire dal cerchio — e diventano
+   min-width/min-height: il bersaglio resta grande ALMENO 44px sui due assi, che
+   è la misura sotto la quale un dito sbaglia il colpo, ed è la voce che sta
+   nella testata di un telefono; ma la scatola può allargarsi quanto serve per
+   ospitare "Profilo" senza stringerlo. --raggio-pieno resta, ma con un padding
+   orizzontale al posto di una larghezza fissa diventa una pastiglia a stadio
+   invece che un cerchio — la stessa forma di .pastiglia.
+
+   Sparisce su schermo largo insieme a .solo-stretto, nella media query in fondo
+   al file. */
+.voce-profilo-stretto {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--s3);
+    border-radius: var(--raggio-pieno);
+    color: var(--testo-tenue);
+    text-decoration: none;
+    transition: background var(--transizione), color var(--transizione);
+}
+
+.voce-profilo-stretto:hover, .voce-profilo-stretto:active { background: var(--superficie); color: var(--testo); }
+
+/* .etichetta-piccola porta di suo un margin-bottom, pensato per stare SOPRA
+   qualcosa (v. riga 330): qui sta ACCANTO all'icona, non sopra, e va azzerato
+   come già in .striscia-spese .etichetta-piccola più sopra — altrimenti il
+   margine sposta il centro ottico del testo rispetto all'icona.
+
+   Il collegamento vive dentro <header class="intestazione solo-stretto">
+   accanto a <SelettoreSpazio />, la cui .selettore ha flex:1 e min-width:0
+   (v. riga 730): flex:none qui impedisce a questa voce di allargarsi oltre il
+   proprio contenuto, quindi tutto lo spazio che l'etichetta in più occupa lo
+   cede il selettore — che si stringe, anche con un nome di spazio lungo,
+   invece di spingere l'icona fuori dallo schermo. */
+.voce-profilo-stretto .etichetta-piccola { margin: 0; }
+
 /* ============================================================ schermo largo ===
    Da qui in giù cambia la disposizione, non il linguaggio: stessi colori,
    stesse forme, stesse classi. Un telefono non deve leggere nemmeno una di
@@ -1464,6 +1767,51 @@ li:last-child > .riga-elemento { border-bottom: none; }
 @media (min-width: 40rem) {
     .app-layout { padding: var(--s6) var(--s5); padding-bottom: calc(var(--s8) + var(--s5)); }
     h1 { font-size: var(--t-3xl); }
+
+    /* Qui le quattro colonne ci stanno: nome, barra (elastica), quota, totale.
+       display:contents leva il <li> dal flusso — i suoi quattro figli finiscono
+       direttamente nelle celle della griglia sotto, come se il <li> non
+       esistesse — e con le colonne dichiarate sul genitore, le barre di ogni
+       riga partono tutte dalla STESSA ascissa: è quello che rende confrontabili
+       le categorie fra loro, ed è il punto di tutto il blocco. */
+    .barre-categorie {
+        display: grid;
+        grid-template-columns: minmax(4.5rem, auto) 1fr auto auto;
+        column-gap: var(--s3);
+        row-gap: var(--s3);
+    }
+
+    .barre-categorie > li { display: contents; }
+
+    /* Le aree nominate della versione stretta (nome/barra/quota/totale) non
+       esistono più in questa griglia: si azzerano esplicitamente invece di
+       lasciarle, per non affidarsi al modo in cui la spec tratta un nome
+       d'area assente — un dettaglio che nessuno vuole dover ricordare
+       rileggendo questo file fra un anno. L'ordine delle colonne lo decide
+       l'ordine dei figli nel markup (nome, barra, quota, totale). */
+    .barre-categorie .nome-categoria,
+    .barre-categorie .barra,
+    .barre-categorie .quota,
+    .barre-categorie .totale-categoria { grid-area: auto; }
+
+    /* Tre parti sulla stessa riga: la meta rientra nel flusso normale invece di
+       andare a capo da sola. */
+    .riga-spesa .meta { flex-basis: auto; order: 0; }
+
+    /* Auto-flow avrebbe spinto "Quando" su una riga tutta sua sotto la
+       descrizione a tutta larghezza — l'algoritmo di posizionamento sparso non
+       torna mai indietro a riempire una cella lasciata vuota. Le tre celle si
+       dichiarano a mano, e l'ordine nel markup (che è anche l'ordine di
+       tabulazione) resta quello naturale: importo, descrizione, quando. */
+    .campi-spesa {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--s4);
+    }
+
+    .campi-spesa .campo:has(.importo-spesa)     { grid-column: 1; grid-row: 1; }
+    .campi-spesa .campo:has(.data-spesa)        { grid-column: 2; grid-row: 1; }
+    .campi-spesa .campo:has(.descrizione-spesa) { grid-column: 1 / -1; grid-row: 2; }
 }
 
 /* --- schermo largo: la barra diventa una colonna --- */
@@ -1565,16 +1913,44 @@ li:last-child > .riga-elemento { border-bottom: none; }
     .nav-app .icona { width: 22px; height: 22px; }
 
     .nav-piede {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: var(--s2);
         padding: var(--s4) var(--s3) 0;
         border-top: 1px solid var(--bordo);
     }
+
+    /* Stesso trattamento di .intestazione .selettore: senza flex:1 il <select>
+       resterebbe largo quanto il nome più corto, e .voce-piede accanto
+       fluttuerebbe a metà colonna invece di stare incollato al bordo destro. */
+    .nav-piede .selettore { flex: 1; min-width: 0; }
+
+    /* Una destinazione secondaria accanto al selettore: somiglia a .voce (stesso
+       raggio, stesso schema hover) ma pesa meno — nessun'etichetta di testo,
+       un'icona sola in un riquadro più piccolo. */
+    .voce-piede {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: var(--raggio-s);
+        color: var(--testo-tenue);
+        text-decoration: none;
+        transition: background var(--transizione), color var(--transizione);
+    }
+
+    .voce-piede:hover { background: var(--superficie); color: var(--testo); }
 
     /* Il selettore dello spazio vive in due posti: qui in fondo alla colonna, e
        in cima alla Home per chi sta sul telefono. Su schermo largo quello della
        Home sparisce — averli tutti e due significherebbe due controlli identici
        nella stessa schermata, e nessuno dei due sembrerebbe quello giusto. */
-    .solo-stretto { display: none; }
+    /* .voce-profilo-stretto è la stessa idea di .solo-stretto — un elemento che
+       esiste solo per il telefono, dove il selettore di spazio vive nella
+       testata invece che nel piede della colonna — e sparisce insieme a lui. */
+    .solo-stretto, .voce-profilo-stretto { display: none; }
 
     /* Due colonne dove il contenuto è fatto di riquadri indipendenti: sotto i
        1024px questa regola non esiste e le schede restano impilate. */

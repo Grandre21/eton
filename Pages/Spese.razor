@@ -1,0 +1,467 @@
+@page "/expenses"
+@using Eton.Models
+@inject ExpenseRepository Repository
+@inject SpaceRepository SpaziRepository
+@inject SpaceStateService Spazi
+@inject AuthStateService AuthState
+@implements IDisposable
+
+<PageTitle>Spese — Eton</PageTitle>
+
+<h1>Spese</h1>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <button class="btn" @onclick="Riprova">Riprova</button>
+    </div>
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Serve uno spazio prima di poter segnare una spesa.</p>
+        <a class="btn primary" href="spaces">Vai agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+
+    @* Il modulo sta in cima e sempre aperto, senza nessuna navigazione per arrivarci: il requisito
+       da cui nasce questa pagina è la parola "comodamente", e un tocco in più per segnare una
+       spesa è esattamente ciò che fa abbandonare l'abitudine dopo una settimana. Il markup dei
+       campi ricalca Pages/SpesaEdit.razor: gli stili sono scritti contro quelle classi. *@
+    <section class="modulo-spesa">
+        <div class="campi-spesa">
+            <label class="campo">
+                <span class="etichetta-campo">Importo</span>
+                <input class="importo-spesa dato" type="text" inputmode="decimal" autofocus
+                       placeholder="0,00" @bind="nuovoImporto" @bind:event="oninput" disabled="@occupato" />
+            </label>
+            @if (!string.IsNullOrWhiteSpace(nuovoImporto) && !Denaro.Prova(nuovoImporto, out _))
+            {
+                <p class="errore-campo">Non è un importo valido: usa la virgola o il punto, al massimo due decimali.</p>
+            }
+
+            <label class="campo">
+                <span class="etichetta-campo">Descrizione</span>
+                <input class="descrizione-spesa" type="text" maxlength="200" placeholder="Per cosa?"
+                       @bind="nuovaDescrizione" @bind:event="oninput" disabled="@occupato" />
+            </label>
+
+            <label class="campo">
+                <span class="etichetta-campo">Quando</span>
+                @* min/max sono solo un aiuto del browser: né Blazor né il browser li fanno rispettare
+                   in tutti i percorsi (si può digitare a mano nei segmenti dell'anno). La guardia vera
+                   è DataRagionevole, in @code. *@
+                <input class="data-spesa dato" type="date" min="2000-01-01" max="@DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")"
+                       @bind="nuovaData" disabled="@occupato" />
+            </label>
+            @if (nuovaData is null)
+            {
+                <p class="errore-campo">Manca la data della spesa.</p>
+            }
+            else if (!DataRagionevole)
+            {
+                <p class="errore-campo">L'anno non è verosimile: dev'essere fra il 2000 e l'anno prossimo.</p>
+            }
+        </div>
+
+        <fieldset class="scelta-categoria">
+            <legend class="etichetta-campo">Categoria</legend>
+            @foreach (var c in CategorieSpesa.Elenco)
+            {
+                <button type="button" class="pastiglia @(c == nuovaCategoria ? "accesa" : "")"
+                        aria-pressed="@(c == nuovaCategoria)" @onclick="() => nuovaCategoria = c" disabled="@occupato">@c</button>
+            }
+        </fieldset>
+
+        <div class="azioni">
+            <button class="btn primary" @onclick="Segna" disabled="@(occupato || !ModuloValido)">Segna</button>
+        </div>
+    </section>
+
+    @if (speseNonLette)
+    {
+        <div class="vuoto">
+            <p>Non sono riuscito a leggere le spese di questo spazio.</p>
+            <button class="btn" @onclick="Riprova">Riprova</button>
+        </div>
+    }
+    else
+    {
+        @* Il riepilogo sta FUORI dal controllo su speseDelMese.Count perché dentro ci sono le frecce
+           ‹ › che cambiano mese: se restasse nel ramo "ci sono spese", un mese vuoto le farebbe
+           sparire insieme al riepilogo, e non ci sarebbe più modo di uscirne — nemmeno per tornare a
+           un mese che ha spese davvero. A lettura riuscita renderlo con zero spese è sicuro
+           (riepilogo parte da new(0, [], 0, null)) e corretto: 0,00 € è vero quando il mese non è
+           costato niente. È diverso dal ramo 'speseNonLette' sopra, dove non si mostra alcun
+           riepilogo perché lì lo zero sarebbe falso: non sappiamo quanto sia costato quel mese, solo
+           che non siamo riusciti a leggerlo. *@
+        @* scheda porta la superficie condivisa (sfondo, bordo, ombra); riepilogo-mese solo ciò che è proprio di questo blocco *@
+        <section class="scheda riepilogo-mese">
+            <div class="testa-registro">
+                <span>@CalcoliSpese.NomeMese(mese) @anno</span>
+                <div class="navigazione-mese">
+                    <button type="button" class="btn piccolo" @onclick="MesePrecedente" aria-label="Mese precedente">‹</button>
+                    <button type="button" class="btn piccolo" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti)" aria-label="Mese successivo">›</button>
+                </div>
+            </div>
+
+            <p class="totale-mese dato">@Denaro.Testo(riepilogo.Totale)&#160;€</p>
+            <p class="confronto-mese testo-tenue">@TestoConfronto()</p>
+
+            <ul class="barre-categorie">
+                @foreach (var v in riepilogo.Categorie)
+                {
+                    <li>
+                        <span class="nome-categoria">@v.Categoria</span>
+                        <span class="barra"><span class="riempimento" style="width: @(v.Quota)%"></span></span>
+                        <span class="quota dato">@v.Quota%</span>
+                        <span class="totale-categoria dato">@Denaro.Testo(v.Totale)&#160;€</span>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        @if (speseDelMese.Count == 0)
+        {
+            <div class="vuoto">
+                <p>Ancora nessuna spesa qui.</p>
+            </div>
+        }
+        else
+        {
+            <div class="testa-registro">
+                <span>@Testi.Conteggio(speseDelMese.Count, "spesa", "spese")</span>
+            </div>
+
+            <ul class="elenco-spese">
+                @foreach (var s in speseDelMese)
+                {
+                    <li>
+                        <a class="riga-spesa" href="expenses/@s.Id">
+                            <span class="descrizione">@s.Description</span>
+                            <span class="meta">
+                                <span class="pastiglia">@s.Category</span>
+                                <span class="dato">@Testi.DataSola(s.SpentOn)</span>
+                                @if (Pagante(s) is string pagante)
+                                {
+                                    <text> · @pagante</text>
+                                }
+                            </span>
+                            <span class="importo dato">@Denaro.Testo(s.Amount)&#160;€</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    }
+}
+
+@code {
+    private int anno = DateTime.Now.Year;
+    private int mese = DateTime.Now.Month;
+    private RiepilogoMese riepilogo = new(0, [], 0, null);
+    private IReadOnlyList<Expense> speseDelMese = [];
+    private IReadOnlyList<Membro> membri = [];
+    private bool caricato, occupato;
+    private string? errore;
+    private Guid spazioMostrato;
+
+    // L'id di chi guarda, letto una volta sola all'apertura della pagina: serve sia a Segna(), per
+    // valorizzare paid_by, sia a Pagante(), per decidere se il nome del pagante va scritto o no
+    // accanto a una riga. Se il parsing fallisce resta null, e Pagante() finisce col mostrare
+    // sempre il nome: un fallimento di questo genere non è un buco di sicurezza, la riga in più è
+    // solo rumore.
+    private Guid? mioId;
+
+    private string nuovoImporto = "";
+    private string nuovaDescrizione = "";
+    private string nuovaCategoria = CategorieSpesa.Elenco[0];
+
+    // DateTime? e non DateTime: con un tipo non annullabile lo stato "vuoto" non è rappresentabile,
+    // e il binder di Blazor lo contrabbanda dentro un valore legale. Verificato decompilando
+    // Microsoft.AspNetCore.Components 9.0.7: quando la conversione fallisce e il valore grezzo è la
+    // stringa vuota (la "x" che Chrome mostra su un <input type="date">), il codice generato non
+    // lascia il campo invariato — chiama setter(default(T)), cioè 0001-01-01. La colonna spent_on
+    // non ha vincoli di intervallo: quella data entra nel database senza errori, e sparisce da ogni
+    // riepilogo mensile perché l'anno 1 non ne intercetta nessuno. Con DateTime? il vuoto diventa
+    // null, uno stato che si può controllare invece di uno che si insinua.
+    private DateTime? nuovaData = DateTime.Today;
+
+    // Guardia di ragionevolezza, non di validazione del dominio: non impedisce una spesa vera fuori
+    // da questo intervallo (nessuno ne segnerebbe una), impedisce che un anno digitato a mano nei
+    // segmenti dell'<input type="date"> — "0001" si scrive senza passare dalla "x" che svuota il
+    // campo — diventi una spesa silenziosamente invisibile in ogni riepilogo mensile. Il limite è
+    // arbitrario apposta.
+    private bool DataRagionevole => nuovaData is { } d && d.Year >= 2000 && d.Year <= DateTime.Today.Year + 1;
+
+    private bool ModuloValido => Denaro.Prova(nuovoImporto, out _) && !string.IsNullOrWhiteSpace(nuovaDescrizione) && DataRagionevole;
+
+    // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
+    // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /spese l'evento arriva
+    // mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto fra un
+    // id vero e uno vuoto lascia passare tutto. Il risultato sarebbe una seconda lettura identica
+    // alla prima, in parallelo. Scartare l'evento non perde niente: il caricamento in corso lo
+    // spazio aggiornato lo legge comunque.
+    private bool inCaricamento;
+
+    // Distingue "questo spazio non ha spese" da "le spese non sono riuscito a leggerle": l'elenco è
+    // vuoto in entrambi i casi, ma dire "ancora nessuna spesa qui" quando la lettura è fallita è
+    // un'affermazione precisa su uno spazio di cui non sappiamo niente.
+    private bool speseNonLette;
+
+    // Falso solo quando il mese mostrato è quello corrente: non esistono spese future, e una
+    // freccia che porta su una schermata sempre vuota è una freccia che non doveva esserci.
+    private bool PuoAndareAvanti => anno != DateTime.Now.Year || mese != DateTime.Now.Month;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Spazi.Cambiato += SuCambioSpazio;
+        if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+        await Carica();
+    }
+
+    // Come SpesaEdit.Crea: pagante letto con AuthState.GetUserIdAsync() e Guid.TryParse, stesso
+    // messaggio se la sessione non è valida (v. Pages/NoteEdit.razor:201-205). occupato è
+    // ripristinato in un finally, altrimenti un'eccezione qui lascerebbe i campi disabilitati per
+    // sempre.
+    private async Task Segna()
+    {
+        occupato = true;
+        errore = null;
+        try
+        {
+            if (!Denaro.Prova(nuovoImporto, out var importo)) return;
+            if (string.IsNullOrWhiteSpace(nuovaDescrizione)) return;
+            if (!DataRagionevole) return;
+
+            var attivo = await Spazi.AssicuraCaricatoAsync();
+            if (attivo is null)
+            {
+                errore = "Serve uno spazio attivo per segnare una spesa.";
+                return;
+            }
+
+            if (!Guid.TryParse(await AuthState.GetUserIdAsync(), out var pagante))
+            {
+                errore = "La sessione non è più valida: esci e rientra.";
+                return;
+            }
+
+            // DataRagionevole, appena sopra, ha già garantito che nuovaData non è null: CreaAsync
+            // vuole un DateTime non annullabile.
+            await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+
+            // Importo e descrizione si svuotano, data e categoria restano: chi segna tre spese al
+            // supermercato le segna nello stesso giorno e spesso nella stessa categoria, e
+            // riazzerarle costringerebbe a rimetterle ogni volta.
+            nuovoImporto = "";
+            nuovaDescrizione = "";
+
+            caricato = false;
+            await Carica();
+        }
+        catch (Exception ex)
+        {
+            errore = $"Non è stato possibile salvare: {ex.Message}";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Carica()
+    {
+        inCaricamento = true;
+        try
+        {
+            // Ciclo e non chiamata singola: SuCambioSpazio SCARTA gli eventi che arrivano mentre
+            // questo metodo è in volo, e scartarli senza rileggere dopo li perderebbe per sempre.
+            // Resterebbero l'intestazione di uno spazio e le spese di un altro, senza che nulla lo
+            // corregga finché l'utente non esce dalla pagina e rientra.
+            while (true)
+            {
+                // Catturato PRIMA del giro, ed è il punto delicato di tutto il metodo. Il confronto
+                // finale si fa contro questo, non soltanto contro spazioMostrato: se il caricamento
+                // fallisce, spazioMostrato non viene aggiornato: guardare solo quello lascerebbe la
+                // condizione vera per sempre, e la pagina rifarebbe all'infinito una lettura che
+                // fallisce sempre allo stesso modo. Confrontare lo spazio attivo di adesso con
+                // quello di partenza distingue "è cambiato davvero" da "non è cambiato niente e la
+                // lettura è andata male".
+                var partenza = Spazi.Attivo?.Id;
+
+                await CaricaUnGiro();
+
+                var adesso = Spazi.Attivo?.Id;
+                if (adesso is null || adesso == partenza || adesso == spazioMostrato) break;
+            }
+        }
+        finally
+        {
+            caricato = true;
+            inCaricamento = false;
+        }
+    }
+
+    private async Task CaricaUnGiro()
+    {
+        errore = null;
+        speseNonLette = false;
+
+        Space? attivo;
+        try
+        {
+            attivo = await Spazi.AssicuraCaricatoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Qui a mancare sono gli SPAZI, non le spese — e il markup reagisce diversamente:
+            // senza spazio attivo l'errore si prende tutta la pagina, col pulsante Riprova,
+            // invece di essere una riga sopra un elenco che comunque esiste.
+            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            return;
+        }
+
+        if (attivo is null) return;
+
+        // Azzerati PRIMA di leggere, come in Home.CaricaDettagli. L'intestazione stampa già
+        // @Spazi.Attivo.Name, cioè il nome NUOVO: lasciare a schermo il riepilogo del vecchio spazio
+        // lo farebbe passare per quello di questo, e non c'è niente che smentisca.
+        riepilogo = new RiepilogoMese(0, [], 0, null);
+        speseDelMese = [];
+        membri = [];
+        spazioMostrato = attivo.Id;
+
+        // Il mese precedente di gennaio è dicembre dell'anno prima: stessa regola di
+        // CalcoliSpese.PerMese, ripetuta qui perché è l'intervallo da chiedere al repository, non
+        // il calcolo del confronto.
+        var mesePrima = mese == 1 ? 12 : mese - 1;
+        var annoMesePrima = mese == 1 ? anno - 1 : anno;
+        var da = new DateTime(annoMesePrima, mesePrima, 1);
+        var a = new DateTime(anno, mese, DateTime.DaysInMonth(anno, mese));
+
+        try
+        {
+            // Una sola lettura copre due mesi: CalcoliSpese.PerMese ha bisogno anche del mese
+            // precedente per calcolare il confronto, e chiederlo qui invece che con una seconda
+            // query risparmia un viaggio di rete (v. ExpenseRepository.ElencaAsync).
+            var spese = await Repository.ElencaAsync(attivo.Id, da, a);
+            riepilogo = CalcoliSpese.PerMese(spese, anno, mese);
+            speseDelMese = spese.Where(s => s.SpentOn.Year == anno && s.SpentOn.Month == mese).ToList();
+        }
+        catch (Exception ex)
+        {
+            errore = $"Spazio caricato, ma non ho potuto leggerne le spese: {ex.Message}";
+            speseNonLette = true;
+            return;
+        }
+
+        // Letti sempre, non solo negli spazi condivisi: chi ha pagato si nasconde riga per riga in
+        // Pagante(), non allo spazio intero — v. il commento lì per il perché. Non rimettere qui un
+        // controllo su IsPersonal.
+
+        // Try separato, e non insieme alle spese: i membri servono soltanto a scrivere il nome del
+        // pagante accanto a ogni spesa. Metterli nello stesso catch faceva sì che un timeout su
+        // questa seconda chiamata dichiarasse illeggibili delle spese già lette benissimo, e le
+        // nascondesse dietro un messaggio d'errore falso. Un fallimento qui lascia Pagante() a
+        // null, e la riga mostra comunque categoria e data — che sono l'informazione principale:
+        // non è un errore da mostrare, ma va detto in console, altrimenti resta invisibile.
+        try
+        {
+            membri = await SpaziRepository.MembriAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
+        }
+    }
+
+    private async Task Riprova()
+    {
+        caricato = false;
+        await Carica();
+    }
+
+    private async Task MesePrecedente()
+    {
+        if (mese == 1) { anno--; mese = 12; } else { mese--; }
+        caricato = false;
+        await Carica();
+    }
+
+    private async Task MeseSuccessivo()
+    {
+        if (mese == 12) { anno++; mese = 1; } else { mese++; }
+        caricato = false;
+        await Carica();
+    }
+
+    // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
+    // logico: se cambia mentre siamo qui, le spese a schermo sono di un altro spazio.
+    private void SuCambioSpazio() => _ = InvokeAsync(async () =>
+    {
+        if (inCaricamento) return;
+        if (Spazi.Attivo?.Id == spazioMostrato) return;
+
+        caricato = false;
+        StateHasChanged();
+        try
+        {
+            await Carica();
+        }
+        catch (Exception ex)
+        {
+            // Carica() cattura già le proprie eccezioni, quindi qui si arriva solo per qualcosa che
+            // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
+            // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
+            // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
+            errore = $"Non è stato possibile aggiornare le spese: {ex.Message}";
+            caricato = true;
+        }
+        StateHasChanged();
+    });
+
+    // La frase sotto il totale: il segno lo decide CalcoliSpese.PerMese, che confronta il totale di
+    // questo mese con quello precedente (v. il commento su VariazionePercentuale). I casi sono tre,
+    // non due: null è la percentuale che non esiste (il mese scorso era a zero, non si può dividere);
+    // 0 è la percentuale che esiste e vale zero (i due mesi si equivalgono). Sono due "niente" diversi,
+    // la stessa distinzione che qui sopra fa speseNonLette fra "non c'è niente" e "non ho potuto
+    // leggere niente", e vanno detti diversi.
+    private string TestoConfronto()
+    {
+        if (riepilogo.VariazionePercentuale is not { } variazione)
+            return "Nessuna spesa il mese scorso.";
+
+        if (variazione == 0)
+            return "Come il mese scorso.";
+
+        return variazione > 0
+            ? $"Il {variazione}% in più del mese scorso."
+            : $"Il {Math.Abs(variazione)}% in meno del mese scorso.";
+    }
+
+    // Separato dalla data perché nel markup quella va in un <span class="dato"> a sé, per renderla
+    // in carattere monospaziato: il nome di una persona non è un dato e non ci va.
+    //
+    // Solo quando paid_by differisce da mioId, non "solo negli spazi condivisi": quella regola
+    // richiederebbe di conoscere il numero di membri, cioè una query in più, e darebbe lo stesso
+    // risultato, perché in uno spazio personale paid_by non differisce mai da chi guarda. La
+    // condizione economica è anche la più precisa, perché in uno spazio condiviso nasconde
+    // comunque il rumore delle proprie righe.
+    private string? Pagante(Expense s) => s.PaidBy != mioId ? membri.FirstOrDefault(m => m.UtenteId == s.PaidBy)?.Nome : null;
+
+    public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
+}

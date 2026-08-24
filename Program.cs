@@ -18,6 +18,7 @@ builder.Services.AddSingleton<NoteRepository>();
 builder.Services.AddSingleton<CollectionRepository>();
 builder.Services.AddSingleton<CollectionItemRepository>();
 builder.Services.AddSingleton<ReviewRepository>();
+builder.Services.AddSingleton<ExpenseRepository>();
 builder.Services.AddSingleton(sp => new RottaRichiesta((IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>()));
 
 await builder.Build().RunAsync();

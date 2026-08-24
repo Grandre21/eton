@@ -46,6 +46,11 @@ public static class Testi
     /// Postgres in UTC, e la sola volta che qualcuno se ne dimentica l'orario risulta sbagliato di
     /// un paio d'ore in una schermata sola.
     /// </para>
+    /// <para>
+    /// Solo per colonne <c>timestamptz</c> — un istante nel tempo (<c>created_at</c>,
+    /// <c>updated_at</c>). Su una colonna <c>date</c> pura come <c>expenses.spent_on</c> non va usato:
+    /// serve <see cref="DataSola"/>, e il motivo è nella sua documentazione.
+    /// </para>
     /// </summary>
     public static string Data(DateTime quando)
         => quando.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
@@ -59,4 +64,29 @@ public static class Testi
     /// </summary>
     public static string DataOra(DateTime quando)
         => quando.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+
+    /// <summary>Una data pura, senza fuso: «05/01/2026». Per colonne <c>date</c> come
+    /// <c>expenses.spent_on</c> — non per <c>timestamptz</c>, dove serve <see cref="Data"/>.
+    /// <para>
+    /// Una colonna <c>date</c> di Postgres non è un istante: è un giorno, senza ora e senza fuso.
+    /// Applicarle <c>.ToLocalTime()</c> — come fa <see cref="Data"/>, giustamente, sui
+    /// <c>timestamptz</c> — significa spostare qualcosa che non ha una posizione nel tempo da cui
+    /// spostarsi.
+    /// </para>
+    /// <para>
+    /// Il motivo per cui questo metodo esiste, e non basta "semplicemente non chiamare
+    /// <c>.ToLocalTime()</c>" all'occorrenza: verificato contro <c>Supabase.Postgrest 4.4.0</c>, una
+    /// colonna <c>date</c> arriva deserializzata come <see cref="DateTime"/> con
+    /// <see cref="DateTimeKind.Unspecified"/>. E <c>.ToLocalTime()</c> su <c>Unspecified</c> non è
+    /// un'operazione neutra: per specifica .NET tratta il valore <b>come se fosse UTC</b> e applica
+    /// l'offset locale — l'assunto contrario a quello che verrebbe naturale, ed è da lì che nasce il
+    /// difetto. In Blazor WebAssembly quell'offset è quello del dispositivo di chi guarda, non del
+    /// server: per un fuso negativo su UTC (<c>America/New_York</c>, UTC-5) il 5 gennaio a
+    /// mezzanotte si stampava «04/01/2026», un giorno indietro, senza nessun errore visibile. In
+    /// Italia non si vedeva mai, perché l'offset è positivo e lo spostamento restava nello stesso
+    /// giorno.
+    /// </para>
+    /// </summary>
+    public static string DataSola(DateTime quando)
+        => quando.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 }

@@ -5,10 +5,40 @@
 @inject SpaceRepository Repository
 @inject NoteRepository NoteRepository
 @inject CollectionRepository CollectionRepository
+@inject ExpenseRepository ExpenseRepository
 @inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Eton</PageTitle>
+
+@* Su schermo largo il selettore sta in fondo alla barra di navigazione, che è sempre a
+   schermo: qui sparisce (v. .solo-stretto in app.css), altrimenti la stessa tendina
+   comparirebbe due volte nella stessa schermata e nessuna delle due sembrerebbe quella
+   buona. Sul telefono la barra in basso non ha spazio per contenerlo, quindi resta qui.
+
+   Il Profilo non è fra le voci della barra di navigazione (v. il commento in testa a
+   Shared/Navigazione.razor): sul telefono l'unico posto dove agganciarlo è questa testata,
+   perché nav-piede — dove sta l'aggancio gemello per lo schermo largo — non esiste qui.
+   L'etichetta è etichetta-piccola, la stessa classe del SelettoreSpazio accanto (v.
+   Shared/SelettoreSpazio.razor), e non un semplice aria-label: Shared/Icona.razor tiene
+   l'icona aria-hidden proprio perché conta sempre di trovarsi accanto a un'etichetta di
+   testo visibile, e qui doveva averla anche lei.
+
+   Sta FUORI dalla catena @if qui sotto, e non dentro il ramo finale, perché è l'unica via
+   d'uscita dall'applicazione su schermo stretto: l'icona porta a /profile, dove sta «Esci»,
+   e una via d'uscita che esiste solo quando tutto è andato bene — spazi caricati, uno
+   attivo — non è una via d'uscita. SelettoreSpazio si protegge già da solo (v. il proprio
+   @if in testa al componente): finché non c'è uno spazio attivo mostra solo l'icona del
+   profilo, non una tendina vuota. Chi in futuro spostasse questa testata dentro l'else
+   riaprirebbe il buco: chi non ha ancora uno spazio, o il cui caricamento è fallito,
+   resterebbe chiuso fuori senza modo di raggiungere «Esci». *@
+<header class="intestazione solo-stretto">
+    <SelettoreSpazio />
+    <a href="profile" class="voce-profilo-stretto">
+        <Icona Nome="persona" />
+        <span class="etichetta-piccola">Profilo</span>
+    </a>
+</header>
 
 @if (!caricato)
 {
@@ -38,14 +68,6 @@ else
         <div class="errore" role="alert">@errore</div>
     }
 
-    @* Su schermo largo il selettore sta in fondo alla barra di navigazione, che è sempre a
-       schermo: qui sparisce (v. .solo-stretto in app.css), altrimenti la stessa tendina
-       comparirebbe due volte nella stessa schermata e nessuna delle due sembrerebbe quella
-       buona. Sul telefono la barra in basso non ha spazio per contenerlo, quindi resta qui. *@
-    <header class="intestazione solo-stretto">
-        <SelettoreSpazio />
-    </header>
-
     <h1>@Spazi.Attivo.Name</h1>
     <p class="sottotitolo">
         @if (Spazi.Attivo.IsPersonal)
@@ -61,6 +83,37 @@ else
             <text>@membri membri.</text>
         }
     </p>
+
+    @* Riga sola e non una terza <section> dentro griglia-due: quella griglia è a due colonne su
+       schermo largo (v. la media query in fondo a app.css), e una terza sezione ci finirebbe da
+       sola su una seconda riga, con metà schermo vuoto accanto. Ed è un oggetto diverso dagli
+       altri due: Note e Collezioni sono registri — elenchi di righe — questo è un totale, e
+       metterlo nella griglia dei registri lo farebbe sembrare ciò che non è. Sta sopra ai due
+       registri perché è la sola informazione della Home che si legge in un colpo d'occhio, ma
+       resta una riga sola e non una sezione, per non pesare più di Note e Collezioni, che sono il
+       cuore dell'applicazione.
+
+       riepilogoSpese è null finché il caricamento non è riuscito, e resta null se fallisce (v.
+       CaricaDettagli): in entrambi i casi la striscia sparisce del tutto, invece di mostrare un
+       totale a zero che sembrerebbe un dato letto per davvero. *@
+    @if (riepilogoSpese is not null)
+    {
+        <a class="striscia-spese" href="expenses">
+            @if (riepilogoSpese.Totale == 0m)
+            {
+                <text>Nessuna spesa questo mese</text>
+            }
+            else
+            {
+                <span class="etichetta-piccola">Questo mese</span>
+                <span class="totale dato">@Denaro.Testo(riepilogoSpese.Totale)&#160;€</span>
+                @if (CimeSpese() is { Length: > 0 } cime)
+                {
+                    <span class="cime">@cime</span>
+                }
+            }
+        </a>
+    }
 
     @* Le due sezioni sono indipendenti: sul telefono si impilano, su schermo largo stanno affiancate
        (v. .griglia-due in app.css). Senza questo contenitore non ci sarebbe niente su cui appoggiare
@@ -163,6 +216,7 @@ else
     private int membri;
     private IReadOnlyList<Note> note = [];
     private IReadOnlyList<Collection> collezioni = [];
+    private RiepilogoMese? riepilogoSpese;
     private string? errore;
     private int generazione;
 
@@ -246,6 +300,7 @@ else
         membri = 0;
         note = [];
         collezioni = [];
+        riepilogoSpese = null;
         dettagliMancanti = false;
 
         // Segnato PRIMA degli await, non dopo: mentre la lettura è in volo possono arrivare altri
@@ -286,6 +341,36 @@ else
             errore = $"{premessa}, ma non ho potuto leggerne i dettagli: {ex.Message}";
             dettagliMancanti = true;
         }
+
+        // Try separato, come i membri in Notes.razor:190: le spese sono un dettaglio a sé, e
+        // metterle nello stesso catch di sopra farebbe sì che un guasto qui dichiari illeggibili
+        // note e collezioni lette benissimo. Un fallimento fa solo sparire la striscia — non è un
+        // errore da mostrare — ma va detto in console, altrimenti resta invisibile.
+        try
+        {
+            var oggi = DateTime.Today;
+            var primoDelMese = new DateTime(oggi.Year, oggi.Month, 1);
+            var ultimoDelMese = primoDelMese.AddMonths(1).AddDays(-1);
+
+            var speseDelMese = await ExpenseRepository.ElencaAsync(spazio.Id, primoDelMese, ultimoDelMese);
+            if (mia != generazione) return;
+
+            riepilogoSpese = CalcoliSpese.PerMese(speseDelMese, oggi.Year, oggi.Month);
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            Console.Error.WriteLine($"[Home] Spese non disponibili: {ex.Message}");
+        }
+    }
+
+    // "Spesa 38% · Trasporti 22%": le prime due categorie del mese, già in ordine di quota
+    // decrescente (v. CalcoliSpese.PerMese). Stringa vuota se non ce ne sono, così il markup può
+    // omettere del tutto lo <span>, invece di lasciarlo a schermo vuoto.
+    private string CimeSpese()
+    {
+        if (riepilogoSpese is null || riepilogoSpese.Categorie.Count == 0) return "";
+        return string.Join(" · ", riepilogoSpese.Categorie.Take(2).Select(c => $"{c.Categoria} {c.Quota}%"));
     }
 
     // Lo spazio attivo si cambia dal selettore, che ora sta in due posti: in cima a questa pagina

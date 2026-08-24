@@ -8,10 +8,20 @@
    non usa l'altro schermo.
 
    Marchio e piede esistono solo nella forma larga — sul telefono la striscia ha spazio per cinque
-   voci e nient'altro — ma stanno comunque nel markup: nasconderli in CSS costa una riga, mentre
-   renderli condizionalmente in C# vorrebbe dire conoscere la larghezza della finestra dentro
-   l'applicazione, cioè interrogare il browser e ridisegnare a ogni ridimensionamento per ottenere
-   quello che una media query fa da sola. *@
+   voci e nient'altro, oggi Home, Note, Collezioni, Spese e Spazi — ma stanno comunque nel markup:
+   nasconderli in CSS costa una riga, mentre renderli condizionalmente in C# vorrebbe dire
+   conoscere la larghezza della finestra dentro l'applicazione, cioè interrogare il browser e
+   ridisegnare a ogni ridimensionamento per ottenere quello che una media query fa da sola.
+
+   Il Profilo non è fra queste cinque: ci si arriva poche volte l'anno, e quando capita è quasi
+   sempre per uscire (v. il commento nel catch di OnInitializedAsync in Pages/Profile.razor: senza
+   nome ed email il pulsante «Esci» funziona comunque, ed è l'unica cosa per cui si arriva davvero
+   su quella pagina), mentre le spese si segnano tutti i giorni, e una sesta icona su un
+   telefono stretto sarebbe illeggibile. Resta comunque raggiungibile da entrambe le forme, con due
+   agganci e non uno solo, perché le due forme della barra si escludono a vicenda e un solo
+   collegamento ne lascerebbe fuori metà degli schermi: qui sotto, accanto al SelettoreSpazio, per
+   lo schermo largo; nella testata "solo-stretto" di Pages/Home.razor per il telefono, dove
+   nav-piede non esiste. *@
 <nav class="nav-app" aria-label="Navigazione principale">
     <div class="nav-marchio">Eton</div>
 
@@ -28,6 +38,10 @@
 
     <div class="nav-piede">
         <SelettoreSpazio />
+        <a href="profile" class="voce-piede">
+            <span class="icona"><Icona Nome="persona" /></span>
+            <span class="etichetta">Profilo</span>
+        </a>
     </div>
 </nav>
 
@@ -41,8 +55,8 @@
         new("", "casa", "Home"),
         new("notes", "note", "Note"),
         new("collections", "collezioni", "Collezioni"),
+        new("expenses", "spese", "Spese"),
         new("spaces", "gruppo", "Spazi"),
-        new("profile", "persona", "Profilo"),
     ];
 
     private bool EAttiva(string rotta)
