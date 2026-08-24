@@ -191,6 +191,12 @@
        soglia che usano sia Material sia le linee guida di accessibilità. */
     --tocco: 48px;
 
+    /* Altezza di una riga di registro. La usa anche .scheletro-riga: lo
+       scheletro di caricamento replica questa misura perché il contenuto
+       prenda il posto di qualcosa che aveva già la sua altezza, e il
+       registro non salti di misura quando i dati arrivano. */
+    --altezza-riga: 66px;
+
     /* Larghezza della colonna di navigazione su schermo largo. Sta qui e non
        dentro la media query perché serve anche all'area di contenuto, che è un
        altro blocco: ripeterla in due punti significa vederle divergere. */
@@ -305,6 +311,14 @@ a { color: var(--accento); }
 .sottotitolo { color: var(--testo-tenue); margin: 0 0 var(--s6); font-size: var(--t-md); }
 .testo-tenue { color: var(--testo-tenue); font-size: var(--t-sm); margin: 0 0 var(--s3); }
 
+/* Prosa esplicativa in testo tenue a corpo piccolo: il pattern ricorreva già sotto
+   il titolo di un interruttore e sarebbe servito anche altrove, ma il nome
+   restava legato a quel solo posto (era .interruttore .spiega). Finché un pattern
+   vive in più punti del progetto con nomi diversi non è riuso, è coincidenza
+   ripetuta — promosso a classe autonoma, .interruttore lo eredita da qui e non
+   lo dichiara più per conto suo. */
+.spiega { color: var(--testo-tenue); font-size: var(--t-sm); }
+
 /* Un collegamento dentro un testo di servizio non è un invito: è una porta per chi
    la sta già cercando. Blu e sottolineato pieno peserebbe più della frase che lo
    contiene — e in fondo a una pagina, accanto a un pulsante primario, due cose che
@@ -381,6 +395,33 @@ a { color: var(--accento); }
     0%, 100% { opacity: 1; }
     50%      { opacity: .45; }
 }
+
+/* Sostituisce «Caricamento…» nelle pagine che aprono un registro: un testo fermo non
+   dice quante righe stanno per arrivare, mentre delle barre già disposte come righe
+   anticipano la forma del contenuto. Riusa @keyframes respiro invece di uno shimmer
+   a gradiente che scorre: un riflesso in movimento su fondo nero si legge come
+   vetro, e tutta l'estetica di Eton è luce additiva, non superfici lucide. */
+.scheletro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    margin-bottom: var(--s5);
+}
+
+/* Alta quanto una riga vera, non quanto una riga di testo: così il registro non
+   fa un salto di misura quando le barre lasciano il posto al contenuto caricato. */
+.scheletro-riga {
+    height: var(--altezza-riga);
+    background: var(--superficie);
+    border-radius: var(--raggio-s);
+    animation: respiro 1.6s ease-in-out infinite;
+}
+
+/* Sfalsate nel tempo e diverse di larghezza: pulsando tutte insieme e tutte
+   uguali sembrerebbero un solo blocco, non un elenco di cose distinte. */
+.scheletro-riga:nth-child(2) { width: 85%; animation-delay: 120ms; }
+.scheletro-riga:nth-child(3) { width: 92%; animation-delay: 240ms; }
+.scheletro-riga:nth-child(4) { width: 78%; animation-delay: 360ms; }
 
 /* Il riquadro di crash di Blazor: giallo e in fondo, sopra ogni cosa. */
 #blazor-error-ui {
@@ -540,13 +581,40 @@ a { color: var(--accento); }
    spazio, un testo tenue e il pulsante che porta fuori di lì. */
 .vuoto {
     text-align: center;
-    padding: var(--s8) var(--s4);
+    /* --s7 e non --s8: con l'icona sopra e la riga che spiega sotto la frase, lo
+       stato vuoto è cresciuto di un blocco intero rispetto a quando era solo
+       testo, e lo stesso respiro verticale di prima lo avrebbe spinto fuori dallo
+       schermo di un telefono piccolo. */
+    padding: var(--s7) var(--s4);
     color: var(--testo-tenue);
     margin-bottom: var(--s5);
 }
 
 .vuoto p { margin: 0; }
 .vuoto .btn { margin-top: var(--s4); }
+
+/* Grande e fioca, in cima allo stato vuoto: deve suggerire senza reclamare, e
+   un'icona accesa lì sopra sarebbe un'icona che chiede attenzione per dire che
+   non c'è niente. Agisce sul discendente svg perché .icona-vuoto veste il
+   contenitore attorno al componente Icona, non l'elemento che disegna davvero. */
+.vuoto .icona-vuoto svg {
+    width: 48px;
+    height: 48px;
+    color: var(--testo-fioco);
+    opacity: .6;
+    margin-bottom: var(--s4);
+}
+
+/* La riga che insegna, sotto la frase che constata. .vuoto è centrato, e una riga
+   lunga centrata si legge male perché l'occhio perde l'inizio della riga
+   successiva: il max-width la tiene a una misura di prosa. line-height più
+   generoso del testo normale perché è prosa esplicativa, non un'etichetta. */
+.vuoto .spiega {
+    display: block;
+    max-width: 42ch;
+    margin: var(--s3) auto 0;
+    line-height: 1.6;
+}
 
 .errore {
     border: 1px solid var(--errore-bordo);
@@ -626,6 +694,24 @@ a { color: var(--accento); }
     cursor: default;
     transform: none;
     box-shadow: none;
+}
+
+/* Un pulsante che sta salvando non è "disabilitato", è "occupato": .btn:disabled
+   da solo non distingue le due cose, e un pulsante grigio non dice a chi preme se
+   è morto o solo al lavoro. Nessuna girandola — uno pseudo-elemento che ruota
+   dentro un pulsante che contiene già del testo sposterebbe quel testo su un
+   pulsante stretto — quindi la stessa pulsazione di .avvio e .scheletro-riga, ma
+   con un minimo più alto: il .45 di @keyframes respiro va bene su un testo tenue
+   senza altro intorno, qui sotto c'è la scritta del pulsante e deve restare
+   leggibile anche al fondo del respiro. */
+.btn.occupato {
+    cursor: progress;
+    animation: respiro-pulsante 1.6s ease-in-out infinite;
+}
+
+@keyframes respiro-pulsante {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .75; }
 }
 
 .azioni {
@@ -783,7 +869,6 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 .interruttore .testi { display: flex; flex-direction: column; gap: var(--s1); }
 .interruttore .titolo { font-weight: 600; }
-.interruttore .spiega { color: var(--testo-tenue); font-size: var(--t-sm); }
 
 /* Acceso si vede anche con la coda dell'occhio, senza dover cercare la casella. */
 .interruttore:has(input:checked) { border-color: var(--accento-scuro); }
@@ -885,7 +970,7 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
     /* Più alta del bersaglio minimo: in un registro la riga deve poter contenere
        nome e meta su due righe senza stringersi, e l'aria fra una riga e l'altra
        è ciò che rende scorrevole la lettura in colonna. */
-    min-height: 66px;
+    min-height: var(--altezza-riga);
     padding: var(--s3) var(--s4);
     background: transparent;
     border: none;
@@ -986,6 +1071,24 @@ li:last-child > .riga-spesa { border-bottom: none; }
 :is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(4) { animation-delay: 135ms; }
 :is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(5) { animation-delay: 180ms; }
 :is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(n+6) { animation-delay: 220ms; }
+
+/* Il lampo che sfuma sulla riga appena salvata, per far vedere dove è finito ciò
+   che si è appena scritto in un elenco che magari ha già altre righe sopra e
+   sotto. Parte dal verde e non dal blu, ed è lo stesso discrimine dichiarato in
+   testa al file: una riga appena salvata è un fatto CONSTATATO, non qualcosa da
+   premere — il blu qui direbbe "puoi ancora agire su questo" quando invece
+   l'azione è già chiusa. È l'altra cosa che può succedere a una riga, insieme a
+   riga-entra qui sopra: entrare perché l'elenco si è caricato, o lampeggiare
+   perché l'hai appena salvata tu. Stare vicine è ciò che fa notare se un domani
+   divergessero di durata o di curva. */
+.riga-nuova {
+    animation: riga-nuova 900ms var(--curva) both;
+}
+
+@keyframes riga-nuova {
+    from { background: var(--secondario-tenue); }
+    to   { background: transparent; }
+}
 
 /* L'estratto sta su una riga sola: una nota lunga non deve allungare la
    propria riga d'elenco. */
@@ -1976,4 +2079,60 @@ button.pastiglia {
         bottom: var(--s5);
         max-width: 26rem;
     }
+}
+
+/* ------------------------------------------- movimento e accessibilità --- */
+
+/* L'involucro del corpo pagina in MainLayout: Blazor lo ricrea a ogni cambio di
+   rotta, quindi l'animazione riparte da sola a ogni navigazione senza bisogno di
+   codice che la faccia ripartire. Solo ingresso, niente uscita — richiederebbe
+   JavaScript per aspettare la fine dell'animazione prima di smontare l'elemento
+   vecchio, e il prezzo non vale il guadagno. È lo stesso linguaggio di
+   riga-entra (v. sopra, sezione elenchi) esteso alla pagina intera, ma con una
+   durata più lunga e uno spostamento più corto: un oggetto grande che si sposta
+   quanto una riga sembra sbattuto, mentre una riga piccola può permettersi un
+   balzo che qui diventerebbe un salto. */
+.pagina-entra {
+    animation: pagina-entra 200ms var(--curva) both;
+}
+
+@keyframes pagina-entra {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Una cifra che si sostituisce con un movimento invece che a freddo — il totale
+   del mese quando si cambia mese, una media che si aggiorna: è la versione senza
+   JavaScript del conteggio animato delle app di finanza, il 90% dell'effetto
+   percepito per zero righe di script. Molto più contenuto di .pagina-entra: è un
+   numero dentro una pagina ferma, e se si muove quanto una pagina intera sembra
+   un errore di rendering, non un aggiornamento. */
+.valore-cambia {
+    animation: valore-cambia 250ms var(--curva) both;
+}
+
+@keyframes valore-cambia {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Testo presente nel documento e letto dagli screen reader, invisibile sullo
+   schermo. display:none e visibility:hidden erano la tentazione più semplice e
+   sono sbagliate allo stesso modo: tolgono l'elemento dall'albero di
+   accessibilità esattamente come lo tolgono dalla vista, cioè fanno sparire il
+   testo anche per chi dovrebbe sentirlo. Il ritaglio a 1×1px lo lascia nel
+   documento e fuori dallo schermo; il margine negativo compensa quel pixel
+   perché non allarghi lo scroll di una frazione; clip-path sostituisce il
+   vecchio clip:rect(), che i lettori di schermo più recenti hanno smesso di
+   rispettare. */
+.solo-lettori {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }

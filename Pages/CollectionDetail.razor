@@ -11,7 +11,7 @@
 
 @if (!caricato)
 {
-    <p class="avvio">Caricamento…</p>
+    <Scheletro Righe="4" />
 }
 else if (sparita)
 {
@@ -51,8 +51,13 @@ else
 
     @if (elementi.Count == 0)
     {
+        @* Niente pulsante qui dentro: "Nuovo elemento" è già nella barra .azioni sopra, sempre
+           visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
+           schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
         <div class="vuoto">
+            <span class="icona-vuoto"><Icona Nome="collezioni" /></span>
             <p>Ancora nessun elemento in questa collezione.</p>
+            <p class="spiega">Un elemento è una cosa da giudicare: una birra, un film, un posto. Lo compili con i campi della collezione, e poi ognuno gli lascia il suo voto.</p>
         </div>
     }
     else
@@ -96,6 +101,9 @@ else
            Shared/RecensioniElemento.razor. *@
         var mostrati = Mostrati.ToList();
 
+        @* Resta nudo apposta, senza icona né riga che insegna: non è un registro vuoto, è il
+           risultato di un filtro "Da provare" su una collezione che elementi ne ha eccome. Spiegare
+           cos'è un elemento a chi li ha provati tutti è l'aiuto che offende. *@
         @if (mostrati.Count == 0)
         {
             <div class="vuoto">

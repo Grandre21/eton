@@ -106,7 +106,10 @@ else
             else
             {
                 <span class="etichetta-piccola">Questo mese</span>
-                <span class="totale dato">@Denaro.Testo(riepilogoSpese.Totale)&#160;€</span>
+                @* @key sul valore, non un indice statico: stesso meccanismo di Pages/Spese.razor
+                   sulla riga .totale-mese, dove il commento spiega perché e dichiara la confidenza
+                   media riposta in questo trucco — v. lì per il dettaglio. *@
+                <span class="totale dato valore-cambia" @key="riepilogoSpese.Totale">@Denaro.Testo(riepilogoSpese.Totale)&#160;€</span>
                 @if (CimeSpese() is { Length: > 0 } cime)
                 {
                     <span class="cime">@cime</span>

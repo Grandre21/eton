@@ -12,7 +12,7 @@
 
 @if (!caricato)
 {
-    <p class="avvio">Caricamento…</p>
+    <Scheletro Righe="4" />
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
@@ -52,8 +52,13 @@ else
     }
     else if (note.Count == 0)
     {
+        @* Niente pulsante qui dentro: "Nuova nota" è già nella barra .azioni sopra, sempre
+           visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
+           schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
         <div class="vuoto">
+            <span class="icona-vuoto"><Icona Nome="note" /></span>
             <p>Ancora nessuna nota qui.</p>
+            <p class="spiega">Una nota si scrive in Markdown e resta nello spazio: appunti, liste di cose da fare, quello che non vuoi dimenticare.</p>
         </div>
     }
     else

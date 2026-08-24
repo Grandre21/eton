@@ -1,0 +1,33 @@
+@* Lo scheletro di caricamento delle pagine che mostrano un registro: barre decorative al posto
+   del contenuto vero, così la pagina non sembra vuota mentre i dati arrivano.
+
+   Le barre sono 'aria-hidden="true"': sono pura decorazione, e uno screen reader che annunciasse
+   N <span> vuoti direbbe solo rumore. Il testo "Caricamento…" che oggi le pagine mostrano in
+   chiaro (<p class="avvio">) non sparisce con questo componente: resta nel DOM dentro
+   '.solo-lettori', invisibile sullo schermo ma leggibile da chi non vede — sostituirlo con sole
+   barre grafiche toglierebbe a chi non vede un'informazione che oggi ha, una regressione di
+   accessibilità mascherata da miglioramento estetico.
+
+   'role="status"' e non 'role="alert"': lo status fa annunciare il cambiamento senza interrompere
+   quello che l'utente sta ascoltando, l'alert interromperebbe — sbagliato per un caricamento, che
+   non è un'emergenza.
+
+   Nel progetto non esiste oggi nessun 'aria-live' né nessuna classe per testo nascosto solo
+   visivamente (verificato con grep su tutti i *.razor e *.css): questo componente è il primo a
+   introdurli, quindi '.solo-lettori' la scrive chi cura wwwroot/css/app.css in parallelo a
+   questo file. *@
+<div class="scheletro" aria-hidden="true">
+    @for (var i = 0; i < Righe; i++)
+    {
+        <span class="scheletro-riga"></span>
+    }
+</div>
+<p class="solo-lettori" role="status">Caricamento…</p>
+
+@code {
+    // Quante barre disegnare. Un valore <= 0 non cicla a vuoto e non lancia: il 'for' sopra si
+    // limita a non entrare nel corpo (0 o meno iterazioni sono la stessa cosa per 'i < Righe'),
+    // quindi una pagina che per errore passasse 0 vede solo lo scheletro senza barre — mai
+    // un'eccezione — mentre il testo per chi non vede resta comunque a schermo.
+    [Parameter] public int Righe { get; set; } = 4;
+}

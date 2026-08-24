@@ -10,7 +10,7 @@
 
 @if (!caricato)
 {
-    <p class="avvio">Caricamento…</p>
+    <Scheletro Righe="4" />
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
@@ -51,8 +51,13 @@ else
     }
     else if (collezioni.Count == 0)
     {
+        @* Niente pulsante qui dentro: "Nuova collezione" è già nella barra .azioni sopra, sempre
+           visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
+           schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
         <div class="vuoto">
+            <span class="icona-vuoto"><Icona Nome="collezioni" /></span>
             <p>Ancora nessuna collezione qui.</p>
+            <p class="spiega">Una collezione è un elenco che si vota insieme: birre, film, ristoranti. I campi li decidi tu, e ogni membro dello spazio lascia il suo voto.</p>
         </div>
     }
     else

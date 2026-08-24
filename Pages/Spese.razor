@@ -37,6 +37,18 @@ else
 
     <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
 
+    @* Due frasi e non una, perché sono due regole diverse: chi VEDE (tutti i membri) e chi TOCCA
+       (chi ha pagato, o il proprietario) — confonderle è l'equivoco che questa riga serve a
+       evitare. Solo negli spazi condivisi: nel personale non c'è nessun altro che potrebbe vedere
+       o toccare niente, e la frase sarebbe rumore. Nella Home la stessa domanda ("chi vede le mie
+       spese?") non trova risposta fuori dal caso personale — v. Home.razor:73-85 — questa riga è
+       dove la risposta manca davvero, perché è dove si agisce. *@
+    @if (!Spazi.Attivo.IsPersonal)
+    {
+        @* Impersonale per lo stesso motivo spiegato in Pages/SpesaEdit.razor:67: è una regola, non un invito. *@
+        <p class="spiega">Le spese di questo spazio le vedono tutti i membri. Può modificarle e cancellarle chi le ha pagate, o chi possiede lo spazio.</p>
+    }
+
     @* Il modulo sta in cima e sempre aperto, senza nessuna navigazione per arrivarci: il requisito
        da cui nasce questa pagina è la parola "comodamente", e un tocco in più per segnare una
        spesa è esattamente ciò che fa abbandonare l'abitudine dopo una settimana. Il markup dei
@@ -87,7 +99,7 @@ else
         </fieldset>
 
         <div class="azioni">
-            <button class="btn primary" @onclick="Segna" disabled="@(occupato || !ModuloValido)">Segna</button>
+            <button class="btn primary @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido)">Segna</button>
         </div>
     </section>
 
@@ -118,7 +130,14 @@ else
                 </div>
             </div>
 
-            <p class="totale-mese dato">@Denaro.Testo(riepilogo.Totale)&#160;€</p>
+            @* @key sul VALORE, non su un indice statico: quando riepilogo.Totale cambia da un mese
+               all'altro, Blazor non aggiorna l'elemento esistente — lo distrugge e ne crea uno
+               nuovo, e un elemento appena inserito riesegue la propria animazione CSS
+               (valore-cambia in app.css), cosa che un semplice aggiornamento di testo non farebbe.
+               È il conteggio animato delle app di finanza, senza una riga di JavaScript.
+               Confidenza media su questo meccanismo, non alta, e non verificato sui sorgenti di
+               .NET 10: se si rivela sbagliato va corretto qui, non spacciato per funzionante. *@
+            <p class="totale-mese dato valore-cambia" @key="riepilogo.Totale">@Denaro.Testo(riepilogo.Totale)&#160;€</p>
             <p class="confronto-mese testo-tenue">@TestoConfronto()</p>
 
             <ul class="barre-categorie">
@@ -150,7 +169,12 @@ else
                 @foreach (var s in speseDelMese)
                 {
                     <li>
-                        <a class="riga-spesa" href="expenses/@s.Id">
+                        @* riga-nuova solo sulla spesa appena creata da Segna(), non su tutto ciò che è
+                           "recente": il lampo verde dichiara un fatto CONSTATATO in questa sessione,
+                           non una qualità della riga. Verde e non blu, come in app.css: blu è dove si
+                           preme, verde è dove si constata — e questa riga non si è premuta, è arrivata
+                           da sola dopo Segna(). *@
+                        <a class="riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="expenses/@s.Id">
                             <span class="descrizione">@s.Description</span>
                             <span class="meta">
                                 <span class="pastiglia">@s.Category</span>
@@ -209,6 +233,14 @@ else
 
     private bool ModuloValido => Denaro.Prova(nuovoImporto, out _) && !string.IsNullOrWhiteSpace(nuovaDescrizione) && DataRagionevole;
 
+    // L'id dell'ultima spesa creata da Segna() in questa sessione della pagina, per darle il lampo
+    // verde di riga-nuova nel registro qui sotto. Azzerato in Riprova, MesePrecedente,
+    // MeseSuccessivo e SuCambioSpazio — cioè a ogni punto che rifà un giro di Carica() diverso da
+    // quello innescato da Segna() stessa: senza, allontanarsi dal mese della spesa e tornarci
+    // farebbe sparire e poi ricomparire la classe riga-nuova fra un render e l'altro, e Blazor
+    // rifarebbe partire l'animazione CSS una seconda volta — il "lampo che si ripete" da evitare.
+    private Guid? ultimaSpesaCreataId;
+
     // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
     // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /spese l'evento arriva
     // mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto fra un
@@ -262,7 +294,8 @@ else
 
             // DataRagionevole, appena sopra, ha già garantito che nuovaData non è null: CreaAsync
             // vuole un DateTime non annullabile.
-            await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+            var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+            ultimaSpesaCreataId = creata.Id;
 
             // Importo e descrizione si svuotano, data e categoria restano: chi segna tre spese al
             // supermercato le segna nello stesso giorno e spesso nella stessa categoria, e
@@ -391,6 +424,7 @@ else
 
     private async Task Riprova()
     {
+        ultimaSpesaCreataId = null;
         caricato = false;
         await Carica();
     }
@@ -398,6 +432,7 @@ else
     private async Task MesePrecedente()
     {
         if (mese == 1) { anno--; mese = 12; } else { mese--; }
+        ultimaSpesaCreataId = null;
         caricato = false;
         await Carica();
     }
@@ -405,6 +440,7 @@ else
     private async Task MeseSuccessivo()
     {
         if (mese == 12) { anno++; mese = 1; } else { mese++; }
+        ultimaSpesaCreataId = null;
         caricato = false;
         await Carica();
     }
@@ -416,6 +452,7 @@ else
         if (inCaricamento) return;
         if (Spazi.Attivo?.Id == spazioMostrato) return;
 
+        ultimaSpesaCreataId = null;
         caricato = false;
         StateHasChanged();
         try

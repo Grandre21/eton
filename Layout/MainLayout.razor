@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@implements IDisposable
 
 @* AuthRedirect AVVOLGE il contenuto invece di stargli accanto: finché la sessione non è risolta,
    qui dentro non si renderizza nulla — quindi nessuna pagina privata può interrogare il database
@@ -16,7 +18,69 @@
        'margin-inline: auto' e il secondo annullerebbe il primo. *@
     <div class="area-contenuto">
         <main class="app-layout">
-            @Body
+            @* 'pagina-entra' anima l'ingresso della pagina al cambio di rotta. L'animazione CSS parte
+               solo su un elemento APPENA INSERITO nel DOM: un aggiornamento del contenuto dello
+               stesso nodo non la fa ripartire. '@key="chiaveRotta"' è il meccanismo che lo garantisce
+               — verificato decompilando RenderTreeDiffBuilder.AppendDiffEntriesForRange in
+               Microsoft.AspNetCore.Components 10.0.10 (via ilspycmd): quando due fratelli con chiave
+               hanno valori diversi e nessuna corrispondenza fra il vecchio e il nuovo albero (il caso
+               di specie, un solo figlio con chiave per volta), il diffing emette un RemoveFrame per
+               il vecchio e un PrependFrame per il nuovo — non un aggiornamento in place — quindi il
+               nodo è davvero distrutto e ricreato e l'animazione riparte da capo. *@
+            <div class="pagina-entra" @key="chiaveRotta">
+                @Body
+            </div>
         </main>
     </div>
 </AuthRedirect>
+
+@code {
+    // Solo il percorso, senza query string né frammento: se la chiave includesse la query, un
+    // cambio di filtro o di parametro sulla STESSA pagina ricreerebbe il nodo — perdendo lo stato
+    // dei componenti figli e rigiocando l'animazione dove non c'è stato nessun cambio di pagina.
+    private string chiaveRotta = "";
+
+    // Inizializzata subito e non lasciata al primo LocationChanged: senza questo, al primo render
+    // chiaveRotta sarebbe vuota invece del percorso corrente.
+    protected override void OnInitialized()
+    {
+        chiaveRotta = PercorsoSenzaQuery();
+        Navigation.LocationChanged += SuCambioRotta;
+    }
+
+    // Perché '@key' possa cambiare valore, MainLayout deve ridisegnarsi ad ogni navigazione — non è
+    // scontato, perché il layout non riceve parametri di rotta e senza questa sottoscrizione
+    // resterebbe fermo al render iniziale per l'intera sessione.
+    private void SuCambioRotta(object? sender, LocationChangedEventArgs e)
+    {
+        chiaveRotta = PercorsoSenzaQuery();
+        // Avvolto in InvokeAsync per coerenza con Shared/SelettoreSpazio.razor:59-61 e
+        // Pages/Home.razor (riga ~393), non perché qui serva: Eton.csproj usa
+        // Microsoft.NET.Sdk.BlazorWebAssembly senza WasmEnableThreads, quindi siamo in WebAssembly
+        // a thread singolo, dove StateHasChanged() diretto e InvokeAsync(StateHasChanged) sono
+        // equivalenti — non c'è nessun thread sbagliato da cui il ridisegno possa partire, oggi.
+        // Resterebbe comunque corretto se un domani il progetto abilitasse i thread WebAssembly, ed
+        // è per questo che vale la pena scriverlo così invece di lasciare la forma diretta.
+        InvokeAsync(StateHasChanged);
+    }
+
+    // Il calcolo "taglia sulla query" esiste anche in Shared/AuthRedirect.razor:47 e
+    // Shared/Navigazione.razor:65, ma lì si taglia SOLO su '?': lì il frammento non fa differenza
+    // perché serve a decidere una rotta, non a identificarla. Qui invece va tagliato anche il '#',
+    // perché il frammento è una posizione dentro la STESSA pagina: se restasse nella chiave, un
+    // salto a un'ancora ricreerebbe il nodo con @key e rigiocherebbe l'animazione di ingresso per
+    // quello che non è un cambio di pagina. Tre copie della stessa idea sono debito noto, non una
+    // svista: se un giorno servisse un quarto uso, è il momento di estrarre un helper condiviso.
+    // IndexOfAny(['?', '#']) restituisce il primo dei due caratteri presenti in un solo
+    // passaggio, quindi anche un URL come "expenses#a?b" viene tagliato nel punto giusto.
+    private string PercorsoSenzaQuery()
+    {
+        var percorso = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var taglio = percorso.IndexOfAny(['?', '#']);
+        return taglio < 0 ? percorso : percorso[..taglio];
+    }
+
+    // NavigationManager vive quanto l'applicazione, non quanto questo componente: senza questa
+    // disiscrizione l'handler terrebbe in vita MainLayout per sempre.
+    public void Dispose() => Navigation.LocationChanged -= SuCambioRotta;
+}
