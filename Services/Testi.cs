@@ -89,4 +89,27 @@ public static class Testi
     /// </summary>
     public static string DataSola(DateTime quando)
         => quando.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    /// <summary>Il motivo per cui il campo importo viene rifiutato, non solo il fatto che lo sia:
+    /// <see cref="EsitoImporto.Vuoto"/> restituisce <c>null</c> di proposito, non per dimenticanza —
+    /// un campo non ancora compilato non è un errore, e non si segnala a chi non ha ancora scritto
+    /// niente. Se un giorno qualcuno "completa" questo caso con una frase, la pagina inizierà a
+    /// lamentarsi di un campo vuoto al primo render.
+    /// <para>
+    /// Sta qui e non in una pagina perché due pagine — <c>Pages/Spese.razor</c> e
+    /// <c>Pages/SpesaEdit.razor</c> — mostrano lo stesso errore sullo stesso campo, e devono dirlo
+    /// con le stesse parole: la mappatura era scritta due volte, identica, ed erano cinque occasioni
+    /// di divergenza.
+    /// </para>
+    /// </summary>
+    public static string? MessaggioImporto(EsitoImporto esito) => esito switch
+    {
+        EsitoImporto.Valido => null,
+        EsitoImporto.Vuoto => null,
+        EsitoImporto.NonNumerico => "Non è un importo valido: usa la virgola o il punto.",
+        EsitoImporto.TroppiDecimali => "Al massimo due decimali.",
+        EsitoImporto.NonPositivo => "L'importo deve essere maggiore di zero.",
+        EsitoImporto.TroppoGrande => "Importo troppo grande.",
+        _ => null,
+    };
 }

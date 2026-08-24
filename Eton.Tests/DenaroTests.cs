@@ -87,6 +87,60 @@ public class DenaroTests
         Assert.Equal(7m, importo);
     }
 
+    // ---------- Verifica ----------
+
+    [Theory]
+    // Il caso che ha originato tutto: "0" rispetta perfettamente il formato (virgola o punto, al
+    // massimo due decimali), quindi non è NonNumerico. A fermarlo è il vincolo amount > 0 del
+    // database, non un problema di come è scritto — ed EsitoImporto deve dirlo.
+    [InlineData("0", EsitoImporto.NonPositivo)]
+    [InlineData("0,00", EsitoImporto.NonPositivo)]
+    // Il segno meno viene letto (AllowLeadingSign, v. la docstring di Verifica): a fermarlo è il
+    // controllo sul valore più sotto nel metodo, non un fallimento di parsing.
+    [InlineData("-3", EsitoImporto.NonPositivo)]
+    [InlineData("abc", EsitoImporto.NonNumerico)]
+    // Due separatori: non è un numero grande scritto con le migliaia, è una stringa che il
+    // parsing non legge affatto. Per questo NonNumerico, non TroppoGrande.
+    [InlineData("1.234,50", EsitoImporto.NonNumerico)]
+    [InlineData("12,505", EsitoImporto.TroppiDecimali)]
+    [InlineData("10000000000", EsitoImporto.TroppoGrande)]
+    [InlineData(null, EsitoImporto.Vuoto)]
+    [InlineData("", EsitoImporto.Vuoto)]
+    [InlineData("   ", EsitoImporto.Vuoto)]
+    [InlineData("12,50", EsitoImporto.Valido)]
+    public void Verifica_distingue_il_motivo_del_rifiuto(string? testo, EsitoImporto atteso)
+        => Assert.Equal(atteso, Denaro.Verifica(testo, out _));
+
+    [Fact]
+    public void Verifica_di_un_importo_valido_restituisce_anche_il_valore()
+    {
+        Assert.Equal(EsitoImporto.Valido, Denaro.Verifica("12,50", out var importo));
+        Assert.Equal(12.50m, importo);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("0,00")]
+    [InlineData("-3")]
+    [InlineData("abc")]
+    [InlineData("1.234,50")]
+    [InlineData("12,505")]
+    [InlineData("10000000000")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Quando_l_esito_non_e_valido_l_importo_resta_zero(string? testo)
+    {
+        var esito = Denaro.Verifica(testo, out var importo);
+
+        Assert.NotEqual(EsitoImporto.Valido, esito);
+
+        // Chi chiama può usare l'out senza guardare l'esito: un residuo diverso da zero qui
+        // finirebbe scritto nel database come se fosse un importo valido. Vale anche per Vuoto,
+        // che non è un errore ma comunque non porta con sé nessun valore utilizzabile.
+        Assert.Equal(0m, importo);
+    }
+
     // ---------- Testo ----------
 
     // Questo è il test che conta più di tutti. È precisamente il punto in cui una sostituzione a

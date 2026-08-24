@@ -111,4 +111,38 @@ public class TestiTests
         Assert.Equal(atteso, Testi.DataSola(utc));
         Assert.Equal(atteso, Testi.DataSola(locale));
     }
+
+    // ---------- MessaggioImporto ----------
+
+    // Prima era scritto due volte, identico, in Pages/Spese.razor e Pages/SpesaEdit.razor: cinque
+    // frasi copiate a mano sono cinque occasioni di divergenza, e il difetto che ne nasce è
+    // invisibile perché nessuna delle due copie sembra sbagliata guardata da sola.
+    [Theory]
+    [InlineData(EsitoImporto.NonNumerico, "Non è un importo valido: usa la virgola o il punto.")]
+    [InlineData(EsitoImporto.TroppiDecimali, "Al massimo due decimali.")]
+    [InlineData(EsitoImporto.NonPositivo, "L'importo deve essere maggiore di zero.")]
+    [InlineData(EsitoImporto.TroppoGrande, "Importo troppo grande.")]
+    public void Ogni_esito_di_errore_produce_la_sua_frase(EsitoImporto esito, string atteso)
+        => Assert.Equal(atteso, Testi.MessaggioImporto(esito));
+
+    // Valido non è un errore da segnalare: nessun messaggio sopra un campo che va bene.
+    [Fact]
+    public void Valido_non_produce_messaggio()
+        => Assert.Null(Testi.MessaggioImporto(EsitoImporto.Valido));
+
+    // Vuoto produce null di proposito, non per dimenticanza: un campo non ancora compilato non è
+    // un errore, e non si segnala a chi non ha ancora scritto niente. È l'invariante che il
+    // commento sul metodo dichiara — questo test è ciò che impedisce a qualcuno di "completarla"
+    // con una frase.
+    [Fact]
+    public void Vuoto_produce_null()
+        => Assert.Null(Testi.MessaggioImporto(EsitoImporto.Vuoto));
+
+    // Il difetto originale: "0" rispetta esattamente il formato — virgola o punto, due decimali al
+    // massimo — e veniva comunque rifiutato con un messaggio sul formato dei decimali, che era
+    // falso e mandava a cercare nel posto sbagliato. NonPositivo deve parlare di zero, non di
+    // formato.
+    [Fact]
+    public void NonPositivo_parla_di_zero_non_di_formato()
+        => Assert.Equal("L'importo deve essere maggiore di zero.", Testi.MessaggioImporto(EsitoImporto.NonPositivo));
 }

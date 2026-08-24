@@ -80,6 +80,18 @@ public class ExpenseRepository
     /// paid_by = auth.uid(), quindi sbagliarlo produce un rifiuto netto invece di una riga firmata
     /// male.
     /// </para>
+    /// <para>
+    /// SpentOn passa da <see cref="PerIlDatabase"/> anche qui, ma non per correggere un difetto:
+    /// l'inserimento produce già oggi la data giusta, perché .Insert() serializza il MODELLO e
+    /// PostgrestContractResolver.CreateProperty aggancia a SpentOn il DateTimeConverter della
+    /// libreria, che scrive il valore così com'è senza mai chiamare .ToUniversalTime() — a
+    /// differenza di .Set() in <see cref="SalvaAsync"/>, dove si serializza un
+    /// Dictionary&lt;object, object?&gt;, quel convertitore non entra in gioco e si ricade sul
+    /// convertitore globale che converte davvero, ed è lì che nasceva il difetto corretto da
+    /// PerIlDatabase. Il risultato di oggi non cambia: è un irrigidimento, non una correzione, e
+    /// serve a togliere la dipendenza da un dettaglio interno della libreria — quale convertitore
+    /// sceglie per il modello — che nessuno ci ha promesso di mantenere.
+    /// </para>
     /// </summary>
     public async Task<Expense> CreaAsync(Guid spazioId, Guid pagante, decimal importo, string descrizione, string categoria, DateTime data)
     {
@@ -92,12 +104,35 @@ public class ExpenseRepository
             Amount      = importo,
             Description = descrizione.Trim(),
             Category    = categoria.Trim(),
-            SpentOn     = data
+            SpentOn     = PerIlDatabase(data)
         });
 
         return risposta.Models.FirstOrDefault()
                ?? throw new InvalidOperationException("Il database non ha restituito la spesa appena creata.");
     }
+
+    /// <summary>
+    /// Il valore di SpentOn così come deve arrivare al database quando si passa per .Set(), cioè
+    /// per Table&lt;TModel&gt;.Update tramite un Dictionary&lt;object, object?&gt; invece che per
+    /// il modello. Su questo percorso Newtonsoft instrada un DateTime a CreatePrimitiveContract e
+    /// MAI a PostgrestContractResolver.CreateProperty: il DateTimeConverter della libreria (che
+    /// non chiama ToUniversalTime) non entra in gioco, e si ricade sul convertitore globale — un
+    /// IsoDateTimeConverter con AdjustToUniversal (Client.cs:55-63) — la cui WriteJson chiama
+    /// .ToUniversalTime(). Su Kind = Unspecified quella chiamata tratta il valore come Local e
+    /// sottrae il fuso, spostando la data indietro di un giorno quando il fuso è positivo
+    /// (l'Italia in agosto è UTC+2): 2026-08-25 00:00 diventava 2026-08-24T22:00:00Z.
+    /// <para>
+    /// La cura NON è passare la stringa "yyyy-MM-dd" già formattata come fa ElencaAsync per i
+    /// filtri: provato che Table&lt;TModel&gt;.Set(Expression&lt;Func&lt;TModel, object&gt;&gt;,
+    /// object?) confronta il tipo del valore con quello atteso dalla proprietà
+    /// (setExpressionVisitor.ExpectedType.IsInstanceOfType(value), Table.cs:535 del pacchetto
+    /// decompilato) e rifiuta con ArgumentException una string dove la proprietà è un DateTime.
+    /// La cura è specificare Kind = Utc PRIMA che il valore raggiunga il convertitore:
+    /// .ToUniversalTime() su un valore già Utc è, per specifica .NET, un'operazione nulla — non
+    /// applica alcun offset — quindi la parte di data resta quella scritta qui.
+    /// </para>
+    /// </summary>
+    internal static DateTime PerIlDatabase(DateTime data) => DateTime.SpecifyKind(data.Date, DateTimeKind.Utc);
 
     /// <summary>
     /// Salva, ma solo se nessuno ha scritto dopo di te: <paramref name="versioneLetta"/> entra
@@ -114,7 +149,7 @@ public class ExpenseRepository
             .Set(e => e.Amount, importo)
             .Set(e => e.Description, descrizione.Trim())
             .Set(e => e.Category, categoria.Trim())
-            .Set(e => e.SpentOn, data)
+            .Set(e => e.SpentOn, PerIlDatabase(data))
             .Update();
 
         if (risposta.Models.Count > 0)

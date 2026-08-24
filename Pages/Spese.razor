@@ -12,7 +12,7 @@
 
 @if (!caricato)
 {
-    <p class="avvio">Caricamento…</p>
+    <Scheletro Righe="4" />
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
@@ -60,9 +60,9 @@ else
                 <input class="importo-spesa dato" type="text" inputmode="decimal" autofocus
                        placeholder="0,00" @bind="nuovoImporto" @bind:event="oninput" disabled="@occupato" />
             </label>
-            @if (!string.IsNullOrWhiteSpace(nuovoImporto) && !Denaro.Prova(nuovoImporto, out _))
+            @if (Testi.MessaggioImporto(Denaro.Verifica(nuovoImporto, out _)) is string erroreImporto)
             {
-                <p class="errore-campo">Non è un importo valido: usa la virgola o il punto, al massimo due decimali.</p>
+                <p class="errore-campo">@erroreImporto</p>
             }
 
             <label class="campo">
@@ -99,7 +99,7 @@ else
         </fieldset>
 
         <div class="azioni">
-            <button class="btn primary @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido)">Segna</button>
+            <button class="btn primary @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido || rileggoMese)">Segna</button>
         </div>
     </section>
 
@@ -107,7 +107,7 @@ else
     {
         <div class="vuoto">
             <p>Non sono riuscito a leggere le spese di questo spazio.</p>
-            <button class="btn" @onclick="Riprova">Riprova</button>
+            <button class="btn" @onclick="Riprova" disabled="@rileggoMese">Riprova</button>
         </div>
     }
     else
@@ -125,8 +125,10 @@ else
             <div class="testa-registro">
                 <span>@CalcoliSpese.NomeMese(mese) @anno</span>
                 <div class="navigazione-mese">
-                    <button type="button" class="btn piccolo" @onclick="MesePrecedente" aria-label="Mese precedente">‹</button>
-                    <button type="button" class="btn piccolo" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti)" aria-label="Mese successivo">›</button>
+                    @* rileggoMese in più su entrambe: due click rapidi lancerebbero due letture che
+                       possono tornare in ordine inverso, lasciando mostrato il mese sbagliato. *@
+                    <button type="button" class="btn piccolo" @onclick="MesePrecedente" disabled="@rileggoMese" aria-label="Mese precedente">‹</button>
+                    <button type="button" class="btn piccolo" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti || rileggoMese)" aria-label="Mese successivo">›</button>
                 </div>
             </div>
 
@@ -153,7 +155,15 @@ else
             </ul>
         </section>
 
-        @if (speseDelMese.Count == 0)
+        @if (rileggoMese)
+        {
+            @* Solo il registro, non il riepilogo qui sopra (v. il commento su rileggoMese in @code):
+               le frecce hanno già cambiato l'intestazione del mese, e le barre hanno l'altezza vera
+               di una riga (--altezza-riga) così il registro non salta di misura quando le spese
+               arrivano. *@
+            <Scheletro Righe="4" />
+        }
+        else if (speseDelMese.Count == 0)
         {
             <div class="vuoto">
                 <p>Ancora nessuna spesa qui.</p>
@@ -202,6 +212,16 @@ else
     private bool caricato, occupato;
     private string? errore;
     private Guid spazioMostrato;
+
+    // Vero mentre la pagina sta rileggendo dati che ha GIÀ — segnare una spesa, rileggere dopo un
+    // errore, cambiare mese con le frecce — a differenza di 'caricato', che è falso solo quando non
+    // c'è ancora niente da mostrare (primo montaggio, cambio di spazio) e per cui è giusto svuotare
+    // tutto. Qui non è giusto: il modulo per segnare una spesa non ha nulla a che vedere con quale
+    // lettura è in corso, e non deve sparire da sotto le dita di chi ci sta scrivendo. Il riepilogo
+    // resta a schermo anche lui: solo l'elenco delle spese, più sotto, cede il posto a <Scheletro>.
+    // Usato anche per disabilitare Segna, Riprova e le due frecce mentre una lettura è in volo, v.
+    // il markup e il commento su Carica().
+    private bool rileggoMese;
 
     // L'id di chi guarda, letto una volta sola all'apertura della pagina: serve sia a Segna(), per
     // valorizzare paid_by, sia a Pagante(), per decidere se il nome del pagante va scritto o no
@@ -272,6 +292,16 @@ else
     private async Task Segna()
     {
         occupato = true;
+        // Alzato qui, prima del primo await, e non più avanti — subito prima di Carica() come
+        // sembrerebbe più naturale: è questa posizione a rendere vera la regola per tutti e quattro
+        // i chiamanti di Carica() (v. il commento lì). Se restasse dopo AssicuraCaricatoAsync,
+        // GetUserIdAsync e soprattutto CreaAsync — un vero viaggio di rete — «Riprova» e le due
+        // frecce del mese resterebbero cliccabili per tutta quella finestra: un click lì lancerebbe
+        // una seconda Carica() in corsa con questa. Il costo accettato è che il registro diventa uno
+        // scheletro anche durante CreaAsync, non solo durante la rilettura che segue — poche
+        // centinaia di millisecondi in più — in cambio di un invariante verificabile leggendo quattro
+        // righe invece di ragionare su due flag sovrapposti.
+        rileggoMese = true;
         errore = null;
         try
         {
@@ -303,7 +333,6 @@ else
             nuovoImporto = "";
             nuovaDescrizione = "";
 
-            caricato = false;
             await Carica();
         }
         catch (Exception ex)
@@ -313,9 +342,23 @@ else
         finally
         {
             occupato = false;
+            rileggoMese = false;
         }
     }
 
+    // Nessun chiamante deve entrare qui mentre un altro è in volo. I quattro percorsi da interfaccia —
+    // Segna, Riprova, le due frecce del mese — si escludono a vicenda perché ciascuno alza rileggoMese
+    // come ULTIMA ISTRUZIONE SINCRONA PRIMA DEL PRIMO AWAIT del proprio metodo, e ogni pulsante che
+    // li avvia è disabilitato quando rileggoMese è vero. La posizione è la parte che conta: un flag
+    // alzato a metà metodo, dopo un await, lascerebbe gli altri pulsanti cliccabili per tutta la
+    // durata della chiamata di rete che precede — è esattamente l'errore corretto in Segna(), v. il
+    // commento lì. SuCambioSpazio si esclude con entrambi inCaricamento e rileggoMese (v. sotto, le
+    // righe con "if (inCaricamento) return;" e "if (rileggoMese) return;"): il primo copre la
+    // finestra in cui Carica() è già in volo, il secondo la finestra in cui un chiamante l'ha già
+    // annunciata ma non l'ha ancora avviata. Chi aggiunge un quinto chiamante deve procurarsi una
+    // delle due esclusioni, rispettando la stessa regola di posizione: due Carica() in parallelo
+    // scrivono sugli stessi campi (riepilogo, speseDelMese, membri, errore, speseNonLette,
+    // spazioMostrato), e vince l'ultima risposta di rete invece dell'ultima azione dell'utente.
     private async Task Carica()
     {
         inCaricamento = true;
@@ -425,24 +468,53 @@ else
     private async Task Riprova()
     {
         ultimaSpesaCreataId = null;
-        caricato = false;
-        await Carica();
+        rileggoMese = true;
+        try
+        {
+            await Carica();
+        }
+        finally
+        {
+            rileggoMese = false;
+        }
     }
 
+    // rileggoMese e non caricato: v. il commento sul campo. CaricaUnGiro azzera comunque riepilogo a
+    // new(0, [], 0, null) prima di rileggere — lo fa anche per il cambio spazio, dove è necessario
+    // per non far passare il riepilogo di uno spazio per quello di un altro — quindi il totale può
+    // mostrare 0,00 € per un istante prima che arrivi quello del mese nuovo, invece di restare fermo
+    // sul valore del mese precedente. Scelta deliberata e non una svista: tenere il vecchio valore
+    // sotto un'intestazione che nel frattempo mostra già il mese nuovo sarebbe fuorviante allo stesso
+    // modo del cambio spazio, e duplicare la logica di CaricaUnGiro solo per questo caso non vale la
+    // complessità in più.
     private async Task MesePrecedente()
     {
         if (mese == 1) { anno--; mese = 12; } else { mese--; }
         ultimaSpesaCreataId = null;
-        caricato = false;
-        await Carica();
+        rileggoMese = true;
+        try
+        {
+            await Carica();
+        }
+        finally
+        {
+            rileggoMese = false;
+        }
     }
 
     private async Task MeseSuccessivo()
     {
         if (mese == 12) { anno++; mese = 1; } else { mese++; }
         ultimaSpesaCreataId = null;
-        caricato = false;
-        await Carica();
+        rileggoMese = true;
+        try
+        {
+            await Carica();
+        }
+        finally
+        {
+            rileggoMese = false;
+        }
     }
 
     // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
@@ -450,6 +522,16 @@ else
     private void SuCambioSpazio() => _ = InvokeAsync(async () =>
     {
         if (inCaricamento) return;
+        // rileggoMese in più, non solo inCaricamento: quel flag copre solo la finestra in cui
+        // Carica() è già in volo, ma Segna() lo alza PRIMA di Carica(), mentre attraversa
+        // AssicuraCaricatoAsync, GetUserIdAsync e CreaAsync — un vero viaggio di rete durante il
+        // quale inCaricamento è ancora falso. Senza questo controllo, un cambio di spazio in quella
+        // finestra passerebbe la guardia e partirebbe qui una seconda Carica() in corsa con quella
+        // che Segna() sta per lanciare. Rinunciare non perde l'evento: Carica() cattura lo spazio
+        // attivo DENTRO il proprio ciclo, a ogni giro (v. 'partenza' più sotto), quindi la Carica()
+        // che il percorso in corso lancerà comunque legge già lo spazio nuovo al primo giro — è la
+        // stessa logica per cui quel ciclo esiste, estesa a questa seconda finestra.
+        if (rileggoMese) return;
         if (Spazi.Attivo?.Id == spazioMostrato) return;
 
         ultimaSpesaCreataId = null;

@@ -84,9 +84,9 @@ else
             <input class="importo-spesa dato" type="text" inputmode="decimal"
                    placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
         </label>
-        @if (!string.IsNullOrWhiteSpace(importoTesto) && !Denaro.Prova(importoTesto, out _))
+        @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
         {
-            <p class="errore-campo">Non è un importo valido: usa la virgola o il punto, al massimo due decimali.</p>
+            <p class="errore-campo">@erroreImporto</p>
         }
 
         <label class="campo">
