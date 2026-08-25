@@ -1,4 +1,5 @@
 @inject NavigationManager Navigation
+@implements IDisposable
 
 @* Una sola barra, due forme. Sul telefono è la striscia in fondo allo schermo, dove arriva il
    pollice; su schermo largo diventa la colonna a sinistra, dove l'occhio cerca la navigazione.
@@ -59,14 +60,38 @@
         new("spaces", "gruppo", "Spazi"),
     ];
 
-    // Legge Navigation.Uri al momento del render, non a ogni cambio di rotta: la voce attiva è
-    // corretta solo perché qualcosa ridisegna questo componente a ogni navigazione. Quel qualcosa
-    // non è qui — Navigazione non si sottoscrive a LocationChanged, di proposito, per non pagare
-    // due volte un ridisegno che avviene già altrove — ma nel genitore, Layout/MainLayout.razor:48
-    // e :64: MainLayout si sottoscrive per far ripartire l'animazione di ingresso legata al suo
-    // '@key', e quel ridisegno del genitore trascina con sé SetParametersAsync sui figli, che
-    // richiama StateHasChanged() incondizionatamente. Un ShouldRender() qui per risparmiare render
-    // spezzerebbe questa catena e lascerebbe la voce attiva ferma alla rotta d'ingresso.
+    // Inizializzata subito per sottoscriversi a LocationChanged: EAttiva legge Navigation.Uri al
+    // momento del render, quindi questo componente deve ridisegnarsi a ogni navigazione, e non può
+    // affidarsi al ridisegno del genitore MainLayout per riceverlo — v. il commento su EAttiva più
+    // sotto per il perché quella strada non funziona.
+    protected override void OnInitialized() => Navigation.LocationChanged += SuCambioRotta;
+
+    // Avvolto in InvokeAsync per lo stesso motivo di Layout/MainLayout.razor:60-70 e
+    // Shared/SelettoreSpazio.razor:59-61: qui non servirebbe, perché Eton gira in WebAssembly a
+    // thread singolo, ma resterebbe corretto se un domani il progetto abilitasse i thread.
+    private void SuCambioRotta(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    // Legge Navigation.Uri al momento del render, quindi questo componente deve ridisegnarsi a ogni
+    // navigazione perché la voce accesa sia corretta — ed è per questo che si sottoscrive da sé a
+    // LocationChanged (v. OnInitialized sopra), invece di contare sul ridisegno del genitore
+    // Layout/MainLayout.razor quando il suo '@key' cambia (v. quel file, righe 21-29).
+    //
+    // Contare sul genitore non funzionerebbe comunque: verificato decompilando
+    // RenderTreeDiffBuilder.AppendDiffEntriesForRange in Microsoft.AspNetCore.Components 10.0.10
+    // (via ilspycmd). Quando MainLayout si ridisegna e il diffing arriva al frame Component di
+    // '<Navigazione />', che non ha parametri, confronta i parametri vecchi e nuovi — entrambi
+    // vuoti — con ParameterView.DefinitelyEquals, che in questo caso risulta sempre true; e il
+    // codice chiama SetDirectParameters solo quando quel confronto è false:
+    // "if (!directParameters.DefinitelyEquals(oldParameters) | flag)
+    // { componentState.SetDirectParameters(directParameters); }". Per un componente senza
+    // parametri quella chiamata — e con essa SetParametersAsync e StateHasChanged — non parte mai,
+    // per nessuna navigazione, anche quando il genitore si è davvero ridisegnato.
+    //
+    // Il difetto che ne nasceva: la voce accesa restava ferma su "Home" — la rotta d'ingresso — su
+    // qualunque destinazione raggiunta cliccando i link della barra stessa, e solo un ricaricamento
+    // a pagina intera la correggeva (confermato nel browser, build b5bcece). È il genere di difetto
+    // che sfugge a chi verifica ricaricando: il primo render è sempre corretto, perché legge
+    // Navigation.Uri da capo.
     private bool EAttiva(string rotta)
     {
         var corrente = Navigation.ToBaseRelativePath(Navigation.Uri).TrimEnd('/');
@@ -77,4 +102,11 @@
         // perché ogni percorso "comincia per" stringa vuota.
         return rotta.Length == 0 ? corrente.Length == 0 : corrente.StartsWith(rotta, StringComparison.Ordinal);
     }
+
+    // NavigationManager vive quanto l'applicazione, non quanto questo componente: senza questa
+    // disiscrizione l'handler terrebbe in vita Navigazione per sempre. In pratica questo componente
+    // è renderizzato una volta sola e non si smonta mai finché l'app è aperta, quindi Dispose oggi
+    // non scatta — ma è il contratto di chi si sottoscrive, ed è quello che tiene la barra corretta
+    // il giorno in cui qualcuno la rendesse condizionale.
+    public void Dispose() => Navigation.LocationChanged -= SuCambioRotta;
 }

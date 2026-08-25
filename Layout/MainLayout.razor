@@ -52,11 +52,10 @@
     // scontato, perché il layout non riceve parametri di rotta e senza questa sottoscrizione
     // resterebbe fermo al render iniziale per l'intera sessione.
     //
-    // Questa sottoscrizione ha un secondo dipendente, non scritto da nessuna parte se non qui:
-    // Shared/Navigazione.razor:EAttiva non si sottoscrive per conto proprio a LocationChanged, e si
-    // affida al ridisegno che questo metodo innesca sul genitore — e quindi sui figli — per
-    // rivalutare la voce attiva a ogni cambio di rotta. Toglierla, o renderla condizionale, rompe
-    // la barra di navigazione oltre all'animazione di ingresso.
+    // Shared/Navigazione.razor non dipende da questa sottoscrizione: si sottoscrive per conto
+    // proprio a LocationChanged, perché il ridisegno di questo componente non la raggiunge (v. il
+    // commento su EAttiva in quel file per il perché, verificato decompilando
+    // RenderTreeDiffBuilder).
     private void SuCambioRotta(object? sender, LocationChangedEventArgs e)
     {
         chiaveRotta = PercorsoSenzaQuery();
