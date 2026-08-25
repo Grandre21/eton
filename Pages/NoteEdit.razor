@@ -47,13 +47,24 @@ else
             </p>
             <div class="azioni">
                 <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@occupato">Sovrascrivi con la mia</button>
+                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+                   PuoIntervenire più sotto. *@
+                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
             </div>
         </div>
     }
 
+    @* PuoIntervenire (v. @code) decide se questi campi si possono toccare. Sotto la spiegazione e
+       non sopra: chi legge dall'alto trova prima i dati della nota, poi capisce perché non può
+       cambiarli. *@
+    @if (!PuoIntervenire)
+    {
+        <p class="spiega">@Permessi.Spiegazione(Permessi.Oggetto.Nota)</p>
+    }
+
     <input class="titolo-nota" type="text" placeholder="Titolo" maxlength="200"
-           @bind="titolo" @bind:event="oninput" disabled="@occupato" />
+           @bind="titolo" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
     <div class="schede-testo">
         <button type="button" class="@(anteprima ? "" : "attiva")" @onclick="() => anteprima = false">Scrivi</button>
@@ -71,7 +82,7 @@ else
            È leggermente più severo del database — il browser conta unità UTF-16, Postgres conta
            caratteri, quindi un'emoji vale 2 qui e 1 di là. Sbagliare per eccesso di prudenza va
            bene: non lascia mai passare qualcosa che il database poi rifiuta. *@
-        <textarea class="corpo-nota" rows="16" maxlength="100000" @bind="corpo" @bind:event="oninput" disabled="@occupato"
+        <textarea class="corpo-nota" rows="16" maxlength="100000" @bind="corpo" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)"
                   placeholder="Scrivi in Markdown.&#10;&#10;**grassetto**  *corsivo*  # titolo&#10;- [ ] da fare&#10;- [x] fatto"></textarea>
     }
 
@@ -80,12 +91,15 @@ else
            acceso, perché il testo è davvero diverso da quello di 'nota'. Ripremerlo risalverebbe
            con la versione vecchia — stesso conflitto, altro giro a vuoto — e scavalcherebbe in
            silenzio la scelta fra Ricarica e Sovrascrivi, che è l'unico modo di uscirne. *@
-        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="notes">Chiudi</a>
 
-        @if (!Nuova)
+        @* Elimina sparisce del tutto quando PuoIntervenire è falso, non si disabilita — un pulsante
+           grigio inviterebbe comunque a chiedersi il motivo, e qui la risposta non starebbe da
+           nessuna parte (v. il commento su PuoIntervenire più sotto). *@
+        @if (!Nuova && PuoIntervenire)
         {
             @if (confermaEliminazione)
             {
@@ -111,6 +125,15 @@ else
     private string? errore, avviso;
     private int generazione;
 
+    // L'id di chi guarda, come mioId in Pages/SpesaEdit.razor: stesso pattern, GetUserIdAsync() più
+    // Guid.TryParse. Letto in OnParametersSetAsync qui sotto e non in OnInitializedAsync come in
+    // SpesaEdit, perché questa pagina rilancia il ciclo di vita sulla stessa istanza a ogni cambio
+    // di rotta (v. il commento sotto), e rileggerlo lì costerebbe una chiamata in più senza motivo:
+    // qui basta che sia pronto prima che il render legga PuoIntervenire, e OnParametersSetAsync gira
+    // comunque a ogni apertura. Se il parsing fallisce resta null, e PuoIntervenire ne tiene conto
+    // fallendo chiuso.
+    private Guid? mioId;
+
     private bool Nuova => Id is null;
 
     // Il pulsante Salva resta spento finché non c'è niente da salvare: su una nota lunga evita il
@@ -119,6 +142,12 @@ else
     private bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(titolo) || !string.IsNullOrWhiteSpace(corpo)
         : nota is not null && (titolo != nota.Title || corpo != nota.Body);
+
+    // Nuova per prima: su /notes/new la nota non esiste ancora, e chiedere a Permessi "sei tu
+    // l'autore?" di un oggetto non creato risponderebbe no, bloccando la creazione. V.
+    // Services/Permessi.cs per il perché di ogni altra scelta qui dentro.
+    private bool PuoIntervenire => Nuova
+        || (nota is not null && Permessi.PuoIntervenire(mioId, nota.OwnerId, nota.SpaceId, Spazi.Elenco));
 
     // Come in SpaceDetail: passando da /notes/new a /notes/{id} dopo la creazione Blazor riusa
     // QUESTA istanza e cambia solo il parametro, quindi due caricamenti possono sovrapporsi e
@@ -132,16 +161,30 @@ else
         conflitto = null;
         sparita = confermaEliminazione = anteprima = false;
 
-        if (Nuova)
-        {
-            nota = null;
-            titolo = corpo = "";
-            caricato = true;
-            return;
-        }
-
         try
         {
+            // Prima che il render possa leggere PuoIntervenire: senza, Spazi.Elenco sarebbe ancora
+            // vuoto quando questa è la prima pagina aperta (da un collegamento diretto), e
+            // PuoIntervenire fallirebbe chiuso nascondendo i pulsanti anche a chi ha tutti i diritti
+            // di premerli — peggio del messaggio di rifiuto che questa pagina mostrava finora.
+            await Spazi.AssicuraCaricatoAsync();
+            if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+
+            // I due await appena sopra sono punti di sospensione: se nel frattempo è partita una nuova
+            // invocazione (altra nota, o questa stessa pagina riaperta), quanto segue non è più
+            // atomico rispetto a quella. Senza questo controllo, un'invocazione vecchia risvegliata in
+            // ritardo rientrerebbe qui e, sul ramo Nuova, cancellerebbe in silenzio il testo che
+            // l'utente ha già iniziato a scrivere nella pagina nel frattempo riaperta.
+            if (mia != generazione) return;
+
+            if (Nuova)
+            {
+                nota = null;
+                titolo = corpo = "";
+                caricato = true;
+                return;
+            }
+
             var letta = await Repository.LeggiAsync(Id!.Value);
             if (mia != generazione) return;
 
@@ -159,6 +202,19 @@ else
         catch (Exception ex)
         {
             if (mia != generazione) return;
+
+            // 'nota = null' e non solo 'caricato = true': al primo caricamento 'nota' è già null,
+            // quindi azzerarla non cambia niente. Il caso che conta è la navigazione da una nota a
+            // un'altra — Blazor riusa questa istanza e 'nota' contiene ancora quella precedente —
+            // dove senza l'azzeramento il modulo si aprirebbe con il contenuto della nota vecchia
+            // sotto l'indirizzo della nota nuova: dati sbagliati presentati come giusti. Con 'nota'
+            // a null e '!Nuova' scatta invece il ramo d'errore qui sopra.
+            // In creazione, però, il modulo resta accessibile lo stesso: qui a fallire è solo
+            // l'elenco degli spazi, che serve esclusivamente a calcolare PuoIntervenire — e in
+            // creazione PuoIntervenire è vero incondizionatamente (v. 'Nuova ||' più sotto), quindi
+            // questo guasto non tocca nulla di ciò che l'utente sta per fare. Crea() richiama
+            // Spazi.AssicuraCaricatoAsync() per conto proprio, quindi la rete viene ritentata nel
+            // momento in cui serve davvero.
             nota = null;
             errore = $"Non è stato possibile aprire la nota: {ex.Message}";
         }
@@ -231,7 +287,12 @@ else
                 break;
 
             case EsitoSalvataggio.Rifiutata:
-                errore = "Il database ha rifiutato la modifica: questa nota può cambiarla solo chi l'ha scritta, o chi possiede lo spazio.";
+                // Con PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo si è
+                // rivelato sbagliato o stantio — per esempio la proprietà dello spazio è cambiata
+                // mentre la pagina era aperta. È l'unico punto in cui non si può affermare la
+                // regola con sicurezza, quindi non la si riscrive qui: si dice il fatto, si
+                // suggerisce la causa senza giurarci, e si indica l'azione.
+                errore = "Non hai più il permesso di modificare questa nota: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                 break;
 
             case EsitoSalvataggio.Sparita:
@@ -286,7 +347,7 @@ else
                 Navigation.NavigateTo("notes");
                 return;
             }
-            errore = "Il database ha rifiutato l'eliminazione.";
+            errore = "Non è stato possibile eliminare la nota.";
         }
         catch (Exception ex)
         {

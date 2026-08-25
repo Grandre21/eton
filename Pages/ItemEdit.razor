@@ -4,6 +4,7 @@
 @using Eton.Services
 @inject CollectionRepository CollectionRepository
 @inject CollectionItemRepository Repository
+@inject SpaceStateService Spazi
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
 
@@ -54,17 +55,28 @@ else
             </p>
             <div class="azioni">
                 <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@occupato">Sovrascrivi con la mia</button>
+                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+                   PuoIntervenire più sotto. Stesso trattamento di SpesaEdit.razor. *@
+                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
             </div>
         </div>
     }
 
+    @* PuoIntervenire (v. @code) decide se questi campi si possono toccare. Sotto la spiegazione e
+       non sopra: chi legge dall'alto trova prima i dati dell'elemento, poi capisce perché non può
+       cambiarli. *@
+    @if (!PuoIntervenire)
+    {
+        <p class="spiega">@Permessi.Spiegazione(Permessi.Oggetto.Elemento)</p>
+    }
+
     <input class="titolo-grande" type="text" placeholder="Nome dell'elemento" maxlength="200"
-           @bind="nome" @bind:event="oninput" disabled="@occupato" />
+           @bind="nome" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
     <label class="campo">
         <span class="etichetta-piccola">Immagine (indirizzo)</span>
-        <input type="url" maxlength="2000" @bind="immagine" @bind:event="oninput" disabled="@occupato" />
+        <input type="url" maxlength="2000" @bind="immagine" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
     </label>
 
     @if (MarkdownRenderer.UrlAmmessa(immagine))
@@ -90,7 +102,7 @@ else
                impedisce. Con la chiave duplicata, @key="campo.Key" farebbe fallire il render
                dell'intera pagina. *@
             <CampoInput @key="campo" Campo="campo" Valore="@valori.GetValueOrDefault(campo.Key, "")"
-                        ValoreChanged="@(v => valori[campo.Key] = v)" Disabilitato="occupato" />
+                        ValoreChanged="@(v => valori[campo.Key] = v)" Disabilitato="@(occupato || !PuoIntervenire)" />
         }
     }
 
@@ -100,12 +112,15 @@ else
            quello di 'elemento'. Ripremerlo risalverebbe con la versione vecchia — stesso conflitto,
            altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e Sovrascrivi,
            che è l'unico modo di uscirne. *@
-        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="collections/@Id">Chiudi</a>
 
-        @if (!Nuovo)
+        @* Elimina non compare affatto quando PuoIntervenire è falso, non solo disabilitato: v. il
+           commento su PuoIntervenire più sotto per il perché — un pulsante grigio inviterebbe
+           comunque a chiedersi il motivo, e qui la risposta non starebbe da nessuna parte. *@
+        @if (!Nuovo && PuoIntervenire)
         {
             @if (confermaEliminazione)
             {
@@ -146,7 +161,21 @@ else
     private string? errore, avviso;
     private int generazione;
 
+    // Come mioId in SpesaEdit.razor: GetUserIdAsync() più Guid.TryParse, popolato dentro Carica()
+    // (v. sotto) e non in OnInitializedAsync, perché qui non esiste — la pagina è rilanciata da
+    // OnParametersSetAsync anche quando Blazor riusa questa istanza da .../items/new a
+    // .../items/{id}, e Carica() è il punto unico da cui passa ogni caricamento.
+    private Guid? mioId;
+
     private bool Nuovo => ItemId is null;
+
+    // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
+    // Services/Permessi.cs per il perché di ogni scelta — perché non è un controllo di sicurezza,
+    // perché guarda Spazi.Elenco e non Spazi.Attivo, perché fallisce chiuso, e perché non si
+    // applica alle recensioni. Nuovo per primo: su .../items/new l'elemento non esiste ancora, e
+    // chiedere "sei tu l'autore?" di un oggetto non creato risponderebbe no, bloccando la creazione.
+    private bool PuoIntervenire => Nuovo
+        || (elemento is not null && Permessi.PuoIntervenire(mioId, elemento.AddedBy, elemento.SpaceId, Spazi.Elenco));
 
     // Come il pulsante Salva di NoteEdit e CollectionEdit: resta spento finché non c'è niente da
     // salvare. Per un elemento nuovo basta il nome, come negli altri due editor.
@@ -175,6 +204,15 @@ else
 
         try
         {
+            // PuoIntervenire fallisce chiuso: uno spazio assente da Spazi.Elenco vale "non posso",
+            // indistinguibile da uno spazio non posseduto. Senza questa attesa, chi apre la pagina
+            // da un collegamento diretto — prima che qualcos'altro carichi Spazi.Elenco — vedrebbe
+            // nascosti i pulsanti anche se possiede lo spazio: peggio del messaggio che questa
+            // pagina correggeva, perché un pulsante assente non spiega a nessuno cosa non va.
+            await Spazi.AssicuraCaricatoAsync();
+            if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+            if (mia != generazione) return;
+
             // Prima la collezione: servono i suoi campi per sapere cosa mostrare, e ordina anche
             // quando è la stessa che era già mostrata, così un campo aggiunto o tolto nel frattempo
             // si riflette anche riaprendo lo stesso elemento.
@@ -349,7 +387,12 @@ else
                 break;
 
             case EsitoSalvataggio.Rifiutata:
-                errore = "Il database ha rifiutato la modifica: questo elemento può cambiarlo solo chi l'ha aggiunto, o chi possiede lo spazio.";
+                // Con PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo si è
+                // rivelato sbagliato o stantio — per esempio la proprietà dello spazio è cambiata
+                // mentre la pagina era aperta. È l'unico punto in cui non si può affermare la
+                // regola con sicurezza, quindi non la si riscrive qui: si dice il fatto, si
+                // suggerisce la causa senza giurarci, e si indica l'azione.
+                errore = "Non hai più il permesso di modificare questo elemento: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                 break;
 
             case EsitoSalvataggio.Sparita:
@@ -405,7 +448,7 @@ else
                 Navigation.NavigateTo($"collections/{Id}");
                 return;
             }
-            errore = "Il database ha rifiutato l'eliminazione.";
+            errore = "Non è stato possibile eliminare l'elemento.";
         }
         catch (Exception ex)
         {

@@ -48,9 +48,17 @@ else
             </p>
             <div class="azioni">
                 <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@occupato">Sovrascrivi con la mia</button>
+                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+                   PuoIntervenire più sotto. *@
+                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
             </div>
         </div>
+    }
+
+    @if (!PuoIntervenire)
+    {
+        <p class="spiega">@Permessi.Spiegazione(Permessi.Oggetto.Collezione)</p>
     }
 
     @if (Nuova && collezione is null)
@@ -61,19 +69,19 @@ else
             <div class="azioni">
                 @foreach (var m in modelli)
                 {
-                    <button class="btn piccolo" @onclick="() => ApplicaModello(m)" disabled="@occupato">@m.Icona @m.Nome</button>
+                    <button class="btn piccolo" @onclick="() => ApplicaModello(m)" disabled="@(occupato || !PuoIntervenire)">@m.Icona @m.Nome</button>
                 }
             </div>
         </div>
     }
 
     <input class="titolo-grande" type="text" placeholder="Nome della collezione" maxlength="100"
-           @bind="nome" @bind:event="oninput" disabled="@occupato" />
+           @bind="nome" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
     <label>
         <span class="etichetta-piccola">Icona</span>
         <input class="icona-input" type="text" placeholder="📋" maxlength="16"
-               @bind="icona" @bind:event="oninput" disabled="@occupato" />
+               @bind="icona" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
     </label>
 
     <label>
@@ -81,7 +89,7 @@ else
            altro valore. Offrirne altre significherebbe far compilare l'utente per poi mostrargli
            un errore Postgres grezzo al salvataggio. *@
         <span class="etichetta-piccola">Scala dei voti</span>
-        <select @bind="votoMassimo" disabled="@occupato">
+        <select @bind="votoMassimo" disabled="@(occupato || !PuoIntervenire)">
             <option value="5">5</option>
             <option value="10">10</option>
         </select>
@@ -91,7 +99,7 @@ else
        subiscono gli altri membri dello spazio quando aprono un elemento. Due parole non
        basterebbero a far capire a chi lo accende cosa cambia per qualcun altro. *@
     <label class="interruttore">
-        <input type="checkbox" @bind="allaCieca" disabled="@occupato" />
+        <input type="checkbox" @bind="allaCieca" disabled="@(occupato || !PuoIntervenire)" />
         <span class="testi">
             <span class="titolo">Voto al buio</span>
             <span class="spiega">
@@ -133,9 +141,9 @@ else
             {
                 <li class="riga-campo" @key="campo">
                     <input type="text" maxlength="60" placeholder="Etichetta"
-                           @bind="campo.Label" @bind:event="oninput" disabled="@occupato" />
+                           @bind="campo.Label" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
-                    <select @bind="campo.Type" @bind:after="() => AlCambioTipo(campo)" disabled="@occupato">
+                    <select @bind="campo.Type" @bind:after="() => AlCambioTipo(campo)" disabled="@(occupato || !PuoIntervenire)">
                         @foreach (var tipo in SchemaCampi.TipiAmmessi)
                         {
                             <option value="@tipo">@EtichettaTipo(tipo)</option>
@@ -150,34 +158,34 @@ else
                             {
                                 var indice = i;
                                 <div class="campo">
-                                    <input type="text" maxlength="60" @bind="opzioni[indice]" @bind:event="oninput" disabled="@occupato" />
-                                    <button class="btn rosso piccolo" @onclick="() => TogliOpzione(campo, indice)" disabled="@occupato">Togli</button>
+                                    <input type="text" maxlength="60" @bind="opzioni[indice]" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+                                    <button class="btn rosso piccolo" @onclick="() => TogliOpzione(campo, indice)" disabled="@(occupato || !PuoIntervenire)">Togli</button>
                                 </div>
                             }
-                            <button class="btn piccolo" @onclick="() => AggiungiOpzione(campo)" disabled="@occupato">Aggiungi opzione</button>
+                            <button class="btn piccolo" @onclick="() => AggiungiOpzione(campo)" disabled="@(occupato || !PuoIntervenire)">Aggiungi opzione</button>
                         </div>
                     }
 
                     <div class="azioni">
-                        <button class="btn piccolo" @onclick="() => Sposta(campo, -1)" disabled="@(occupato || campi[0] == campo)">↑</button>
-                        <button class="btn piccolo" @onclick="() => Sposta(campo, 1)" disabled="@(occupato || campi[^1] == campo)">↓</button>
+                        <button class="btn piccolo" @onclick="() => Sposta(campo, -1)" disabled="@(occupato || !PuoIntervenire || campi[0] == campo)">↑</button>
+                        <button class="btn piccolo" @onclick="() => Sposta(campo, 1)" disabled="@(occupato || !PuoIntervenire || campi[^1] == campo)">↓</button>
 
                         @if (campoDaRimuovere == campo.Key)
                         {
                             <span class="testo-tenue">I valori già inseriti per questo campo restano salvati ma non si vedranno più.</span>
-                            <button class="btn rosso piccolo" @onclick="() => Rimuovi(campo)" disabled="@occupato">Sì, togli</button>
-                            <button class="btn piccolo" @onclick="() => campoDaRimuovere = null" disabled="@occupato">Annulla</button>
+                            <button class="btn rosso piccolo" @onclick="() => Rimuovi(campo)" disabled="@(occupato || !PuoIntervenire)">Sì, togli</button>
+                            <button class="btn piccolo" @onclick="() => campoDaRimuovere = null" disabled="@(occupato || !PuoIntervenire)">Annulla</button>
                         }
                         else
                         {
-                            <button class="btn rosso piccolo" @onclick="() => campoDaRimuovere = campo.Key" disabled="@occupato">Togli</button>
+                            <button class="btn rosso piccolo" @onclick="() => campoDaRimuovere = campo.Key" disabled="@(occupato || !PuoIntervenire)">Togli</button>
                         }
                     </div>
                 </li>
             }
         </ul>
 
-        <button class="btn" @onclick="AggiungiCampo" disabled="@(occupato || campi.Count >= SchemaCampi.MassimoCampi)">Aggiungi campo</button>
+        <button class="btn" @onclick="AggiungiCampo" disabled="@(occupato || !PuoIntervenire || campi.Count >= SchemaCampi.MassimoCampi)">Aggiungi campo</button>
     </div>
 
     <div class="azioni">
@@ -186,12 +194,15 @@ else
            quello di 'collezione'. Ripremerlo risalverebbe con la versione vecchia — stesso
            conflitto, altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e
            Sovrascrivi, che è l'unico modo di uscirne. *@
-        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="collections">Chiudi</a>
 
-        @if (!Nuova)
+        @* PuoIntervenire in più, non solo !Nuova: Elimina sparisce del tutto, non si disabilita —
+           un pulsante grigio inviterebbe comunque a chiedersi il motivo, e qui la risposta non
+           starebbe da nessuna parte (v. il commento su PuoIntervenire più sotto). *@
+        @if (!Nuova && PuoIntervenire)
         {
             @if (confermaEliminazione)
             {
@@ -231,7 +242,22 @@ else
     // qui, una sola volta.
     private IReadOnlyList<ModelloCollezione> modelli = [];
 
+    // L'id di chi guarda, come mioId in SpesaEdit.razor: stesso pattern, GetUserIdAsync() più
+    // Guid.TryParse. Popolato in OnParametersSetAsync e non in OnInitializedAsync, a differenza di
+    // SpesaEdit: qui il cambio di rotta da /collections/new a /collections/{id}/edit rilancia
+    // OnParametersSetAsync su questa stessa istanza (v. il commento lì), quindi è quello il punto
+    // in cui Spazi.Elenco va garantito pronto prima del render. Se il parsing fallisce resta null, e
+    // PuoIntervenire qui sotto ne tiene conto fallendo chiuso.
+    private Guid? mioId;
+
     private bool Nuova => Id is null;
+
+    // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
+    // Services/Permessi.cs per il perché di ogni scelta. Nuova per prima, ed è essenziale: su
+    // /collections/new la collezione non esiste ancora, quindi chiedere "l'ho creata io?" di un
+    // oggetto inesistente risponderebbe sempre no e bloccherebbe la creazione stessa.
+    private bool PuoIntervenire => Nuova
+        || (collezione is not null && Permessi.PuoIntervenire(mioId, collezione.OwnerId, collezione.SpaceId, Spazi.Elenco));
 
     // Come per il pulsante Salva di NoteEdit: resta spento finché non c'è niente da salvare.
     private bool Cambiata => Nuova
@@ -262,19 +288,37 @@ else
         campoDaRimuovere = null;
         erroriValidazione = [];
 
-        if (Nuova)
-        {
-            collezione = null;
-            nome = icona = "";
-            votoMassimo = 10;
-            allaCieca = false;
-            campi = [];
-            caricato = true;
-            return;
-        }
-
+        // A differenza di SpesaEdit, questa pagina non ha un OnInitializedAsync che gira una sola
+        // volta: usa deliberatamente OnParametersSetAsync (v. il commento sopra il metodo), quindi è
+        // qui che Spazi.Elenco va garantito caricato prima che PuoIntervenire venga calcolato per il
+        // render. Senza, su un collegamento diretto — Spazi.Elenco ancora vuoto — PuoIntervenire
+        // fallirebbe chiuso e nasconderebbe i pulsanti anche a chi ha tutti i diritti di premerli:
+        // peggio del difetto che si sta correggendo, perché un pulsante assente non segnala niente.
         try
         {
+            await Spazi.AssicuraCaricatoAsync();
+            if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+
+            // I due await sopra sono punti di sospensione: da qui in poi non è più atomico
+            // rispetto a una navigazione concorrente che riusa questa stessa istanza (v. il
+            // commento sopra il metodo). Senza questo controllo, aprendo una collezione
+            // esistente con rete lenta e poi navigando su /collections/new prima che
+            // risponda, l'invocazione vecchia si risveglierebbe DOPO che l'utente ha già
+            // iniziato a scrivere il nome nel modulo nuovo, rileggerebbe 'Nuova' come vera
+            // ed eseguirebbe il ramo sotto — cancellando in silenzio il testo appena digitato.
+            if (mia != generazione) return;
+
+            if (Nuova)
+            {
+                collezione = null;
+                nome = icona = "";
+                votoMassimo = 10;
+                allaCieca = false;
+                campi = [];
+                caricato = true;
+                return;
+            }
+
             var letta = await Repository.LeggiAsync(Id!.Value);
             if (mia != generazione) return;
 
@@ -291,6 +335,13 @@ else
         catch (Exception ex)
         {
             if (mia != generazione) return;
+
+            // Non basta rimettere 'caricato = true': con 'collezione' non azzerata, su una
+            // collezione esistente Spazi.Elenco resterebbe vuoto (è proprio AssicuraCaricatoAsync
+            // ad aver fallito), PuoIntervenire fallirebbe chiuso, e l'utente vedrebbe il proprio
+            // modulo con tutti i controlli in sola lettura — un guasto di rete travestito da "non
+            // hai il permesso". Azzerando 'collezione' il render finisce invece nel ramo
+            // "collezione is null && !Nuova" più sopra, che mostra l'errore al posto del modulo.
             collezione = null;
             errore = $"Non è stato possibile aprire la collezione: {ex.Message}";
         }
@@ -513,7 +564,12 @@ else
                 break;
 
             case EsitoSalvataggio.Rifiutata:
-                errore = "Il database ha rifiutato la modifica: questa collezione può cambiarla solo chi l'ha creata, o chi possiede lo spazio.";
+                // Con PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo si è
+                // rivelato sbagliato o stantio — per esempio la proprietà dello spazio è cambiata
+                // mentre la pagina era aperta. È l'unico punto in cui non si può affermare la
+                // regola con sicurezza, quindi non la si riscrive qui: si dice il fatto, si
+                // suggerisce la causa senza giurarci, e si indica l'azione.
+                errore = "Non hai più il permesso di modificare questa collezione: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                 break;
 
             case EsitoSalvataggio.Sparita:
@@ -570,7 +626,7 @@ else
                 Navigation.NavigateTo("collections");
                 return;
             }
-            errore = "Il database ha rifiutato l'eliminazione.";
+            errore = "Non è stato possibile eliminare la collezione.";
         }
         catch (Exception ex)
         {

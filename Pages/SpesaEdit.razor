@@ -66,11 +66,7 @@ else
        cambiarli. *@
     @if (!PuoIntervenire)
     {
-        @* Impersonale di proposito, non "puoi modificarla solo se l'hai pagata tu": qui il testo è
-           una REGOLA, valida per chiunque apra questa pagina, non un invito a chi la sta guardando
-           adesso. La seconda persona (v. "i campi li decidi tu" in Collections.razor:60) è per gli
-           INVITI — quello stesso testo, infatti, torna impersonale per l'azione di ogni altro membro. *@
-        <p class="spiega">Questa spesa l'ha segnata qualcun altro: può modificarla o cancellarla solo chi l'ha pagata, o chi possiede lo spazio.</p>
+        <p class="spiega">@Permessi.Spiegazione(Permessi.Oggetto.Spesa)</p>
     }
 
     <div class="campi-spesa">
@@ -193,12 +189,16 @@ else
     private int generazione;
 
     // L'id di chi guarda, come mioId in Pages/Spese.razor: stesso pattern, GetUserIdAsync() più
-    // Guid.TryParse. Letto in OnInitializedAsync e non in OnParametersSetAsync qui sotto, perché
-    // OnInitializedAsync gira una volta sola anche quando Blazor riusa questa istanza passando da
-    // una spesa a un'altra (da /expenses/{a} a /expenses/{b}): chi guarda non cambia da una spesa
-    // all'altra, e rileggerlo a ogni cambio di parametro sarebbe una chiamata di rete in più senza
-    // nessun bisogno. Se il parsing fallisce resta null, e PuoIntervenire qui sotto ne tiene conto
-    // fallendo chiuso, come Pagante() fa con la riga in più invece che con un buco di sicurezza.
+    // Guid.TryParse. Letto in OnParametersSetAsync qui sotto, non più in un OnInitializedAsync
+    // separato: due metodi di caricamento con due catch distinti aprivano una finestra in cui il
+    // primo poteva fallire e impostare l'errore, e il secondo, partendo subito dopo, lo cancellava
+    // rimettendo caricato a false — spesa letta correttamente ma mioId rimasto nullo e Spazi.Elenco
+    // vuoto, PuoIntervenire falso: un guasto di rete travestito da "non hai il permesso". Rileggerlo
+    // a ogni cambio di parametro costa una chiamata in più, ma AssicuraCaricatoAsync è cachato
+    // internamente da SpaceStateService: il costo per navigazione da una spesa a un'altra è nullo
+    // dopo la prima volta, quindi il risparmio che giustificava la separazione non esiste davvero.
+    // Se il parsing fallisce resta null, e PuoIntervenire qui sotto ne tiene conto fallendo chiuso,
+    // come Pagante() fa con la riga in più invece che con un buco di sicurezza.
     private Guid? mioId;
 
     // Il pulsante resta spento anche senza un importo valido, una descrizione o una data
@@ -215,44 +215,22 @@ else
     private bool Cambiata => spesa is not null && (importoTesto != Denaro.Testo(spesa.Amount) || descrizione != spesa.Description
                                                      || categoria != spesa.Category || data?.Date != spesa.SpentOn.Date);
 
-    // NON è un controllo di sicurezza: la sicurezza vera è la RLS in
-    // supabase/migrations/20260824000000_spese.sql (expenses_update, expenses_delete), che resta
-    // intatta e che chiunque può aggirare chiamando PostgREST a mano con la chiave anon — pubblica
-    // per costruzione. Questo booleano è onestà dell'interfaccia: smette di offrire un pulsante
-    // che il database rifiuterebbe comunque, invece di offrirlo e poi spiegare il rifiuto con un
-    // messaggio che non aiuta nessuno (v. il vecchio "Il database ha rifiutato l'eliminazione."
-    // sotto Elimina()). La divisione dei compiti è questa: la RLS decide, l'interfaccia informa.
-    //
-    // Guarda Spazi.Elenco e non Spazi.Attivo: la domanda è "possiedo lo spazio DI QUESTA SPESA?",
-    // un fatto che non dipende da quale spazio è selezionato adesso nel selettore. Spazi.Attivo è
-    // una preferenza dell'interfaccia — cambia da un'altra pagina, o non è ancora caricato affatto
-    // quando questa è la prima aperta — e legarci la proprietà era il difetto della versione
-    // precedente: chi apriva questa pagina da un collegamento diretto, prima che qualcos'altro
-    // caricasse Spazi.Attivo, si vedeva negare una modifica che invece gli spettava. Da Elenco
-    // niente sottoscrizione a Spazi.Cambiato: cambiare lo spazio attivo altrove non tocca la
-    // proprietà di QUESTO spazio, quindi non c'è nulla a cui reagire.
-    //
-    // Fallisce chiuso comunque: FirstOrDefault su Elenco restituisce null se lo spazio della spesa
-    // non c'è ancora — Elenco non è stato caricato — o non c'è affatto — non se ne fa parte — e
-    // '?.OwnerId' su null resta null, che confrontato con un mioId non nullo è sempre falso. Nel
-    // dubbio si mostra di meno, mai di più.
-    private bool PuoIntervenire => spesa is not null && mioId is not null
-        && (spesa.PaidBy == mioId
-            || Spazi.Elenco.FirstOrDefault(s => s.Id == spesa.SpaceId)?.OwnerId == mioId);
-
-    // Come Spese.razor.OnInitializedAsync: chi guarda si legge una volta sola, non a ogni cambio
-    // di parametro (v. il commento su mioId). AssicuraCaricatoAsync prima di mioId: senza,
-    // Spazi.Elenco resterebbe vuoto — e quindi PuoIntervenire falso per chiunque non sia il
-    // pagante — quando questa è la prima pagina aperta, come da un collegamento diretto.
-    protected override async Task OnInitializedAsync()
-    {
-        await Spazi.AssicuraCaricatoAsync();
-        if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
-    }
+    // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
+    // Services/Permessi.cs per il perché di ogni scelta — perché non è un controllo di sicurezza,
+    // perché guarda Spazi.Elenco e non Spazi.Attivo, perché fallisce chiuso, e perché non si
+    // applica alle recensioni.
+    private bool PuoIntervenire => spesa is not null && Permessi.PuoIntervenire(mioId, spesa.PaidBy, spesa.SpaceId, Spazi.Elenco);
 
     // Blazor riusa questa stessa istanza anche passando da una spesa a un'altra — da /expenses/{a}
     // a /expenses/{b} — e cambia solo il parametro: due caricamenti possono sovrapporsi, e quello
     // partito prima può rispondere per ultimo, sovrascrivendo i dati buoni con quelli vecchi.
+    // Spazi.AssicuraCaricatoAsync() e mioId stanno dentro questo stesso try, non in un
+    // OnInitializedAsync separato con un proprio catch: due percorsi di caricamento distinti
+    // aprivano una finestra in cui uno falliva e impostava l'errore, e l'altro, partendo subito
+    // dopo, la cancellava rimettendo caricato a false — spesa letta correttamente ma mioId nullo e
+    // Spazi.Elenco vuoto, PuoIntervenire falso: un guasto di rete travestito da "non hai il
+    // permesso". Un solo try/catch chiude quella finestra: qualunque cosa fallisca, spesa e
+    // caricato finiscono nello stesso stato.
     protected override async Task OnParametersSetAsync()
     {
         var mia = ++generazione;
@@ -264,6 +242,27 @@ else
 
         try
         {
+            // AssicuraCaricatoAsync prima di mioId, ed entrambi prima della lettura della spesa:
+            // senza, Spazi.Elenco resterebbe vuoto — e quindi PuoIntervenire falso per chiunque non
+            // sia il pagante — quando questa è la prima pagina aperta, come da un collegamento
+            // diretto. È cachato internamente da SpaceStateService, quindi il costo per
+            // navigazione da una spesa a un'altra è nullo dopo la prima volta.
+            await Spazi.AssicuraCaricatoAsync();
+            if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+
+            // Oggi risparmia una GET inutile: senza questa guardia, un'invocazione vecchia che si
+            // risveglia in ritardo proseguirebbe fino a Repository.LeggiAsync(Id) — e Id è un
+            // [Parameter] di questa stessa istanza, quindi nel frattempo vale già la spesa nuova —
+            // duplicando esattamente la chiamata che l'invocazione corrente sta già facendo, per poi
+            // essere scartata dalla guardia successiva: lavoro sprecato, esito comunque corretto.
+            // Domani è la ragione vera: fra questi due await e la lettura non c'è oggi nessuna
+            // scrittura di stato, ma nelle pagine gemelle (NoteEdit.razor:200, CollectionEdit.razor:309,
+            // ItemEdit.razor:214) sì — è proprio qui che quella guardia le protegge. Chi in futuro
+            // aggiungesse una riga in questo punto, guardando le pagine gemelle per sapere cosa fare,
+            // si troverebbe qui senza la rete di protezione che là c'è: lavoro sprecato diventerebbe
+            // silenziosamente stato corrotto.
+            if (mia != generazione) return;
+
             var letta = await Repository.LeggiAsync(Id);
             if (mia != generazione) return;
 
@@ -332,7 +331,12 @@ else
                 break;
 
             case EsitoSalvataggio.Rifiutata:
-                errore = "Il database ha rifiutato la modifica: questa spesa può modificarla solo chi l'ha pagata, o chi possiede lo spazio.";
+                // Con PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo si è
+                // rivelato sbagliato o stantio — per esempio la proprietà dello spazio è cambiata
+                // mentre la pagina era aperta. È l'unico punto in cui non si può affermare la
+                // regola con sicurezza, quindi non la si riscrive qui: si dice il fatto, si
+                // suggerisce la causa senza giurarci, e si indica l'azione.
+                errore = "Non hai più il permesso di modificare questa spesa: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                 break;
 
             case EsitoSalvataggio.Sparita:
@@ -399,7 +403,7 @@ else
                 Navigation.NavigateTo("expenses");
                 return;
             }
-            errore = "Il database ha rifiutato l'eliminazione.";
+            errore = "Non è stato possibile eliminare la spesa.";
         }
         catch (Exception ex)
         {
