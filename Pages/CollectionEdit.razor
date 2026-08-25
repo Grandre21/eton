@@ -186,7 +186,7 @@ else
            quello di 'collezione'. Ripremerlo risalverebbe con la versione vecchia — stesso
            conflitto, altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e
            Sovrascrivi, che è l'unico modo di uscirne. *@
-        <button class="btn primary" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="collections">Chiudi</a>

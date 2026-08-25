@@ -47,7 +47,7 @@ else
         <div class="campo">
             <input type="text" placeholder="Nome dello spazio" maxlength="60"
                    @bind="nuovoNome" @bind:event="oninput" disabled="@occupato" />
-            <button class="btn primary" @onclick="Crea"
+            <button class="btn primario" @onclick="Crea"
                     disabled="@(occupato || string.IsNullOrWhiteSpace(nuovoNome))">Crea</button>
         </div>
     </div>
@@ -58,7 +58,7 @@ else
         <div class="campo">
             <input type="text" placeholder="Codice invito" maxlength="8" class="codice-invito"
                    @bind="codice" @bind:event="oninput" disabled="@occupato" />
-            <button class="btn primary" @onclick="Entra"
+            <button class="btn primario" @onclick="Entra"
                     disabled="@(occupato || string.IsNullOrWhiteSpace(codice))">Entra</button>
         </div>
     </div>

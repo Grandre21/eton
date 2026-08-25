@@ -669,7 +669,7 @@ a { color: var(--accento); }
    sembrava che il pulsante emettesse luce, e un'interfaccia in cui un elemento
    brilla è un'interfaccia in cui quello è l'unico elemento che si guarda. Qui il
    pulsante deve farsi trovare, non chiamare. */
-.btn.primary {
+.btn.primario {
     background: var(--accento);
     border-color: var(--accento);
     color: var(--su-accento);
@@ -677,7 +677,7 @@ a { color: var(--accento); }
     box-shadow: 0 4px 14px -8px rgba(76, 141, 255, .35);
 }
 
-.btn.primary:hover { background: var(--accento-scuro); border-color: var(--accento-scuro); }
+.btn.primario:hover { background: var(--accento-scuro); border-color: var(--accento-scuro); }
 
 .btn.rosso { border-color: var(--errore-bordo); color: var(--errore); background: var(--errore-sfondo); box-shadow: none; }
 .btn.rosso:hover { background: #2f1a1c; }

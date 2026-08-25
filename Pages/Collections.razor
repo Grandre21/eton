@@ -23,7 +23,7 @@ else if (Spazi.Attivo is null)
 {
     <div class="vuoto">
         <p>Serve uno spazio prima di poter creare collezioni.</p>
-        <a class="btn primary" href="spaces">Vai agli spazi</a>
+        <a class="btn primario" href="spaces">Vai agli spazi</a>
     </div>
 }
 else
@@ -36,7 +36,7 @@ else
     <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
 
     <div class="azioni">
-        <a class="btn primary" href="collections/new">Nuova collezione</a>
+        <a class="btn primario" href="collections/new">Nuova collezione</a>
     </div>
 
     @* L'ordine conta: 'collezioniNonLette' va provato PRIMA di 'collezioni.Count == 0', perché

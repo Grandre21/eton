@@ -80,7 +80,7 @@ else
            acceso, perché il testo è davvero diverso da quello di 'nota'. Ripremerlo risalverebbe
            con la versione vecchia — stesso conflitto, altro giro a vuoto — e scavalcherebbe in
            silenzio la scelta fra Ricarica e Sovrascrivi, che è l'unico modo di uscirne. *@
-        <button class="btn primary" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="notes">Chiudi</a>

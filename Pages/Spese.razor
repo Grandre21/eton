@@ -25,7 +25,7 @@ else if (Spazi.Attivo is null)
 {
     <div class="vuoto">
         <p>Serve uno spazio prima di poter segnare una spesa.</p>
-        <a class="btn primary" href="spaces">Vai agli spazi</a>
+        <a class="btn primario" href="spaces">Vai agli spazi</a>
     </div>
 }
 else
@@ -99,7 +99,7 @@ else
         </fieldset>
 
         <div class="azioni">
-            <button class="btn primary @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido || rileggoMese)">Segna</button>
+            <button class="btn primario @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido || rileggoMese)">Segna</button>
         </div>
     </section>
 
