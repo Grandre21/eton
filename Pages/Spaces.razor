@@ -6,7 +6,12 @@
 
 <PageTitle>Spazi — Eton</PageTitle>
 
-<h1>I tuoi spazi</h1>
+<TestataPagina Titolo="I tuoi spazi">
+    <Aiuto>
+        <p>Uno spazio si condivide col codice invito: chi ce l'ha entra e vede tutto quello che contiene. Lo spazio personale non si condivide.</p>
+        <p>Da uno spazio condiviso si può uscire dalla sua pagina: smetti di vederne il contenuto, ma puoi rientrare col codice.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -22,11 +27,11 @@ else
     <div class="testa-registro">
         <span>@Testi.Conteggio(Spazi.Elenco.Count, "spazio", "spazi")</span>
     </div>
-    <ul class="elenco-spazi">
+    <ul class="registro elenco-spazi">
         @foreach (var s in Spazi.Elenco)
         {
             <li>
-                <a class="riga-spazio" href="spaces/@s.Id">
+                <a class="riga riga-spazio" href="spaces/@s.Id">
                     <span class="nome">@s.Name</span>
                     @if (s.IsPersonal)
                     {

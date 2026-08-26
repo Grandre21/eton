@@ -39,26 +39,17 @@ else
 
     @if (conflitto is not null)
     {
-        <div class="scheda pericolo">
-            <h2>Qualcun altro ha salvato prima di te</h2>
-            <p class="testo-tenue">
-                Mentre scrivevi, questa spesa è cambiata. Sovrascrivendo si perde il lavoro
-                dell'altra persona; ricaricando si perde il tuo.
-            </p>
-            <div class="azioni">
-                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                @* !ImportoValido oltre a 'occupato': anche questa azione scrive nel database, coi
-                   campi ancora modificabili a scheda aperta. Prima era protetta solo da 'occupato',
-                   ed era possibile spedire una descrizione vuota — violando il check del database,
-                   con un errore Postgres crudo al posto di un pulsante spento — o un importo non
-                   valido. Le due azioni scrivono entrambe: la soglia di validità dev'essere la
-                   stessa, non solo quella nata insieme al pulsante Salva.
-                   !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
-                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
-                   PuoIntervenire più sotto. *@
-                <button class="btn rosso @(occupato ? "occupato" : "")" @onclick="Sovrascrivi" disabled="@(occupato || !ImportoValido || !PuoIntervenire)">Sovrascrivi con la mia</button>
-            </div>
-        </div>
+        @* !ImportoValido oltre a 'occupato': anche questa azione scrive nel database, coi
+           campi ancora modificabili a scheda aperta. Prima era protetta solo da 'occupato',
+           ed era possibile spedire una descrizione vuota — violando il check del database,
+           con un errore Postgres crudo al posto di un pulsante spento — o un importo non
+           valido. Le due azioni scrivono entrambe: la soglia di validità dev'essere la
+           stessa, non solo quella nata insieme al pulsante Salva.
+           !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+           rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+           PuoIntervenire più sotto. *@
+        <SchedaConflitto Premessa="Mentre scrivevi, questa spesa è cambiata." Occupato="@occupato" SovrascriviAbilitato="@(ImportoValido && PuoIntervenire)"
+                         OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @* PuoIntervenire (v. @code) decide se questi campi si possono toccare. Sotto la spiegazione e
@@ -144,15 +135,7 @@ else
            comunque a chiedersi il motivo, e qui la risposta non starebbe da nessuna parte. *@
         @if (PuoIntervenire)
         {
-            @if (confermaEliminazione)
-            {
-                <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
-                <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
-            }
-            else
-            {
-                <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
-            }
+            <ConfermaAzione Chiave="@Id" Occupato="@occupato" OnConferma="Elimina" />
         }
     </div>
 }
@@ -184,7 +167,7 @@ else
     private static DateTime DataMassima => DateTime.Today.AddYears(1);
     private static bool DataRagionevole(DateTime? d) => d is not null && d.Value >= DataMinima && d.Value <= DataMassima;
 
-    private bool caricato, occupato, sparita, confermaEliminazione;
+    private bool caricato, occupato, sparita;
     private string? errore, avviso;
     private int generazione;
 
@@ -238,7 +221,7 @@ else
         caricato = false;
         errore = avviso = null;
         conflitto = null;
-        sparita = confermaEliminazione = false;
+        sparita = false;
 
         try
         {
@@ -412,7 +395,6 @@ else
         finally
         {
             occupato = false;
-            confermaEliminazione = false;
         }
     }
 }

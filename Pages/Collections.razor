@@ -1,12 +1,24 @@
 @page "/collections"
 @using Eton.Models
+@inherits PaginaRegistro
 @inject CollectionRepository Repository
-@inject SpaceStateService Spazi
-@implements IDisposable
 
 <PageTitle>Collezioni — Eton</PageTitle>
 
-<h1>Collezioni</h1>
+<TestataPagina Titolo="Collezioni">
+    <Azione>
+        @* Senza uno spazio attivo "Nuova collezione" porterebbe a un modulo che non ha dove salvare,
+           e la pagina mostra già il proprio invito ad andare negli spazi. *@
+        @if (Spazi.Attivo is not null)
+        {
+            <a class="btn primario compatto" href="collections/new">Nuova collezione</a>
+        }
+    </Azione>
+    <Aiuto>
+        <p>I campi di una collezione li decide chi la crea, e valgono per tutti i suoi elementi. Ogni membro dello spazio lascia il proprio voto.</p>
+        <p>Con il voto al buio, chi apre un elemento non vede i voti degli altri finché non mette il suo: vede solo quante persone hanno recensito.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -14,10 +26,7 @@
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
-    <div class="vuoto">
-        <div class="errore" role="alert">@errore</div>
-        <button class="btn" @onclick="Riprova">Riprova</button>
-    </div>
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
 }
 else if (Spazi.Attivo is null)
 {
@@ -35,14 +44,10 @@ else
 
     <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
 
-    <div class="azioni">
-        <a class="btn primario" href="collections/new">Nuova collezione</a>
-    </div>
-
-    @* L'ordine conta: 'collezioniNonLette' va provato PRIMA di 'collezioni.Count == 0', perché
+    @* L'ordine conta: 'datiNonLetti' va provato PRIMA di 'collezioni.Count == 0', perché
        l'elenco è vuoto in entrambi i casi e solo il flag distingue "non ci sono collezioni" da
        "non ho potuto leggerle". *@
-    @if (collezioniNonLette)
+    @if (datiNonLetti)
     {
         <div class="vuoto">
             <p>Non sono riuscito a leggere le collezioni di questo spazio.</p>
@@ -51,7 +56,7 @@ else
     }
     else if (collezioni.Count == 0)
     {
-        @* Niente pulsante qui dentro: "Nuova collezione" è già nella barra .azioni sopra, sempre
+        @* Niente pulsante qui dentro: "Nuova collezione" è già nella testata sopra, sempre
            visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
            schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
         <div class="vuoto">
@@ -65,11 +70,11 @@ else
         <div class="testa-registro">
             <span>@Testi.Conteggio(collezioni.Count, "collezione", "collezioni")</span>
         </div>
-        <ul class="elenco-collezioni">
+        <ul class="registro elenco-collezioni">
             @foreach (var c in collezioni)
             {
                 <li>
-                    <a class="riga-collezione" href="collections/@c.Id">
+                    <a class="riga riga-collezione" href="collections/@c.Id">
                         <span class="icona-collezione">@(string.IsNullOrWhiteSpace(c.Icon) ? "📋" : c.Icon)</span>
                         @* Nome e meta vanno avvolti insieme, non messi come figli diretti: la riga è
                            un flex orizzontale, quindi senza questo contenitore finirebbero affiancati
@@ -88,89 +93,12 @@ else
 
 @code {
     private IReadOnlyList<Collection> collezioni = [];
-    private bool caricato;
-    private string? errore;
-    private Guid spazioMostrato;
 
-    // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
-    // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /collections l'evento
-    // arriva mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto
-    // fra un id vero e uno vuoto lascia passare tutto. Il risultato sarebbe una seconda lettura
-    // identica alla prima, in parallelo. Scartare l'evento non perde niente: il caricamento in
-    // corso lo spazio aggiornato lo legge comunque.
-    private bool inCaricamento;
+    protected override string NomePlurale => "le collezioni";
 
-    // Distingue "questo spazio non ha collezioni" da "le collezioni non sono riuscito a
-    // leggerle": l'elenco è vuoto in entrambi i casi, ma dire "ancora nessuna collezione qui"
-    // quando la lettura è fallita è un'affermazione precisa su uno spazio di cui non sappiamo
-    // niente.
-    private bool collezioniNonLette;
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task Leggi(Space attivo)
     {
-        Spazi.Cambiato += SuCambioSpazio;
-        await Carica();
-    }
-
-    private async Task Carica()
-    {
-        inCaricamento = true;
-        try
-        {
-            // Ciclo e non chiamata singola: SuCambioSpazio SCARTA gli eventi che arrivano mentre
-            // questo metodo è in volo, e scartarli senza rileggere dopo li perderebbe per sempre.
-            // Resterebbero l'intestazione di uno spazio e le collezioni di un altro, senza che
-            // nulla lo corregga finché l'utente non esce dalla pagina e rientra.
-            while (true)
-            {
-                // Catturato PRIMA del giro, ed è il punto delicato di tutto il metodo. Il confronto
-                // finale si fa contro questo, non soltanto contro spazioMostrato: se il caricamento
-                // fallisce, spazioMostrato non viene aggiornato: guardare solo quello lascerebbe la
-                // condizione vera per sempre, e la pagina rifarebbe all'infinito una lettura che
-                // fallisce sempre allo stesso modo. Confrontare lo spazio attivo di adesso con
-                // quello di partenza distingue "è cambiato davvero" da "non è cambiato niente e la
-                // lettura è andata male".
-                var partenza = Spazi.Attivo?.Id;
-
-                await CaricaUnGiro();
-
-                var adesso = Spazi.Attivo?.Id;
-                if (adesso is null || adesso == partenza || adesso == spazioMostrato) break;
-            }
-        }
-        finally
-        {
-            caricato = true;
-            inCaricamento = false;
-        }
-    }
-
-    private async Task CaricaUnGiro()
-    {
-        errore = null;
-        collezioniNonLette = false;
-
-        Space? attivo;
-        try
-        {
-            attivo = await Spazi.AssicuraCaricatoAsync();
-        }
-        catch (Exception ex)
-        {
-            // Qui a mancare sono gli SPAZI, non le collezioni — e il markup reagisce
-            // diversamente: senza spazio attivo l'errore si prende tutta la pagina, col pulsante
-            // Riprova, invece di essere una riga sopra un elenco che comunque esiste.
-            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
-            return;
-        }
-
-        if (attivo is null) return;
-
-        // Azzerate PRIMA di leggere, come in Home.CaricaDettagli. L'intestazione stampa già
-        // @Spazi.Attivo.Name, cioè il nome NUOVO: lasciare a schermo le collezioni del vecchio
-        // spazio le farebbe passare per collezioni di questo, e non c'è niente che smentisca.
         collezioni = [];
-        spazioMostrato = attivo.Id;
 
         try
         {
@@ -178,41 +106,10 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Spazio caricato, ma non ho potuto leggerne le collezioni: {ex.Message}";
-            collezioniNonLette = true;
+            SegnalaNonLetti(ex);
+            return;
         }
     }
-
-    private async Task Riprova()
-    {
-        caricato = false;
-        await Carica();
-    }
-
-    // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
-    // logico: se cambia mentre siamo qui, le collezioni a schermo sono di un altro spazio.
-    private void SuCambioSpazio() => _ = InvokeAsync(async () =>
-    {
-        if (inCaricamento) return;
-        if (Spazi.Attivo?.Id == spazioMostrato) return;
-
-        caricato = false;
-        StateHasChanged();
-        try
-        {
-            await Carica();
-        }
-        catch (Exception ex)
-        {
-            // Carica() cattura già le proprie eccezioni, quindi qui si arriva solo per qualcosa che
-            // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
-            // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
-            // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
-            errore = $"Non è stato possibile aggiornare le collezioni: {ex.Message}";
-            caricato = true;
-        }
-        StateHasChanged();
-    });
 
     // Separato dalla data perché nel markup quella va in un <span class="dato"> a sé, per renderla
     // in carattere monospaziato: il conteggio dei campi no, quindi non possono restare un unico
@@ -227,6 +124,4 @@ else
         1 => "1 campo",
         var n => $"{n} campi"
     };
-
-    public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
 }

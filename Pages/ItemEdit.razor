@@ -47,20 +47,11 @@ else
 
     @if (conflitto is not null)
     {
-        <div class="scheda pericolo">
-            <h2>Qualcun altro ha salvato prima di te</h2>
-            <p class="testo-tenue">
-                Mentre modificavi, questo elemento è cambiato. Sovrascrivendo si perde il lavoro
-                dell'altra persona; ricaricando si perde il tuo.
-            </p>
-            <div class="azioni">
-                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
-                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
-                   PuoIntervenire più sotto. Stesso trattamento di SpesaEdit.razor. *@
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
-            </div>
-        </div>
+        @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+           rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+           PuoIntervenire più sotto. Stesso trattamento di SpesaEdit.razor. *@
+        <SchedaConflitto Premessa="Mentre modificavi, questo elemento è cambiato." Occupato="@occupato" SovrascriviAbilitato="@PuoIntervenire"
+                         OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @* PuoIntervenire (v. @code) decide se questi campi si possono toccare. Sotto la spiegazione e
@@ -122,15 +113,7 @@ else
            comunque a chiedersi il motivo, e qui la risposta non starebbe da nessuna parte. *@
         @if (!Nuovo && PuoIntervenire)
         {
-            @if (confermaEliminazione)
-            {
-                <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
-                <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
-            }
-            else
-            {
-                <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
-            }
+            <ConfermaAzione Chiave="@ItemId" Occupato="@occupato" OnConferma="Elimina" />
         }
     </div>
 
@@ -157,7 +140,7 @@ else
     private readonly Dictionary<string, string> valori = new();
     private Dictionary<string, string> valoriIniziali = new();
     private IReadOnlyList<CampoDefinizione> campi = [];
-    private bool caricato, occupato, sparito, confermaEliminazione;
+    private bool caricato, occupato, sparito;
     private string? errore, avviso;
     private int generazione;
 
@@ -200,7 +183,7 @@ else
         caricato = false;
         errore = avviso = null;
         conflitto = null;
-        sparito = confermaEliminazione = false;
+        sparito = false;
 
         try
         {
@@ -457,7 +440,6 @@ else
         finally
         {
             occupato = false;
-            confermaEliminazione = false;
         }
     }
 }

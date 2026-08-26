@@ -40,20 +40,11 @@ else
 
     @if (conflitto is not null)
     {
-        <div class="scheda pericolo">
-            <h2>Qualcun altro ha salvato prima di te</h2>
-            <p class="testo-tenue">
-                Mentre modificavi, questa collezione è cambiata. Sovrascrivendo si perde il lavoro
-                dell'altra persona; ricaricando si perde il tuo.
-            </p>
-            <div class="azioni">
-                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
-                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
-                   PuoIntervenire più sotto. *@
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
-            </div>
-        </div>
+        @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+           rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+           PuoIntervenire più sotto. *@
+        <SchedaConflitto Premessa="Mentre modificavi, questa collezione è cambiata." Occupato="@occupato" SovrascriviAbilitato="@PuoIntervenire"
+                         OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @if (!PuoIntervenire)
@@ -204,16 +195,9 @@ else
            starebbe da nessuna parte (v. il commento su PuoIntervenire più sotto). *@
         @if (!Nuova && PuoIntervenire)
         {
-            @if (confermaEliminazione)
-            {
-                <span class="testo-tenue">Eliminando la collezione spariscono anche tutti i suoi elementi.</span>
-                <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
-                <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
-            }
-            else
-            {
-                <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
-            }
+            <ConfermaAzione Chiave="@Id" Occupato="@occupato" OnConferma="Elimina">
+                <Avvertenza><span class="testo-tenue">Eliminando la collezione spariscono anche tutti i suoi elementi.</span></Avvertenza>
+            </ConfermaAzione>
         }
     </div>
 }
@@ -229,12 +213,13 @@ else
     private bool allaCieca;
     private List<CampoDefinizione> campi = [];
     private IReadOnlyList<string> erroriValidazione = [];
-    private bool caricato, occupato, sparita, confermaEliminazione;
+    private bool caricato, occupato, sparita;
     private string? errore, avviso;
     private int generazione;
 
-    // La chiave del campo di cui è aperta la conferma di rimozione, o null se nessuna lo è: stessa
-    // idea di 'confermaEliminazione' ma per riga, quindi serve un identificatore invece di un bool.
+    // La chiave del campo di cui è aperta la conferma di rimozione, o null se nessuna lo è: qui
+    // serve un identificatore invece di un bool, perché la conferma è per riga e non per pagina —
+    // a differenza di quella di eliminazione della collezione, che ConfermaAzione tiene per sé.
     private string? campoDaRimuovere;
 
     // SchemaCampi.Modelli alloca copie nuove a ogni accesso, di proposito (v. il commento lì):
@@ -284,7 +269,7 @@ else
         caricato = false;
         errore = avviso = null;
         conflitto = null;
-        sparita = confermaEliminazione = false;
+        sparita = false;
         campoDaRimuovere = null;
         erroriValidazione = [];
 
@@ -635,7 +620,6 @@ else
         finally
         {
             occupato = false;
-            confermaEliminazione = false;
         }
     }
 }

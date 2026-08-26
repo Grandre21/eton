@@ -1,0 +1,59 @@
+@* Il pulsante "Elimina" a doppia conferma, ripetuto oggi in ogni pagina con un campo booleano
+   privato solo per questo: qui lo stato di conferma vive dentro il componente, e la pagina
+   chiamante sa solo che OnConferma è scattato.
+
+   Nessun contenitore attorno ai pulsanti: il call-site li mette dentro un <div class="azioni">
+   già esistente, accanto a Salva e Chiudi — un wrapper qui romperebbe quel layout flex.
+
+   Chiave esiste per un motivo preciso, non per uniformità: le pagine editor (v. il commento su
+   'mioId' in Pages/NoteEdit.razor, che dichiara che quella pagina "rilancia il ciclo di vita sulla
+   stessa istanza a ogni cambio di rotta") riusano la STESSA istanza di questo componente passando
+   da un'entità all'altra — /notes/A a /notes/B cambia solo il parametro, non ricrea la pagina né i
+   suoi figli. Senza Chiave, 'confermando' armato sulla nota A sopravvivrebbe alla navigazione verso
+   la nota B: chi apre B vedrebbe già "Sì, elimina" pronto per un'entità che non ha mai chiesto di
+   cancellare, e un clic la cancellerebbe senza conferma vera. OnParametersSet confronta Chiave con
+   l'ultimo valore visto invece di azzerare a ogni chiamata: il metodo gira anche quando cambia solo
+   Occupato, e un azzeramento incondizionato disarmerebbe la conferma nell'istante stesso in cui
+   l'utente preme "Sì, elimina".
+
+   Avvertenza è un RenderFragment, non una stringa: CollectionEdit deve mostrare un avviso di più
+   di una frase legato solo al ramo armato ("Eliminando la collezione spariscono anche tutti i suoi
+   elementi."), e un solo call-site su quattro lo usa — un parametro stringa in più per tutti gli
+   altri sarebbe genericità pagata da chi non ne ha bisogno. *@
+@if (confermando)
+{
+    @Avvertenza
+    <button class="btn rosso" @onclick="Conferma" disabled="@Occupato">@EtichettaConferma</button>
+    <button class="btn" @onclick="() => confermando = false" disabled="@Occupato">Annulla</button>
+}
+else
+{
+    <button class="btn rosso" @onclick="() => confermando = true" disabled="@Occupato">@Etichetta</button>
+}
+
+@code {
+    [Parameter] public string Etichetta { get; set; } = "Elimina";
+    [Parameter] public string EtichettaConferma { get; set; } = "Sì, elimina";
+    [Parameter] public bool Occupato { get; set; }
+    [Parameter] public EventCallback OnConferma { get; set; }
+    [Parameter, EditorRequired] public object? Chiave { get; set; }
+    [Parameter] public RenderFragment? Avvertenza { get; set; }
+
+    private bool confermando;
+    private object? chiavePrecedente;
+
+    protected override void OnParametersSet()
+    {
+        if (!Equals(Chiave, chiavePrecedente))
+        {
+            confermando = false;
+            chiavePrecedente = Chiave;
+        }
+    }
+
+    private async Task Conferma()
+    {
+        try { await OnConferma.InvokeAsync(); }
+        finally { confermando = false; }
+    }
+}

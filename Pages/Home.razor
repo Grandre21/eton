@@ -46,10 +46,7 @@
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
-    <div class="vuoto">
-        <div class="errore" role="alert">@errore</div>
-        <button class="btn" @onclick="Riprova">Riprova</button>
-    </div>
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
 }
 else if (Spazi.Attivo is null)
 {
@@ -68,7 +65,12 @@ else
         <div class="errore" role="alert">@errore</div>
     }
 
-    <h1>@Spazi.Attivo.Name</h1>
+    <TestataPagina Titolo="@Spazi.Attivo.Name">
+        <Aiuto>
+            <p>Ogni cosa in Eton sta dentro uno spazio: note, collezioni e spese appartengono a quello attivo, e cambiandolo cambia tutto quello che vedi.</p>
+            <p>Lo spazio personale lo vedi solo tu. Gli altri si condividono con un codice invito, e chi entra vede tutto quello che contengono.</p>
+        </Aiuto>
+    </TestataPagina>
     <p class="sottotitolo">
         @if (Spazi.Attivo.IsPersonal)
         {
@@ -148,11 +150,11 @@ else
             }
             else
             {
-                <ul class="elenco-note">
+                <ul class="registro elenco-note">
                     @foreach (var n in note)
                     {
                         <li>
-                            <a class="riga-nota" href="notes/@n.Id">
+                            <a class="riga riga-nota" href="notes/@n.Id">
                                 <span class="titolo">@n.TitoloVisibile()</span>
                                 <span class="meta dato">@Testi.Data(n.UpdatedAt)</span>
                             </a>
@@ -185,11 +187,11 @@ else
             }
             else
             {
-                <ul class="elenco-collezioni">
+                <ul class="registro elenco-collezioni">
                     @foreach (var c in collezioni)
                     {
                         <li>
-                            <a class="riga-collezione" href="collections/@c.Id">
+                            <a class="riga riga-collezione" href="collections/@c.Id">
                                 <span class="icona-collezione">@(string.IsNullOrWhiteSpace(c.Icon) ? "📋" : c.Icon)</span>
                                 <span class="testi">
                                     <span class="nome">@c.Name</span>

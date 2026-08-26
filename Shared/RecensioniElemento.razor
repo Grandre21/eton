@@ -69,15 +69,7 @@
 
                 @if (mia is not null)
                 {
-                    @if (confermaEliminazione)
-                    {
-                        <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, togli</button>
-                        <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
-                    }
-                    else
-                    {
-                        <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Togli la mia recensione</button>
-                    }
+                    <ConfermaAzione Etichetta="Togli la mia recensione" EtichettaConferma="Sì, togli" Chiave="@ElementoId" Occupato="@occupato" OnConferma="Elimina" />
                 }
             </div>
         </div>
@@ -178,7 +170,7 @@
     // recensioniNonLette, ma su una lettura che avviene a componente già caricato.
     private bool altreNonLette;
 
-    private bool caricato, occupato, confermaEliminazione;
+    private bool caricato, occupato;
 
     // Distingue "questo elemento non ha ancora recensioni" da "le recensioni non sono riuscito a
     // leggerle": in entrambi i casi la lista è vuota, ma solo nel secondo va mostrato un errore
@@ -228,11 +220,8 @@
 
         // Anche lo stato di interazione, non solo i dati: 'occupato' lasciato acceso da un
         // salvataggio partito sull'elemento precedente terrebbe il pulsante su "Salvo…" per un
-        // elemento su cui non sta salvando niente, e 'confermaEliminazione' lasciata accesa
-        // mostrerebbe "Sì, togli"/"Annulla" già aperti sulla recensione di un altro elemento, senza
-        // che nessuno abbia chiesto di toglierla — un clic distratto la cancellerebbe.
+        // elemento su cui non sta salvando niente.
         occupato = false;
-        confermaEliminazione = false;
 
         try
         {
@@ -568,7 +557,6 @@
             if (miaGenerazione == generazione)
             {
                 occupato = false;
-                confermaEliminazione = false;
             }
         }
     }

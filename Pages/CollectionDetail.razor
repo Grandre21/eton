@@ -27,10 +27,7 @@ else if (collezione is null)
        un'affermazione falsa su un fatto che non conosciamo, e lascerebbe l'utente col solo
        "Torna alle collezioni" invece che con un pulsante che ritenta. Stessa forma di
        Home.razor:16-22. *@
-    <div class="vuoto">
-        <div class="errore" role="alert">@errore</div>
-        <button class="btn" @onclick="Riprova">Riprova</button>
-    </div>
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
 }
 else
 {
@@ -120,12 +117,12 @@ else
                 }
             </div>
 
-            <ul class="elenco-elementi">
+            <ul class="registro elenco-elementi">
                 @foreach (var e in mostrati)
                 {
                     var riepilogo = Riepilogo(e);
                     <li>
-                        <a class="riga-elemento" href="collections/@Id/items/@e.Id">
+                        <a class="riga riga-elemento" href="collections/@Id/items/@e.Id">
                             @if (Miniatura(e) is string src)
                             {
                                 <img class="miniatura" src="@src" alt="" loading="lazy" />

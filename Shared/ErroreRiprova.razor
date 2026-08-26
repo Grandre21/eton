@@ -1,0 +1,13 @@
+@* Il blocco "c'è stato un errore" che oggi ogni pagina scrive per conto proprio quando il
+   caricamento da remoto fallisce: il messaggio dentro '.errore' e un pulsante per riprovare,
+   dentro il contenitore '.vuoto' già usato per gli stati vuoti. *@
+<div class="vuoto">
+    <div class="errore" role="alert">@Messaggio</div>
+    <button class="btn" @onclick="OnRiprova" disabled="@Disabilitato">Riprova</button>
+</div>
+
+@code {
+    [Parameter] public string? Messaggio { get; set; }
+    [Parameter] public EventCallback OnRiprova { get; set; }
+    [Parameter] public bool Disabilitato { get; set; }
+}

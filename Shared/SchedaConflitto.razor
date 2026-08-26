@@ -1,0 +1,36 @@
+@* La scheda di conflitto da concorrenza ottimistica, copiata verbatim da Pages/NoteEdit.razor
+   (dov'è nata). Solo la prima frase è un parametro: varia sia nel verbo — "scrivevi" in
+   NoteEdit e SpesaEdit, "modificavi" in CollectionEdit e ItemEdit — sia nella concordanza di
+   genere, "è cambiata" contro "è cambiato" (Pages/ItemEdit.razor è il caso maschile che lo
+   dimostra). La seconda frase, "Sovrascrivendo si perde il lavoro dell'altra persona;
+   ricaricando si perde il tuo.", è invece identica al carattere in tutte e quattro le pagine, e
+   per questo resta fissa nel testo.
+
+   SovrascriviAbilitato è in positivo, non 'SovrascriviBloccato' come prima: lo impone la
+   convenzione di fail-closed già scritta in questo codebase — v. il commento su 'mioId' in
+   Pages/NoteEdit.razor, che dice di 'PuoIntervenire' che «se il parsing fallisce resta null, e
+   PuoIntervenire ne tiene conto fallendo chiuso». Un parametro che BLOCCA, col default 'false'
+   di ogni bool non impostato, significa "non bloccare": fail-open, e chi lo dimentica ottiene un
+   pulsante di scrittura abilitato in silenzio. Un parametro che ABILITA, con lo stesso default
+   'false', significa "non abilitare": fail-closed, e chi lo dimentica trova il pulsante spento —
+   un difetto visibile subito, non un'autorizzazione allentata di nascosto. Non girarlo in
+   negativo per "leggibilità": romperebbe questa proprietà. *@
+<div class="scheda pericolo">
+    <h2>Qualcun altro ha salvato prima di te</h2>
+    <p class="testo-tenue">
+        @Premessa Sovrascrivendo si perde il lavoro
+        dell'altra persona; ricaricando si perde il tuo.
+    </p>
+    <div class="azioni">
+        <button class="btn" @onclick="OnRicarica" disabled="@Occupato">Ricarica la sua</button>
+        <button class="btn rosso @(Occupato ? "occupato" : "")" @onclick="OnSovrascrivi" disabled="@(Occupato || !SovrascriviAbilitato)">Sovrascrivi con la mia</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Premessa { get; set; } = "";
+    [Parameter] public bool Occupato { get; set; }
+    [Parameter, EditorRequired] public bool SovrascriviAbilitato { get; set; }
+    [Parameter] public EventCallback OnRicarica { get; set; }
+    [Parameter] public EventCallback OnSovrascrivi { get; set; }
+}

@@ -1,0 +1,60 @@
+@* La testata comune a ogni schermata: titolo, un "?" che apre l'aiuto, e facoltativamente
+   l'azione principale della pagina a destra. Sostituisce il blocco <h1> + <div class="azioni">
+   che Note e Collezioni ripetevano ciascuna per conto proprio.
+
+   Il pannello si apre con l'API Popover nativa (popovertarget qui, [popover] sul <div> sotto) e
+   non con uno stato booleano gestito a mano: chiusura con Esc, chiusura al tocco fuori,
+   aria-expanded sull'invocante, ritorno del fuoco al pulsante alla chiusura, rendering nel
+   top-layer sopra la barra di navigazione — tutto gratis, zero righe di JavaScript. Il progetto
+   non ha un file .js proprio (v. il commento in Shared/Icona.razor sul perché) e un pannello
+   d'aiuto non è certo il motivo per cui aprirne uno.
+
+   Il <div popover> sta subito dopo .testata e non in fondo al file: dove l'API non c'è (iOS 16 e
+   precedenti — iPhone che non possono aggiornarsi, non un caso raro da ignorare) l'attributo
+   popover viene semplicemente ignorato dal browser, e l'elemento resta visibile, in flusso,
+   esattamente dov'è scritto nel markup. Messo qui si legge come un riquadro informativo appena
+   sotto il titolo; messo altrove sembrerebbe un relitto lasciato cadere in fondo alla pagina. Il
+   degrado è leggibile perché il markup è nell'ordine in cui deve apparire, non per fortuna.
+
+   Niente attributo che nasconda questo div di default (l'istinto sarebbe l'equivalente HTML di
+   "display: none finché non si apre"): sui browser con popover sarebbe ridondante, ma su quelli
+   senza renderebbe il pannello irraggiungibile per sempre, trasformando un degrado leggibile in
+   una funzione morta. Se un giorno qualcuno prova ad aggiungerlo, questo commento è il motivo per
+   cui non va fatto.
+
+   Niente pulsante di chiusura dentro il pannello, per lo stesso motivo speculare: dove popover
+   funziona è superfluo, perché Esc e il tocco fuori sono il gesto che chiunque già conosce; dove
+   non funziona sarebbe una "×" premuta a vuoto, cioè proprio il controllo rotto che il paragrafo
+   sopra vuole evitare.
+
+   L'id del pannello, qui sotto, è statico, e va bene che lo sia: ogni pagina monta una sola
+   testata, e Blazor smonta il componente al cambio di rotta, chiudendo il popover da sé — non
+   serve un id univoco per istanza. Se un domani servissero due testate nella stessa pagina,
+   quell'id diventerebbe un duplicato: andrebbe reso un parametro a quel punto, non prima. *@
+<div class="testata">
+    <h1>@Titolo</h1>
+    <button type="button" class="aiuto-apri" popovertarget="aiuto-schermata"
+            aria-label="Come si usa questa schermata"></button>
+    @if (Azione is not null)
+    {
+        <div class="testata-azione">@Azione</div>
+    }
+</div>
+
+<div id="aiuto-schermata" popover class="aiuto-pannello">
+    @Aiuto
+</div>
+
+@code {
+    /// <summary>Il titolo della schermata, mostrato nell'&lt;h1&gt;.</summary>
+    [Parameter, EditorRequired] public string Titolo { get; set; } = "";
+
+    /// <summary>
+    /// L'azione principale della pagina, allineata a destra della testata. Facoltativa: molte
+    /// schermate (per esempio quelle di dettaglio) non ne hanno una da mettere qui.
+    /// </summary>
+    [Parameter] public RenderFragment? Azione { get; set; }
+
+    /// <summary>Il contenuto del pannello d'aiuto, aperto dal "?" accanto al titolo.</summary>
+    [Parameter, EditorRequired] public RenderFragment? Aiuto { get; set; }
+}

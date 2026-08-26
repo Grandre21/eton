@@ -39,20 +39,11 @@ else
 
     @if (conflitto is not null)
     {
-        <div class="scheda pericolo">
-            <h2>Qualcun altro ha salvato prima di te</h2>
-            <p class="testo-tenue">
-                Mentre scrivevi, questa nota è cambiata. Sovrascrivendo si perde il lavoro
-                dell'altra persona; ricaricando si perde il tuo.
-            </p>
-            <div class="azioni">
-                <button class="btn" @onclick="Ricarica" disabled="@occupato">Ricarica la sua</button>
-                @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
-                   rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
-                   PuoIntervenire più sotto. *@
-                <button class="btn rosso" @onclick="Sovrascrivi" disabled="@(occupato || !PuoIntervenire)">Sovrascrivi con la mia</button>
-            </div>
-        </div>
+        @* !PuoIntervenire in più: anche Sovrascrivi scrive nel database, e la RLS la
+           rifiuterebbe agli stessi soggetti a cui Salva è vietato — v. il commento su
+           PuoIntervenire più sotto. *@
+        <SchedaConflitto Premessa="Mentre scrivevi, questa nota è cambiata." Occupato="@occupato" SovrascriviAbilitato="@PuoIntervenire"
+                         OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @* PuoIntervenire (v. @code) decide se questi campi si possono toccare. Sotto la spiegazione e
@@ -101,15 +92,7 @@ else
            nessuna parte (v. il commento su PuoIntervenire più sotto). *@
         @if (!Nuova && PuoIntervenire)
         {
-            @if (confermaEliminazione)
-            {
-                <button class="btn rosso" @onclick="Elimina" disabled="@occupato">Sì, elimina</button>
-                <button class="btn" @onclick="() => confermaEliminazione = false" disabled="@occupato">Annulla</button>
-            }
-            else
-            {
-                <button class="btn rosso" @onclick="() => confermaEliminazione = true" disabled="@occupato">Elimina</button>
-            }
+            <ConfermaAzione Chiave="@Id" Occupato="@occupato" OnConferma="Elimina" />
         }
     </div>
 }
@@ -121,7 +104,7 @@ else
     private Note? conflitto;   // la versione altrui, quando il salvataggio si è scontrato
     private string titolo = "";
     private string corpo = "";
-    private bool caricato, occupato, anteprima, sparita, confermaEliminazione;
+    private bool caricato, occupato, anteprima, sparita;
     private string? errore, avviso;
     private int generazione;
 
@@ -159,7 +142,7 @@ else
         caricato = false;
         errore = avviso = null;
         conflitto = null;
-        sparita = confermaEliminazione = anteprima = false;
+        sparita = anteprima = false;
 
         try
         {
@@ -356,7 +339,6 @@ else
         finally
         {
             occupato = false;
-            confermaEliminazione = false;
         }
     }
 }

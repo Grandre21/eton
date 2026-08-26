@@ -1,14 +1,18 @@
 @page "/expenses"
 @using Eton.Models
+@inherits PaginaRegistro
 @inject ExpenseRepository Repository
 @inject SpaceRepository SpaziRepository
-@inject SpaceStateService Spazi
 @inject AuthStateService AuthState
-@implements IDisposable
 
 <PageTitle>Spese — Eton</PageTitle>
 
-<h1>Spese</h1>
+<TestataPagina Titolo="Spese">
+    <Aiuto>
+        <p>Il riepilogo conta solo il mese che stai guardando: cambiando mese cambiano il totale e le categorie.</p>
+        <p>Ogni spesa resta legata a chi l'ha pagata, e questo non cambia più dopo averla segnata.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -16,10 +20,7 @@
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
-    <div class="vuoto">
-        <div class="errore" role="alert">@errore</div>
-        <button class="btn" @onclick="Riprova">Riprova</button>
-    </div>
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
 }
 else if (Spazi.Attivo is null)
 {
@@ -103,7 +104,7 @@ else
         </div>
     </section>
 
-    @if (speseNonLette)
+    @if (datiNonLetti)
     {
         <div class="vuoto">
             <p>Non sono riuscito a leggere le spese di questo spazio.</p>
@@ -117,7 +118,7 @@ else
            sparire insieme al riepilogo, e non ci sarebbe più modo di uscirne — nemmeno per tornare a
            un mese che ha spese davvero. A lettura riuscita renderlo con zero spese è sicuro
            (riepilogo parte da new(0, [], 0, null)) e corretto: 0,00 € è vero quando il mese non è
-           costato niente. È diverso dal ramo 'speseNonLette' sopra, dove non si mostra alcun
+           costato niente. È diverso dal ramo 'datiNonLetti' sopra, dove non si mostra alcun
            riepilogo perché lì lo zero sarebbe falso: non sappiamo quanto sia costato quel mese, solo
            che non siamo riusciti a leggerlo. *@
         @* scheda porta la superficie condivisa (sfondo, bordo, ombra); riepilogo-mese solo ciò che è proprio di questo blocco *@
@@ -175,7 +176,7 @@ else
                 <span>@Testi.Conteggio(speseDelMese.Count, "spesa", "spese")</span>
             </div>
 
-            <ul class="elenco-spese">
+            <ul class="registro elenco-spese">
                 @foreach (var s in speseDelMese)
                 {
                     <li>
@@ -184,7 +185,7 @@ else
                            non una qualità della riga. Verde e non blu, come in app.css: blu è dove si
                            preme, verde è dove si constata — e questa riga non si è premuta, è arrivata
                            da sola dopo Segna(). *@
-                        <a class="riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="expenses/@s.Id">
+                        <a class="riga riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="expenses/@s.Id">
                             <span class="descrizione">@s.Description</span>
                             <span class="meta">
                                 <span class="pastiglia">@s.Category</span>
@@ -209,9 +210,7 @@ else
     private RiepilogoMese riepilogo = new(0, [], 0, null);
     private IReadOnlyList<Expense> speseDelMese = [];
     private IReadOnlyList<Membro> membri = [];
-    private bool caricato, occupato;
-    private string? errore;
-    private Guid spazioMostrato;
+    private bool occupato;
 
     // Vero mentre la pagina sta rileggendo dati che ha GIÀ — segnare una spesa, rileggere dopo un
     // errore, cambiare mese con le frecce — a differenza di 'caricato', che è falso solo quando non
@@ -261,28 +260,16 @@ else
     // rifarebbe partire l'animazione CSS una seconda volta — il "lampo che si ripete" da evitare.
     private Guid? ultimaSpesaCreataId;
 
-    // Vero mentre Carica() è in volo. La guardia sull'id non basta: AssicuraCaricatoAsync emette
-    // Cambiato PRIMA di restituire il controllo, quindi alla prima visita di /spese l'evento arriva
-    // mentre siamo ancora dentro Carica(), con spazioMostrato ancora vuoto — e il confronto fra un
-    // id vero e uno vuoto lascia passare tutto. Il risultato sarebbe una seconda lettura identica
-    // alla prima, in parallelo. Scartare l'evento non perde niente: il caricamento in corso lo
-    // spazio aggiornato lo legge comunque.
-    private bool inCaricamento;
-
-    // Distingue "questo spazio non ha spese" da "le spese non sono riuscito a leggerle": l'elenco è
-    // vuoto in entrambi i casi, ma dire "ancora nessuna spesa qui" quando la lettura è fallita è
-    // un'affermazione precisa su uno spazio di cui non sappiamo niente.
-    private bool speseNonLette;
-
     // Falso solo quando il mese mostrato è quello corrente: non esistono spese future, e una
     // freccia che porta su una schermata sempre vuota è una freccia che non doveva esserci.
     private bool PuoAndareAvanti => anno != DateTime.Now.Year || mese != DateTime.Now.Month;
 
+    protected override string NomePlurale => "le spese";
+
     protected override async Task OnInitializedAsync()
     {
-        Spazi.Cambiato += SuCambioSpazio;
         if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
-        await Carica();
+        await base.OnInitializedAsync();
     }
 
     // Come SpesaEdit.Crea: pagante letto con AuthState.GetUserIdAsync() e Guid.TryParse, stesso
@@ -346,80 +333,42 @@ else
         }
     }
 
-    // Nessun chiamante deve entrare qui mentre un altro è in volo. I quattro percorsi da interfaccia —
-    // Segna, Riprova, le due frecce del mese — si escludono a vicenda perché ciascuno alza rileggoMese
-    // come ULTIMA ISTRUZIONE SINCRONA PRIMA DEL PRIMO AWAIT del proprio metodo, e ogni pulsante che
-    // li avvia è disabilitato quando rileggoMese è vero. La posizione è la parte che conta: un flag
-    // alzato a metà metodo, dopo un await, lascerebbe gli altri pulsanti cliccabili per tutta la
-    // durata della chiamata di rete che precede — è esattamente l'errore corretto in Segna(), v. il
-    // commento lì. SuCambioSpazio si esclude con entrambi inCaricamento e rileggoMese (v. sotto, le
-    // righe con "if (inCaricamento) return;" e "if (rileggoMese) return;"): il primo copre la
-    // finestra in cui Carica() è già in volo, il secondo la finestra in cui un chiamante l'ha già
-    // annunciata ma non l'ha ancora avviata. Chi aggiunge un quinto chiamante deve procurarsi una
-    // delle due esclusioni, rispettando la stessa regola di posizione: due Carica() in parallelo
-    // scrivono sugli stessi campi (riepilogo, speseDelMese, membri, errore, speseNonLette,
-    // spazioMostrato), e vince l'ultima risposta di rete invece dell'ultima azione dell'utente.
-    private async Task Carica()
+    // Nessun chiamante deve entrare in Carica() (ereditato, Shared/PaginaRegistro.cs) mentre un
+    // altro è in volo. I quattro percorsi da interfaccia — Segna, Riprova, le due frecce del mese —
+    // si escludono a vicenda perché ciascuno alza rileggoMese come ULTIMA ISTRUZIONE SINCRONA PRIMA
+    // DEL PRIMO AWAIT del proprio metodo, e ogni pulsante che li avvia è disabilitato quando
+    // rileggoMese è vero. La posizione è la parte che conta: un flag alzato a metà metodo, dopo un
+    // await, lascerebbe gli altri pulsanti cliccabili per tutta la durata della chiamata di rete che
+    // precede — è esattamente l'errore corretto in Segna(), v. il commento lì.
+    //
+    // SuCambioSpazio (Shared/PaginaRegistro.cs) si esclude con due guardie separate, non una sola:
+    // "if (inCaricamento) return;" a PaginaRegistro.cs:155, che copre la finestra in cui Carica() è
+    // già in volo, e "if (ScartaCambioSpazio()) return;" a PaginaRegistro.cs:156, che chiama
+    // l'override qui sotto — quindi in pratica rileggoMese — e copre la finestra in cui un chiamante
+    // l'ha già annunciata ma non l'ha ancora avviata. Chi aggiunge un quinto chiamante deve
+    // procurarsi una delle due esclusioni, rispettando la stessa regola di posizione: due Carica() in
+    // parallelo scrivono sugli stessi campi (riepilogo, speseDelMese, membri — di questa pagina — ed
+    // errore, datiNonLetti, spazioMostrato — ereditati da PaginaRegistro), e vince l'ultima risposta
+    // di rete invece dell'ultima azione dell'utente.
+    //
+    // rileggoMese in più, non solo inCaricamento: quel flag copre solo la finestra in cui Carica() è
+    // già in volo, ma Segna() lo alza PRIMA di Carica(), mentre attraversa AssicuraCaricatoAsync,
+    // GetUserIdAsync e CreaAsync — un vero viaggio di rete durante il quale inCaricamento è ancora
+    // falso. Senza questo controllo, un cambio di spazio in quella finestra passerebbe la guardia e
+    // partirebbe qui una seconda Carica() in corsa con quella che Segna() sta per lanciare.
+    // Rinunciare non perde l'evento: Carica() cattura lo spazio attivo dentro il proprio ciclo, a
+    // ogni giro (v. 'partenza' a PaginaRegistro.cs:98), quindi la Carica() che il percorso in corso
+    // lancerà comunque legge già lo spazio nuovo al primo giro — è la stessa logica per cui quel
+    // ciclo esiste, estesa a questa seconda finestra.
+    protected override bool ScartaCambioSpazio() => rileggoMese;
+
+    protected override void PrimaDiRicaricare() => ultimaSpesaCreataId = null;
+
+    protected override async Task Leggi(Space attivo)
     {
-        inCaricamento = true;
-        try
-        {
-            // Ciclo e non chiamata singola: SuCambioSpazio SCARTA gli eventi che arrivano mentre
-            // questo metodo è in volo, e scartarli senza rileggere dopo li perderebbe per sempre.
-            // Resterebbero l'intestazione di uno spazio e le spese di un altro, senza che nulla lo
-            // corregga finché l'utente non esce dalla pagina e rientra.
-            while (true)
-            {
-                // Catturato PRIMA del giro, ed è il punto delicato di tutto il metodo. Il confronto
-                // finale si fa contro questo, non soltanto contro spazioMostrato: se il caricamento
-                // fallisce, spazioMostrato non viene aggiornato: guardare solo quello lascerebbe la
-                // condizione vera per sempre, e la pagina rifarebbe all'infinito una lettura che
-                // fallisce sempre allo stesso modo. Confrontare lo spazio attivo di adesso con
-                // quello di partenza distingue "è cambiato davvero" da "non è cambiato niente e la
-                // lettura è andata male".
-                var partenza = Spazi.Attivo?.Id;
-
-                await CaricaUnGiro();
-
-                var adesso = Spazi.Attivo?.Id;
-                if (adesso is null || adesso == partenza || adesso == spazioMostrato) break;
-            }
-        }
-        finally
-        {
-            caricato = true;
-            inCaricamento = false;
-        }
-    }
-
-    private async Task CaricaUnGiro()
-    {
-        errore = null;
-        speseNonLette = false;
-
-        Space? attivo;
-        try
-        {
-            attivo = await Spazi.AssicuraCaricatoAsync();
-        }
-        catch (Exception ex)
-        {
-            // Qui a mancare sono gli SPAZI, non le spese — e il markup reagisce diversamente:
-            // senza spazio attivo l'errore si prende tutta la pagina, col pulsante Riprova,
-            // invece di essere una riga sopra un elenco che comunque esiste.
-            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
-            return;
-        }
-
-        if (attivo is null) return;
-
-        // Azzerati PRIMA di leggere, come in Home.CaricaDettagli. L'intestazione stampa già
-        // @Spazi.Attivo.Name, cioè il nome NUOVO: lasciare a schermo il riepilogo del vecchio spazio
-        // lo farebbe passare per quello di questo, e non c'è niente che smentisca.
         riepilogo = new RiepilogoMese(0, [], 0, null);
         speseDelMese = [];
         membri = [];
-        spazioMostrato = attivo.Id;
 
         // Il mese precedente di gennaio è dicembre dell'anno prima: stessa regola di
         // CalcoliSpese.PerMese, ripetuta qui perché è l'intervallo da chiedere al repository, non
@@ -440,8 +389,7 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Spazio caricato, ma non ho potuto leggerne le spese: {ex.Message}";
-            speseNonLette = true;
+            SegnalaNonLetti(ex);
             return;
         }
 
@@ -465,7 +413,12 @@ else
         }
     }
 
-    private async Task Riprova()
+    // Riprova() non usa quella ereditata: qui rileggere è uno dei quattro percorsi che alzano
+    // rileggoMese (v. il commento sopra ScartaCambioSpazio) e non caricato, così il modulo per
+    // segnare una spesa e il riepilogo del mese restano a schermo invece di sparire sotto uno
+    // <Scheletro>. L'override è deliberato, non una svista: non va "semplificato" verso quello
+    // ereditato.
+    protected override async Task Riprova()
     {
         ultimaSpesaCreataId = null;
         rileggoMese = true;
@@ -517,48 +470,13 @@ else
         }
     }
 
-    // Lo spazio attivo si cambia dalla Home, che resta montata sotto questa pagina solo in senso
-    // logico: se cambia mentre siamo qui, le spese a schermo sono di un altro spazio.
-    private void SuCambioSpazio() => _ = InvokeAsync(async () =>
-    {
-        if (inCaricamento) return;
-        // rileggoMese in più, non solo inCaricamento: quel flag copre solo la finestra in cui
-        // Carica() è già in volo, ma Segna() lo alza PRIMA di Carica(), mentre attraversa
-        // AssicuraCaricatoAsync, GetUserIdAsync e CreaAsync — un vero viaggio di rete durante il
-        // quale inCaricamento è ancora falso. Senza questo controllo, un cambio di spazio in quella
-        // finestra passerebbe la guardia e partirebbe qui una seconda Carica() in corsa con quella
-        // che Segna() sta per lanciare. Rinunciare non perde l'evento: Carica() cattura lo spazio
-        // attivo DENTRO il proprio ciclo, a ogni giro (v. 'partenza' più sotto), quindi la Carica()
-        // che il percorso in corso lancerà comunque legge già lo spazio nuovo al primo giro — è la
-        // stessa logica per cui quel ciclo esiste, estesa a questa seconda finestra.
-        if (rileggoMese) return;
-        if (Spazi.Attivo?.Id == spazioMostrato) return;
-
-        ultimaSpesaCreataId = null;
-        caricato = false;
-        StateHasChanged();
-        try
-        {
-            await Carica();
-        }
-        catch (Exception ex)
-        {
-            // Carica() cattura già le proprie eccezioni, quindi qui si arriva solo per qualcosa che
-            // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
-            // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
-            // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
-            errore = $"Non è stato possibile aggiornare le spese: {ex.Message}";
-            caricato = true;
-        }
-        StateHasChanged();
-    });
-
     // La frase sotto il totale: il segno lo decide CalcoliSpese.PerMese, che confronta il totale di
     // questo mese con quello precedente (v. il commento su VariazionePercentuale). I casi sono tre,
     // non due: null è la percentuale che non esiste (il mese scorso era a zero, non si può dividere);
     // 0 è la percentuale che esiste e vale zero (i due mesi si equivalgono). Sono due "niente" diversi,
-    // la stessa distinzione che qui sopra fa speseNonLette fra "non c'è niente" e "non ho potuto
-    // leggere niente", e vanno detti diversi.
+    // la stessa distinzione che qui sopra fa datiNonLetti fra "non c'è niente" e "non ho potuto
+    // leggere niente" — ereditato da PaginaRegistro, non più un campo di questa pagina — e vanno
+    // detti diversi.
     private string TestoConfronto()
     {
         if (riepilogo.VariazionePercentuale is not { } variazione)
@@ -581,6 +499,4 @@ else
     // condizione economica è anche la più precisa, perché in uno spazio condiviso nasconde
     // comunque il rumore delle proprie righe.
     private string? Pagante(Expense s) => s.PaidBy != mioId ? membri.FirstOrDefault(m => m.UtenteId == s.PaidBy)?.Nome : null;
-
-    public void Dispose() => Spazi.Cambiato -= SuCambioSpazio;
 }

@@ -106,9 +106,7 @@
 
     /* --- accento secondario: VERDE ACIDO. Valori, voti, medie, conteggi --- */
     --secondario: #b6f36a;
-    --secondario-scuro: #8fd142;
     --secondario-tenue: rgba(182, 243, 106, .12);
-    --su-secondario: #16240a;
 
     /* --- stati --- */
     --errore: #ff9b9b;
@@ -689,6 +687,20 @@ a { color: var(--accento); }
     border-radius: var(--raggio-s);
 }
 
+/* Non è .btn.piccolo alzato: quello resta 2.2rem (~35px, sotto i 48px di
+   --tocco) di proposito, perché vive dentro righe di elenco dove un pulsante
+   alto quanto il dito cambierebbe l'altezza di ogni riga della lista.
+   .btn.compatto serve altrove — nella testata di schermata, dove si preme col
+   pollice come ovunque — quindi tiene l'altezza piena e stringe solo la
+   larghezza: meno padding orizzontale di .btn, corpo piccolo come .piccolo, e
+   niente a capo, perché "Nuova collezione" spezzato su due righe dentro una
+   riga larga quanto il titolo sarebbe illeggibile. */
+.btn.compatto {
+    padding: 0 var(--s3);
+    font-size: var(--t-sm);
+    white-space: nowrap;
+}
+
 .btn:disabled {
     opacity: .5;
     cursor: default;
@@ -815,6 +827,116 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
    menù a tendina resterebbe largo quanto il nome più corto. */
 .intestazione .selettore { flex: 1; min-width: 0; }
 
+/* ---------------------------------------------------- testata di schermata --- */
+
+.testata {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    /* Lo stesso margine che oggi separa un <h1> nudo (Note, Collezioni) da ciò
+       che segue: è il margin-bottom di default della regola h1 qui sopra
+       (var(--s2)), e va ripetuto qui perché il prossimo blocco lo azzera —
+       v. .testata h1 subito sotto, stesso problema di .intestazione h1. */
+    margin-bottom: var(--s2);
+}
+
+.testata h1 { margin: 0; min-width: 0; }
+
+/* Sotto ~416px due parole intere come «Collezioni» e «Nuova collezione» non
+   stanno affiancate al corpo pieno di --t-2xl senza spingersi a vicenda. Il
+   titolo ha min-width:0, quindi non sfora: cede — e «Collezioni» è una parola
+   sola, che va a capo spezzata a metà, trascinando con sé il cerchio «?» sotto
+   i 48px di area di tocco. Un corpo più piccolo qui basta a lasciare al
+   pulsante lo spazio che gli serve.
+
+   Misurato nel browser sul caso peggiore, 360px, «Collezioni» + «Nuova
+   collezione»: con questa regola avanzano 8,5px sui 328 di area utile; senza,
+   il titolo si spezza. Il margine è quindi reale ma sottile — un'etichetta di
+   azione più lunga di «Nuova collezione» va rimisurata prima di introdurla.
+
+   Come si collauda, perché il modo ovvio non funziona: scrollWidth resta
+   UGUALE a clientWidth anche nel caso rotto, perché il testo che deborda dal
+   proprio box in overflow:visible non risale all'antenato. Una misura di
+   overflow qui dà un falso "tutto a posto": si guarda. */
+@media (max-width: 26rem) {
+    .testata h1 { font-size: var(--t-xl); }
+}
+
+.testata-azione { margin-left: auto; }
+
+/* L'area di tocco resta piena (--tocco, come ogni altro controllo premuto col
+   pollice), ma un cerchio di 48px accanto a un titolo sarebbe visivamente
+   pesante: il pulsante è trasparente e senza bordo, il segno vero — un "?" in
+   un cerchio di circa 1.75rem — lo disegna lo pseudo-elemento. */
+.aiuto-apri {
+    display: grid;
+    place-items: center;
+    width: var(--tocco);
+    height: var(--tocco);
+    padding: 0;
+    border: none;
+    border-radius: var(--raggio-pieno);
+    background: transparent;
+    color: var(--testo-fioco);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color var(--transizione);
+}
+
+.aiuto-apri::before {
+    content: "?";
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid currentColor;
+    border-radius: var(--raggio-pieno);
+    font-size: var(--t-sm);
+    font-weight: 600;
+}
+
+/* aria-expanded lo scrive il browser da solo sull'elemento che invoca il
+   popover, non noi: qui si legge soltanto. È lo stesso blu di ogni altro posto
+   premibile — niente bagliore di fondo, la luce in questo progetto spetta solo
+   al centro dell'attenzione (v. l'intestazione del file), e un "?" accanto a
+   un titolo non lo è. */
+.aiuto-apri:is(:hover, [aria-expanded="true"]) { color: var(--accento); }
+
+/* Il browser mette [popover] in position:fixed, centrato e nudo — senza questa
+   vestizione sarebbe un rettangolo bianco di sistema. */
+.aiuto-pannello {
+    width: min(90vw, 32rem);
+    background: var(--superficie-alta);
+    color: var(--testo);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+    padding: var(--s5);
+    box-shadow: var(--ombra);
+}
+
+.aiuto-pannello p {
+    font-size: var(--t-base);
+    line-height: 1.5;
+    margin: 0 0 var(--s3);
+}
+
+.aiuto-pannello p:last-child { margin-bottom: 0; }
+
+.aiuto-pannello::backdrop {
+    /* Solo un velo: non serve altro a bloccare i tocchi, ci pensa già la
+       chiusura al tocco fuori che l'API Popover dà gratis. */
+    background: rgba(0, 0, 0, .6);
+}
+
+/* Dove [popover] non è supportato (iOS 16 e precedenti) l'attributo viene
+   ignorato e il pannello resta nel flusso, dov'è nel markup — v. il commento
+   in Shared/TestataPagina.razor. Lì gli serve uno stacco da ciò che segue; qui,
+   dove il browser lo centra da sé in position:fixed, lo stesso margine
+   romperebbe il centraggio. */
+@supports not selector(:popover-open) {
+    .aiuto-pannello { margin-bottom: var(--s5); }
+}
+
 /* ---------------------------------------------------------- pastiglie --- */
 
 .pastiglia {
@@ -931,7 +1053,11 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 /* ------------------------------------------------------------ elenchi --- */
 
-.elenco-spazi, .elenco-membri, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese, .editor-campi {
+/* Un registro è <ul class="registro elenco-X">, una riga è <a class="riga
+   riga-X">: la classe generica davanti porta ciò che hanno in comune, il nome
+   specifico resta come modificatore e serve solo alle differenze. */
+
+.registro, .elenco-membri, .editor-campi {
     list-style: none;
     padding: 0;
     margin: 0 0 var(--s5);
@@ -943,14 +1069,10 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
    uno sotto l'altro non sono dodici informazioni, sono rumore ripetuto dodici
    volte. Il contenitore porta il bordo, le righe portano un filo di separazione.
 
-   .elenco-membri e .editor-campi restano fuori dall'elenco dei selettori: il primo
+   .elenco-membri e .editor-campi restano fuori dalla classe .registro: il primo
    è un elenco di persone dentro una scheda, il secondo un editor le cui righe si
    aggiungono e si tolgono, e nessuno dei due si scorre per confrontare. */
-.elenco-spazi,
-.elenco-note,
-.elenco-collezioni,
-.elenco-elementi,
-.elenco-spese {
+.registro {
     background: var(--superficie);
     border: 1px solid var(--bordo);
     border-radius: var(--raggio-l);
@@ -962,8 +1084,9 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 /* Tutte le righe cliccabili degli elenchi hanno la stessa base: cambia solo
    cosa ci sta dentro. Tenerle separate le faceva divergere di mezzo pixel per
-   volta. */
-.riga-spazio, .riga-nota, .riga-collezione, .riga-elemento, .riga-spesa {
+   volta. La classe .riga porta questa base, il nome specifico (.riga-nota,
+   .riga-spazio...) porta solo le differenze. */
+.riga {
     display: flex;
     align-items: center;
     gap: var(--s4);
@@ -984,18 +1107,14 @@ label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 /* L'ultimo filo va tolto: cadrebbe sopra il bordo del contenitore e si vedrebbe
    una doppia linea in fondo all'elenco. */
-li:last-child > .riga-spazio,
-li:last-child > .riga-nota,
-li:last-child > .riga-collezione,
-li:last-child > .riga-elemento,
-li:last-child > .riga-spesa { border-bottom: none; }
+li:last-child > .riga { border-bottom: none; }
 
 /* La riga puntata si accende e si fa marcare a sinistra. Il filo verticale
    sostituisce la freccia che stava in fondo a ogni riga: dice la stessa cosa —
    qui si entra — ma solo sulla riga che interessa adesso, invece di ripetersi
    identico su tutte. inset e non un bordo vero: un bordo sposterebbe il contenuto
    di tre pixel al passaggio del mouse. */
-.riga-spazio:hover, .riga-nota:hover, .riga-collezione:hover, .riga-elemento:hover, .riga-spesa:hover {
+.riga:hover {
     background: var(--superficie-alta);
     /* Il filo, e la luce che ne esce. Il secondo inset è sfocato di 30px e rientrato di
        altrettanti: resta un velo blu solo nel primo centimetro della riga, che è dove il
@@ -1008,7 +1127,7 @@ li:last-child > .riga-spesa { border-bottom: none; }
    e deve farlo con qualcosa di visibile sotto un dito che copre metà riga — lo
    sfondo, non un dettaglio di tre pixel. Niente scale: dentro un contenitore con
    overflow nascosto una riga che si rimpicciolisce mostra il fondo agli angoli. */
-.riga-spazio:active, .riga-nota:active, .riga-collezione:active, .riga-elemento:active, .riga-spesa:active {
+.riga:active {
     background: var(--bordo);
 }
 
@@ -1055,22 +1174,23 @@ li:last-child > .riga-spesa { border-bottom: none; }
    che a quello di partenza, e scatterebbe indietro nel momento in cui l'animazione
    parte davvero. 'both' applica il fotogramma 'from' anche durante l'attesa.
 
-   :is() per non ripetere quattro selettori sei volte; la specificità resta quella
-   di una classe, quindi tutto ciò che sta qui sotto continua a sovrascriverla. */
+   La classe .registro rende superflua l'enumerazione dei cinque nomi; la
+   specificità resta quella di una classe, quindi tutto ciò che sta qui sotto
+   continua a sovrascriverla. */
 @keyframes riga-entra {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: none; }
 }
 
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li {
+.registro > li {
     animation: riga-entra 380ms cubic-bezier(.2, .7, .3, 1) both;
 }
 
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(2) { animation-delay: 45ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(3) { animation-delay: 90ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(4) { animation-delay: 135ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(5) { animation-delay: 180ms; }
-:is(.elenco-spazi, .elenco-note, .elenco-collezioni, .elenco-elementi, .elenco-spese) > li:nth-child(n+6) { animation-delay: 220ms; }
+.registro > li:nth-child(2) { animation-delay: 45ms; }
+.registro > li:nth-child(3) { animation-delay: 90ms; }
+.registro > li:nth-child(4) { animation-delay: 135ms; }
+.registro > li:nth-child(5) { animation-delay: 180ms; }
+.registro > li:nth-child(n+6) { animation-delay: 220ms; }
 
 /* Il lampo che sfuma sulla riga appena salvata, per far vedere dove è finito ciò
    che si è appena scritto in un elenco che magari ha già altre righe sopra e
