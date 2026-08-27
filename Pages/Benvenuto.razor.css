@@ -567,6 +567,43 @@ footer.piede {
     color: var(--testo);
 }
 
+/* La scena del grafo: alta tre schermate, con occhiello, titolo e canvas incollati dentro
+   mentre la si attraversa. È lì che il grafo si compone, un pezzo per volta.
+
+   GRIGLIA e non flex sul pinnato, ed è la stessa meccanica della regola 'section' più in alto:
+   colonna singola, figli larghi la colonna, e il centraggio orizzontale continua a venire da
+   'text-align: center' qui sopra. Con 'display: flex; flex-direction: column' l'occhiello — che
+   è inline-flex — verrebbe blockificato come flex item, e il suo contenuto smetterebbe di stare
+   al centro. 'align-content: center' centra verticalmente il gruppo di righe quando c'è altezza
+   in eccesso, e non fa nulla quando non ce n'è.
+
+   Nessun overflow, transform, filter o contain qui né sugli antenati: ognuna di quelle proprietà
+   disattiva o riancora il 'position: sticky' del pinnato. */
+.grafo-pinnato {
+    display: grid;
+    align-content: center;
+}
+
+/* L'altezza alta è condizionata a .scena-viva, che il JavaScript del grafo aggiunge solo quando
+   il disegno è partito davvero. È lo stesso principio scritto in testa al blocco @supports più
+   sotto: lo stato speciale non va mai nella regola base, altrimenti chi non può eseguirlo si
+   ritrova con una pagina rotta. Senza la classe la sezione resta alta quanto il suo contenuto,
+   cioè esattamente com'era prima; con la classe scritta nella regola base, chi non carica il
+   modulo si troverebbe tre schermate di nero al posto di un canvas.
+
+   svh e non vh né dvh: su un telefono la barra dell'indirizzo che si ritrae cambia vh e dvh a
+   metà scorrimento, quindi l'altezza del pin cambierebbe mentre il progresso la sta misurando e
+   la composizione salterebbe. svh è il viewport più piccolo, stabile per tutta la corsa. */
+.grafo-scena.scena-viva {
+    height: 280svh;
+}
+
+.grafo-scena.scena-viva .grafo-pinnato {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+}
+
 /* La misura del canvas NON sta qui ma in Shared/GrafoSpazio.razor.css: il <canvas> è scritto
    dentro quel componente, quindi porta il suo attributo di scope e non questo — una regola
    scritta qui non lo raggiungerebbe mai senza ::deep. E comunque è giusto che stia là: quanto

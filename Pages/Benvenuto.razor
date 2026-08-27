@@ -120,11 +120,24 @@
 @* Il grafo segue subito la sezione degli spazi perché illustra proprio quella: uno spazio non è
    una cartella, è chi ci sta dentro più quello che ci mettete, legati dai voti. È l'unica cosa
    della vetrina che si può toccare prima di entrare — e il gesto centrale di Eton, dare un voto,
-   è divertente di suo: farlo intravedere vale più di un paragrafo che lo descrive. *@
+   è divertente di suo: farlo intravedere vale più di un paragrafo che lo descrive.
+
+   La sezione è alta tre schermate e il blocco .grafo-pinnato ci resta incollato: mentre si
+   attraversa, il grafo si compone un pezzo per volta invece di arrivare già fatto. Occhiello e
+   titolo stanno DENTRO il pinnato perché devono accompagnare la composizione — due schermate di
+   grafo senza il titolo che dice cosa si sta guardando sono un'illustrazione senza didascalia.
+   Il suggerimento invece sta FUORI di proposito: la sua animazione (Benvenuto.razor.css, blocco
+   @@supports) usa animation-timeline: view(), e una view-timeline dichiarata su un elemento
+   sticky ha semantica incerta fra browser. Fuori dal pin quella regola resta identica a oggi, e
+   la riga compare quando la scena si sgancia e il grafo, ormai composto, scorre via. *@
 <section class="grafo-sezione">
-    <p class="etichetta-piccola occhiello">Uno spazio, visto da dentro</p>
-    <h2>Chi c'è, cosa avete provato, chi ha votato cosa.</h2>
-    <GrafoSpazio Persone="@Membri" Elementi="@Votate" />
+    <div class="grafo-scena">
+        <div class="grafo-pinnato">
+            <p class="etichetta-piccola occhiello">Uno spazio, visto da dentro</p>
+            <h2>Chi c'è, cosa avete provato, chi ha votato cosa.</h2>
+            <GrafoSpazio Persone="@Membri" Elementi="@Votate" />
+        </div>
+    </div>
     <p class="testo-tenue suggerimento">Passaci sopra il mouse, o toccalo.</p>
 </section>
 

@@ -51,6 +51,11 @@ export function avvia(tela, dati) {
         polvere: [],
         visibile: true,
         animazione: 0,
+        // Quanto il grafo è composto (progresso) e quanto dovrebbe esserlo
+        // (bersaglio): il secondo lo scrive lo scorrimento, il primo lo insegue
+        // smorzato nel ciclo, con lo stesso idioma del calore dei nodi.
+        progresso: 0,
+        bersaglio: 0,
     };
 
     // --- dimensionamento ------------------------------------------------------
@@ -77,6 +82,10 @@ export function avvia(tela, dati) {
             r: .4 + Math.random() * .9,
             o: .05 + Math.random() * .14,
         }));
+
+        // Un cambio di misura della finestra cambia la corsa del pin: rimisurarla
+        // qui evita un secondo ascoltatore che direbbe la stessa cosa.
+        stato.bersaglio = misuraProgresso();
     }
 
     // Solo ridimensiona(): il ridisegno immediato che stava qui serviva a chi non
@@ -117,6 +126,35 @@ export function avvia(tela, dati) {
     tela.addEventListener("pointerleave", esci);
     tela.addEventListener("pointerdown", tocca);
 
+    // --- il progresso della scena ---------------------------------------------
+
+    // Il canvas risale al proprio contenitore invece di farselo passare: così il
+    // componente non cambia contratto e il grafo resta riusabile dentro
+    // l'applicazione, dove nessuna scena esiste, il progresso vale 1 e il disegno
+    // è quello di sempre — già composto.
+    const scena = tela.closest(".grafo-scena");
+    const pinnato = tela.closest(".grafo-pinnato");
+
+    /** Quanta parte della scena è stata attraversata, da 0 a 1. */
+    function misuraProgresso() {
+        if (!scena || !pinnato) return 1;
+        // La corsa del pin è quanto la scena è più alta del blocco incollato, non
+        // quanto è alta la finestra: i due valori divergono — il pinnato è 100svh e
+        // il viewport reale può essere più alto — e misurare gli elementi veri
+        // toglie l'ipotesi.
+        const corsa = scena.clientHeight - pinnato.clientHeight;
+        if (corsa <= 0) return 1;
+        return clamp01(-scena.getBoundingClientRect().top / corsa);
+    }
+
+    // Un ascoltatore e non una misura dentro il ciclo: getBoundingClientRect() forza
+    // il calcolo del layout, e chiamarlo a ogni fotogramma lo farebbe anche nei
+    // secondi in cui nessuno scorre. Qui si misura solo quando c'è qualcosa da
+    // misurare, e il ciclo si limita a inseguire un numero già pronto.
+    function scorri() { stato.bersaglio = misuraProgresso(); }
+
+    if (scena) window.addEventListener("scroll", scorri, { passive: true });
+
     // --- disegno --------------------------------------------------------------
 
     /**
@@ -147,6 +185,24 @@ export function avvia(tela, dati) {
         // voti in transito per un istante dopo un'interazione, e poi tornare calmi.
         stato.energia *= .96;
         stato.flusso += dt * (1 + stato.energia * 2.2);
+
+        // Il progresso insegue il bersaglio invece di saltarci sopra: lo scorrimento
+        // di una rotella arriva a scatti, e senza smorzamento la composizione
+        // procederebbe a scatti con lui.
+        stato.progresso += (stato.bersaglio - stato.progresso) * .1;
+
+        // I cinque tempi della composizione, nell'ordine in cui si legge il modello:
+        // prima lo spazio, poi le persone che ne escono, poi le cose che ci mettono,
+        // poi gli archi che le legano, infine i voti che ci passano. Calcolati una
+        // volta per fotogramma e poi solo moltiplicati, punto per punto, più sotto.
+        // Le fasce si SOVRAPPONGONO di proposito — un tempo comincia mentre il
+        // precedente finisce: a testimone secco si leggerebbero come cinque
+        // animazioni separate invece che come una cosa che si compone.
+        const vSpazio  = fascia(stato.progresso, 0,   .10);
+        const vPersone = fascia(stato.progresso, .08, .32);
+        const vCose    = fascia(stato.progresso, .28, .52);
+        const vArchi   = fascia(stato.progresso, .48, .74);
+        const vVoti    = fascia(stato.progresso, .70, .92);
 
         const w = stato.larghezza, h = stato.altezza;
         const cx = w / 2, cy = h / 2;
@@ -206,8 +262,8 @@ export function avvia(tela, dati) {
             // Il respiro è sfasato per nodo (a + i): tutti insieme sembrerebbero un
             // battito cardiaco, sfalsati sembrano cose vive ciascuna per conto suo.
             const respiro = 1 + Math.sin(t * .5 + el.i * 1.3) * .022;
-            el.x = cx + Math.cos(a) * raggioX * respiro;
-            el.y = cy + Math.sin(a) * raggioY * respiro;
+            el.x = cx + Math.cos(a) * raggioX * respiro * vCose;
+            el.y = cy + Math.sin(a) * raggioY * respiro * vCose;
 
             // Il nodo si accende avvicinandosi, e si spegne piano: l'inseguimento
             // smorzato (il moltiplicatore .1) è la differenza fra un interruttore e
@@ -217,10 +273,13 @@ export function avvia(tela, dati) {
             el.caldo += ((vicino ? 1 : 0) - el.caldo) * .1;
         }
 
+        // Le persone escono dal nodo centrale, e le cose dallo stesso punto poco
+        // dopo: è la lettura del modello, non un effetto. Lo spazio contiene le
+        // persone e le cose che ci mettono, quindi è da lì che nascono.
         for (const p of persone) {
             const a = -Math.PI / 2 + (p.i + .5) / persone.length * Math.PI * 2;
-            p.x = cx + Math.cos(a) * internoX;
-            p.y = cy + Math.sin(a) * internoY;
+            p.x = cx + Math.cos(a) * internoX * vPersone;
+            p.y = cy + Math.sin(a) * internoY * vPersone;
         }
 
         // --- archi: chi ha votato cosa ---
@@ -238,7 +297,7 @@ export function avvia(tela, dati) {
         });
 
         function disegnaArco(el, p, seme, peso) {
-            const acceso = (.20 + el.caldo * .5) * peso;
+            const acceso = (.20 + el.caldo * .5) * peso * vArchi;
 
             // Curva e non retta: il punto di controllo sta di lato e oscilla piano,
             // così l'arco respira invece di stare teso.
@@ -271,7 +330,7 @@ export function avvia(tela, dati) {
             for (let k = 0; k < quanti; k++) {
                 const u = (stato.flusso * (.10 + (seme % 3) * .015) + k / quanti + seme * .17) % 1;
                 const q = puntoSuCurva(u, p, { x: kx, y: ky }, el);
-                const intensita = (1 - Math.abs(u - .5) * 1.05) * (.6 + el.caldo * .4 + stato.energia * .3);
+                const intensita = (1 - Math.abs(u - .5) * 1.05) * (.6 + el.caldo * .4 + stato.energia * .3) * vVoti;
                 alone(q.x, q.y, 7, verde, Math.max(0, intensita) * .3);
                 ctx.beginPath();
                 ctx.fillStyle = rgba(verde, Math.max(0, intensita) * .9);
@@ -284,7 +343,7 @@ export function avvia(tela, dati) {
         // è ciò che contiene le persone. Senza questi tratti il disegno non lo diceva.
         for (const p of persone) {
             ctx.beginPath();
-            ctx.strokeStyle = rgba(blu, .22);
+            ctx.strokeStyle = rgba(blu, .22 * vPersone);
             ctx.lineWidth = .9;
             ctx.moveTo(cx, cy);
             ctx.lineTo(p.x, p.y);
@@ -306,27 +365,27 @@ export function avvia(tela, dati) {
         // --- alone centrale ---
         // Il gradiente radiale è per forza circolare: prende il maggiore dei due raggi
         // interni, così l'alone copre l'orbita delle persone anche sull'asse lungo.
-        alone(cx, cy, Math.max(internoX, internoY) * 1.7, blu, .20);
+        alone(cx, cy, Math.max(internoX, internoY) * 1.7, blu, .20 * vSpazio);
 
         // --- gli aloni dei nodi, finché il blending è ancora additivo ---
         // Prima gli aloni di TUTTI i nodi, poi (fuori dall'additivo) tutti i dischi: se
         // si alternassero, l'alone di un nodo si sommerebbe sopra il disco del vicino
         // schiarendolo, e i nodi al centro risulterebbero più chiari di quelli ai bordi.
-        alone(cx, cy, 34, blu, .34);
-        for (const p of persone) alone(p.x, p.y, 22, blu, .30);
-        for (const el of elementi) alone(el.x, el.y, 18 + el.caldo * 14, verde, .22 + el.caldo * .3);
+        alone(cx, cy, 34, blu, .34 * vSpazio);
+        for (const p of persone) alone(p.x, p.y, 22, blu, .30 * vPersone);
+        for (const el of elementi) alone(el.x, el.y, 18 + el.caldo * 14, verde, (.22 + el.caldo * .3) * vCose);
 
         ctx.globalCompositeOperation = "source-over";
 
         // --- le persone ---
         for (const p of persone) {
             ctx.beginPath();
-            ctx.fillStyle = rgba(blu, .95);
+            ctx.fillStyle = rgba(blu, .95 * vPersone);
             ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.font = `600 11px ${stile.getPropertyValue("--mono") || "monospace"}`;
-            ctx.fillStyle = rgba(grigio, .82);
+            ctx.fillStyle = rgba(grigio, .82 * vPersone);
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(p.nome, p.x, p.y - 17);
@@ -335,7 +394,7 @@ export function avvia(tela, dati) {
         // --- le cose votate ---
         for (const el of elementi) {
             ctx.beginPath();
-            ctx.fillStyle = rgba(verde, .7 + el.caldo * .3);
+            ctx.fillStyle = rgba(verde, (.7 + el.caldo * .3) * vCose);
             ctx.arc(el.x, el.y, 5 + el.caldo * 2.5, 0, Math.PI * 2);
             ctx.fill();
 
@@ -345,24 +404,24 @@ export function avvia(tela, dati) {
             // Il nome in Inter, il voto in mono: è lo stesso discrimine di tutta
             // l'applicazione — la prosa si legge, i dati si confrontano.
             ctx.font = `500 12px ${stile.getPropertyValue("--prosa") || "sans-serif"}`;
-            ctx.fillStyle = rgba(grigio, .62 + el.caldo * .38);
+            ctx.fillStyle = rgba(grigio, (.62 + el.caldo * .38) * vCose);
             ctx.fillText(el.nome, el.x, el.y + 19);
 
             ctx.font = `600 12px ${stile.getPropertyValue("--mono") || "monospace"}`;
-            ctx.fillStyle = rgba(verde, .62 + el.caldo * .38);
+            ctx.fillStyle = rgba(verde, (.62 + el.caldo * .38) * vCose);
             ctx.fillText(el.voto, el.x, el.y - 16);
         }
 
         // --- il nodo dello spazio ---
         const pulsa = 1 + Math.sin(t * 1.1) * .12;
         ctx.beginPath();
-        ctx.fillStyle = rgba(blu, 1);
+        ctx.fillStyle = rgba(blu, 1 * vSpazio);
         ctx.arc(cx, cy, 9 * pulsa, 0, Math.PI * 2);
         ctx.fill();
         // L'anello attorno: distingue lo spazio dalle persone senza doverlo scrivere.
         // Un cerchio più grande e basta sarebbe stato «una persona importante».
         ctx.beginPath();
-        ctx.strokeStyle = rgba(blu, .35);
+        ctx.strokeStyle = rgba(blu, .35 * vSpazio);
         ctx.lineWidth = 1;
         ctx.arc(cx, cy, 16 * pulsa, 0, Math.PI * 2);
         ctx.stroke();
@@ -376,6 +435,25 @@ export function avvia(tela, dati) {
         stato.animazione = requestAnimationFrame(ciclo);
     }
 
+    // L'unico punto in cui questo modulo tocca il DOM fuori dal canvas: il CSS tiene
+    // la sezione alta tre schermate solo su questa classe, quindi se il modulo non
+    // si carica — file mancante, JavaScript spento, un browser che non conosce
+    // qualcosa — la vetrina resta quella di prima invece di guadagnare tre
+    // schermate di nero. È la stessa scelta del try/catch in Shared/GrafoSpazio.razor:
+    // un'illustrazione non deve poter rovinare la pagina che la contiene. A questo
+    // punto tutto ciò che poteva fallire — getContext, i due observer, gli
+    // ascoltatori — è già passato; resta deliberato che venga PRIMA delle misure
+    // qui sotto, e non più dopo: una geometria si misura dopo averla stabilita, non
+    // prima.
+    scena?.classList.add("scena-viva");
+
+    // Tutti e due, e non solo il bersaglio: chi ricarica la pagina a metà scena deve
+    // trovare il grafo già composto fin dove è arrivato, non vederlo ricomporsi da
+    // zero sotto gli occhi mentre sta fermo. Ed è questa riga a dipendere dall'ordine
+    // sopra: leggere clientHeight subito dopo aver mutato classList restituisce la
+    // geometria nuova, perché la lettura forza il ricalcolo del layout.
+    stato.progresso = stato.bersaglio = misuraProgresso();
+
     ridimensiona();
     stato.animazione = requestAnimationFrame(ciclo);
 
@@ -387,6 +465,7 @@ export function avvia(tela, dati) {
             tela.removeEventListener("pointermove", muovi);
             tela.removeEventListener("pointerleave", esci);
             tela.removeEventListener("pointerdown", tocca);
+            window.removeEventListener("scroll", scorri);
         }
     };
 }
@@ -399,6 +478,22 @@ function puntoSuCurva(u, a, c, b) {
         x: v * v * a.x + 2 * v * u * c.x + u * u * b.x,
         y: v * v * a.y + 2 * v * u * c.y + u * u * b.y,
     };
+}
+
+/** Ritaglia un numero fra 0 e 1: lo stesso confine ricorreva scritto per esteso. */
+function clamp01(v) {
+    return Math.min(1, Math.max(0, v));
+}
+
+/**
+ * Ritaglia il progresso della scena su un intervallo, addolcendone partenza e arrivo.
+ * Fuori dall'intervallo vale 0 o 1; dentro sale con uno smoothstep, che è ciò che
+ * toglie lo scatto ai due estremi — una rampa lineare si vede partire e si vede
+ * fermare, e cinque rampe lineari in fila si leggono come cinque animazioni.
+ */
+function fascia(p, da, a) {
+    const u = clamp01((p - da) / (a - da));
+    return u * u * (3 - 2 * u);
 }
 
 function rgba([r, g, b], a) {
