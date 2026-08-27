@@ -7,6 +7,12 @@ ha bisogno di leggere la conversazione da cui nasce.
 
 ## Dove siamo
 
+> **Aggiornato al 27 agosto 2026, a valle della ricognizione.** `main` è pulito e
+> **allineato al remoto fino a `3cb5924`**, la scena del grafo, pushata dall'utente. Build
+> 0 errori / 0 avvisi. Server fermo, entrambi i PID, porta 5000 libera. Entrambi i lavori
+> qui sotto sono chiusi; quello che resta aperto è **decidere cosa correggere** fra i 15
+> rilievi di `handoff/01-ricognizione-ui/rilievi.md`, a partire dal rilievo 0.
+
 `main` è **pulito e allineato al remoto**, fino a `9e284cc`. Build 0 errori / 0 avvisi, 258
 test su 258. Il server di sviluppo è **fermo** e la porta 5000 è libera.
 
@@ -25,7 +31,21 @@ Chiuso in questa sessione, già sul remoto:
 
 ---
 
-## Lavoro 1 — La scena del grafo
+## Lavoro 1 — La scena del grafo · **FATTO** il 26 agosto 2026
+
+Commit `3cb5924`, sul remoto dal 27 agosto. Build 0 errori / 0 avvisi, 258 test su 258.
+Collaudo nel browser verde su sette scenari, zero difetti: sticky attivo, i cinque tempi
+della composizione nell'ordine giusto, 181 fps dentro la scena contro 181 su una sezione
+ferma. **Non va ricollaudato.**
+
+Tre cose restano *da tarare*, e l'utente ha deciso di **non** toccarle: la dissolvenza di
+occhiello e titolo si esaurisce ~250px prima che la scena si agganci (coerente col resto
+della pagina, non è un difetto); l'ultimo 8% della corsa è fermo (~95px su 1183); l'onda al
+clic è sottile negli screenshot statici.
+
+Quel che segue è il mandato originale, tenuto perché documenta **perché** la scena è fatta
+così — le tre ragioni per cui il canvas non è pinnato sull'intera pagina restano vere e
+vincolanti per chiunque ci rimetta mano.
 
 **Deciso dall'utente**, con la posizione di `tech-advisor` già sul tavolo.
 
@@ -101,7 +121,26 @@ non a tavolino: `tech-advisor` dà confidenza media su quel punto e alta su tutt
 
 ---
 
-## Lavoro 2 — Ricognizione UI/UX dell'app
+## Lavoro 2 — Ricognizione UI/UX dell'app · **FATTA** il 27 agosto 2026
+
+**Il prodotto è in `handoff/01-ricognizione-ui/rilievi.md`**: 15 rilievi ordinati per
+gravità, più un elenco di ciò che funziona e va protetto. Nessuna correzione applicata:
+le decisioni spettano all'utente, ed è il senso di aver guardato prima.
+
+**Il reperto che cambia le priorità** è il rilievo 0, e non era in programma:
+**creare una collezione è impossibile in produzione dal 12 agosto 2026**.
+`20260812230000_voto_al_buio.sql` aggiunge la colonna `blind` e la riconcede solo in
+UPDATE; il grant di INSERT di `20260812120000_collections.sql:221` non la contiene; e
+`Models/Collection.cs:40` la invia comunque, perché è l'unica colonna non concessa priva di
+`ignoreOnInsert: true`. Postgres rifiuta l'intera istruzione con
+`permission denied for table collections`. È anche il motivo per cui lo spazio dell'utente
+ha 0 collezioni — non una coincidenza dei dati, come si era creduto.
+
+Restano perciò **non viste** `/collections/{id}`, `/collections/{id}/edit` e
+`/collections/{id}/items/{id}`: la parte di voti e recensioni non è raggiungibile finché il
+rilievo 0 non è corretto. Vanno guardate in un secondo giro, che a quel punto sarà breve.
+
+Il mandato originale, per memoria:
 
 **Deciso dall'utente**: prima si guarda, poi si propone. Nessun miglioramento è stato
 deciso, e indovinarli senza aver guardato sarebbe peggio che chiedere.
