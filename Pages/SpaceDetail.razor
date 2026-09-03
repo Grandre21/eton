@@ -203,7 +203,16 @@ else
         {
             if (mia != generazione) return;
             spazio = null;
-            errore = $"Non è stato possibile caricare lo spazio: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo aprire uno spazio. In console ci va invece per intero, con lo stesso
+            // marcatore delle diagnosi già presenti qui sotto, così non si perde.
+            // Le due cause nominate sono quelle che questo catch non sa distinguere: la prima
+            // chiamata del try è AuthState.GetUserIdAsync(). "Non ne fai più parte" NON è fra
+            // queste — quel caso non lancia, rende zero righe, e ha già il suo ramo a schermo.
+            Console.Error.WriteLine($"[Spazi] Caricamento dello spazio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile caricare lo spazio: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
         }
 
         caricato = true;
@@ -216,7 +225,14 @@ else
         {
             if (!await Repository.RinominaAsync(Id, nome))
             {
-                errore = "Il database ha rifiutato la modifica: solo il proprietario può rinominare.";
+                // "Solo il proprietario può rinominare" lo leggerebbe soltanto il proprietario: il
+                // modulo di rinomina sta dentro @if (sonoProprietario && !spazio.IsPersonal). Le
+                // cause davvero raggiungibili sono altre due — lo spazio non c'è più, o non se ne è
+                // più proprietari da quando la pagina è stata aperta — e sono quelle che si dicono.
+                // Non si promette che il nome digitato sia salvo, perché l'azione indicata è
+                // ricaricare, e ricaricando quel nome si perde: dirlo è meno peggio che prometterlo
+                // e poi buttarlo. "Ricarica" e non "riprova": riprovare un rifiuto lo ripete.
+                errore = "Non è stato possibile rinominare lo spazio: può darsi che non ci sia più, eliminato da un altro dispositivo, oppure che il tuo accesso sia cambiato. Ricarica la pagina per vedere com'è adesso: il nome che hai scritto qui non è stato salvato.";
                 return;
             }
 
@@ -233,7 +249,15 @@ else
 
             avviso = "Nome aggiornato.";
         }
-        catch (Exception ex) { errore = $"Non è stato possibile rinominare: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            // Qui la promessa "il nome è ancora quello di prima" è LECITA, a differenza di Rimuovi,
+            // Esci ed Elimina qui sotto: SpaceRepository.RinominaAsync fa UNA sola chiamata di rete
+            // (una UPDATE), e la rilettura che potrebbe fallire dopo ha già il suo try annidato.
+            // Se si arriva qui, la rinomina non è avvenuta.
+            Console.Error.WriteLine($"[Spazi] Rinomina non riuscita: {ex.Message}");
+            errore = "Non è stato possibile rinominare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Il nome che hai scritto è ancora qui e lo spazio si chiama ancora come prima: riprova fra un momento.";
+        }
         finally { occupato = false; }
     }
 
@@ -244,7 +268,13 @@ else
         {
             if (!await Repository.EsciAsync(Id, m.UtenteId))
             {
-                errore = "Il database ha rifiutato la rimozione.";
+                // Delle tre condizioni di space_members_delete due sono già escluse dal markup —
+                // il pulsante "Rimuovi" vive dentro @if (sonoProprietario && !m.EProprietario) —
+                // quindi ciò che resta raggiungibile è che il proprio ruolo nello spazio sia
+                // cambiato da quando la pagina è stata aperta. Il membro che se ne fosse andato da
+                // solo NON finisce qui: la DELETE tocca zero righe ma la rilettura ne trova zero,
+                // e il metodo rende true.
+                errore = $"Non è stato possibile togliere {m.Nome} dallo spazio: può rimuovere un membro solo chi possiede lo spazio, e da quando hai aperto la pagina il tuo accesso può essere cambiato. Ricarica la pagina per vedere com'è adesso.";
                 return;
             }
 
@@ -259,7 +289,15 @@ else
 
             avviso = $"{m.Nome} non fa più parte dello spazio.";
         }
-        catch (Exception ex) { errore = $"Non è stato possibile rimuovere: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            // Nessuna promessa sullo stato: SpaceRepository.EsciAsync fa DUE chiamate di rete —
+            // la DELETE e la rilettura di conferma — quindi l'eccezione può scoppiare DOPO una
+            // rimozione riuscita. Dire "è ancora nello spazio" sarebbe falso in un caso
+            // raggiungibile, e l'unica azione onesta è guardare com'è adesso.
+            Console.Error.WriteLine($"[Spazi] Rimozione di un membro non riuscita: {ex.Message}");
+            errore = $"Non è stato possibile togliere {m.Nome} dallo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere chi ne fa parte adesso.";
+        }
         finally { occupato = false; }
     }
 
@@ -270,7 +308,12 @@ else
         {
             if (!await Repository.EsciAsync(Id, utenteCorrente))
             {
-                errore = "Il database ha rifiutato l'uscita.";
+                // La condizione della policy che qui può ancora mordere è quella sul PROPRIETARIO:
+                // la sua riga non si rimuove mai, nemmeno da lui stesso, altrimenti resterebbe
+                // proprietario di uno spazio che non vedrebbe più. La via d'uscita è eliminarlo, e
+                // il messaggio la indica invece di lasciarla indovinare. Chi fosse già uscito NON
+                // finisce qui: senza righe da rimuovere il metodo rende true.
+                errore = "Non è stato possibile uscire dallo spazio: chi lo possiede non può uscirne — per andarsene deve eliminarlo — e da quando hai aperto la pagina le cose possono essere cambiate. Ricarica la pagina per vedere com'è adesso.";
                 return;
             }
 
@@ -287,7 +330,13 @@ else
 
             Navigation.NavigateTo("spaces");
         }
-        catch (Exception ex) { errore = $"Non è stato possibile uscire: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            // Come in Rimuovi: EsciAsync fa DUE chiamate di rete, quindi l'eccezione può scoppiare
+            // dopo un'uscita riuscita e nessuna promessa sullo stato sarebbe onesta.
+            Console.Error.WriteLine($"[Spazi] Uscita dallo spazio non riuscita: {ex.Message}");
+            errore = "Non è stato possibile uscire dallo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se ne fai ancora parte.";
+        }
         finally { occupato = false; }
     }
 
@@ -298,7 +347,12 @@ else
         {
             if (!await Repository.EliminaAsync(Id))
             {
-                errore = "Il database ha rifiutato l'eliminazione.";
+                // Due cause vere, entrambe da SpaceRepository.EliminaAsync: la lettura preventiva
+                // non ha trovato lo spazio (già eliminato, o non più visibile), oppure la DELETE è
+                // stata rifiutata perché spaces_delete chiede di esserne il proprietario. Lo spazio
+                // personale, terza condizione della policy, è escluso dal markup: il riquadro
+                // "Elimina lo spazio" vive dentro @if (!spazio.IsPersonal).
+                errore = "Non è stato possibile eliminare lo spazio: può eliminarlo solo chi lo possiede, e può anche darsi che non ci sia già più, eliminato da un altro dispositivo. Ricarica la pagina per vedere com'è adesso.";
                 return;
             }
 
@@ -313,7 +367,14 @@ else
 
             Navigation.NavigateTo("spaces");
         }
-        catch (Exception ex) { errore = $"Non è stato possibile eliminare: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            // Nessuna promessa "lo spazio è ancora al suo posto": SpaceRepository.EliminaAsync fa
+            // TRE chiamate di rete — lettura preventiva, DELETE, rilettura di conferma — quindi
+            // l'eccezione può scoppiare dopo una cancellazione riuscita.
+            Console.Error.WriteLine($"[Spazi] Eliminazione dello spazio non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare lo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se lo spazio c'è ancora.";
+        }
         finally { occupato = false; confermaRichiesta = false; }
     }
 

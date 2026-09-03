@@ -130,6 +130,19 @@ else
         <div class="avviso" role="status">@avviso</div>
     }
 
+    @* Perché il pulsante è spento, e solo quando non è già scritto altrove: 'occupato' lo dice il
+       pulsante stesso, che intanto legge «Salvo…»; '!PuoIntervenire' lo dice la riga .spiega in
+       cima alla pagina; '!ImportoValido' lo dicono i due .errore-campo dell'importo e della data;
+       il conflitto lo dice SchedaConflitto. Resta scoperto solo !Cambiata, che oggi non lascia
+       niente da leggere e si scopre per tentativi.
+       'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero — qui non c'è niente
+       di sbagliato da correggere, semplicemente non c'è ancora niente da salvare. Stessa forma di
+       Pages/CollectionEdit.razor. *@
+    @if (!occupato && PuoIntervenire && conflitto is null && ImportoValido && !Cambiata)
+    {
+        <p class="testo-tenue">Non c'è niente da salvare: non hai ancora cambiato niente.</p>
+    }
+
     <div class="azioni">
         @* Anche 'conflitto is null': con la scheda del conflitto aperta il pulsante resterebbe
            acceso, perché i campi sono davvero diversi da quelli di 'spesa'. Ripremerlo risalverebbe
@@ -254,11 +267,12 @@ else
             // duplicando esattamente la chiamata che l'invocazione corrente sta già facendo, per poi
             // essere scartata dalla guardia successiva: lavoro sprecato, esito comunque corretto.
             // Domani è la ragione vera: fra questi due await e la lettura non c'è oggi nessuna
-            // scrittura di stato, ma nelle pagine gemelle (NoteEdit.razor:175-181,
-            // CollectionEdit.razor:385-394, ItemEdit.razor:225) sì — è proprio qui che quella
-            // guardia le protegge. Chi in futuro aggiungesse una riga in questo punto, guardando le
-            // pagine gemelle per sapere cosa fare, si troverebbe qui senza la rete di protezione
-            // che là c'è: lavoro sprecato diventerebbe silenziosamente stato corrotto.
+            // scrittura di stato, ma nelle pagine gemelle sì — il ramo di creazione che azzera i
+            // campi del modulo in NoteEdit.razor e in CollectionEdit.razor, l'assegnazione di
+            // 'campi' subito dopo la lettura in ItemEdit.razor — è proprio qui che quella guardia le
+            // protegge. Chi in futuro aggiungesse una riga in questo punto, guardando le pagine
+            // gemelle per sapere cosa fare, si troverebbe qui senza la rete di protezione che là
+            // c'è: lavoro sprecato diventerebbe silenziosamente stato corrotto.
             if (mia != generazione) return;
 
             var letta = await Repository.LeggiAsync(Id);
@@ -281,7 +295,13 @@ else
         {
             if (mia != generazione) return;
             spesa = null;
-            errore = $"Non è stato possibile aprire la spesa: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo aprire una spesa. In console ci va invece per intero, così la diagnosi non
+            // si perde. Vale per tutti i catch qui sotto.
+            Console.Error.WriteLine($"[Spese] Apertura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire la spesa: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
         caricato = true;
@@ -299,7 +319,13 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile salvare: {ex.Message}";
+            // v. il commento nel catch di OnParametersSetAsync: il JSON in console, la frase
+            // all'utente. Qui in più conta dire che il lavoro non è perso, perché è la prima
+            // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
+            // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
+            // esattamente ciò che non è stato scritto.
+            Console.Error.WriteLine($"[Spese] Salvataggio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -383,7 +409,8 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile sovrascrivere: {ex.Message}";
+            Console.Error.WriteLine($"[Spese] Sovrascrittura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -401,11 +428,22 @@ else
                 Esci("expenses");
                 return;
             }
-            errore = "Non è stato possibile eliminare la spesa.";
+            // Rifiuto, non guasto: EliminaAsync ha reso false. Le parole della regola vengono da
+            // Services/Permessi.cs, la formulazione canonica, e non da una riformulazione: quella
+            // stessa frase compare su questa pagina quando !PuoIntervenire, e due modi di dire la
+            // stessa regola a due centimetri di distanza sembrano due regole. Non si riusa
+            // Spiegazione() testualmente perché apre affermando che la spesa l'ha segnata qualcun
+            // altro, e qui è una delle due ipotesi, non un fatto.
+            errore = "Non è stato possibile eliminare la spesa: può cancellarla solo chi l'ha pagata, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminata: ricarica la pagina per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile eliminare: {ex.Message}";
+            // Nessuna promessa "la spesa è ancora al suo posto", a differenza della frase gemella di
+            // Pages/CollectionEdit.razor: ExpenseRepository.EliminaAsync fa TRE chiamate di rete —
+            // lettura preventiva, DELETE, rilettura di conferma — quindi un'eccezione può scoppiare
+            // DOPO una cancellazione riuscita, e la promessa sarebbe falsa in un caso raggiungibile.
+            Console.Error.WriteLine($"[Spese] Eliminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se la spesa c'è ancora.";
         }
         finally
         {

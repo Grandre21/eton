@@ -61,6 +61,15 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
   giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
   `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **3 set 2026, sera** — **`RecensioniElemento.razor:465` accodato all'unità 13**, una riga sola.
+  Il mandato dell'unità 10 dichiarava quel messaggio — «La tua recensione non c'è più.» — fra i
+  «due già buoni da non toccare». **Era un errore mio**, e l'unità l'ha trovato perché il mandato
+  le chiedeva di verificare invece di fidarsi: le tre righe sopra azzerano `mia`, `mioVoto` e
+  `mioCommento`, quindi il voto e il commento appena digitati spariscono **nello stesso istante**
+  in cui compare il messaggio, che tace la sola cosa da sapere. L'unità ha obbedito al divieto
+  perché nominava la riga — mossa giusta — e ha lasciato la frase pronta. Il divieto è tolto.
+  **La lezione per i mandati futuri**: dichiarare qualcosa «già buono» senza averlo aperto è una
+  scorciatoia del capo che costa un giro. Meglio scrivere «verifica e decidi».
 - **3 set 2026, sera** — **Le unità NON committano: committa il capo.** L'unità 08 ha committato
   da sé, le unità 06, 07 e 12 no, e nessun mandato lo diceva. Il commit resta al capo perché è
   l'unico che vede il quadro e scrive nel registro del progetto. Il commit già fatto dalla 08
@@ -139,7 +148,7 @@ i numeri di cartella non si riusano.
 | 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | **FATTO** — commit `4327598`. Quarta e ultima gemella; ha trovato il difetto che diventa l'unità 12 |
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
 | 09 | Registri vuoti | `Pages/Notes.razor`, `Pages/Collections.razor` | — | **FATTO** — due righe di codice; ha trovato l'orfano `CollectionDetail.razor`. `ConfermaAzione` tolto dal perimetro: era lì per il rilievo 8, ora dell'unità 11 |
-| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
+| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
 | 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`** | 05, 08, 09, 10, 12 | PIANIFICATA — nata dal censimento del 3 set sera |

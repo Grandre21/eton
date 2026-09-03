@@ -107,12 +107,28 @@ else
         <div class="avviso" role="status">@avviso</div>
     }
 
+    @* Perché il pulsante è spento, e solo quando non è già scritto altrove: 'occupato' lo dice il
+       pulsante stesso, che intanto legge «Salvo…»; '!PuoIntervenire' lo dice la riga .spiega in
+       cima alla pagina; il conflitto lo dice SchedaConflitto. Resta scoperto solo !Cambiata, che
+       oggi non lascia niente da leggere e si scopre per tentativi.
+       'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero — su .../items/new il
+       modulo nasce vuoto per costruzione, e accoglierlo con una riga rossa darebbe la colpa di un
+       errore a chi non ha ancora fatto niente. Stessa forma di Pages/CollectionEdit.razor. *@
+    @if (!occupato && PuoIntervenire && conflitto is null && !Cambiata)
+    {
+        <p class="testo-tenue">
+            @(Nuovo
+                ? "Scrivi il nome dell'elemento per poterlo salvare."
+                : "Non c'è niente da salvare: non hai ancora cambiato niente.")
+        </p>
+    }
+
     <div class="azioni">
-        @* Anche 'conflitto is null', per lo stesso motivo di NoteEdit.razor:91-94: con la scheda del
-           conflitto aperta il pulsante resterebbe acceso, perché lo stato è davvero diverso da
-           quello di 'elemento'. Ripremerlo risalverebbe con la versione vecchia — stesso conflitto,
-           altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e Sovrascrivi,
-           che è l'unico modo di uscirne. *@
+        @* Anche 'conflitto is null', per lo stesso motivo del commento gemello in
+           Pages/NoteEdit.razor: con la scheda del conflitto aperta il pulsante resterebbe acceso,
+           perché lo stato è davvero diverso da quello di 'elemento'. Ripremerlo risalverebbe con la
+           versione vecchia — stesso conflitto, altro giro a vuoto — e scavalcherebbe in silenzio la
+           scelta fra Ricarica e Sovrascrivi, che è l'unico modo di uscirne. *@
         <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
@@ -251,12 +267,19 @@ else
         catch (Exception ex)
         {
             if (mia != generazione) return;
-            errore = $"Non è stato possibile aprire l'elemento: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo aprire un elemento. In console ci va invece per intero, così la diagnosi
+            // non si perde. Vale per tutti i catch qui sotto.
+            Console.Error.WriteLine($"[Elemento] Apertura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire l'elemento: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
 
             // NON si accende 'sparito': quello significa "il database ha risposto che non c'è", e
             // qui il database non ha risposto affatto. Si azzera invece tutto ciò che era a schermo,
-            // come fa NoteEdit.razor:213 — e non per simmetria, ma perché tenere i dati precedenti
-            // è attivamente pericoloso su questa pagina. Se il caricamento fallito è quello
+            // come fa l'azzeramento di 'nota' nel catch di OnParametersSetAsync di
+            // Pages/NoteEdit.razor — e non per simmetria, ma perché tenere i dati precedenti è
+            // attivamente pericoloso su questa pagina. Se il caricamento fallito è quello
             // dell'elemento B raggiunto da /items/A, 'elemento' resterebbe A mentre ItemId ormai
             // vale B: SalvaAsync riga 304 usa ItemId, non elemento.Id, quindi salvare scriverebbe i
             // dati di A dentro B. Il conflitto ottimistico non lo ferma, perché confronta versioni
@@ -337,7 +360,13 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile salvare: {ex.Message}";
+            // v. il commento nel catch di OnParametersSetAsync: il JSON in console, la frase
+            // all'utente. Qui in più conta dire che il lavoro non è perso, perché è la prima
+            // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
+            // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
+            // esattamente ciò che non è stato scritto.
+            Console.Error.WriteLine($"[Elemento] Salvataggio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -355,11 +384,11 @@ else
 
         var creato = await Repository.CreaAsync(Id, collezione!.SpaceId, autore, nome, immagine, CostruisciDati());
 
-        // replace: true per lo stesso motivo di NoteEdit.razor:260-263: .../items/new non è un
-        // posto in cui tornare col tasto Indietro — l'elemento ormai esiste, e ripresentare la
-        // schermata vuota ne farebbe creare uno secondo. Il cambio di rotta rilancia
-        // OnParametersSetAsync su questa stessa istanza, che rilegge l'elemento: solo da quel
-        // momento c'è una versione con cui fare concorrenza ottimistica.
+        // replace: true per lo stesso motivo spiegato nel commento gemello di Crea() in
+        // Pages/NoteEdit.razor: .../items/new non è un posto in cui tornare col tasto Indietro —
+        // l'elemento ormai esiste, e ripresentare la schermata vuota ne farebbe creare uno secondo.
+        // Il cambio di rotta rilancia OnParametersSetAsync su questa stessa istanza, che rilegge
+        // l'elemento: solo da quel momento c'è una versione con cui fare concorrenza ottimistica.
         // Esci e non NavigateTo: qui la guardia va disarmata, il salvataggio è riuscito (v. PaginaEditor.Esci).
         Esci($"collections/{Id}/items/{creato.Id}", replace: true);
     }
@@ -426,7 +455,8 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile sovrascrivere: {ex.Message}";
+            Console.Error.WriteLine($"[Elemento] Sovrascrittura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -445,11 +475,23 @@ else
                 Esci($"collections/{Id}");
                 return;
             }
-            errore = "Non è stato possibile eliminare l'elemento.";
+            // Rifiuto, non guasto: EliminaAsync ha reso false. Le parole della regola vengono da
+            // Services/Permessi.cs, la formulazione canonica, e non da una riformulazione: quella
+            // stessa frase compare su questa pagina quando !PuoIntervenire, e due modi di dire la
+            // stessa regola a due centimetri di distanza sembrano due regole. Non si riusa
+            // Spiegazione() testualmente perché apre affermando che l'elemento è di qualcun altro,
+            // e qui è una delle due ipotesi, non un fatto.
+            errore = "Non è stato possibile eliminare l'elemento: può cancellarlo solo chi l'ha aggiunto, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminato: ricarica la pagina per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile eliminare: {ex.Message}";
+            // Nessuna promessa "l'elemento è ancora al suo posto", a differenza della frase gemella
+            // di Pages/CollectionEdit.razor: CollectionItemRepository.EliminaAsync fa TRE chiamate
+            // di rete — lettura preventiva, DELETE, rilettura di conferma — quindi un'eccezione può
+            // scoppiare DOPO una cancellazione riuscita, e la promessa sarebbe falsa in un caso
+            // raggiungibile.
+            Console.Error.WriteLine($"[Elemento] Eliminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se l'elemento c'è ancora.";
         }
         finally
         {

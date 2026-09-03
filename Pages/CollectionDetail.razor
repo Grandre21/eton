@@ -48,13 +48,17 @@ else
 
     @if (elementi.Count == 0)
     {
-        @* Niente pulsante qui dentro: "Nuovo elemento" è già nella barra .azioni sopra, sempre
-           visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
-           schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
+        @* Il pulsante sta qui dentro oltre che nella barra .azioni sopra, e il doppione non è un
+           rischio: stessa etichetta e stessa destinazione, quindi si leggono come la stessa azione
+           in due posti. A registro vuoto l'occhio sta su questo blocco centrato — è lì che va messa
+           l'azione — mentre quello sopra è compatto e in fila con "Modifica collezione". Non è
+           ridondante nemmeno per gli stati: a registro pieno questo blocco non esiste, e resta solo
+           la barra. Stessa forma e stesso ragionamento di Pages/Collections.razor. *@
         <div class="vuoto">
             <span class="icona-vuoto"><Icona Nome="collezioni" /></span>
             <p>Ancora nessun elemento in questa collezione.</p>
             <p class="spiega">Un elemento è una cosa da giudicare: una birra, un film, un posto. Lo compili con i campi della collezione, e poi ognuno gli lascia il suo voto.</p>
+            <a class="btn primario" href="collections/@Id/items/new">Nuovo elemento</a>
         </div>
     }
     else
@@ -239,14 +243,21 @@ else
         catch (Exception ex)
         {
             if (mia != generazione) return;
-            errore = $"Non è stato possibile aprire la collezione: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo aprire una collezione. In console ci va per intero, con lo stesso
+            // marcatore delle due diagnosi già presenti più sotto.
+            Console.Error.WriteLine($"[Collezione] Apertura del dettaglio non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire la collezione: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
 
             // NON si accende 'sparita': quello significa "il database ha risposto che non c'è", e
             // qui il database non ha risposto affatto. Si azzera invece tutto ciò che era a schermo,
-            // come fa NoteEdit.razor:161: se il caricamento fallito è quello della collezione B
-            // raggiunta da /collections/A, tenere i dati precedenti mostrerebbe il nome e gli
-            // elementi di A sotto l'indirizzo di B, con i link delle righe che puntano a elementi
-            // di un'altra collezione. Meglio nessun dato che dati attribuiti alla cosa sbagliata.
+            // come fa l'azzeramento di 'nota' nel catch di OnParametersSetAsync di
+            // Pages/NoteEdit.razor: se il caricamento fallito è quello della collezione B raggiunta
+            // da /collections/A, tenere i dati precedenti mostrerebbe il nome e gli elementi di A
+            // sotto l'indirizzo di B, con i link delle righe che puntano a elementi di un'altra
+            // collezione. Meglio nessun dato che dati attribuiti alla cosa sbagliata.
             collezione = null;
             elementi = [];
             campi = [];
