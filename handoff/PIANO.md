@@ -171,6 +171,21 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   `tech-advisor` contro la doc .NET 10 e il sorgente di `NavigationLock`:
   `OnBeforeInternalNavigation` **copre anche il tasto Indietro** del browser;
   `ConfirmExternalNavigation` serve solo per chiusura scheda, ricarica e link esterni.
+- **4 set 2026** — **Le tre domande dell'unità 16, decise dal capo.** (a) **L'helper
+  `FraseRifiuto` non si fa ora.** Il codice di autenticazione è la superficie dove un errore
+  costa di più, i gate sono verdi e il collaudo deve provare **questa** forma: cambiarla adesso
+  significherebbe provare una forma che sto per riscrivere. **E il test che lo giustificava è
+  mal specificato**: «ogni valore dell'enum ha una frase» è **vacuo**, perché col ramo `_` ogni
+  valore ha sempre una frase per costruzione. La sola forma che asserisce qualcosa è «ogni
+  valore dichiarato mappa a una frase **distinta dalla generica**», che coglierebbe un quinto
+  valore aggiunto senza tradurlo. Chi riaprirà quel file lo faccia con quella specifica, non
+  con l'altra. (b) **L'URL non più ripulito** nel caso `?error_description=` senza `error`:
+  **nessuna correzione**, l'unità ha ragione. La query resta nella barra perché ce l'ha messa
+  l'attaccante nel link, e la vittima l'ha già letta cliccandolo; una barra degli indirizzi non
+  porta l'autorità del chrome del sito. Ripulirla richiederebbe di riconoscere quell'URL come
+  ritorno OAuth, cioè riaprire il ramo che l'unità chiude. (c) **La prova 4 — l'annullamento
+  vero su Google — non è eseguibile da un agente**: richiede un accesso Google interattivo. Non
+  va nel collaudo, va all'utente nel rapporto finale, con la ricetta già scritta nel resoconto.
 - **4 set 2026** — **L'ottava voce dell'unità 11 non si fa**, deciso dal capo con l'utente
   assente. Era la rinomina `.scelta-categoria` → `.scelta-pastiglie`: un nome di classe più
   onesto, che però tocca tre `.razor` fuori dal perimetro di chi possiede il foglio di stile
@@ -214,7 +229,7 @@ i numeri di cartella non si riusano.
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **FATTO** — commit `8a4a89f`. Eseguita fuori numero, subito dopo la 07. 273 test (267+6) |
 | 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
 | 15 | L'undicesimo punto | `Services/SupabaseService.cs` | 14 | **FATTO** — commit `84217ec`. **Il rilievo 3 è chiuso, con prova**: zero righe sul `grep` dei sink. Ha trovato il difetto che diventa l'unità 16 |
-| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 15 | **IN CORSO** — mandato `4bb9267`, lanciata il 4 set. Insieme chiuso, `Errore` diventa un `enum`. Unica unità del piano con tutti e quattro i revisori |
+| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 15 | **FATTO** — 287 test (273+14), 0 avvisi, gate riverificati dal capo. Ha chiuso il difetto **per mutazione deliberata**, non per dichiarazione: rimettere la riga originale non fa un test rosso, fa `CS0029` |
 | 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
 
 ### MAPPA RILIEVO → UNITÀ
@@ -242,7 +257,7 @@ partizione aggiorna anche questa tabella.*
 | 14 — selettore spazio e «Profilo» accavallati | 11 | **chiuso** `ef61a22` — l'origine si è stabilita dal codice, non serviva la misura |
 | 15 — logout non riuscito | — | **ritirato**, non era un difetto |
 | *(fuori elenco)* spese ≥ 1.000 € non modificabili | 12 | **chiuso** `8a4a89f` — trovato dall'unità 07 |
-| *(fuori elenco)* content spoofing sul ritorno OAuth | 16 | **in corso** — trovato dall'unità 15 |
+| *(fuori elenco)* content spoofing sul ritorno OAuth | 16 | **chiuso** — trovato dall'unità 15, chiuso col tipo: `Errore` non è più una `string?` |
 
 **Tre assegnazioni decise dal capo il 3 set sera**, perché nessuna era nel piano originale:
 
@@ -510,24 +525,21 @@ Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sez
 
 ## PROSSIMA AZIONE
 
-**Unità 16 lanciata il 4 settembre 2026** (`claude -p`, tetto 20 dollari, in background). È
-l'ultima unità di codice del piano: quando rientra, **tutti e sedici i rilievi sono chiusi
-o ritirati** e non resta niente da scrivere prima del browser.
+**Il codice è finito.** L'unità 16 è rientrata `FATTO` il 4 settembre: sedici unità chiuse,
+tutti i rilievi chiusi o ritirati, 287 test verdi e 0 avvisi riverificati dal capo. Non resta
+niente da scrivere prima del browser.
 
-Al suo resoconto, in quest'ordine:
+**Il collaudo**, la cui forma è decisa nella sezione `IL COLLAUDO` più sopra: quattro giri
+tematici sequenziali (A il bloccante, B il contratto degli editor, C i testi, D le misure di
+CSS), server avviato **dal capo** con porta e PID su `handoff/server.md`, riavviato prima di
+ogni giro, entrambi i processi fermati alla fine.
 
-1. **Audita `CONTRATTI` e `SCOSTAMENTI`**, non ri-adjudicare i rilievi. Due cose sole
-   contano: che l'`enum` sia atterrato con quattro valori e nessuna classe attorno, e che la
-   sezione `IL DIFETTO È CHIUSO?` risponda **con un test che fallirebbe**, non con una
-   dichiarazione. Il difetto tocca la sicurezza: per il §5 il codice lo apri comunque tu.
-2. **Committa** — l'unità ha ordine di non farlo. Messaggio con `git commit -F` su file
-   UTF-8 scritto con `Write`: gli accenti si perdono negli argomenti della shell.
-3. **Aggiorna questa tabella e la mappa**, che è lo stesso atto del punto 1, non uno in più.
-
-Poi **il collaudo**, la cui forma è già decisa nella sezione `IL COLLAUDO` più sopra: quattro
-giri tematici sequenziali (A il bloccante, B il contratto degli editor, C i testi, D le
-misure di CSS), server avviato **dal capo** con porta e PID su `handoff/server.md`, riavviato
-prima di ogni giro, entrambi i processi fermati alla fine.
+**Il giro C acquisisce tre prove nuove dall'unità 16**, con l'URL esatto già scritto nel suo
+resoconto: l'URL dell'attacco che **non deve mostrare niente**, e i due che devono produrre le
+frasi «annullato» e «generico» — quest'ultima è il caso che giustifica l'intera coppia
+`(error, error_code)`. Attenzione a **dove** guardare: Google riporta sulla radice, che è rotta
+privata, e `AuthRedirect` rimbalza l'anonimo su `/benvenuto`; il riquadro si legge lì, non
+sull'URL che si è incollato.
 
 I criteri di accettazione **sono già scritti e non si riscrivono**: dieci in
 `handoff/03-contratto-editor/resoconto.md`, cinque in `handoff/04-collezione-contratto/`
@@ -536,7 +548,12 @@ I criteri di accettazione **sono già scritti e non si riscrivono**: dieci in
 aggiunge tre col loro URL esatto, fra cui l'unica prova che nessuna lettura può dare: un
 annullamento **vero** sulla schermata di Google.
 
-Dopo il collaudo, la **sessione di chiusura** secondo `~/.claude/architettura-sessioni.md`.
+Dopo il collaudo, la **sessione di chiusura**: il suo prompt e ciò che vale solo per questo
+lavoro stanno già scritti in **`handoff/CHIUSURA.md`** (commit `30ba417`), redatto il 4 set
+mentre l'architettura era ancora nel contesto del capo. Prima di aprirla si riempie il campo
+`ESITO DEL COLLAUDO` in fondo a quel file: finché contiene «da riempire», il collaudo non è
+stato fatto.
+
 Solo allora il filone delle spese ricorrenti, qui sotto.
 
 **Filone parallelo, spese ricorrenti.** Design in

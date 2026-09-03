@@ -105,9 +105,22 @@ public class SupabaseService
                 // 2) Ritorno da Google?
                 var esito = OAuthCallback.Analizza(_navigation.Uri);
 
-                if (esito.Errore is not null)
+                if (esito.Errore is not OAuthRifiuto.Nessuno)
                 {
-                    ErroreAccesso = esito.Errore;
+                    // Il grezzo del provider si registra e si ferma qui: in console per esteso, col marcatore
+                    // [Auth] che il file già usa (v. ScambiaCodiceAsync). Tradurre senza registrare baratterebbe
+                    // un'indiscrezione con una cecità.
+                    Console.Error.WriteLine($"[Auth] Ritorno da Google rifiutato: {esito.Diagnostica}");
+
+                    ErroreAccesso = esito.Errore switch
+                    {
+                        OAuthRifiuto.Annullato => "L'accesso con Google non è stato autorizzato: sulla schermata di Google il permesso non è stato concesso. Prova di nuovo a entrare con Google e conferma quando te lo chiede.",
+                        OAuthRifiuto.Scaduto => "Non è stato possibile completare l'accesso: l'autorizzazione avviata con Google vale una sola volta e per pochi minuti, e questa non era più valida al ritorno. Prova di nuovo a entrare con Google.",
+                        // Default, non OAuthRifiuto.Generico: un valore nuovo dell'enum deve cadere
+                        // sulla frase generica, non far esplodere lo switch a runtime.
+                        _ => "L'accesso con Google non è riuscito: la richiesta è stata rifiutata, e può essere un problema temporaneo del servizio oppure una condizione del tuo account. Prova di nuovo a entrare con Google fra un momento.",
+                    };
+
                     _pkce.Cancella();
                 }
                 else if (esito.Codice is not null)
@@ -126,7 +139,7 @@ public class SupabaseService
                 _initialized = true;
 
                 // 3) Ripulisce l'URL dai parametri OAuth, dopo aver marcato _initialized.
-                if (esito.Codice is not null || esito.Errore is not null)
+                if (esito.Codice is not null || esito.Errore is not OAuthRifiuto.Nessuno)
                     _navigation.NavigateTo(_navigation.BaseUri, forceLoad: false, replace: true);
             }
         }
