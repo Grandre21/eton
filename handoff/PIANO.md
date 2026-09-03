@@ -54,6 +54,17 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   **Sul nome ho deciso contro `tech-advisor`**, che proponeva `TestoPerInput`: il progetto nomina
   in italiano (`Testo`, `Prova`, `Verifica`), e la coerenza linguistica è un fatto verificabile,
   non una preferenza.
+- **3 set 2026, sera** — **`SpaceDetail.razor` accodato all'unità 13**, sciogliendo una
+  contraddizione che ha trovato l'**unità 08**, non io: la prosa del RAZIONALE le assegnava le
+  stringhe «Il database ha rifiutato…» di quel file, la MAPPA scritta poche ore prima assegnava
+  il rilievo 3 a «05 + 13», il cui perimetro non lo comprendeva. L'unità ha obbedito al proprio
+  mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
+  giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
+  `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **3 set 2026, sera** — **Le unità NON committano: committa il capo.** L'unità 08 ha committato
+  da sé, le unità 06, 07 e 12 no, e nessun mandato lo diceva. Il commit resta al capo perché è
+  l'unico che vede il quadro e scrive nel registro del progetto. Il commit già fatto dalla 08
+  (`bdd858a`) è buono e non si rifà; i mandati successivi lo dicono esplicitamente.
 - **3 set 2026, sera** — **Rilievo 14 assegnato all'unità 11**, che già possiede `app.css`. Non
   era in nessun perimetro della tabella: la barra laterale è `Shared/Navigazione.razor` +
   `Shared/SelettoreSpazio.razor`, e il difetto (basi disallineate, 820 contro 838) è
@@ -126,12 +137,12 @@ i numeri di cartella non si riusano.
 | 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | **FATTO** — commit `e139ce8`. Perimetro rifiutato a metà, e aveva ragione: v. RAZIONALE |
 | 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | **FATTO** — commit `f4f2dbd`. 0 rilievi da tre revisori, più tre verifiche proprie dell'unità |
 | 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | **FATTO** — commit `4327598`. Quarta e ultima gemella; ha trovato il difetto che diventa l'unità 12 |
-| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
+| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
 | 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
-| 13 | **I tre editor rimasti traducono l'errore e dicono cosa manca** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor` | 05, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
+| 13 | **I tre editor rimasti, e lo spazio, traducono l'errore e dicono cosa manca** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`** | 05, 08, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
 
 ### MAPPA RILIEVO → UNITÀ
 
@@ -144,7 +155,7 @@ partizione aggiorna anche questa tabella.*
 | 0 — creare una collezione è impossibile | 02 | **chiuso** `8a1d438` |
 | 1 — il lavoro non salvato si perde | 03, 04, 06, 07 | **chiuso** su tutti e quattro gli editor |
 | 2 — l'esito compare dove non guardi | 03, 04, 05, 06, 07 | **chiuso** |
-| 3 — il messaggio d'errore è JSON grezzo | 05 (`CollectionEdit`) + **13** (gli altri tre) | **parziale** |
+| 3 — il messaggio d'errore è JSON grezzo | 05 (`CollectionEdit`) + **10** (`RecensioniElemento`) + **13** (i tre editor e `SpaceDetail`) | **parziale** |
 | 4 — l'avviso di aggiornamento non si rimanda | 11 | pianificato |
 | 5 — bersagli categorie alti 22px | 11 | pianificato |
 | 6 — «Anteprima» fa saltare il layout di 358px | 11 | pianificato |
@@ -216,10 +227,12 @@ produce il contratto, tre lo consumano.
 **File contesi, e a chi vanno.**
 
 - `wwwroot/css/app.css` è **l'unico** foglio di stile del progetto: non esistono
-  `.razor.css` per le pagine coinvolte. Lo possiede l'unità 10 e nessun altro. Le unità
-  03-06 e 08, se hanno bisogno di stile nuovo, usano classi già esistenti (per esempio
-  `.errore-campo`, già in `app.css:1876`) o stile inline. **Un'unità che scopre di aver
-  bisogno di `app.css` torna `BLOCKED`, non lo modifica**: va serializzata dopo la 10.
+  `.razor.css` per le pagine coinvolte. **Lo possiede l'unità 11** e nessun altro — *«unità 10»
+  qui era un residuo della numerazione precedente alla scissione dell'unità 04, corretto il 3
+  set sera; la tabella della PARTIZIONE è sempre stata la fonte giusta.* Le altre unità, se
+  hanno bisogno di stile nuovo, usano classi già esistenti (per esempio `.errore-campo`, già in
+  `app.css:1876`) o stile inline. **Un'unità che scopre di aver bisogno di `app.css` torna
+  `BLOCKED`, non lo modifica**: la voce si accoda a quelle in attesa per l'unità 11.
 - `Shared/TestataPagina.razor` lo **consumano** cinque unità con l'API esistente
   (`Titolo` / `Aiuto` / `Azione`) e non lo modifica nessuno. Se una scopre di aver bisogno
   di un'opzione nuova, è un'eccezione che torna al capo — non si risolve nell'unità.
@@ -449,6 +462,19 @@ viene riaperto da qualcuno fra sei mesi.
 
 ~~Da consegnare all'utente: la migrazione da eseguire in produzione.~~ **Consegnata ed
 eseguita il 3 set 2026.**
+
+**Da riportare all'utente — difetto vero, fuori dai sedici rilievi, trovato dall'unità 08.**
+`profiles.display_name` e `profiles.avatar_url` sono **congelati al primo accesso**:
+`handle_new_user` (`supabase/migrations/20260811000000_initial_schema.sql:187-193`) li scrive con
+`on conflict (id) do nothing`, e **nessun punto dell'applicazione li aggiorna mai** — l'unico
+consumo è in lettura (`Services/SpaceRepository.cs:122-123`). Chi cambia nome o foto su Google li
+vede aggiornati sulla **propria** `/profile`, che legge la sessione viva, ma **gli altri membri
+continuano a vedere quelli del primo accesso, per sempre**. L'unità l'ha scoperto verificando cosa
+poteva onestamente scrivere nell'aiuto, ed è la ragione per cui quell'aiuto **non** promette che
+una correzione fatta su Google arrivi agli altri. Non è nel perimetro di nessuna unità: il rimedio
+sta nel database o in un servizio. **Non l'ho corretto**: è fuori dall'obiettivo «correggere i
+quindici rilievi», e inventarsi un'unità per ogni difetto che spunta trasformerebbe il lavoro in
+un altro lavoro.
 
 **Da proporre all'utente, fuori dall'obiettivo attuale.** La ricognizione del 27 agosto non
 ha mai visto `/collections/{id}`, `/collections/{id}/edit` e `/collections/{id}/items/{id}`
