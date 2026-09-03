@@ -104,7 +104,9 @@ public static class Denaro
         => Verifica(testo, out importo) == EsitoImporto.Valido;
 
     /// <summary>Da <c>1284.50m</c> a «1.284,50»: sempre due decimali, punto come separatore delle
-    /// migliaia, virgola come separatore decimale.</summary>
+    /// migliaia, virgola come separatore decimale.
+    /// Serve solo per la visualizzazione; in un campo modificabile si usa <see
+    /// cref="TestoDigitabile"/>, perché <see cref="Prova"/> rifiuta il punto delle migliaia.</summary>
     public static string Testo(decimal importo)
     {
         // Formattando con InvariantCulture si ottiene "1,284.50" (virgola alle migliaia, punto
@@ -117,4 +119,13 @@ public static class Denaro
         var invariante = importo.ToString("N2", CultureInfo.InvariantCulture);
         return invariante.Replace(',', '\0').Replace('.', ',').Replace('\0', '.');
     }
+
+    /// <summary>Da <c>1284.50m</c> a «1284,50»: sempre due decimali, virgola come separatore
+    /// decimale, nessun separatore delle migliaia. Riempie un campo modificabile: ciò che ne esce
+    /// è rileggibile da <see cref="Prova"/>, l'uscita di <see cref="Testo"/> sopra il migliaio no.</summary>
+    public static string TestoDigitabile(decimal importo)
+        // Si usa "F2" (fixed-point) e non "N2", che inserisce i gruppi delle migliaia — per questo
+        // Testo non va bene in un campo modificabile. InvariantCulture più sostituzione esplicita,
+        // come il resto della classe: con InvariantGlobalization attivo non c'è altra cultura da usare.
+        => importo.ToString("F2", CultureInfo.InvariantCulture).Replace('.', ',');
 }

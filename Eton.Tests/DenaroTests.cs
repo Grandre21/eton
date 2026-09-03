@@ -164,13 +164,48 @@ public class DenaroTests
     public void Testo_di_un_intero_mostra_comunque_due_decimali()
         => Assert.Equal("7,00", Denaro.Testo(7m));
 
+    // ---------- TestoDigitabile ----------
+
+    [Fact]
+    public void TestoDigitabile_non_mette_il_punto_delle_migliaia()
+        => Assert.Equal("1284,50", Denaro.TestoDigitabile(1284.50m));
+
+    // I due decimali sempre presenti non sono cosmesi: chi confronta il testo del campo con
+    // quello ricalcolato deve far passare entrambi i lati dalla stessa funzione, e "7" contro
+    // "7,00" darebbe una differenza inesistente.
+    [Fact]
+    public void TestoDigitabile_di_un_intero_mostra_comunque_due_decimali()
+        => Assert.Equal("7,00", Denaro.TestoDigitabile(7m));
+
+    [Fact]
+    public void TestoDigitabile_non_raggruppa_a_nessuna_scala()
+        => Assert.Equal("1000000,00", Denaro.TestoDigitabile(1000000m));
+
+    // È l'invariante su cui si regge Cambiata in SpesaEdit.razor: il campo viene riempito da
+    // TestoDigitabile e riconfrontato con TestoDigitabile dello stesso importo, quindi i due lati
+    // devono coincidere carattere per carattere o la pagina nasce già "modificata". Un decimal
+    // porta con sé una scala oltre al valore: 1284.500m e 1284.5m sono lo stesso numero ma non
+    // la stessa rappresentazione. Quale scala abbia spesa.Amount dipende da come PostgREST
+    // serializza numeric(12,2), e non è sotto il controllo di questo codice né verificato qui:
+    // per questo l'invariante deve reggere per qualunque scala arrivi. È "F2" a normalizzare
+    // sempre a due decimali, ciò che la rende vera per costruzione invece che per fortuna.
+    [Fact]
+    public void TestoDigitabile_non_dipende_dalla_scala_del_decimal()
+    {
+        Assert.Equal("1284,50", Denaro.TestoDigitabile(1284.5m));
+        Assert.Equal("1284,50", Denaro.TestoDigitabile(1284.500m));
+        Assert.Equal("1284,00", Denaro.TestoDigitabile(1284m));
+        Assert.Equal("7,00", Denaro.TestoDigitabile(7.0m));
+    }
+
     // ---------- andata e ritorno ----------
 
     // Prova(Testo(x)) NON deve necessariamente ridare x: Testo introduce il separatore delle
     // migliaia ("1.284,50"), che Prova rifiuta di proposito perché più di un separatore vuol dire
     // "probabile errore di digitazione", non "migliaia". I due metodi servono due direzioni
     // diverse — uno legge ciò che una persona digita, l'altro mostra un valore già validato — e
-    // questo test documenta l'asimmetria invece di nasconderla.
+    // questo test documenta l'asimmetria invece di nasconderla. Il gemello qui sotto mostra
+    // l'altra metà della coppia: quale delle due funzioni si usa davvero per un campo modificabile.
     [Fact]
     public void Testo_e_Prova_non_sono_l_uno_l_inverso_dell_altro_sopra_il_migliaio()
     {
@@ -178,6 +213,21 @@ public class DenaroTests
 
         Assert.Equal("1.284,50", testo);
         Assert.False(Denaro.Prova(testo, out _));
+    }
+
+    [Fact]
+    public void TestoDigitabile_e_Prova_sono_l_uno_l_inverso_dell_altro_sopra_il_migliaio()
+    {
+        Assert.True(Denaro.Prova(Denaro.TestoDigitabile(1284.50m), out var importo));
+        Assert.Equal(1284.50m, importo);
+    }
+
+    [Fact]
+    public void TestoDigitabile_e_Prova_sono_l_uno_l_inverso_dell_altro_al_bordo_superiore_di_numeric_12_2()
+    {
+        // Il bordo superiore di numeric(12,2), il tipo della colonna expenses.amount sul database.
+        Assert.True(Denaro.Prova(Denaro.TestoDigitabile(9999999999.99m), out var importo));
+        Assert.Equal(9999999999.99m, importo);
     }
 
     [Fact]

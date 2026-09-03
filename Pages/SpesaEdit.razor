@@ -207,7 +207,10 @@ else
     // salvataggio a vuoto, che incrementerebbe comunque la versione e farebbe scattare un
     // conflitto a chi la sta scrivendo davvero. Un 'data' azzerato a null conta come cambiato —
     // altrimenti sparirebbe anche dal confronto — ma resta comunque bloccato dalla guardia sopra.
-    protected override bool Cambiata => spesa is not null && (importoTesto != Denaro.Testo(spesa.Amount) || descrizione != spesa.Description
+    // TestoDigitabile e non Testo perché i due lati del confronto devono passare dalla stessa
+    // funzione che riempie il campo — con Testo, che mette il punto delle migliaia, la pagina
+    // nascerebbe già "modificata" sopra i mille euro.
+    protected override bool Cambiata => spesa is not null && (importoTesto != Denaro.TestoDigitabile(spesa.Amount) || descrizione != spesa.Description
                                                      || categoria != spesa.Category || data?.Date != spesa.SpentOn.Date);
 
     // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
@@ -268,7 +271,7 @@ else
             }
             else
             {
-                importoTesto = Denaro.Testo(spesa.Amount);
+                importoTesto = Denaro.TestoDigitabile(spesa.Amount);
                 descrizione = spesa.Description;
                 categoria = spesa.Category;
                 data = spesa.SpentOn;
@@ -314,7 +317,7 @@ else
         {
             case EsitoSalvataggio.Salvata:
                 spesa = esito.Aggiornata;
-                importoTesto = Denaro.Testo(spesa!.Amount);
+                importoTesto = Denaro.TestoDigitabile(spesa!.Amount);
                 descrizione = spesa.Description;
                 categoria = spesa.Category;
                 data = spesa.SpentOn;
@@ -345,7 +348,7 @@ else
         if (conflitto is null) return;
 
         spesa = conflitto;
-        importoTesto = Denaro.Testo(conflitto.Amount);
+        importoTesto = Denaro.TestoDigitabile(conflitto.Amount);
         descrizione = conflitto.Description;
         categoria = conflitto.Category;
         data = conflitto.SpentOn;
