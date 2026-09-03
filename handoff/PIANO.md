@@ -57,6 +57,12 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   nessun `localStorage`, nessun timer. `index.html:108` ripropone già il banner a ogni
   avvio finché il worker è in attesa, e `:116` all'arrivo di una versione più nuova: la
   differenza fra una X e un «Più tardi» è l'etichetta, non il meccanismo.
+- **3 set 2026** — **La migrazione è stata eseguita in produzione dall'utente.** Il vincolo
+  di collaudo cade: `/collections/{id}`, `/collections/{id}/edit` e
+  `/collections/{id}/items/{id}` tornano raggiungibili, e le unità 04, 05, 09 e 10 sono di
+  nuovo collaudabili nel browser. **Non ancora verificato dal vivo**: la prima cosa che
+  `live-testing` dovrà fare, al primo giro utile, è creare una collezione e vedere che il
+  42501 non compare più. Finché non è visto, resta un fatto riferito, non misurato.
 - **3 set 2026** — Rilievi 1, 2, 12: la **guardia di uscita** diventa una classe base
   `Shared/PaginaEditor.cs : ComponentBase`, la stessa forma di `PaginaRegistro.cs`.
   Testata (12) ed esito (2) **non** entrano nell'astrazione: sono quattro applicazioni di
@@ -87,19 +93,27 @@ i numeri di cartella non si riusano.
 
 | # | Unità | Perimetro | Dipende da | Stato |
 |---|---|---|---|---|
-| 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; nuovo file in `Eton.Tests/` | — | **IN CORSO** — migrazione e script FATTI e verificati dal capo; il primo tentativo ha esaurito il budget prima del test statico e del resoconto. Rilanciata con tetto a 15 $ |
-| 03 | Il contratto degli editor | `Shared/PaginaEditor.cs` (nuovo) | — | PIANIFICATA |
-| 04 | Editor Nota | `Pages/NoteEdit.razor` | 03 | PIANIFICATA |
-| 05 | Editor Collezione | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 03 | PIANIFICATA |
-| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
-| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
-| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
-| 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
-| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
-| 11 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | — | PIANIFICATA |
+| 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; `Eton.Tests/PrivilegiInsertTests.cs` | — | **FATTO** — commit `8a1d438`. Gate riverificato dal capo: 267/267, 0 avvisi |
+| 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | PIANIFICATA |
+| 04 | Editor Collezione | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 03 | PIANIFICATA |
+| 05 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
+| 06 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
+| 07 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
+| 08 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
+| 09 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
+| 10 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | — | PIANIFICATA |
 
-Copertura dei rilievi: 02→r0 · 03+04-07→r1, r2, r12 e P1 · 05→r3, r9, r10 · 08→r7, r11,
-r12 in parte e P2 in parte · 09→r8, r13 · 10→P2 in parte · 11→r4, r5, r6, r14, P3.
+Copertura dei rilievi: 02→r0 · 03→il contratto, più r1, r2, r12 e P1 su NoteEdit ·
+04→r1, r2, r12 su CollectionEdit, più r3, r9, r10 · 05 e 06→r1, r2, r12 sui rispettivi
+editor · 07→r7, r11, r12 in parte e P2 in parte · 08→r8, r13 · 09→P2 in parte ·
+10→r4, r5, r6, r14, P3.
+
+**Perché la 03 porta anche `NoteEdit.razor`, cambiato il 3 set rispetto alla prima
+stesura.** Un'astrazione con zero call-site non è verificabile: compila, i test passano, e
+che il contratto non si incastri lo scopre il primo consumatore, quando correggerlo tocca
+due unità già chiuse. Il precedente della casa lo conferma — `PaginaRegistro.cs` è nato
+**estraendo** da tre copie esistenti, non in astratto. Se il contratto è sbagliato, ora si
+scopre dentro l'unità che lo produce.
 **r15 non è assegnato a nessuna unità**: deciso di non correggerlo (vedi DECISIONI). Il suo
 testo in `rilievi.md` lo aggiorna il capo, non un'unità: è un documento, non codice.
 
@@ -141,28 +155,54 @@ serve innescare un'altra eccezione Postgrest.
 
 ## CONTRATTO — `Shared/PaginaEditor.cs`
 
-Lo **produce l'unità 03**, lo **consumano le unità 04-07**. Scritto qui perché i mandati
-delle consumatrici lo devono citare verbatim, e prima che la 03 rientri non esiste su
-disco. Quando la 03 rientra, la firma reale del suo resoconto **prevale su questa** e la
-divergenza va annotata.
+**Firma reale, dal file su disco dopo l'unità 03** (commit dell'unità 03). Prevale sulla
+bozza che il capo aveva scritto prima: divergeva in tre punti, marcati `⚠`. Questa versione
+va nei mandati 04, 05 e 06.
 
 ```csharp
-public abstract class PaginaEditor : ComponentBase
+public abstract class PaginaEditor : ComponentBase, IDisposable   // ⚠ IDisposable in più
 {
-    [Inject] protected NavigationManager Navigation { get; set; } = default!;
-    [Inject] protected IJSRuntime JS { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; }   // ⚠ private, non protected
+    [Inject] private IJSRuntime JS { get; set; }                  // ⚠ private, non protected
 
-    // Ogni editor ha già 'private bool Cambiata': diventa 'protected override'.
     protected abstract bool Cambiata { get; }
-
-    // Sostituisce Navigation.NavigateTo dopo Crea() ed Elimina(): esce senza far
-    // scattare la guardia.
     protected void Esci(string uri, bool replace = false);
-
-    // Handler per NavigationLock.OnBeforeInternalNavigation.
     protected async Task GuardaUscita(LocationChangingContext ctx);
+    public virtual void Dispose();                                // ⚠ nuovo
 }
 ```
+
+**Cosa cambia per chi lo consuma, e va scritto nei loro mandati.**
+
+1. **`Navigation` è `private`: le pagine derivate non la vedono.** Tutti e cinque i
+   `NavigateTo` rimasti nei tre editor sono post-`Crea()` o post-`Elimina()`, quindi
+   diventano `Esci(...)` e nessuno resta scoperto; la riga `@inject NavigationManager
+   Navigation` va tolta. Se un'unità scoprisse di aver bisogno di navigare per altro,
+   **rimette** l'`@inject` nella pagina: con la base `private` questo **non** produce
+   l'avviso CS0108, mentre con `protected` l'avrebbe prodotto rompendo il gate «0 avvisi».
+   È il motivo per cui `private` batte `protected` qui.
+2. **`JS` è `private`**, stessa via del punto 1. Nessuno dei tre editor inietta oggi
+   `IJSRuntime`.
+3. **La base implementa `IDisposable`.** Nessuno dei tre lo implementa oggi: lo ereditano e
+   basta. Se una unità aggiunge una propria pulizia, la forma è
+   `public override void Dispose() { base.Dispose(); … }` — e **`base.Dispose()` non è
+   facoltativo**: senza, la guardia contro la navigazione tardiva smette di funzionare in
+   silenzio.
+
+**Perché esistono `smontata` e `Dispose`** — trovato da `bug-hunter` nell'unità 03, non era
+nel mandato. `NavigationManager` è un **singleton dell'applicazione**: se `Crea()` resta
+sospeso su una chiamata di rete e l'utente intanto esce, il `NavigateTo` tardivo dirotta la
+pagina che sta guardando in quel momento, e fa scattare la guardia di *quella* pagina con
+una domanda fuori contesto. Il difetto **preesisteva** — il codice chiamava `NavigateTo`
+grezzo con lo stesso esito — ma ora c'è un posto solo dove correggerlo per quattro pagine.
+`Esci` esce subito se il componente è smontato: l'oggetto creato resta creato, si abbandona
+solo la navigazione.
+
+**Verificato con `doc-checker` contro il sorgente ASP.NET Core al tag `v10.0.10`** (la
+versione pinnata in `Eton.csproj:36`), e **non va riverificato**: `ComponentFactory` cerca
+le proprietà `[Inject]` con `BindingFlags.Instance | Public | NonPublic` e risale la
+gerarchia livello per livello, quindi le proprietà **`private` di una classe base vengono
+trovate e popolate**. `NonPublic` non distingue `private` da `protected`.
 
 Una riga di markup per editor, dentro il ramo del modulo:
 
@@ -184,7 +224,12 @@ sostituire con `Esci(...)` sono quelli che seguono `Crea()` ed `Elimina()`.
 
 ## PROSSIMA AZIONE
 
-Scrivere `handoff/02-collezioni-insert/mandato.md` e aprire l'unità 02.
+Unità 03 **aperta** (tetto 20 $). Quando rientra: auditare `CONTRATTI` — la firma reale di
+`PaginaEditor` è ciò che finirà nei mandati 04, 05 e 06 — e `SCOSTAMENTI`, poi scrivere il
+mandato dell'unità 04.
+
+**Non** lanciare `live-testing` prima che le unità 03-06 siano tutte rientrate: il
+comportamento della guardia va provato una volta sola sulla forma finale.
 
 ## APERTO
 
@@ -193,10 +238,17 @@ sezione è ora «ISTRUITO E CHIUSO — non era un difetto», col ragionamento pe
 condizione che lo smentirebbe. Non sparisce dall'elenco: un rilievo cancellato senza motivo
 viene riaperto da qualcuno fra sei mesi.
 
-**Da consegnare all'utente quando l'unità 02 rientra**: la migrazione da eseguire in
-produzione. Il lavoro non è finito finché lui non l'ha eseguita, e finché non lo è, le
-unità 06 e 10 non sono collaudabili nel browser e il medaglione P3 dell'unità 11 non è
-visibile.
+~~Da consegnare all'utente: la migrazione da eseguire in produzione.~~ **Consegnata ed
+eseguita il 3 set 2026.**
+
+**Da proporre all'utente, fuori dall'obiettivo attuale.** La ricognizione del 27 agosto non
+ha mai visto `/collections/{id}`, `/collections/{id}/edit` e `/collections/{id}/items/{id}`
+— cioè **tutta la parte di voti e recensioni**, la più grande del progetto — perché erano
+irraggiungibili. Ora non lo sono più. I quindici rilievi in lavorazione non le riguardano:
+nessuno le ha guardate, quindi nessuno sa se hanno attriti. Non è un buco della partizione,
+è un buco dell'**elenco** da cui la partizione nasce, e colmarlo non rientra in «correggere
+tutto». Proporre un secondo giro di ricognizione **breve** a lavoro finito — non prima: le
+unità in corso cambiano proprio le schermate che andrebbe a guardare.
 
 **Dubbi miei, non ancora domande.**
 

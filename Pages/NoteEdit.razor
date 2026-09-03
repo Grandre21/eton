@@ -1,12 +1,20 @@
 @page "/notes/new"
 @page "/notes/{Id:guid}"
 @using Eton.Models
+@inherits PaginaEditor
 @inject NoteRepository Repository
 @inject SpaceStateService Spazi
 @inject AuthStateService AuthState
-@inject NavigationManager Navigation
 
-<PageTitle>@(string.IsNullOrWhiteSpace(titolo) ? "Nota" : titolo) — Eton</PageTitle>
+<PageTitle>@TitoloSchermata — Eton</PageTitle>
+
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>Il testo si scrive in Markdown: la scheda Anteprima mostra come verrà.</p>
+        <p>Se qualcun altro salva questa nota mentre la stai scrivendo, il salvataggio si ferma e ti fa scegliere fra ricaricare la sua versione e sovrascrivere con la tua.</p>
+        <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -28,14 +36,7 @@ else if (nota is null && !Nuova)
 }
 else
 {
-    @if (errore is not null)
-    {
-        <div class="errore" role="alert">@errore</div>
-    }
-    @if (avviso is not null)
-    {
-        <div class="avviso" role="status">@avviso</div>
-    }
+    <NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
 
     @if (conflitto is not null)
     {
@@ -74,7 +75,16 @@ else
            caratteri, quindi un'emoji vale 2 qui e 1 di là. Sbagliare per eccesso di prudenza va
            bene: non lascia mai passare qualcosa che il database poi rifiuta. *@
         <textarea class="corpo-nota" rows="16" maxlength="100000" @bind="corpo" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)"
-                  placeholder="Scrivi in Markdown.&#10;&#10;**grassetto**  *corsivo*  # titolo&#10;- [ ] da fare&#10;- [x] fatto"></textarea>
+                  placeholder="@("Scrivi in Markdown.\n\n**grassetto**  *corsivo*  # titolo\n- [ ] da fare\n- [x] fatto")"></textarea>
+    }
+
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
     }
 
     <div class="azioni">
@@ -119,10 +129,12 @@ else
 
     private bool Nuova => Id is null;
 
+    private string TitoloSchermata => string.IsNullOrWhiteSpace(titolo) ? "Nota" : titolo;
+
     // Il pulsante Salva resta spento finché non c'è niente da salvare: su una nota lunga evita il
     // salvataggio a vuoto, che incrementerebbe comunque la versione e farebbe scattare un
     // conflitto a chi la sta scrivendo davvero.
-    private bool Cambiata => Nuova
+    protected override bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(titolo) || !string.IsNullOrWhiteSpace(corpo)
         : nota is not null && (titolo != nota.Title || corpo != nota.Body);
 
@@ -249,7 +261,8 @@ else
         // nota ormai esiste, e ripresentare la schermata vuota ne farebbe creare una seconda.
         // Il cambio di rotta rilancia OnParametersSetAsync su questa stessa istanza, che rilegge
         // la nota: solo da quel momento c'è una versione con cui fare concorrenza ottimistica.
-        Navigation.NavigateTo($"notes/{creata.Id}", replace: true);
+        // Esci e non NavigateTo: qui la guardia va disarmata, il salvataggio è riuscito (v. PaginaEditor.Esci).
+        Esci($"notes/{creata.Id}", replace: true);
     }
 
     private async Task SalvaCon(int versione)
@@ -327,7 +340,8 @@ else
         {
             if (await Repository.EliminaAsync(Id!.Value))
             {
-                Navigation.NavigateTo("notes");
+                // Esci e non NavigateTo: qui la guardia va disarmata, l'eliminazione è riuscita (v. PaginaEditor.Esci).
+                Esci("notes");
                 return;
             }
             errore = "Non è stato possibile eliminare la nota.";
