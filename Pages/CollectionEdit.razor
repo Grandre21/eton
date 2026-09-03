@@ -70,11 +70,42 @@ else
     <input class="titolo-grande" type="text" placeholder="Nome della collezione" maxlength="100"
            @bind="nome" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
-    <label>
-        <span class="etichetta-piccola">Icona</span>
-        <input class="icona-input" type="text" placeholder="📋" maxlength="16"
+    @* Un <fieldset> con la sua <legend>, non un <div>: sono ventiquattro bottoni che valgono una
+       scelta sola, e senza la legenda chi ascolta la pagina li incontra uno per uno senza sapere
+       di che cosa siano l'elenco. È la forma che il progetto usa già per lo stesso identico caso
+       in SpesaEdit.razor:105-106 e in Spese.razor:93-94, pastiglia e aria-pressed compresi.
+
+       La classe si chiama 'scelta-categoria' perché è nata per le spese, ma la regola che porta è
+       generica — azzera il bordo del fieldset, manda la legenda a capo da sola, fa andare a capo
+       le pastiglie invece di farle scorrere fuori (app.css:1885-1896) — ed è esattamente ciò che
+       serve qui. Riscriverla inline pur di non riusare un nome scomodo avrebbe duplicato una
+       regola che esiste già; il nome può cambiarlo solo chi possiede app.css.
+
+       Il campo di testo sta DENTRO il fieldset e non più sopra, in un <label> suo: la legenda dice
+       già «Icona», e ripeterlo a mezzo centimetro di distanza sarebbe rumore. Ci guadagna anche il
+       disegno, perché .icona-input dichiara 'flex: none' e larghezza fissa (app.css:1370) — due
+       proprietà che dentro un <label> non facevano niente e qui tengono il campo stretto accanto
+       alle pastiglie, che è il posto in cui era stato chiesto di metterlo. L'aria-label serve
+       perché il <label> non c'è più: la legenda nomina il gruppo, non il campo.
+
+       L'unica aggiunta alla pastiglia è il corpo del carattere: .pastiglia nasce a --t-xs per
+       un'etichetta di testo, e a undici pixel un'emoji non si riconosce né si prende col dito. È
+       lo stesso --t-lg che .icona-input usa per l'emoji del campo accanto (app.css:1375), così le
+       due non risultano di due misure diverse. Inline, perché la classe che lo eviterebbe andrebbe
+       scritta in app.css. *@
+    <fieldset class="scelta-categoria">
+        <legend class="etichetta-campo">Icona</legend>
+
+        <input class="icona-input" type="text" placeholder="📋" maxlength="16" aria-label="Icona"
                @bind="icona" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
-    </label>
+
+        @foreach (var emoji in TavolozzaIcone)
+        {
+            <button type="button" class="pastiglia @(emoji == icona ? "accesa" : "")" style="font-size: var(--t-lg)"
+                    aria-pressed="@(emoji == icona)" @onclick="() => icona = emoji"
+                    disabled="@(occupato || !PuoIntervenire)">@emoji</button>
+        }
+    </fieldset>
 
     <label>
         @* Solo 5 e 10: il vincolo "check (rating_max in (5, 10))" della migrazione rifiuta ogni
@@ -105,18 +136,6 @@ else
     <div class="scheda">
         <h2>Campi</h2>
         <p class="testo-tenue">Le colonne che ogni elemento di questa collezione avrà.</p>
-
-        @if (erroriValidazione.Count > 0)
-        {
-            <div class="errore" role="alert">
-                <ul>
-                    @foreach (var e in erroriValidazione)
-                    {
-                        <li>@e</li>
-                    }
-                </ul>
-            </div>
-        }
 
         <ul class="editor-campi">
             @* @key="campo.Key": senza, riordinando o cancellando un campo Blazor riusa gli elementi
@@ -180,6 +199,32 @@ else
         <button class="btn" @onclick="AggiungiCampo" disabled="@(occupato || !PuoIntervenire || campi.Count >= SchemaCampi.MassimoCampi)">Aggiungi campo</button>
     </div>
 
+    @* Gli errori di validazione stavano dentro la scheda «Campi», in cima a essa: dopo lo stesso
+       clic su «Salva» l'esito si trovava in due punti diversi a seconda del motivo del fallimento,
+       e il vincolo SQL ammette fino a 40 campi — con la scheda alta più schermate, l'errore di
+       validazione finiva fuori vista proprio quando serviva. Ora tutto ciò che «Salva» produce sta
+       qui, attaccato al pulsante che lo produce. I messaggi di SchemaCampi.Valida nominano il campo
+       per etichetta o per chiave, quindi restano localizzabili anche lontani dalla scheda.
+
+       'Cambiata &&' non è prudenza: questo riquadro dice PERCHÉ l'ultimo salvataggio è stato
+       rifiutato, e quel perché vale finché c'è ancora qualcosa da salvare. Aggiungendo un campo
+       senza etichetta, premendo Salva e poi togliendo quel campo si torna esattamente alla
+       collezione salvata: il motivo del rifiuto non esiste più, ma il riquadro resterebbe acceso
+       accanto alla riga qui sotto che dice «non hai ancora cambiato niente» — due frasi che si
+       contraddicono davanti allo stesso pulsante. Azzerare il campo a ogni mutazione avrebbe
+       richiesto di intercettare sette punti più tutti i @bind; la condizione lo dice in un posto
+       solo, ed è vera. *@
+    @if (Cambiata && erroriValidazione.Count > 0)
+    {
+        <div class="errore" role="alert">
+            <ul>
+                @foreach (var e in erroriValidazione)
+                {
+                    <li>@e</li>
+                }
+            </ul>
+        </div>
+    }
     @if (errore is not null)
     {
         <div class="errore" role="alert">@errore</div>
@@ -187,6 +232,22 @@ else
     @if (avviso is not null)
     {
         <div class="avviso" role="status">@avviso</div>
+    }
+
+    @* Perché il pulsante è spento, e solo quando non è già scritto altrove: 'occupato' lo dice il
+       pulsante stesso, che intanto legge «Salvo…»; '!PuoIntervenire' lo dice la riga .spiega in
+       cima alla pagina; il conflitto lo dice SchedaConflitto. Resta scoperto solo !Cambiata, che
+       oggi non lascia niente da leggere e si scopre per tentativi.
+       'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero — su /collections/new
+       il modulo nasce vuoto per costruzione, e accoglierlo con una riga rossa darebbe la colpa di
+       un errore a chi non ha ancora fatto niente. *@
+    @if (!occupato && PuoIntervenire && conflitto is null && !Cambiata)
+    {
+        <p class="testo-tenue">
+            @(Nuova
+                ? "Scrivi il nome della collezione per poterla salvare."
+                : "Non c'è niente da salvare: non hai ancora cambiato niente.")
+        </p>
     }
 
     <div class="azioni">
@@ -236,6 +297,22 @@ else
     // leggerlo dentro il @foreach del markup ricostruirebbe tutto a ogni ridisegno. Va catturato
     // qui, una sola volta.
     private IReadOnlyList<ModelloCollezione> modelli = [];
+
+    // Le prime tre sono le stesse emoji dei tre modelli predefiniti (Services/SchemaCampi.cs):
+    // tavolozza e modelli devono dire la stessa cosa, e chi parte da "Birre" deve ritrovare 🍺
+    // acceso qui sotto invece di una pastiglia in più che gli somiglia. Sono ricopiate a mano e
+    // non lette da SchemaCampi.Modelli perché il resto dell'elenco non viene da lì e perché
+    // Modelli alloca a ogni accesso (v. il commento lì): se un giorno cambia l'emoji di un
+    // modello va cambiata anche qui, ed è l'unico legame che questo commento tiene in piedi.
+    //
+    // Ventiquattro e non di più: oltre, la fila diventa un catalogo da scorrere invece di una
+    // scelta da guardare, e il campo di testo accanto resta comunque la via per qualunque altra.
+    private static readonly string[] TavolozzaIcone =
+    [
+        "🧪", "🍺", "🎬", "📚", "🎵", "🎮", "🍷", "☕",
+        "🍕", "🌿", "🧴", "👟", "⌚", "📷", "🎧", "🚗",
+        "🎨", "🃏", "🏆", "✈️", "🐾", "🔧", "💿", "📋",
+    ];
 
     // L'id di chi guarda, come mioId in SpesaEdit.razor: stesso pattern, GetUserIdAsync() più
     // Guid.TryParse. Popolato in OnParametersSetAsync e non in OnInitializedAsync, a differenza di
@@ -340,7 +417,13 @@ else
             // hai il permesso". Azzerando 'collezione' il render finisce invece nel ramo
             // "collezione is null && !Nuova" più sopra, che mostra l'errore al posto del modulo.
             collezione = null;
-            errore = $"Non è stato possibile aprire la collezione: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo aprire una collezione. In console ci va invece per intero, con lo stesso
+            // marcatore di CollectionDetail.razor:308,322, così la diagnosi non si perde.
+            Console.Error.WriteLine($"[Collezione] Apertura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire la collezione: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
         caricato = true;
@@ -399,6 +482,11 @@ else
         icona = modello.Icona;
         campi = modello.Campi.Select(CopiaCampo).ToList();
         campoDaRimuovere = null;
+        // Stessa ragione per cui si azzera la conferma di rimozione, e vale anche qui: 'campi' è
+        // stato appena sostituito in blocco, e un errore di validazione rimasto acceso nominerebbe
+        // un campo di un elenco che non esiste più. La condizione 'Cambiata' del markup non
+        // basterebbe a coprirlo, perché un modello porta con sé un nome e quindi lascia Cambiata vera.
+        erroriValidazione = [];
     }
 
     // ChiaveDa si chiama SOLO qui, quando il campo nasce, e MAI quando l'etichetta viene rinominata
@@ -483,7 +571,10 @@ else
 
     private async Task Salva()
     {
-        occupato = true; errore = avviso = null; conflitto = null;
+        // erroriValidazione viene riassegnato più sotto, ma solo se si arriva fin lì: se Valida
+        // lanciasse, il catch scriverebbe in 'errore' lasciando accesi gli errori del tentativo
+        // precedente, cioè due riquadri rossi che raccontano due tentativi diversi.
+        occupato = true; errore = avviso = null; conflitto = null; erroriValidazione = [];
         try
         {
             // Valida PRIMA di scrivere: il database rifiuterebbe comunque uno schema scorretto, ma
@@ -511,7 +602,13 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile salvare: {ex.Message}";
+            // v. il commento nel catch di OnParametersSetAsync: il JSON in console, la frase
+            // all'utente. Qui in più conta dire che il lavoro non è perso, perché è la prima
+            // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
+            // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
+            // esattamente ciò che non è stato scritto.
+            Console.Error.WriteLine($"[Collezione] Salvataggio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -584,8 +681,10 @@ else
         CaricaDaCollezione(conflitto);
         conflitto = null;
         // Anche la conferma di rimozione va azzerata: 'campi' è stato appena sostituito, e una
-        // conferma rimasta aperta si riferirebbe a un campo di un elenco che non esiste più.
+        // conferma rimasta aperta si riferirebbe a un campo di un elenco che non esiste più. Per
+        // la stessa ragione se ne vanno gli errori di validazione, che nominavano quei campi.
         campoDaRimuovere = null;
+        erroriValidazione = [];
         avviso = "Caricata la versione più recente.";
     }
 
@@ -593,7 +692,10 @@ else
     {
         if (conflitto is null) return;
 
-        occupato = true; errore = null;
+        // erroriValidazione insieme a errore: questo è un tentativo nuovo, e il verdetto del
+        // precedente non ne fa parte. Senza, un rifiuto qui si affiancherebbe al riquadro rosso
+        // rimasto acceso dall'ultimo Salva, davanti allo stesso pulsante.
+        occupato = true; errore = null; erroriValidazione = [];
         try
         {
             // Si risalva con la versione DEL SERVER, non con quella che si aveva in mano: è
@@ -606,7 +708,8 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile sovrascrivere: {ex.Message}";
+            Console.Error.WriteLine($"[Collezione] Sovrascrittura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
         {
@@ -616,7 +719,8 @@ else
 
     private async Task Elimina()
     {
-        occupato = true; errore = null;
+        // v. il commento in Sovrascrivi: azione nuova, verdetto vecchio via.
+        occupato = true; errore = null; erroriValidazione = [];
         try
         {
             if (await Repository.EliminaAsync(Id!.Value))
@@ -625,11 +729,23 @@ else
                 Esci("collections");
                 return;
             }
-            errore = "Non è stato possibile eliminare la collezione.";
+            // EliminaAsync torna false per due motivi che dall'esterno non si distinguono (v. il
+            // commento lungo in CollectionRepository.EliminaAsync): non hai il diritto di
+            // cancellare, oppure la collezione non è più visibile perché qualcun altro l'ha già
+            // tolta. Il messaggio li nomina entrambi invece di sceglierne uno a caso, e l'azione
+            // che chiude tutti e due i casi è ricaricare. Le parole della prima metà sono quelle
+            // di Permessi.Spiegazione(Oggetto.Collezione) — «può modificarla o cancellarla solo
+            // chi l'ha creata, o chi possiede lo spazio» — e non una riformulazione: quella
+            // frase compare in questa stessa pagina a riga 53, e due modi di dire la stessa
+            // regola a due centimetri di distanza sembrano due regole. Non la si riusa
+            // testualmente perché Spiegazione apre affermando che la collezione è di qualcun
+            // altro, e qui è una delle due ipotesi, non un fatto.
+            errore = "Non è stato possibile eliminare la collezione: può cancellarla solo chi l'ha creata, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminata: ricarica la pagina per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile eliminare: {ex.Message}";
+            Console.Error.WriteLine($"[Collezione] Eliminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. La collezione è ancora al suo posto: riprova fra un momento.";
         }
         finally
         {

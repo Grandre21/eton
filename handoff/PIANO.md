@@ -96,7 +96,7 @@ i numeri di cartella non si riusano.
 | 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; `Eton.Tests/PrivilegiInsertTests.cs` | — | **FATTO** — commit `8a1d438`. Gate riverificato dal capo: 267/267, 0 avvisi |
 | 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | PIANIFICATA |
 | 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | PIANIFICATA |
-| 05 | Collezione, i suoi tre rilievi propri | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | PIANIFICATA |
+| 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | PIANIFICATA |
 | 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
 | 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
@@ -147,10 +147,16 @@ produce il contratto, tre lo consumano.
 - `Shared/TestataPagina.razor` lo **consumano** cinque unità con l'API esistente
   (`Titolo` / `Aiuto` / `Azione`) e non lo modifica nessuno. Se una scopre di aver bisogno
   di un'opzione nuova, è un'eccezione che torna al capo — non si risolve nell'unità.
-- Le sei stringhe «Il database ha rifiutato…» vivono in due file di proprietà diversa
-  (`SpaceDetail.razor` all'unità 07, `RecensioniElemento.razor` alla 09). Vanno tradotte
-  **allo stesso modo**: è un contratto, e l'omologo già corretto da imitare è
-  `NoteEdit.razor:278`.
+- Le sei stringhe «Il database ha rifiutato…» vivono in due file di proprietà diversa:
+  `SpaceDetail.razor` all'unità **08**, `RecensioniElemento.razor` all'unità **10**. Vanno
+  tradotte **allo stesso modo**: è un contratto, e il modello ora non è più una descrizione
+  ma **codice da aprire** — le sei frasi che l'unità 05 ha scritto in
+  `Pages/CollectionEdit.razor`, elencate verbatim nel suo resoconto, sezione `CONTRATTI`.
+
+  *(Questi due numeri erano sbagliati fino al 3 set: dicevano 07 e 09, residuo della
+  numerazione precedente alla scissione dell'unità 04. Segnalato dall'unità 05 nel suo
+  `FUORI SCOPE`, punto 4. La **tabella della PARTIZIONE** è sempre stata la fonte giusta, e
+  resta la fonte in caso di dubbio: se una prosa la contraddice, vince la tabella.)*
 
 **La proprietà di un file si riassegna quando l'unità che lo teneva chiude.** È il motivo
 per cui `Pages/NoteEdit.razor`, prodotto dell'unità 03, entra nel perimetro dell'unità 04
@@ -295,11 +301,39 @@ Una classe base legge i campi vivi nell'istante dell'handler.
 quelli che seguono `Crea()` ed `Elimina()`, e sono cinque in tutto: due in
 `CollectionEdit`, due in `ItemEdit`, uno in `SpesaEdit`, che non ha `Crea`.
 
+## DA PORTARE NEL MANDATO DELL'UNITÀ 11 — il foglio di stile
+
+Si accumulano qui man mano che le unità le segnalano, perché `app.css` ha un solo
+proprietario e ogni unità che ne ha bisogno deve rinunciare e dirlo.
+
+1. **`a.btn:not([href])` accodato a `.btn:disabled`** (`app.css:704-709`). Senza, i due
+   link «Chiudi» delle unità 04 e 05 sono funzionalmente inerti ma **non spenti
+   visivamente**: sembrano premibili e non lo sono.
+2. **La stessa regola `.btn:disabled` risolve la metà visiva del rilievo 9**: «Salva» spento
+   è reso con `opacity: .5` su fondo blu pieno, e su nero resta saturo. L'unità 05 ha fatto
+   la metà che si poteva fare senza CSS — dire *cosa manca* — quindi oggi il pulsante spiega
+   il perché ma non sembra spento.
+3. **`min-height: var(--tocco)` su `.scelta-categoria .pastiglia`.** Le pastiglie sono alte
+   ~21px contro i 48px che il progetto stesso dichiara in `--tocco` (`app.css:190`) e già
+   applica a `.barra-elenco .pastiglia`. **Vale per tre file** — `Spese.razor`,
+   `SpesaEdit.razor` e ora `CollectionEdit.razor` — ed è lo stesso difetto del rilievo 5. Una
+   riga in `app.css` lo chiude in tutti e tre; uno stile inline lo chiuderebbe in uno solo,
+   lasciando due misure diverse della stessa pastiglia. L'unità 05 ha messo un
+   `font-size: var(--t-lg)` inline come rimedio parziale dichiarato: **valutare se togliere**
+   quando arriva la regola vera.
+4. **`.scelta-categoria` ha ora due domini e un nome solo**: la usano le categorie di spesa e
+   le icone di collezione, ma il nome parla di spese. Cosmesi di nomenclatura, non urgente —
+   `.scelta-pastiglie` costerebbe tre sostituzioni. Decide chi possiede il file.
+
 ## PROSSIMA AZIONE
 
-Unità 04 **aperta** (tetto 22 $). Quando rientra: auditare `CONTRATTI` — come ha consumato
-`PaginaEditor`, perché le unità 06 e 07 faranno lo stesso — e `SCOSTAMENTI`, poi committare
-e scrivere il mandato dell'unità 05.
+Unità 05 **aperta** (tetto 22 $). Quando rientra: auditare `CONTRATTI` — **la forma esatta
+del messaggio d'errore tradotto**, che le unità 08 e 10 dovranno copiare invece di
+inventarne un terzo modo — e `SCOSTAMENTI`, poi committare e scrivere il mandato
+dell'unità 06 (`ItemEdit`), che è gemella della 04 e può riusarne il mandato quasi parola
+per parola.
+
+Unità 04 chiusa: commit `3206150`, gate riverificato dal capo con `-warnaserror`, 267/267.
 
 **Non** lanciare `live-testing` prima che le unità 04, 06 e 07 siano tutte rientrate: la
 guardia va provata una volta sola sulla forma finale, non quattro volte su forme
@@ -373,6 +407,12 @@ Ereditati dal piano precedente, tutti ancora validi.
 - **Lo sviluppo gira contro il database vero.** `wwwroot/appsettings.json:3` è l'unico
   appsettings e punta a `fdqedhgvpneuybtykamf.supabase.co`; non esiste
   `appsettings.Development.json`. Ogni prova nel browser scrive sui dati reali.
+- **Le `file:line` di `threat-hunter` sono risultate sfasate**, in modo consistente, sul
+  diff dell'unità 04: dava `<PageTitle>` a `:16` e «Chiudi» a `:68` mentre stanno a `:10` e
+  `:201`. I suoi **verdetti** erano corretti e verificabili senza le righe. Regola per le
+  unità successive: accogli i suoi verdetti se reggono per contenuto, ma **non riportare mai
+  un suo numero di riga** in un resoconto o in un commento senza averlo riaperto. Quelle di
+  `conformity` e `bug-hunter` tornano.
 - **Il budget di un'unità si prezza sui giri di protocollo, non sulle righe di diff.**
   Misurato il 3 settembre: l'unità 02 — una riga di SQL e un test — ha esaurito **4 dollari**
   completando due obiettivi su tre. Il costo fisso di un'unità (brief, `implementer`,
