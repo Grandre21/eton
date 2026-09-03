@@ -390,6 +390,40 @@ Una classe base legge i campi vivi nell'istante dell'handler.
 quelli che seguono `Crea()` ed `Elimina()`, e sono cinque in tutto: due in
 `CollectionEdit`, due in `ItemEdit`, uno in `SpesaEdit`, che non ha `Crea`.
 
+## IL COLLAUDO — deciso il 3 set sera, prima che serva
+
+Le prove nel browser si sono accumulate a **una quarantina** e non stanno in un giro solo. Un
+`live-testing` con quaranta criteri o si ferma a metà o li tratta tutti male.
+
+**Quattro giri tematici, in sequenza e mai in parallelo.** Il browser è una risorsa condivisa:
+due agenti sullo stesso Chrome si pestano, e nessuno dei due se ne accorgerebbe.
+
+| Giro | Cosa prova | Fonte dei criteri |
+|---|---|---|
+| **A — il bloccante** | Creare una collezione funziona davvero. **Non è mai stato misurato**: l'effetto della migrazione è un fatto riportato, non osservato. Se fallisce, tutto il resto aspetta | rilievo 0 |
+| **B — il contratto degli editor** | Guardia d'uscita, testata, esito sopra i pulsanti, gate di «Chiudi», sulle quattro pagine | resoconti 03 (dieci prove), 04 (cinque), 06 (sei), 07 (sei) |
+| **C — testo e messaggi** | Errori tradotti, stati vuoti, i tre rilievi della Home/spazio/profilo, l'importo sopra il migliaio | resoconti 08, 09, 10, 12, 13 |
+| **D — le misure** | Altezze, larghezze, allineamenti, il banner: l'unico lavoro che **non si verifica leggendo il codice** | resoconto 11 |
+
+**Il giro A viene per primo e da solo**, perché è l'unico che può invalidare gli altri: se creare
+una collezione è ancora rotto, le prove su `CollectionEdit` e `ItemEdit` non hanno soggetto.
+
+**L'applicazione la avvia il capo**, annotando porta e PID **su disco** in
+`handoff/server.md` — non in chat, che una compaction cancella lasciando il processo orfano. La
+ferma il capo a ciclo chiuso, **tutti e due i processi**: su Windows la morte del padre non
+uccide il figlio, e il giro dopo si collegherebbe a una build vecchia ancora in ascolto,
+riportando un esito falso.
+
+**Prima di ogni giro il server va riavviato**: dopo un po' di build il server di sviluppo
+annuncia asset che non esistono più.
+
+**Il browser giusto ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`.** Due Chrome sono
+collegati e i nomi si scambiano a ogni riconnessione: si identifica per `deviceId`, e solo
+quello vede `localhost`.
+
+**La cache della PWA non falsa le prove in sviluppo** — il service worker di dev è un no-op
+verificato — e il banner «versione nuova» che riappare lì **non è un difetto**.
+
 ## DA PORTARE NEL MANDATO DELL'UNITÀ 11 — il foglio di stile
 
 Si accumulano qui man mano che le unità le segnalano, perché `app.css` ha un solo
