@@ -56,13 +56,19 @@ else
     }
     else if (collezioni.Count == 0)
     {
-        @* Niente pulsante qui dentro: "Nuova collezione" è già nella testata sopra, sempre
-           visibile anche a registro vuoto. Duplicarlo qui darebbe due pulsanti uguali sullo stesso
-           schermo, e chi guarda si chiederebbe se fanno cose diverse. *@
+        @* Il pulsante sta qui dentro oltre che nella testata, e il doppione non è un rischio:
+           stessa etichetta e stessa destinazione, quindi si leggono come la stessa azione in
+           due posti. A registro vuoto l'occhio sta su questo blocco centrato — è lì che va
+           messa l'azione — mentre quello in testata è compatto e in un angolo. Non è ridondante
+           nemmeno per gli stati: a registro pieno questo blocco non esiste, e resta solo la
+           testata. Qui Spazi.Attivo è non nullo per costruzione (il ramo che lo esclude è più
+           sopra), quindi "collections/new" ha sempre dove salvare e non serve la guardia che
+           protegge il pulsante della testata. *@
         <div class="vuoto">
             <span class="icona-vuoto"><Icona Nome="collezioni" /></span>
             <p>Ancora nessuna collezione qui.</p>
             <p class="spiega">Una collezione è un elenco che si vota insieme: birre, film, ristoranti. I campi li decidi tu, e ogni membro dello spazio lascia il suo voto.</p>
+            <a class="btn primario" href="collections/new">Nuova collezione</a>
         </div>
     }
     else

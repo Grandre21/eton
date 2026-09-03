@@ -138,11 +138,11 @@ i numeri di cartella non si riusano.
 | 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | **FATTO** — commit `f4f2dbd`. 0 rilievi da tre revisori, più tre verifiche proprie dell'unità |
 | 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | **FATTO** — commit `4327598`. Quarta e ultima gemella; ha trovato il difetto che diventa l'unità 12 |
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
-| 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
+| 09 | Registri vuoti | `Pages/Notes.razor`, `Pages/Collections.razor` | — | **FATTO** — due righe di codice; ha trovato l'orfano `CollectionDetail.razor`. `ConfermaAzione` tolto dal perimetro: era lì per il rilievo 8, ora dell'unità 11 |
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
-| 13 | **I tre editor rimasti, e lo spazio, traducono l'errore e dicono cosa manca** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`** | 05, 08, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
+| 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`** | 05, 08, 09, 10, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
 
 ### MAPPA RILIEVO → UNITÀ
 
