@@ -224,7 +224,21 @@
         }
         catch (Exception ex)
         {
-            errore = $"Errore di accesso: {ex.Message}";
+            // Il testo dell'eccezione NON va all'utente, ma non si butta: in console per esteso, col
+            // marcatore [Auth] che SupabaseService già usa per le proprie diagnosi.
+            //
+            // La causa NON è la connessione, e vale la pena dirlo perché tutte le frasi gemelle del
+            // progetto la nominano: AvviaAccessoGoogleAsync non fa nessuna chiamata di rete — è un
+            // 'public Task' che costruisce l'URL e chiama NavigateTo(forceLoad: true). Le sole cose
+            // che possono lanciare sono la generazione del verificatore PKCE e il suo salvataggio,
+            // cioè un localStorage.setItem via JS interop sincrono (v. Services/PkceStore.cs).
+            // Quindi la causa che si suggerisce è quella vera: lo storage del browser.
+            //
+            // L'azione nomina il pulsante che esiste davvero — "Entra con Google" — e non un
+            // generico "riprova": chi legge questo messaggio non è autenticato e non ha nessuna
+            // sessione da ricaricare, quindi le frasi delle altre pagine non si trasferiscono.
+            Console.Error.WriteLine($"[Auth] Avvio dell'accesso non riuscito: {ex.Message}");
+            errore = "Non è stato possibile avviare l'accesso: può essere il browser che non lascia salvare i dati di questo sito — succede con la navigazione anonima, o con le impostazioni sulla riservatezza più severe. Prova di nuovo a entrare con Google, e se non basta apri Eton in una finestra normale.";
             occupato = false;
         }
     }

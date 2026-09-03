@@ -116,9 +116,24 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
         await Carica();
     }
 
+    /// <summary>
+    /// Il messaggio di "i dati non si sono letti", scritto qui e non nelle pagine: lo chiamano i
+    /// catch di Notes, Collections e Spese, quindi anche la riga di diagnosi vale per tutte e tre e
+    /// nessuno di quei catch resta muto.
+    /// <para>
+    /// "Riprova" è letterale: questo ramo alza <see cref="datiNonLetti"/>, e tutte e tre le pagine
+    /// mostrano un pulsante "Riprova" dentro quel ramo del markup.
+    /// </para>
+    /// <para>
+    /// Il marcatore di console è [Registro] e non [Note]/[Spese]: una riga scritta qui esce da tre
+    /// pagine diverse, e prendere il marcatore di una sola sarebbe falso sulle altre due. È il nome
+    /// che il progetto dà già a questa cosa — la classe si chiama PaginaRegistro.
+    /// </para>
+    /// </summary>
     protected void SegnalaNonLetti(Exception ex)
     {
-        errore = $"Spazio caricato, ma non ho potuto leggerne {NomePlurale}: {ex.Message}";
+        Console.Error.WriteLine($"[Registro] Lettura del registro non riuscita: {ex.Message}");
+        errore = $"Lo spazio si è caricato, ma non è stato possibile leggerne {NomePlurale}: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova.";
         datiNonLetti = true;
     }
 
@@ -137,7 +152,17 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
             // Qui a mancare sono gli SPAZI, non i dati — e il markup reagisce diversamente:
             // senza spazio attivo l'errore si prende tutta la pagina, col pulsante Riprova,
             // invece di essere una riga sopra un elenco che comunque esiste.
-            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            //
+            // "Riprova fra un momento" e non "Riprova": qui il pulsante NON è garantito. Il ramo col
+            // pulsante è quello di <ErroreRiprova>, che le tre pagine derivate scelgono solo quando
+            // Spazi.Attivo è nullo — e non lo è sempre. SpaceStateService è un singleton il cui
+            // stato sopravvive alla navigazione: quando la lettura fallisce rimette _caricato a
+            // false ma tiene l'elenco e lo spazio attivo precedenti, di proposito, quindi
+            // AssicuraCaricatoAsync può lanciare con Attivo ancora valorizzato. Lì a schermo resta
+            // il <div class="errore"> nudo, e una frase che dice "Riprova" nominerebbe un pulsante
+            // che non c'è. La formula senza pulsante è quella che il progetto usa ovunque.
+            Console.Error.WriteLine($"[Registro] Elenco degli spazi non caricato: {ex.Message}");
+            errore = "Non è stato possibile caricare i tuoi spazi: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
             return;
         }
 
@@ -169,7 +194,19 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
             // sfugge a quel try. Senza questo blocco l'eccezione morirebbe dentro un Task che
             // nessuno osserva — il '_ =' rende esplicito che non lo osserva nessuno — e la pagina
             // resterebbe su "Caricamento…" per sempre, senza niente a schermo che lo spieghi.
-            errore = $"Non è stato possibile aggiornare {NomePlurale}: {ex.Message}";
+            //
+            // L'azione è ricaricare, e nient'altro: "scegli di nuovo lo spazio" sarebbe stato un
+            // consiglio inefficace. SpaceStateService.Imposta esce subito quando lo spazio scelto è
+            // già quello attivo, senza emettere Cambiato, e anche passando da un terzo spazio la
+            // guardia su spazioMostrato qui sopra scarterebbe l'evento, perché CaricaUnGiro l'ha
+            // già aggiornato al nuovo spazio prima di fallire.
+            //
+            // Il costo è dichiarato: su Spese il modulo "segna una spesa" è sempre a schermo e può
+            // contenere un importo e una descrizione appena digitati, che la ricarica butta via.
+            // Si accetta perché l'alternativa non funziona, e un'azione che non produce niente è
+            // peggio di una che costa qualcosa. Su Notes e Collections non c'è nulla da perdere.
+            Console.Error.WriteLine($"[Registro] Aggiornamento dopo il cambio di spazio non riuscito: {ex.Message}");
+            errore = $"Non è stato possibile aggiornare {NomePlurale} dopo il cambio di spazio: può essere la connessione, oppure il tuo accesso al nuovo spazio che è cambiato. Ricarica la pagina.";
             caricato = true;
         }
         StateHasChanged();

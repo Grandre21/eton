@@ -61,6 +61,20 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
   giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
   `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **3 set 2026, sera** — **Unità 14, e il rilievo 3 creduto chiuso per la seconda volta.**
+  L'unità 13 è nata perché il rilievo 3 risultava chiuso essendolo su **una pagina su sei**. La 13
+  ha chiuso quelle sei e, censendo, ne ha trovate **dieci in quattro file ancora aperte** — fra cui
+  **tre in `Shared/PaginaRegistro.cs`, la classe base dei registri**, che si mostrano su *ogni*
+  pagina di elenco. Stesso errore, stessa causa: una mappa *file → unità* dichiara chiuso un
+  rilievo quando è chiuso nel perimetro di chi l'ha toccato.
+  **Il rimedio strutturale, adottato:** il mandato della 14 le chiede di **rifare il `grep`** e di
+  chiudere il resoconto con una sezione «IL RILIEVO 3 È CHIUSO?» che risponda con il conteggio
+  delle occorrenze rimaste. Non basta chiudere i dieci punti: serve la prova che non ce n'è un
+  undicesimo. Le prime due volte la risposta creduta era sbagliata.
+  Nella 14 confluiscono altre due cose trovate dalla 13: la promessa **falsa** di
+  `CollectionEdit:748` («La collezione è ancora al suo posto» — ma `EliminaAsync` fa tre chiamate
+  di rete e l'eccezione può scoppiare dopo la cancellazione riuscita), e cinque `file:line`
+  incrociate che il diff della 13 ha sfasato, da rendere **nominali** e non da rinumerare.
 - **3 set 2026, sera** — **`RecensioniElemento.razor:465` accodato all'unità 13**, una riga sola.
   Il mandato dell'unità 10 dichiarava quel messaggio — «La tua recensione non c'è più.» — fra i
   «due già buoni da non toccare». **Era un errore mio**, e l'unità l'ha trovato perché il mandato
@@ -151,7 +165,8 @@ i numeri di cartella non si riusano.
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
-| 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`** | 05, 08, 09, 10, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
+| 14 | **Il rilievo 3 si chiude davvero** — dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **IN CORSO** |
+| 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
 
 ### MAPPA RILIEVO → UNITÀ
 
@@ -164,7 +179,7 @@ partizione aggiorna anche questa tabella.*
 | 0 — creare una collezione è impossibile | 02 | **chiuso** `8a1d438` |
 | 1 — il lavoro non salvato si perde | 03, 04, 06, 07 | **chiuso** su tutti e quattro gli editor |
 | 2 — l'esito compare dove non guardi | 03, 04, 05, 06, 07 | **chiuso** |
-| 3 — il messaggio d'errore è JSON grezzo | 05 (`CollectionEdit`) + **10** (`RecensioniElemento`) + **13** (i tre editor e `SpaceDetail`) | **parziale** |
+| 3 — il messaggio d'errore è JSON grezzo | 05 + **10** + **13** (sei file) + **14** (gli ultimi dieci punti) | **parziale — chiuso solo quando la 14 rientra** |
 | 4 — l'avviso di aggiornamento non si rimanda | 11 | pianificato |
 | 5 — bersagli categorie alti 22px | 11 | pianificato |
 | 6 — «Anteprima» fa saltare il layout di 358px | 11 | pianificato |
@@ -196,7 +211,7 @@ partizione aggiorna anche questa tabella.*
   interpolazioni di `ex.Message` sulla sola `SpesaEdit`. Perimetro: `NoteEdit`, `ItemEdit`,
   `SpesaEdit`; `CollectionEdit` **si legge come modello e non si tocca**.
 
-**Ordine di esecuzione**, che non coincide con la numerazione: 12 → 08 → 09 → 10 → 13 → 11 →
+**Ordine di esecuzione**, che non coincide con la numerazione: 12 → 08 → 09 → 10 → 13 → **14** → 11 →
 `live-testing` → chiusura. La 13 sta **prima** della 11 perché può accodarle voci di CSS,
 come hanno fatto le unità 04, 05 e 06.
 

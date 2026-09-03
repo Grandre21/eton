@@ -283,7 +283,12 @@ else
             // Senza questo, un errore di rete al primo caricamento risalirebbe fino al riquadro
             // di crash di Blazor: schermata bianca e "Ricarica", invece di un messaggio e un
             // pulsante che ritenta senza buttare via l'applicazione.
-            errore = $"Non è stato possibile caricare i tuoi spazi: {ex.Message}";
+            // "Riprova fra un momento" e non "Riprova": il markup sceglie <ErroreRiprova>, che il
+            // pulsante ce l'ha, solo quando Spazi.Attivo è nullo — e SpaceStateService, che è un
+            // singleton, tiene lo spazio attivo precedente anche quando la lettura fallisce. Con
+            // Attivo valorizzato resta il <div class="errore"> sopra il contenuto, senza pulsante.
+            Console.Error.WriteLine($"[Home] Elenco degli spazi non caricato: {ex.Message}");
+            errore = "Non è stato possibile caricare i tuoi spazi: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
             caricato = true;
             return;
         }
@@ -314,7 +319,8 @@ else
     // sorpassato da una lettura più recente non deve piantare un banner rosso sopra dati giusti.
     private async Task CaricaDettagli(string premessa)
     {
-        // Contatore di generazione, come in NoteEdit.razor:119 e in SpaceDetail. Dal <select> si
+        // Contatore di generazione, come il campo 'generazione' di NoteEdit.razor e di SpaceDetail.
+        // Dal <select> si
         // può cambiare spazio due volte prima che la prima lettura torni, e su rete mobile la
         // seconda risposta può benissimo arrivare per prima: senza guardia la continuazione più
         // lenta scrive per ultima e lascia il nome di uno spazio accanto ai dettagli di un altro.
@@ -364,8 +370,13 @@ else
         }
         catch (Exception ex)
         {
+            // La diagnosi sta PRIMA della guardia di generazione, a differenza di quella delle spese
+            // qui sotto: un fallimento già sorpassato da una lettura più recente non deve andare a
+            // schermo — e infatti il return resta — ma nemmeno sparire senza lasciare traccia, o
+            // questo catch sarebbe muto in quel ramo.
+            Console.Error.WriteLine($"[Home] Dettagli dello spazio non letti: {ex.Message}");
             if (mia != generazione) return;
-            errore = $"{premessa}, ma non ho potuto leggerne i dettagli: {ex.Message}";
+            errore = $"{premessa}, ma non è stato possibile leggerne i dettagli: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Ricarica la pagina per riprovare.";
             dettagliMancanti = true;
         }
 

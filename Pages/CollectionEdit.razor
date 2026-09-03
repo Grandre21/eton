@@ -251,7 +251,8 @@ else
     }
 
     <div class="azioni">
-        @* Anche 'conflitto is null', per lo stesso motivo di NoteEdit.razor:91-94: con la scheda del
+        @* Anche 'conflitto is null', per lo stesso motivo del commento gemello sopra il pulsante
+           Salva di NoteEdit.razor: con la scheda del
            conflitto aperta il pulsante resterebbe acceso, perché lo stato è davvero diverso da
            quello di 'collezione'. Ripremerlo risalverebbe con la versione vecchia — stesso
            conflitto, altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e
@@ -421,7 +422,8 @@ else
             // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
             // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
             // voleva solo aprire una collezione. In console ci va invece per intero, con lo stesso
-            // marcatore di CollectionDetail.razor:308,322, così la diagnosi non si perde.
+            // marcatore [Collezione] che CollectionDetail.razor usa per le proprie diagnosi, così
+            // la diagnosi non si perde.
             Console.Error.WriteLine($"[Collezione] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire la collezione: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
@@ -633,7 +635,8 @@ else
 
         var creata = await Repository.CreaAsync(attivo.Id, autore, nome, icona, campi, votoMassimo, allaCieca);
 
-        // replace: true per lo stesso motivo di NoteEdit.razor:260-263: /collections/new non è un
+        // replace: true per lo stesso motivo del commento gemello dopo la creazione in
+        // NoteEdit.razor: /collections/new non è un
         // posto in cui tornare col tasto Indietro — la collezione ormai esiste, e ripresentare la
         // schermata vuota ne farebbe creare una seconda. Il cambio di rotta rilancia
         // OnParametersSetAsync su questa stessa istanza, che rilegge la collezione: solo da quel
@@ -745,7 +748,13 @@ else
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[Collezione] Eliminazione non riuscita: {ex.Message}");
-            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. La collezione è ancora al suo posto: riprova fra un momento.";
+            // Nessuna promessa che la collezione sia al suo posto, e la frase l'ha persa apposta:
+            // CollectionRepository.EliminaAsync fa TRE chiamate di rete — la lettura preventiva, la
+            // DELETE e la rilettura di conferma — quindi un'eccezione può scoppiare DOPO una
+            // cancellazione riuscita, e in quel caso la collezione non c'è più davvero. È la stessa
+            // divergenza dal modello che Shared/RecensioniElemento.razor ha già dovuto fare sul
+            // proprio catch di eliminazione, per la stessa ragione.
+            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se la collezione c'è ancora.";
         }
         finally
         {

@@ -273,7 +273,8 @@ else
     }
 
     // Come SpesaEdit.Crea: pagante letto con AuthState.GetUserIdAsync() e Guid.TryParse, stesso
-    // messaggio se la sessione non è valida (v. Pages/NoteEdit.razor:201-205). occupato è
+    // messaggio se la sessione non è valida (v. Pages/NoteEdit.razor, il ramo in cui Guid.TryParse
+    // fallisce dentro Crea). occupato è
     // ripristinato in un finally, altrimenti un'eccezione qui lascerebbe i campi disabilitati per
     // sempre.
     private async Task Segna()
@@ -324,7 +325,15 @@ else
         }
         catch (Exception ex)
         {
-            errore = $"Non è stato possibile salvare: {ex.Message}";
+            // "Segnare" e non "salvare": è il verbo del pulsante che porta qui.
+            //
+            // La promessa "quello che hai scritto è ancora qui" è vera in ogni ramo raggiungibile, e
+            // non è ovvia perché questo è un modulo di CREAZIONE, che dopo un successo si svuota:
+            // nuovoImporto e nuovaDescrizione si azzerano solo DOPO che CreaAsync è tornata, quindi
+            // ogni percorso che finisce in questo catch li lascia intatti. Data e categoria non si
+            // azzerano mai.
+            Console.Error.WriteLine($"[Spese] Spesa non segnata: {ex.Message}");
+            errore = "Non è stato possibile segnare la spesa: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento.";
         }
         finally
         {
@@ -342,8 +351,9 @@ else
     // precede — è esattamente l'errore corretto in Segna(), v. il commento lì.
     //
     // SuCambioSpazio (Shared/PaginaRegistro.cs) si esclude con due guardie separate, non una sola:
-    // "if (inCaricamento) return;" a PaginaRegistro.cs:155, che copre la finestra in cui Carica() è
-    // già in volo, e "if (ScartaCambioSpazio()) return;" a PaginaRegistro.cs:156, che chiama
+    // "if (inCaricamento) return;" — la prima delle due guardie in cima a PaginaRegistro.SuCambioSpazio —
+    // che copre la finestra in cui Carica() è già in volo, e "if (ScartaCambioSpazio()) return;",
+    // la seconda, che chiama
     // l'override qui sotto — quindi in pratica rileggoMese — e copre la finestra in cui un chiamante
     // l'ha già annunciata ma non l'ha ancora avviata. Chi aggiunge un quinto chiamante deve
     // procurarsi una delle due esclusioni, rispettando la stessa regola di posizione: due Carica() in
@@ -357,7 +367,8 @@ else
     // falso. Senza questo controllo, un cambio di spazio in quella finestra passerebbe la guardia e
     // partirebbe qui una seconda Carica() in corsa con quella che Segna() sta per lanciare.
     // Rinunciare non perde l'evento: Carica() cattura lo spazio attivo dentro il proprio ciclo, a
-    // ogni giro (v. 'partenza' a PaginaRegistro.cs:98), quindi la Carica() che il percorso in corso
+    // ogni giro (v. la variabile 'partenza' catturata in cima al ciclo di PaginaRegistro.Carica),
+    // quindi la Carica() che il percorso in corso
     // lancerà comunque legge già lo spazio nuovo al primo giro — è la stessa logica per cui quel
     // ciclo esiste, estesa a questa seconda finestra.
     protected override bool ScartaCambioSpazio() => rileggoMese;
