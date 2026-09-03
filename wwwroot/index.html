@@ -75,6 +75,7 @@
     <div id="aggiornamento-pwa" hidden>
         <span>È disponibile una versione nuova di Eton.</span>
         <button type="button" id="aggiorna-ora">Aggiorna</button>
+        <button type="button" id="aggiorna-dopo" class="dopo">Più tardi</button>
     </div>
 
     <!-- Il segnaposto #[.{fingerprint}] non è decorativo: da .NET 9 questo script viene
@@ -101,6 +102,16 @@
                     banner.hidden = true;
                     aggiornamentoRichiesto = true;
                     worker.postMessage({ type: 'SKIP_WAITING' });
+                };
+
+                // «Più tardi» nasconde il banner e nient'altro: nessun sessionStorage, nessun
+                // localStorage, nessun timer. Ricordare il rifiuto sarebbe riscrivere un
+                // meccanismo che il service worker ha già — finché resta in attesa, la riga
+                // registrazione.waiting qui sotto ripropone il banner al prossimo avvio, e
+                // updatefound lo ripropone all'arrivo di una versione più nuova ancora. La
+                // differenza fra questo pulsante e una «X» è l'etichetta, non il congegno.
+                document.getElementById('aggiorna-dopo').onclick = function () {
+                    banner.hidden = true;
                 };
             }
 

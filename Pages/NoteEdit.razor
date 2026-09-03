@@ -74,7 +74,7 @@ else
            È leggermente più severo del database — il browser conta unità UTF-16, Postgres conta
            caratteri, quindi un'emoji vale 2 qui e 1 di là. Sbagliare per eccesso di prudenza va
            bene: non lascia mai passare qualcosa che il database poi rifiuta. *@
-        <textarea class="corpo-nota" rows="16" maxlength="100000" @bind="corpo" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)"
+        <textarea class="corpo-nota" maxlength="100000" @bind="corpo" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)"
                   placeholder="@("Scrivi in Markdown.\n\n**grassetto**  *corsivo*  # titolo\n- [ ] da fare\n- [x] fatto")"></textarea>
     }
 

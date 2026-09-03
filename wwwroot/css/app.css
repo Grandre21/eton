@@ -366,6 +366,14 @@ a { color: var(--accento); }
    lascia libera la colonna occupata dalla barra di navigazione. La spinta è qui
    e non su .app-layout perché quest'ultimo si centra da solo dentro lo spazio
    rimasto: una sola scatola non può fare tutte e due le cose. */
+/* Il banner di aggiornamento è uno sticky in fondo al documento (v. #aggiornamento-pwa più
+   sotto), e uno sticky ha bisogno di pagina sopra di sé a cui restare incollato. Il worker può
+   proporlo entro pochi millisecondi dall'avvio, mentre il boot di WebAssembly dura secondi: in
+   quella finestra #app contiene il solo «Caricamento…», il documento è alto un dito e il banner
+   comparirebbe a mezza schermata per poi saltare in fondo appena l'applicazione disegna.
+   A regime la riga non fa niente, perché .area-contenuto qui sotto è già alta almeno così. */
+#app { min-height: 100vh; }
+
 .area-contenuto { min-height: 100vh; }
 
 .app-layout {
@@ -435,14 +443,28 @@ a { color: var(--accento); }
 /* Proposta di aggiornamento della PWA. Vive in index.html, fuori dall'applicazione, quindi si veste
    qui: sta sopra la barra di navigazione (z-index maggiore di .nav-app) e le si appoggia sopra
    invece di coprirla. L'attributo 'hidden' basta a nasconderlo — display:flex lo rimetterebbe in
-   scena, quindi va escluso esplicitamente. */
+   scena, quindi va escluso esplicitamente.
+
+   sticky e non fixed, ed è la differenza fra coprire e non coprire. Un elemento fixed è fuori dal
+   flusso: il documento non sa che esiste, quindi il banner si posava sull'ultima fascia di
+   contenuto — negli editor proprio sopra «Salva» — e l'unico rimedio sarebbe stato indovinare la
+   sua altezza per riservare altrettanto spazio in fondo alla pagina. Ma quell'altezza non è nota:
+   cresce quando il testo va a capo su schermo stretto, e ora ci sono due pulsanti. Sticky lo tiene
+   nel flusso, ultimo blocco del documento: l'altezza se la riserva da sé, qualunque sia, e finché
+   c'è pagina sotto resta incollato a --s8 dal fondo esattamente come prima. Il conto non dipende
+   più da lei — restano i --s5 di stacco fra il fondo del contenuto e il banner, su ogni schermo.
+   left/right diventano un margine perché uno sticky sta nel flusso e non si stira fra due bordi. */
 #aggiornamento-pwa {
-    position: fixed;
+    position: sticky;
     z-index: 30;
-    left: var(--s3);
-    right: var(--s3);
+    margin: 0 var(--s3);
     bottom: calc(var(--s8) + env(safe-area-inset-bottom));
     display: flex;
+    /* Due pulsanti e una frase non stanno su una riga a 360px, e i pulsanti hanno flex:none:
+       senza il wrap sarebbe il testo a stringersi fino a diventare una colonna di lettere. Il
+       min-width sullo <span> qui sotto è ciò che forza il capo, come già in .barra-elenco
+       .selettore: il flex:1 da solo lo lascerebbe stringersi all'infinito senza mai andare a capo. */
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--s3);
     padding: var(--s3) var(--s4);
@@ -454,7 +476,7 @@ a { color: var(--accento); }
 }
 
 #aggiornamento-pwa[hidden] { display: none; }
-#aggiornamento-pwa span { flex: 1; }
+#aggiornamento-pwa span { flex: 1; min-width: 12rem; }
 
 #aggiornamento-pwa button {
     flex: none;
@@ -468,6 +490,18 @@ a { color: var(--accento); }
     font-weight: 600;
     cursor: pointer;
     touch-action: manipulation;
+}
+
+/* «Più tardi» non compete con «Aggiorna»: il colore pieno resta a una sola delle due azioni,
+   perché due pulsanti accesi accanto non dicono quale sia quella giusta. È lo stesso rapporto
+   che .btn ha con .btn.primario, non un terzo linguaggio inventato per questo banner.
+   Fondo trasparente e non --superficie-alta come .btn: quel colore è già quello del banner, e
+   un pulsante dello stesso colore del suo contenitore si vedrebbe solo per il bordo. */
+#aggiornamento-pwa button.dopo {
+    background: transparent;
+    color: var(--testo);
+    border: 1px solid var(--bordo-forte);
+    font-weight: 500;
 }
 
 /* -------------------------------------------------------- navigazione --- */
@@ -701,11 +735,33 @@ a { color: var(--accento); }
     white-space: nowrap;
 }
 
-.btn:disabled {
+/* a.btn:not([href]) accanto a :disabled, e non al suo posto: i quattro editor spengono
+   «Chiudi» durante un salvataggio togliendogli l'href (v. Pages/NoteEdit.razor:114), e un <a>
+   senza href davvero non naviga né prende il fuoco — ma :disabled non lo raggiunge, perché
+   non è un controllo di modulo, e senza questa riga resta acceso all'occhio: sembra premibile
+   e non lo è. */
+.btn:disabled,
+a.btn:not([href]) {
     opacity: .5;
     cursor: default;
     transform: none;
     box-shadow: none;
+}
+
+/* Un primario spento non è un primario più pallido: opacity .5 su fondo blu pieno, su nero,
+   lascia comunque il colore più acceso della schermata — «Salva» inerte sembrava premibile
+   quanto «Salva» pronto. Spento significa perdere la gerarchia, cioè tornare la superficie
+   qualunque che .btn è già di suo: nessun colore nuovo, e lo stesso aspetto del «Chiudi»
+   spento che gli sta accanto.
+   :not(.occupato) perché un pulsante che sta salvando è disabled anche lui, ma non è spento:
+   .btn.occupato lo dice con una pulsazione e non ridichiara i colori, quindi senza questa
+   esclusione il grigio di qui vincerebbe per specificità proprio sul caso che quella classe
+   esiste per distinguere — «Segna» di Pages/Spese.razor:103 è l'unico punto dove le due cose
+   capitano insieme, ed è dove si vedrebbe. */
+.btn.primario:disabled:not(.occupato) {
+    background: var(--superficie-alta);
+    border-color: var(--bordo-forte);
+    color: var(--testo);
 }
 
 /* Un pulsante che sta salvando non è "disabilitato", è "occupato": .btn:disabled
@@ -1402,6 +1458,12 @@ li:last-child > .riga { border-bottom: none; }
     border: 1px solid var(--bordo);
     border-radius: var(--raggio);
     padding: var(--s4);
+    /* La stessa altezza minima di .corpo-nota, la textarea che questo blocco sostituisce
+       quando si passa ad Anteprima: senza, il contenuto sotto risaliva di quasi quattrocento
+       pixel a ogni passaggio fra le due schede, e i pulsanti finivano da un'altra parte
+       rispetto a dove il dito li aveva appena lasciati. Due stati della stessa area occupano
+       lo stesso spazio; se l'anteprima è più lunga cresce, ed è giusto che cresca. */
+    min-height: 40vh;
     margin-bottom: var(--s4);
     /* Una nota la scrive qualcun altro: senza questo, una parola lunghissima o
        un URL nudo sfondano la larghezza e fanno scorrere l'intera pagina. */
@@ -1908,6 +1970,21 @@ button.pastiglia {
     touch-action: manipulation;
 }
 
+/* Le pastiglie dentro una scelta non sono etichette da leggere ma bersagli da premere col
+   pollice, ed erano alte ventun pixel: meno della metà dei 48 che questo file dichiara in
+   --tocco. La misura è quella che .barra-elenco .pastiglia (più sopra) dà già alle proprie —
+   stessa altezza, stesso respiro orizzontale, stesso corpo — perché sono la stessa cosa in
+   due posti e vederle di due misure direbbe che sono due cose diverse. A --t-xs dentro
+   quarantotto pixel il testo sarebbe un filo in mezzo al vuoto.
+   Il corpo non tocca le pastiglie-emoji di Pages/CollectionEdit.razor:104, che lo dichiarano
+   inline a --t-lg per stare grandi quanto la .icona-input accanto: un'emoji e una parola non
+   si leggono alla stessa misura, e l'inline vince su questa regola per costruzione. */
+.scelta-categoria .pastiglia {
+    min-height: var(--tocco);
+    padding: 0 var(--s4);
+    font-size: var(--t-sm);
+}
+
 /* ------------------------------------------------------- riepilogo Home --- */
 
 /* Una riga sola fra il sottotitolo e i due registri della Home: il totale del
@@ -2137,7 +2214,13 @@ button.pastiglia {
 
     .nav-piede {
         display: flex;
-        align-items: center;
+        /* flex-end e non center, come già in .barra-elenco (più sopra) e per lo stesso motivo:
+           il selettore dello spazio è alto quanto la sua etichetta più il campo, il collegamento
+           al profilo accanto è un quadrato di 2.25rem, e centrare due cose di altezza diversa
+           lascia le loro basi sfalsate di metà differenza — diciotto pixel, abbastanza perché
+           di striscio sembrino accavallati pur non toccandosi. Allineate sotto, si leggono come
+           una riga sola. */
+        align-items: flex-end;
         gap: var(--s2);
         padding: var(--s4) var(--s3) 0;
         border-top: 1px solid var(--bordo);
@@ -2194,8 +2277,9 @@ button.pastiglia {
     /* Il banner di aggiornamento su schermo largo non è più una fascia a tutta
        larghezza in fondo: si accosta in basso a destra, come una notifica. */
     #aggiornamento-pwa {
-        left: auto;
-        right: var(--s5);
+        /* margin-left:auto al posto di left:auto/right: con max-width dichiarata è ciò che
+           accosta a destra un elemento che ora sta nel flusso invece di essere appeso ai bordi. */
+        margin: 0 var(--s5) 0 auto;
         bottom: var(--s5);
         max-width: 26rem;
     }
