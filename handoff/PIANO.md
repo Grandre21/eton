@@ -61,6 +61,19 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
   giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
   `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **4 set 2026** — **Voce 4 dell'unità 11 (rilievo 8) autorizzata, e il mio mandato sbagliava.**
+  Avevo scritto che aggiungere una classe per allontanare «Elimina» da «Chiudi» «tocca i quattro
+  editor». **Falso**: gli editor non scrivono «Elimina», lo delegano tutti a
+  `Shared/ConfermaAzione.razor` — **un file solo**, cinque call-site. L'unità l'ha verificato e
+  me l'ha detto invece di eseguire un mandato sbagliato o di allargarsi da sola.
+  Ha anche escluso il selettore che sarebbe sembrato ovvio (`.btn.rosso` dentro `.azioni`) con
+  **quattro controesempi**, tutti riverificati dal capo: `Profile.razor:35` («Esci» finirebbe da
+  solo a destra), `SpaceDetail.razor:128` («Sì, elimina» è il primo di due e trascinerebbe
+  «Annulla»), `SchedaConflitto.razor:26` (due scelte gemelle si staccherebbero),
+  `CollectionEdit.razor:187` («Sì, togli» sta in mezzo a una fila).
+  **Rimedio autorizzato**: una classe esplicita `azione-distruttiva` sui due `<button>` del
+  componente, più `.azioni .azione-distruttiva { margin-left: auto; }`. Perimetro esteso a quel
+  solo file.
 - **3 set 2026, sera** — **Unità 16: un difetto di sicurezza vero, trovato dalla 15.**
   `Services/OAuthCallback.cs:24` legge `error_description` **dalla query, senza validarlo**;
   `SupabaseService.cs:110` lo assegna tale e quale; `Benvenuto.razor:28` lo rende in un
@@ -190,7 +203,7 @@ i numeri di cartella non si riusano.
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
 | 09 | Registri vuoti | `Pages/Notes.razor`, `Pages/Collections.razor` | — | **FATTO** — due righe di codice; ha trovato l'orfano `CollectionDetail.razor`. `ConfermaAzione` tolto dal perimetro: era lì per il rilievo 8, ora dell'unità 11 |
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
-| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
+| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, `Pages/NoteEdit.razor` (voce 5), **`Shared/ConfermaAzione.razor`** (voce 4, autorizzata al rilancio) | tutte | **6/8 FATTE** — commit `ef61a22`. Rilanciata per la sola voce 4 |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
 | 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
 | 15 | L'undicesimo punto | `Services/SupabaseService.cs` | 14 | **FATTO** — commit `84217ec`. **Il rilievo 3 è chiuso, con prova**: zero righe sul `grep` dei sink. Ha trovato il difetto che diventa l'unità 16 |

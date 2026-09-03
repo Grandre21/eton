@@ -1,12 +1,16 @@
-UNITÀ: 11 — ESITO: PARZIALE
+UNITÀ: 11 — ESITO: FATTO
 
-Sei voci su otto chiuse, una `BLOCKED` con la proposta pronta (voce 4), una lasciata per
-mandato (voce 8, cosmesi che toccherebbe file non miei). Nessuna voce è stata dimenticata:
-le otto righe d'esito sono più sotto.
+Sette voci su otto chiuse, una lasciata per mandato (voce 8, cosmesi che toccherebbe file
+non miei). Nessuna voce è stata dimenticata: le otto righe d'esito sono più sotto.
 
-**La domanda per il capo, in una riga**: posso aggiungere una classe a
-`Shared/ConfermaAzione.razor` — **un file solo, non i quattro editor** — per dare al CSS un
-gancio sull'azione distruttiva? Il dettaglio è nella riga della voce 4 e in `FUORI SCOPE`.
+**Questo resoconto copre due giri.** Il primo ha chiuso sei voci ed è committato in
+`ef61a22`; la voce 4 era tornata `BLOCKED` con una proposta, il capo l'ha verificata, ha
+esteso il perimetro a `Shared/ConfermaAzione.razor` e il secondo giro l'ha applicata.
+
+**Tutto ciò che riguarda il secondo giro sta in coda**, nella sezione
+`SECONDO GIRO — VOCE 4`, che ha `TOCCATI`, `CONTRATTI`, `ADJUDICA`, `GATE` e prove suoi. Le
+sezioni qui sotto sono quelle del primo giro e non sono state riscritte: l'unica riga
+cambiata è la 4 dell'elenco delle otto voci.
 
 ## TOCCATI
 
@@ -34,9 +38,11 @@ tree è come il mandato lo vuole.
    `font-size: var(--t-lg)` di `CollectionEdit.razor:104` **resta**, e la decisione è
    motivata sotto in `SCOSTAMENTI`: non è la stessa pastiglia in tre misure, è testo in due
    pagine ed emoji nella terza.
-4. **«Elimina» lontano da «Chiudi» — BLOCKED.** Nessun gancio nel markup, come il capo
-   sospettava; ma il rimedio costa **meno** di quanto il mandato prevede. Dettaglio in
-   `FUORI SCOPE`.
+4. **«Elimina» lontano da «Chiudi» — FATTA nel secondo giro.** Al primo giro era `BLOCKED`:
+   nessun gancio nel markup, come il capo sospettava, e il rimedio costava **meno** di quanto
+   il mandato prevedeva — un file solo, non i quattro editor. Il capo ha verificato la
+   proposta e l'ha autorizzata. Applicata in `Shared/ConfermaAzione.razor:34` e `:39` più
+   `app.css:805`. Dettaglio in `SECONDO GIRO — VOCE 4`, in coda.
 5. **Il salto di 358px dell'anteprima — FATTA.** `app.css:1466` più una parola tolta a
    `NoteEdit.razor:77`. Il CSS da solo non bastava: perché, sotto.
 6. **Basi della barra laterale — FATTA**, e l'origine del disallineamento **si è potuta
@@ -259,7 +265,9 @@ l'ho messo fuori mandato nei tre brief, citando la scelta dell'utente del 24 ago
 ## FUORI SCOPE
 
 **1. Voce 4, «Elimina» adiacente a «Chiudi» — BLOCKED, e il rimedio costa meno del
-previsto.**
+previsto.** *(Superata: il capo ha autorizzato, ed è stata applicata nel secondo giro. Il
+testo che segue è il record del primo giro e la proposta che il capo ha letto; l'esito sta
+in `SECONDO GIRO — VOCE 4`.)*
 
 Il mandato dice che aggiungere una classe «tocca i quattro editor». **Non è così**: i
 quattro editor non scrivono «Elimina», lo delegano a `Shared/ConfermaAzione.razor`, che è
@@ -478,3 +486,260 @@ service worker in attesa — si vede solo sul sito pubblicato: in sviluppo il wo
 no-op, e mostrarlo dalla console prova il layout ma non la sequenza
 `waiting` → `proponi()` → «Più tardi» → riapparizione al riavvio. Quella sequenza resta da
 verificare al primo rilascio dopo questo lavoro.
+
+---
+
+# SECONDO GIRO — VOCE 4
+
+Una voce sola, con perimetro esteso dal capo a `Shared/ConfermaAzione.razor`. Il primo giro
+resta committato in `ef61a22` e **non è stato ritoccato**: le voci 1, 2, 3, 5, 6 e 7 non
+sono state riaperte né riverificate, come il mandato prescrive.
+
+## TOCCATI
+
+- `Shared/ConfermaAzione.razor` → +11/−3
+- `wwwroot/css/app.css` → +10/−0
+
+`git diff --stat`: **21 inserzioni, 3 rimozioni su due file**. Di quelle 21 righe, **15 sono
+commento nuovo**, 2 sono righe vuote e 1 è una riga di commento riscritta solo per spostare
+il `*@` di chiusura più in basso. **Le righe che cambiano comportamento sono tre**: due
+attributi `class` e un selettore.
+
+Nessun call-site toccato, nessun altro file, nessun commit. `git status --porcelain` mostra
+questi due file più i due documenti di `handoff/` che il capo stava già modificando.
+
+## CONTRATTI
+
+**`Shared/ConfermaAzione.razor:34`** — ramo armato. La classe si aggiunge, `.btn` e `.rosso`
+restano:
+
+```razor
+    <button class="btn rosso azione-distruttiva" @onclick="Conferma" disabled="@Occupato">@EtichettaConferma</button>
+```
+
+**`Shared/ConfermaAzione.razor:39`** — ramo a riposo, stessa aggiunta:
+
+```razor
+    <button class="btn rosso azione-distruttiva" @onclick="() => confermando = true" disabled="@Occupato">@Etichetta</button>
+```
+
+**`Shared/ConfermaAzione.razor:35`** — **invariata, ed è un contratto anche questa**:
+«Annulla» NON prende la classe, e non è una svista. Il perché è nel paragrafo qui sotto.
+
+```razor
+    <button class="btn" @onclick="() => confermando = false" disabled="@Occupato">Annulla</button>
+```
+
+**`wwwroot/css/app.css:805`** — regola nuova, nella sezione dei pulsanti, subito dopo
+`.azioni:not(:last-child)` (`:795`) e prima del separatore `/* --- campi --- */` (`:807`):
+
+```css
+.azioni .azione-distruttiva { margin-left: auto; }
+```
+
+Il selettore è discendente e non figlio diretto, ed è la forma che il progetto usa già per i
+ganci di questo tipo: `.riga-spesa .importo` (`app.css:1896`), `.striscia-spese .cime`
+(`:2024`), `.testa-registro a` (`:1338`). L'idioma `margin-left: auto` come classe-gancio
+esiste già sei volte nel foglio, e in un caso è **letteralmente la stessa regola**:
+`.testata-azione { margin-left: auto; }` (`app.css:931`). Nessuna variabile nuova, nessun
+`!important`, nessuna astrazione.
+
+## LE DUE VERIFICHE CHE IL MANDATO CHIEDEVA — fatte prima di applicare
+
+### 1. «Annulla» si sposta insieme a «Sì, elimina», e il markup lo produce davvero
+
+**Il meccanismo è l'assenza di un wrapper, ed è deliberata.** `ConfermaAzione` non avvolge i
+suoi pulsanti in nessun contenitore — il commento in testa al file lo dichiara da prima di
+me (`Shared/ConfermaAzione.razor:5-6`: «Nessun contenitore attorno ai pulsanti: il call-site
+li mette dentro un `<div class="azioni">` già esistente [...] un wrapper qui romperebbe quel
+layout flex»). Quindi nel DOM reso i due pulsanti del ramo armato sono **fratelli flex
+diretti** di «Salva» e «Chiudi», nello stesso `.azioni` del call-site.
+
+Su quella riga flex, `margin-left: auto` non sposta un elemento: **assorbe tutto lo spazio
+libero della riga**. Ciò che sta prima del margine resta a sinistra, ciò che sta dopo viene
+spinto a destra insieme. Poiché «Annulla» segue «Sì, elimina» nel markup, finisce a destra
+con lui, e la distanza fra i due resta il `gap: var(--s2)` di `.azioni` (`app.css:785-789`):
+8px, invariati. Mettere la classe anche su «Annulla» avrebbe fatto il contrario di quel che
+serve — un secondo margine auto avrebbe **diviso** lo spazio libero fra i due, separando le
+due metà della stessa decisione.
+
+Nel ramo armato di `CollectionEdit.razor:270` l'ordine reso è
+`Salva · Chiudi · @Avvertenza · «Sì, elimina» · «Annulla»`: l'avvertenza precede il margine,
+quindi resta a sinistra col resto del testo, e le due scelte vanno a destra come coppia. È
+l'esito voluto.
+
+**Un limite misurato, non nascosto.** L'andata a capo (`flex-wrap: wrap` su `.azioni`) si
+risolve **prima** dei margini auto, che in quella fase valgono zero: la mia regola quindi
+**non cambia dove la fila va a capo**, cambia solo la posizione orizzontale dentro la riga.
+Ma se a schermo stretto la riga si spezza fra «Sì, elimina» e «Annulla», i due finiscono su
+righe diverse e il raggruppamento si perde in orizzontale. È una prova del browser, non del
+codice: sta in `DA PROVARE NEL BROWSER`, prova 8b, con la soglia e il rimedio.
+
+### 2. Il quinto call-site *è* dentro un `<div class="azioni">` — quindi la regola lo tocca
+
+Il mandato chiedeva di guardare, e ho guardato: `Shared/RecensioniElemento.razor:65` apre
+`<div class="azioni">`, `:66-68` contiene «Salva», `:72` il componente, `:74` chiude. Non è
+un'eccezione: è la stessa struttura degli altri quattro.
+
+Quindi **«Togli la mia recensione» si sposta**, e non resta dov'è oggi. È l'esito giusto e
+non un effetto collaterale: lì la fila è `Salva · [azione distruttiva]` e sono esattamente i
+due pulsanti che la voce 4 vuole separati. Non ho aggiunto nessun `.azioni`, non ho toccato
+il file.
+
+## ADJUDICA
+
+Gate del mandato: `bug-hunter` e `conformity`. **`threat-hunter` no**, ed è motivato: questo
+secondo diff **non tocca `index.html`** — quindi niente JavaScript — e non ha superficie di
+fiducia. Nessun input esterno, nessuna query, nessun render di markup, nessun authn/authz,
+nessuna serializzazione. `backend-expert` nemmeno: 21 righe, nessun tipo, nessun servizio,
+nessuna astrazione nuova.
+
+**istruttoria: 0 rilievi su 0 file → checker no.** La soglia (somma ≥ 4, oppure ≥ 3 file
+distinti citati) non è avvicinata.
+
+**`bug-hunter` — 0 rilievi**, e non è un rapporto vuoto: ha istruito le sei domande del
+brief aprendo tutti e cinque i call-site, la regola `.azioni`, il blocco `.btn` e ogni altra
+regola del foglio che dichiari `margin`/`margin-left`/`margin-inline` su `.btn` o su un
+discendente di `.azioni`. Esiti: nessun conflitto di specificità o di cascata dopo `:805`;
+nessun `.azioni` annidato in un altro `.azioni` in tutto il progetto, quindi il selettore
+discendente non può agganciare un contenitore diverso da quello previsto; nessuna modifica a
+focus, ordine di tabulazione, `disabled`, ciclo di vita o campo `confermando`. Ha inoltre
+**verificato le affermazioni fattuali del commento** — i quattro controesempi che non passano
+dal componente, e i tre blocchi `.azioni` di `CollectionEdit` (`:61`, `:180`, `:253`) di cui
+solo l'ultimo finisce con l'azione distruttiva — perché un commento falso è un rilievo.
+
+**`conformity` — 0 rilievi.** Ha cercato una classe o una regola già esistente che facesse
+questo lavoro (`pericol|danger|distrutt` su tutti i `.razor`, più una regex mirata sulle
+`margin-left: auto` del foglio) e non l'ha trovata: `.testata-azione` è legata al proprio
+contesto e non era riusabile. Ha giudicato conforme la nomenclatura (`azione-distruttiva`
+segue l'ordine sostantivo+descrittore di `testata-azione`, `riga-spesa`, `scelta-categoria`,
+ed è distinta da `.scheda.pericolo`, che è un modificatore di superficie e non un gancio di
+layout), la forma del selettore, la posizione nel file, la densità del commento (8 righe per
+una riga di CSS è la norma qui: confronta `.btn.occupato` a `:767-778`) e la scelta di
+mettere la classe nel componente invece che nei cinque call-site.
+
+**Campione sugli infondati.** Il §5 ne chiede almeno uno per unità **quando ce ne sono**: qui
+non c'è nessun rilievo, né fondato né respinto, quindi non c'è nulla da campionare. Lo
+dichiaro invece di tacerlo. In compenso **non ho preso per buono un 0/0**: ho riaperto io,
+prima e dopo i revisori, tutti e cinque i call-site, la regola `.azioni` e i quattro
+controesempi (`Pages/Profile.razor:35`, `Pages/SpaceDetail.razor:128` e `:134`,
+`Shared/SchedaConflitto.razor:26`, `Pages/CollectionEdit.razor:187`), e ho confermato con
+`grep` che i call-site di `ConfermaAzione` sono cinque e nessuno dei quattro controesempi è
+fra loro — cioè che nessuno di essi può ricevere la classe.
+
+Una riprova indipendente che i due revisori hanno letto il file **dopo** la modifica e non
+una copia stantia: citano `.testata-azione` a `:931` e `.riga-spesa .importo` a `:1896`,
+mentre il mio `grep` pre-modifica le dava a `:921` e `:1886`. Lo scarto è 10, cioè
+**esattamente** le righe che il blocco nuovo inserisce a `:796`.
+
+**Nessun rilievo su `prefers-reduced-motion`**: l'ho messo fuori mandato in entrambi i brief,
+citando la scelta dell'utente del 24 agosto 2026.
+
+## FUORI SCOPE
+
+**1. Voce 8, `.scelta-categoria` → `.scelta-pastiglie` — resta non fatta**, per la stessa
+ragione del primo giro: tocca tre `.razor` che non sono miei. Il consiglio resta quello, cioè
+lasciarla.
+
+**2. Il raggruppamento «Sì, elimina» + «Annulla» a schermo molto stretto.** Se la misura del
+browser (prova 8b) mostra che la riga si spezza fra i due, il rimedio **non è mio e non è di
+questa voce**: richiederebbe un contenitore attorno ai due pulsanti dentro `ConfermaAzione`,
+che il commento a `:5-6` esclude per iscritto perché romperebbe il layout flex del
+call-site. La scelta è del capo, e va presa con il numero in mano, non prima.
+
+**3. Il guadagno di distanza dipende dallo spazio libero della riga, e a 360px è modesto.**
+`margin-left: auto` non aggiunge distanza: ne redistribuisce quella che c'è. Su schermo largo
+la fila `.azioni` è molto più larga della somma dei pulsanti e «Elimina» finisce lontano; su
+un telefono a 360px lo spazio libero residuo è di poche decine di pixel, quindi la separazione
+migliora ma non diventa grande. Non è un difetto della regola, è il suo limite, e lo scrivo
+perché nessuno lo scopra come sorpresa: la misura è nella prova 7.
+
+## GATE
+
+- `dotnet build -warnaserror` → **Compilazione completata. Avvisi: 0. Errori: 0.**
+- `dotnet test` → **Superato! Non superati: 0. Superati: 273. Ignorati: 0. Totale: 273.**
+  Esattamente i 273 di partenza, come al primo giro.
+- Compilato **una volta sola, a fine giro**, con nessun agente attivo.
+- Il server di sviluppo **non è stato avviato** e nessuna prova è stata fatta nel browser,
+  come il mandato prescrive: lo fa il capo subito dopo, con `live-testing`.
+- Nessun commit.
+
+## SCOSTAMENTI
+
+**1. Il mandato dava per possibile che `RecensioniElemento.razor:72` non fosse dentro un
+`.azioni`. Lo è.** Non è uno scostamento dalle istruzioni — era la domanda, e questa è la
+risposta — ma cambia la portata della voce: i call-site toccati sono **cinque, non quattro**.
+Lo segnalo perché il capo lo sappia prima di guardare le schermate.
+
+**2. Il capoverso di commento aggiunto in testa a `ConfermaAzione.razor` (`:24-30`) non era
+richiesto dal mandato.** L'ho aggiunto perché la classe è un gancio di layout senza effetto
+visivo proprio, e senza una riga che lo dica il prossimo che passa la toglie credendola
+morta — o peggio, la sostituisce con `.btn.rosso` dentro `.azioni`, che è esattamente la
+scelta sbagliata da cui il primo giro aveva messo in guardia. Il commento spiega **perché
+non** si può fare così, che è l'informazione che si perde.
+
+**3. Non ho messo la classe su «Annulla»**, benché il mandato parlasse di spostarli
+«insieme, come gruppo». La lettura giusta della richiesta è l'esito, non il mezzo: con la
+classe su entrambi lo spazio libero si sarebbe **diviso in due**, allontanando «Annulla» da
+«Sì, elimina» invece di tenerli uniti. Il mandato stesso lo prevedeva — «con la classe sul
+solo `:26` è ciò che accade» — e la verifica è nella sezione dedicata qui sopra.
+
+## DA PROVARE NEL BROWSER — voce 4
+
+Continua la numerazione del primo giro, che si fermava alla prova 6. Tutte le posizioni si
+misurano con `getBoundingClientRect()`.
+
+**Prova 7 — «Elimina» all'estremo destro della fila (il cuore della voce).** Aprire un
+editor su una entità **esistente** con permesso di intervenire — `/notes/{id}`,
+`/expenses/{id}`, `/collections/{id}/edit`, `/collections/{id}/items/{id}` — e misurare
+sulla fila `.azioni` in fondo:
+- `right` di «Elimina» = `right` del `<div class="azioni">` (scarto **0**, il pulsante è a
+  filo del bordo destro della fila);
+- distanza fra il `right` di «Chiudi» e il `left` di «Elimina`: *prima* era **8px**
+  (`gap: var(--s2)`), il rilievo la chiamava ~55px da centro a centro. *Atteso ora*: tutto lo
+  spazio libero della riga. **Riportare il numero misurato**, non solo «è aumentata»: su
+  schermo largo saranno centinaia di pixel, a 360px poche decine, ed è il limite dichiarato in
+  `FUORI SCOPE 3`.
+- «Salva» e «Chiudi» **non si sono mossi**: il `left` di «Salva» coincide con quello della
+  fila.
+
+**Prova 8 — il ramo armato: «Sì, elimina» e «Annulla» si muovono come coppia.** Premere
+«Elimina» per armare la conferma, poi:
+- **a)** su schermo largo: «Annulla» è a filo destro della fila, «Sì, elimina» lo precede a
+  **8px** esatti, e i due sono staccati da «Chiudi» da tutto lo spazio libero. Su
+  `/collections/{id}/edit` verificare in più che l'avvertenza «Eliminando la collezione
+  spariscono anche tutti i suoi elementi.» resti **a sinistra**, col testo, e non venga
+  trascinata a destra.
+- **b)** *La prova che verifica il limite dichiarato*: portare la finestra a **360px** e
+  riarmare la conferma su `/notes/{id}`, dove la fila diventa
+  `Salva · Chiudi · Sì, elimina · Annulla`. Leggere il `top` dei due pulsanti di conferma. Se
+  è **lo stesso**, sono sulla stessa riga e il raggruppamento regge. Se «Annulla» ha un `top`
+  maggiore, la riga si è spezzata fra i due: **non è una regressione** — si spezzava anche
+  prima, perché l'andata a capo si risolve ignorando i margini auto — ma il raggruppamento si
+  perde in orizzontale, e allora vale il rimedio in `FUORI SCOPE 2`, che è una decisione del
+  capo. **Riportare quale dei due casi si osserva.**
+
+**Prova 9 — i quattro punti che NON devono muoversi.** È la prova che la classe-gancio ha
+fatto il suo mestiere, cioè non toccare chi non passa dal componente. In ciascuno,
+`margin-left` calcolato del pulsante rosso deve essere **`0px`**, non `auto` risolto:
+- `/profile` (`Pages/Profile.razor:35`): «Esci» è l'unico pulsante della fila e deve restare
+  **a sinistra**, non finire solo a destra;
+- `/spaces/{id}` (`Pages/SpaceDetail.razor:128` e `:134`): armare l'eliminazione dello spazio
+  — «Sì, elimina» e «Annulla» restano **a sinistra**, adiacenti, come oggi;
+- `Shared/SchedaConflitto.razor:26`: provocare un conflitto di salvataggio — «Sovrascrivi con
+  la mia» resta accanto a «Ricarica la sua», che è la scelta gemella;
+- `/collections/{id}/edit` (`Pages/CollectionEdit.razor:187`): armare la rimozione di un
+  elemento dalla lista — «Sì, togli» resta **in mezzo** a `↑ ↓ … Annulla`, non salta a destra.
+
+**Prova 10 — il quinto call-site, le recensioni.** Aprire un elemento con una recensione
+propria già salvata (`RecensioniElemento`, dentro la pagina dell'elemento). *Atteso*: «Togli
+la mia recensione» a filo destro della fila, «Salva» fermo a sinistra. A **360px**
+l'etichetta è lunga e la fila probabilmente va a capo: in quel caso il pulsante deve restare
+**a filo destro della propria riga**, sotto «Salva» — è l'esito voluto, non un difetto, ed è
+lo stesso comportamento della prova 8b.
+
+**Prova 11 — nessuna regressione sull'aspetto.** Su un «Elimina» qualsiasi: `background`,
+`border-color` e `color` devono essere ancora quelli di `.btn.rosso` (`app.css:714`),
+il `min-height` ancora `48px` (`--tocco`), e il pulsante deve continuare a spegnersi durante
+un salvataggio (`disabled="@Occupato"`). La classe nuova dichiara **solo** `margin-left`: se
+si vede altro, qualcosa ha agganciato il selettore per sbaglio.

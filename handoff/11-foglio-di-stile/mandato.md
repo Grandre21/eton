@@ -1,6 +1,67 @@
 UNITÀ: 11/13 — Il foglio di stile paga i debiti di nove unità
 
-## OBIETTIVO
+## STATO AL RILANCIO — leggi questo per primo, il resto è già fatto
+
+**Un primo giro su questo mandato è rientrato `PARZIALE` e ha chiuso sei voci su otto**, con
+gate verde (`-warnaserror` 0/0, 273 test) e commit `ef61a22`. Il tuo resoconto di allora è in
+`handoff/11-foglio-di-stile/resoconto.md`: **leggilo per intero**, è tuo e vale come contesto.
+
+**Ti resta una voce sola: la 4.** Le voci 1, 2, 3, 5, 6 e 7 sono chiuse e committate — **non
+rifarle, non ritoccarle, non riverificarle**. La voce 8 resta non fatta per mandato.
+
+### La voce 4 è autorizzata, e il capo ha verificato la tua proposta
+
+Avevi ragione su due cose, e il mandato originale sbagliava su entrambe:
+
+1. **Allontanare «Elimina» non tocca i quattro editor**, perché gli editor non scrivono
+   «Elimina»: lo delegano tutti a `Shared/ConfermaAzione.razor`, che è **un file solo**.
+   Verificato dal capo: i cinque call-site sono `NoteEdit.razor:121`, `ItemEdit.razor:142`,
+   `SpesaEdit.razor:161`, `CollectionEdit.razor:270`, `RecensioniElemento.razor:72`.
+2. **`.btn.rosso` dentro `.azioni` non è un selettore utilizzabile**, e i tuoi quattro
+   controesempi sono veri: verificati `Profile.razor:35`, `SpaceDetail.razor:128`, `:134`,
+   `:141` — usano quella classe **fuori** dal componente, dove spingere a destra sarebbe un
+   danno.
+
+**Il perimetro si estende a `Shared/ConfermaAzione.razor`**, e a nient'altro. Applica la
+proposta che hai scritto tu:
+
+```razor
+@* Shared/ConfermaAzione.razor:26 e :31 — la classe si aggiunge, .btn e .rosso restano *@
+<button class="btn rosso azione-distruttiva" ...>
+```
+
+```css
+/* app.css, nella sezione dei pulsanti, accanto a .azioni */
+.azioni .azione-distruttiva { margin-left: auto; }
+```
+
+**Due cose da verificare prima di dichiararla fatta**, e sono tue perché il capo non apre il
+browser:
+
+- **`:27`, «Annulla», NON prende la classe.** Nel ramo armato «Sì, elimina» e «Annulla» devono
+  spostarsi **insieme**, come gruppo: sono la stessa decisione. Con la classe sul solo `:26` è
+  ciò che accade — verifica che il markup lo produca davvero e spiega come nel resoconto.
+- **Il quinto call-site, `RecensioniElemento.razor:72`, non è dentro un `<div class="azioni">`
+  come gli altri quattro** — o forse sì. **Guarda**: se non lo è, la regola non lo tocca, e va
+  detto se questo lascia «Togli la mia recensione» dov'è oggi. Non aggiungere `.azioni` lì per
+  farcelo entrare: sarebbe un cambio di layout fuori dalla voce.
+
+### Cosa devi consegnare
+
+1. La voce 4 applicata.
+2. **La review di questo secondo diff**: `bug-hunter` e `conformity` — è markup e CSS che
+   cambiano il comportamento visivo di cinque schermate, non formattazione. `threat-hunter` no:
+   nessuna superficie di fiducia. Istruttoria e adjudica come sempre.
+3. **Il resoconto aggiornato**, non uno nuovo: riapri
+   `handoff/11-foglio-di-stile/resoconto.md`, porta l'esito da `PARZIALE` a `FATTO` se la voce 4
+   si chiude, aggiorna la riga 4 delle otto, e aggiungi in coda una sezione
+   `SECONDO GIRO — VOCE 4` con quello che hai fatto, l'adjudica e le prove nel browser.
+   **Non riscrivere le parti già buone**: sono state lette dal capo e citate nel commit.
+4. Gate: `dotnet build -warnaserror` e `dotnet test` (erano **273**).
+
+---
+
+## OBIETTIVO ORIGINALE — per contesto; le voci 1-3 e 5-8 sono già chiuse
 
 Sei l'unica unità che possiede `wwwroot/css/app.css`, ed è per questo che nove unità prima di
 te hanno rinunciato a toccarlo e hanno lasciato qui le loro voci. Più cinque rilievi che sono

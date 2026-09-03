@@ -794,6 +794,16 @@ a.btn:not([href]) {
    invece di due classi che chi scrive il markup deve ricordarsi di scegliere. */
 .azioni:not(:last-child) { margin-bottom: var(--s5); }
 
+/* L'azione distruttiva all'estremo opposto di «Chiudi», invece che a 55px da lui: la
+   conferma a valle (Shared/ConfermaAzione.razor) rende il danno recuperabile, la distanza
+   evita il tocco sbagliato. margin-left auto in un contenitore flex assorbe tutto lo spazio
+   libero della riga, quindi nel ramo armato «Annulla» — che nel markup viene dopo — si sposta
+   INSIEME a «Sì, elimina» senza una regola sua: sono la stessa decisione e devono restare
+   vicine. Il gancio è una classe e non un selettore posizionale perché CollectionEdit ha tre
+   blocchi .azioni e non tutti finiscono con l'azione distruttiva, e non è .btn.rosso perché
+   quella coppia esiste anche fuori da questo componente, dove spostare sarebbe un danno. */
+.azioni .azione-distruttiva { margin-left: auto; }
+
 /* ------------------------------------------------------------- campi --- */
 
 /* Un'unica dichiarazione per tutti i campi di testo: prima ce n'erano quattro

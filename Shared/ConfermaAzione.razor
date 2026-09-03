@@ -19,16 +19,24 @@
    Avvertenza è un RenderFragment, non una stringa: CollectionEdit deve mostrare un avviso di più
    di una frase legato solo al ramo armato ("Eliminando la collezione spariscono anche tutti i suoi
    elementi."), e un solo call-site su quattro lo usa — un parametro stringa in più per tutti gli
-   altri sarebbe genericità pagata da chi non ne ha bisogno. *@
+   altri sarebbe genericità pagata da chi non ne ha bisogno.
+
+   'azione-distruttiva' è un gancio per il foglio di stile, non un modificatore visivo: .btn e
+   .rosso restano e continuano a dare l'aspetto. Serve perché .btn.rosso dentro .azioni non è
+   selezionabile senza danno — lo stesso accoppiamento esiste in quattro punti che NON passano di
+   qui (Pages/Profile.razor, Pages/SpaceDetail.razor, Shared/SchedaConflitto.razor,
+   Pages/CollectionEdit.razor), dove spingere a destra separerebbe scelte gemelle o lascerebbe un
+   pulsante solo in fondo alla fila. La classe la porta solo il pulsante distruttivo: 'Annulla' lo
+   segue da sé, perché un margin-left auto in flex sposta anche i fratelli che vengono dopo. *@
 @if (confermando)
 {
     @Avvertenza
-    <button class="btn rosso" @onclick="Conferma" disabled="@Occupato">@EtichettaConferma</button>
+    <button class="btn rosso azione-distruttiva" @onclick="Conferma" disabled="@Occupato">@EtichettaConferma</button>
     <button class="btn" @onclick="() => confermando = false" disabled="@Occupato">Annulla</button>
 }
 else
 {
-    <button class="btn rosso" @onclick="() => confermando = true" disabled="@Occupato">@Etichetta</button>
+    <button class="btn rosso azione-distruttiva" @onclick="() => confermando = true" disabled="@Occupato">@Etichetta</button>
 }
 
 @code {
