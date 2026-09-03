@@ -131,6 +131,54 @@ i numeri di cartella non si riusano.
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
+| 13 | **I tre editor rimasti traducono l'errore e dicono cosa manca** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor` | 05, 12 | PIANIFICATA — nata dal censimento del 3 set sera |
+
+### MAPPA RILIEVO → UNITÀ
+
+*Aggiunta il 3 set 2026 sera. Non c'era, e la sua assenza aveva lasciato **quattro rilievi
+senza proprietario** — scoperti solo censendo prima di scrivere il mandato 09. Chi tocca la
+partizione aggiorna anche questa tabella.*
+
+| Rilievo | Unità | Stato |
+|---|---|---|
+| 0 — creare una collezione è impossibile | 02 | **chiuso** `8a1d438` |
+| 1 — il lavoro non salvato si perde | 03, 04, 06, 07 | **chiuso** su tutti e quattro gli editor |
+| 2 — l'esito compare dove non guardi | 03, 04, 05, 06, 07 | **chiuso** |
+| 3 — il messaggio d'errore è JSON grezzo | 05 (`CollectionEdit`) + **13** (gli altri tre) | **parziale** |
+| 4 — l'avviso di aggiornamento non si rimanda | 11 | pianificato |
+| 5 — bersagli categorie alti 22px | 11 | pianificato |
+| 6 — «Anteprima» fa saltare il layout di 358px | 11 | pianificato |
+| 7 — «Gestisci questo spazio» non gestisce niente | 08 | pianificato |
+| 8 — «Elimina» a 55px da «Chiudi» | 11 | pianificato |
+| 9 — pulsante spento che non dice cosa manca | 05 (`CollectionEdit`) + **13** (gli altri) + 11 (la metà visiva) | **parziale** |
+| 10 — l'icona è un campo di testo libero | 05 | **chiuso** `e139ce8` |
+| 11 — «Spesa 100%» non dice di essere una categoria | 08 | pianificato |
+| 12 — due schermate non si spiegano | 03-07 (editor) + 08 (`/spaces`, `/profile`) | **parziale** |
+| 13 — lo stato vuoto invita all'azione lontano | 09 | pianificato |
+| 14 — selettore spazio e «Profilo» accavallati | 11 | pianificato |
+| 15 — logout non riuscito | — | **ritirato**, non era un difetto |
+| *(fuori elenco)* spese ≥ 1.000 € non modificabili | 12 | in corso |
+
+**Tre assegnazioni decise dal capo il 3 set sera**, perché nessuna era nel piano originale:
+
+- **Rilievo 8 all'unità 11, non agli editor.** `.azioni` è governato da una sola regola
+  (`wwwroot/css/app.css:729`) che vale per tutti e sei i blocchi delle quattro pagine:
+  separare l'azione distruttiva lì la separa ovunque, in un punto solo. Se servisse una classe
+  nuova sul markup, l'unità 11 torna `BLOCKED` e allora — e solo allora — il perimetro si
+  estende agli editor.
+- **Rilievo 6 all'unità 11**, con `Pages/NoteEdit.razor` in perimetro **solo se il CSS non
+  basta**: un'anteprima che fa saltare il layout di 358px è un'altezza che non è riservata,
+  non un difetto di logica.
+- **Unità 13, nuova.** I rilievi 3 e 9 sono stati chiusi dall'unità 05 sul **solo**
+  `CollectionEdit`, che era il suo perimetro. Le sei frasi che traducono l'errore di
+  PostgreSQL e la riga che spiega perché «Salva» è spento **esistono in un posto solo**, e
+  sulle altre tre pagine il JSON grezzo è ancora a schermo — l'unità 07 ne ha contate quattro
+  interpolazioni di `ex.Message` sulla sola `SpesaEdit`. Perimetro: `NoteEdit`, `ItemEdit`,
+  `SpesaEdit`; `CollectionEdit` **si legge come modello e non si tocca**.
+
+**Ordine di esecuzione**, che non coincide con la numerazione: 12 → 08 → 09 → 10 → 13 → 11 →
+`live-testing` → chiusura. La 13 sta **prima** della 11 perché può accodarle voci di CSS,
+come hanno fatto le unità 04, 05 e 06.
 
 **`CollectionEdit.razor` spezzato in due unità sequenziali, deciso il 3 set 2026.** Il piano
 segnalava già la 04 come «la più grande dell'elenco e la prima candidata a essere
