@@ -112,9 +112,16 @@ else
                    sulla riga .totale-mese, dove il commento spiega perché e dichiara la confidenza
                    media riposta in questo trucco — v. lì per il dettaglio. *@
                 <span class="totale dato valore-cambia" @key="riepilogoSpese.Totale">@Denaro.Testo(riepilogoSpese.Totale)&#160;€</span>
+                @* "Per categoria:" davanti ai valori, e non una micro-etichetta a sé come "Questo
+                   mese": .cime ha margin-left:auto (v. app.css, regola .striscia-spese .cime), e
+                   un'etichetta separata finirebbe spinta in fondo alla riga, staccata proprio dai
+                   valori che deve introdurre. Serve perché una delle dieci categorie si chiama
+                   "Spesa" (Services/CategorieSpesa.cs) e la sezione che la contiene si chiama
+                   spese: con una sola categoria nel mese, "Spesa 100%" da solo si legge come un
+                   totale invece che come la ripartizione di un totale. *@
                 @if (CimeSpese() is { Length: > 0 } cime)
                 {
-                    <span class="cime">@cime</span>
+                    <span class="cime">Per categoria: @cime</span>
                 }
             }
         </a>
@@ -210,10 +217,25 @@ else
     </div>
 
     @* In fondo e non fra le azioni delle due sezioni: gestire lo spazio (membri, inviti) non è una
-       cosa che si fa aprendo la Home, è dove si va quando serve. *@
-    <p class="testo-tenue">
-        <a href="spaces/@Spazi.Attivo.Id">Gestisci questo spazio</a>
-    </p>
+       cosa che si fa aprendo la Home, è dove si va quando serve.
+
+       Nascosto sullo spazio personale, e non disabilitato né lasciato con un messaggio: là
+       /spaces/{id} non ha nulla da gestire, perché rinomina, codice invito ed eliminazione stanno
+       tutte dietro !spazio.IsPersonal (v. Pages/SpaceDetail.razor) e resta a schermo il solo
+       elenco dei membri, con dentro il proprio nome. Un link che promette una gestione inesistente
+       è peggio di nessun link.
+
+       Il predicato è lo stesso del sottotitolo qui sopra, e non ne serve un secondo: dentro questo
+       ramo Spazi.Attivo è non nullo per costruzione — i tre rami sopra hanno già intercettato il
+       caricamento in corso, l'errore e l'assenza di spazio — quindi il link non può comparire per
+       un istante prima che gli spazi siano caricati, né far saltare la pagina. È lo stesso motivo
+       per cui @Spazi.Attivo.Name nella testata non ha bisogno di protezione. *@
+    @if (!Spazi.Attivo.IsPersonal)
+    {
+        <p class="testo-tenue">
+            <a href="spaces/@Spazi.Attivo.Id">Gestisci questo spazio</a>
+        </p>
+    }
 }
 
 @code {

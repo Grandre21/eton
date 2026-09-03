@@ -6,7 +6,33 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>@(spazio?.Name ?? "Spazio") — Eton</PageTitle>
+<PageTitle>@TitoloSchermata — Eton</PageTitle>
+
+@* La testata sta FUORI dalla catena @if qui sotto, come in Pages/SpesaEdit.razor: il titolo e il
+   "?" restano a schermo anche mentre lo spazio si carica e anche quando non si è potuto leggere,
+   dove altrimenti non ci sarebbe niente a dire su quale pagina si è finiti.
+
+   L'aiuto dice solo ciò che lo schermo non dice già: chi può fare cosa dentro uno spazio condiviso,
+   che il codice invito non ha scadenza né revoca, e che uscire non porta via quello che si è
+   scritto. Non ripete la scheda del codice invito ("Chi ha questo codice può entrare"), né quella
+   dell'eliminazione ("Sparisce per tutti i membri"), né l'uscita ("Smetterai di vederne il
+   contenuto"): sono tre frasi già visibili qui sotto.
+
+   L'eccezione delle recensioni non è un dettaglio da omettere per brevità: reviews_update e
+   reviews_delete hanno la sola condizione user_id = auth.uid(), senza il ramo is_space_owner che
+   invece note, collezioni, elementi e spese hanno tutti (v.
+   supabase/migrations/20260812200000_recensioni.sql:127-134, e il commento a :118-122 che dichiara
+   la divergenza deliberata: "un voto è un'opinione personale e riscriverla sarebbe falsificarla,
+   non moderare"). Enunciare la regola della moderazione tacendo la sua unica eccezione lascerebbe
+   un proprietario a provare una cancellazione che il database rifiuta. *@
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>Chi entra non si limita a guardare: qualunque membro può aggiungere note, collezioni e spese. Modificare e cancellare, invece, ognuno lo fa solo su ciò che ha scritto lui — tranne il proprietario dello spazio, che può correggere e cancellare anche il lavoro degli altri.</p>
+        <p>Le recensioni fanno eccezione: sono opinioni, e restano di chi le ha scritte. Nemmeno il proprietario può correggerle o cancellarle.</p>
+        <p>Il codice invito non scade e non si può cambiare: chi l'ha avuto una volta può rientrare quando vuole, anche dopo che l'hai rimosso da qui.</p>
+        <p>Se esci da uno spazio, quello che ci hai scritto resta dentro e gli altri continuano a vederlo: te ne vai tu, non il tuo lavoro.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -36,8 +62,6 @@ else
     {
         <div class="avviso" role="status">@avviso</div>
     }
-
-    <h1>@spazio.Name</h1>
 
     @if (sonoProprietario && !spazio.IsPersonal)
     {
@@ -131,6 +155,12 @@ else
     private string nome = "";
     private string? errore, avviso;
     private int generazione;
+
+    // Ripiego identico a quello che il <PageTitle> aveva prima in linea: la testata sta fuori dalla
+    // catena @if, quindi deve avere un titolo anche quando `spazio` è ancora null — durante il
+    // caricamento e nei due rami in cui la lettura non è riuscita. Stessa forma di
+    // TitoloSchermata in Pages/SpesaEdit.razor.
+    private string TitoloSchermata => spazio?.Name ?? "Spazio";
 
     // OnParametersSetAsync e non OnInitializedAsync: navigando da uno spazio all'altro Blazor
     // riusa la stessa istanza del componente e cambia solo il parametro.

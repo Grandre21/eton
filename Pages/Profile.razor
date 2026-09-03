@@ -3,7 +3,19 @@
 
 <PageTitle>Profilo — Eton</PageTitle>
 
-<h1>Profilo</h1>
+@* Come nelle altre schermate, la testata sta fuori dalla catena @if: il titolo e il "?" restano
+   anche durante il caricamento.
+
+   Questa pagina mostra tre cose e basta — nome, email e "Esci" — quindi tutto il resto è
+   invisibile, ed è di quello che parla l'aiuto: da dove arrivano i due dati, chi altri li vede, e
+   che cosa fa davvero "Esci". Nessuno dei tre è deducibile da ciò che è a schermo. *@
+<TestataPagina Titolo="Profilo">
+    <Aiuto>
+        <p>Nome ed email arrivano dall'account Google con cui sei entrato: Eton li legge e basta, non ha un posto dove cambiarli.</p>
+        <p>Il nome e la foto compaiono agli altri membri degli spazi che condividi, nell'elenco dei membri. L'email no: non fa parte del profilo che gli altri leggono.</p>
+        <p>«Esci» chiude la sessione solo su questo dispositivo: se sei entrato anche dal telefono, lì resti dentro. E non cancella niente — spazi, note, collezioni e spese restano dove sono.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
