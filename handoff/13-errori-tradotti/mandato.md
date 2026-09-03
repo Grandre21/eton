@@ -32,8 +32,33 @@ forma vecchia.
 - `Pages/SpesaEdit.razor`
 - `Pages/SpaceDetail.razor`
 - `Pages/CollectionDetail.razor`
+- `Shared/RecensioniElemento.razor` — **una riga sola**, la `:465`. Vedi sotto.
 
-Cinque file, tutti chiusi da unità precedenti e **riaperti apposta per te**. Nessun altro.
+Sei file, tutti chiusi da unità precedenti e **riaperti apposta per te**. Nessun altro.
+
+### `RecensioniElemento.razor:465`, e nient'altro di quel file
+
+L'unità 10 ha appena chiuso quel file, e il capo le aveva detto che
+`case EsitoSalvataggio.Sparita` → «La tua recensione non c'è più.» era **fra i due messaggi già
+buoni da non toccare**. Lei ha verificato, come il mandato le chiedeva, e **ha trovato che il capo
+si sbagliava**:
+
+- dice il fatto e nient'altro — nessuna causa, nessuna azione;
+- e soprattutto **le tre righe immediatamente sopra (`:462-464`) azzerano `mia`, `mioVoto` e
+  `mioCommento`**: il voto e il commento appena digitati spariscono dallo schermo **nello stesso
+  istante** in cui compare il messaggio. La regola 3 del contratto impone di dire cosa succede a
+  ciò che l'utente ha in mano, e qui la risposta è «è perso» — taciuta.
+
+Ha obbedito al divieto perché nominava la riga, ed è stata la mossa giusta. **Il divieto ora è
+tolto: quella riga è tua.** La frase che l'unità 10 ha già scritto e argomentato, che puoi usare
+o migliorare:
+
+> «La tua recensione non c'è più: può averla tolta tu da un altro dispositivo, oppure il tuo
+> accesso a questo spazio è cambiato. Quello che avevi appena scritto è stato tolto dal modulo:
+> per rimetterla, riscrivila e salva.»
+
+**Verifica tu che `:462-464` azzerino davvero quei tre campi** prima di scrivere che sono persi:
+se l'unità 10 avesse sbagliato, la frase mentirebbe. **Nient'altro di quel file si tocca.**
 
 ## IL CENSIMENTO, GIÀ FATTO DAL CAPO — verificalo, non fidartene
 
@@ -74,6 +99,33 @@ La forma è **fatto, causa, azione**. E la frase che l'unità 05 ha reso il cuor
 un'indiscrezione con una cecità, e a pagarla sarebbe stato chi deve diagnosticare il prossimo
 guasto. **Se una traduzione ti fa perdere il dettaglio tecnico, aggiungi un
 `Console.Error.WriteLine`** — non tenere il JSON a schermo.
+
+L'unità 10 ha alzato l'asticella e conviene seguirla: nel suo file ci sono **otto `catch` e otto
+righe di diagnosi**, corrispondenza uno a uno, **nessun `catch` muto**. Contali anche tu, file per
+file, e riporta i due numeri.
+
+### Tre lezioni operative dell'unità 10, che ti risparmiano i suoi errori
+
+1. **Il marcatore di console lo detta il file, non il resoconto precedente.** L'unità 05 aveva
+   suggerito `[Recensioni]`; l'unità 10 ha usato `[RecensioniElemento]` perché **è quello che il
+   file già usava** nelle sue diagnosi preesistenti. La regola è «l'idioma che il progetto già
+   usa», e batte un nome proposto da chi quel file non l'aveva aperto. **Guarda cosa usa ciascuno
+   dei tuoi sei file** invece di sceglierne uno solo per tutti: potrebbero divergere, ed è giusto
+   che divergano.
+
+2. **Un `file:line` interno allo stesso file è un riferimento a scadenza.** L'unità 10 ha scritto
+   un commento che citava tre righe dello stesso file per numero; le sue stesse aggiunte, poche
+   righe sopra, le hanno sfasate **prima ancora della fine del giro**. Ha corretto rendendo i
+   riferimenti **nominali** — «i nomi degli autori, il conteggio dei recensori, la rilettura
+   silenziosa». **Fa' lo stesso**: in un file che stai allungando, cita per contenuto, non per
+   numero.
+
+3. **Non tutte le frasi del modello sono trasferibili, e la divergenza va motivata nel codice.**
+   `CollectionEdit:748` promette «La collezione è ancora al suo posto»; l'unità 10 **non** l'ha
+   promesso per la recensione, perché `EliminaAsync` fa **tre** chiamate di rete e un'eccezione può
+   scoppiare **dopo** una cancellazione riuscita. Prima di copiare una promessa, **apri il metodo
+   del repository e conta le chiamate**: se ce n'è una sola, la promessa è lecita; se sono più
+   d'una, è falsa in un caso raggiungibile.
 
 ## LE DUE COSE CHE CAMBIANO FRA I FILE, E CHE NON VANNO APPIATTITE
 

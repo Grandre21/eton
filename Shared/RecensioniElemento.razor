@@ -233,7 +233,16 @@
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            errore = $"Non è stato possibile identificare l'utente corrente: {ex.Message}";
+
+            // Il testo dell'eccezione NON va all'utente: quando è una PostgrestException, Message è
+            // il corpo JSON della risposta — SQLSTATE, nome della tabella e, sul 42501, perfino il
+            // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
+            // voleva solo leggere delle recensioni. In console ci va invece per intero, con lo
+            // stesso marcatore [RecensioniElemento] che questo file già usa per le diagnosi non
+            // fatali — i nomi degli autori, il conteggio dei recensori, la rilettura silenziosa —
+            // così la diagnosi non si perde. Vale per tutti i catch qui sotto.
+            Console.Error.WriteLine($"[RecensioniElemento] Identificazione dell'utente non riuscita: {ex.Message}");
+            errore = "Non è stato possibile riconoscere il tuo accesso: può essere la connessione, oppure la sessione che è scaduta. Finché non si risolve, la tua recensione non viene riconosciuta come tua: ricarica la pagina, e se non basta esci e rientra.";
         }
 
         try
@@ -252,7 +261,11 @@
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            errore = $"Non è stato possibile leggere le recensioni: {ex.Message}";
+
+            // v. il commento nel catch dell'identificazione, sopra: il JSON in console, la frase
+            // all'utente.
+            Console.Error.WriteLine($"[RecensioniElemento] Lettura delle recensioni non riuscita: {ex.Message}");
+            errore = "Non è stato possibile leggere le recensioni: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
             recensioniNonLette = true;
             caricato = true;
             return;
@@ -380,6 +393,11 @@
         {
             if (miaGenerazione != generazione) return;
 
+            // In console sempre, anche quando la rilettura qui sotto scopre che la recensione
+            // c'era già e all'utente compare un avviso invece di un errore: l'eccezione che ha
+            // fatto partire tutto questo è la sola cosa che dice PERCHÉ l'INSERT è fallita.
+            Console.Error.WriteLine($"[RecensioniElemento] Creazione della recensione non riuscita: {ex.Message}");
+
             // Il vincolo unique (item_id, user_id) vieta una seconda recensione della stessa persona
             // sullo stesso elemento: se questa INSERT è fallita perché una c'era già — scritta da te
             // da un'altra scheda dopo che questa pagina aveva caricato — il messaggio grezzo di
@@ -393,7 +411,7 @@
             var esistente = elencate?.FirstOrDefault(r => r.UserId == io);
             if (esistente is null)
             {
-                errore = $"Non è stato possibile salvare: {ex.Message}";
+                errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
                 return;
             }
 
@@ -431,7 +449,13 @@
                     break;
 
                 case EsitoSalvataggio.Rifiutata:
-                    errore = "Il database ha rifiutato la modifica.";
+                    // Zero righe toccate, riga ancora leggibile, versione che combacia: per la
+                    // policy reviews_update — user_id = auth.uid() e nient'altro — questa
+                    // recensione non risulta scritta dall'accesso corrente. Non si afferma quale
+                    // dei due sia il caso, si dice il fatto, si suggerisce la causa e si indica
+                    // l'azione, come in CollectionEdit.razor:667. "Ricarica" e non "riprova":
+                    // riprovare un rifiuto di permessi ripete lo stesso rifiuto.
+                    errore = "Non hai più il permesso di modificare questa recensione: può farlo solo chi l'ha scritta, e da quando hai aperto la pagina il tuo accesso può essere cambiato. Ricarica la pagina.";
                     break;
 
                 case EsitoSalvataggio.Sparita:
@@ -445,7 +469,9 @@
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            errore = $"Non è stato possibile salvare: {ex.Message}";
+
+            Console.Error.WriteLine($"[RecensioniElemento] Salvataggio della recensione non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
     }
 
@@ -544,13 +570,25 @@
             }
             else
             {
-                errore = "Il database ha rifiutato l'eliminazione.";
+                // Le due cause vere di un false da EliminaAsync, entrambe nominate perché da qui
+                // non si distinguono: la riga non è più leggibile (già tolta altrove, o sparita
+                // con l'elemento per l'ON DELETE CASCADE), oppure la DELETE è stata rifiutata.
+                // Non si cita il proprietario dello spazio, che su reviews NON può cancellare le
+                // recensioni altrui (v. reviews_delete): chi legge questo messaggio è per forza
+                // l'autore, perché il pulsante compare solo con 'mia' non nulla.
+                errore = "Non è stato possibile togliere la recensione: può darsi che non ci sia già più, tolta da un altro dispositivo o sparita insieme all'elemento, oppure che il tuo accesso a questo spazio sia cambiato. Ricarica la pagina per vedere com'è adesso.";
             }
         }
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            errore = $"Non è stato possibile eliminare: {ex.Message}";
+
+            // Terza parte diversa da CollectionEdit.razor:748, che qui direbbe il falso:
+            // EliminaAsync fa tre chiamate di rete (lettura preventiva, DELETE, rilettura di
+            // conferma), quindi un'eccezione può scoppiare DOPO una cancellazione riuscita.
+            // "La recensione è ancora al suo posto" sarebbe una promessa che non si può mantenere.
+            Console.Error.WriteLine($"[RecensioniElemento] Eliminazione della recensione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se la recensione c'è ancora.";
         }
         finally
         {
