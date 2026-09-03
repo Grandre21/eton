@@ -1,12 +1,20 @@
 @page "/expenses/{Id:guid}"
 @using Eton.Models
 @using System.Globalization
+@inherits PaginaEditor
 @inject ExpenseRepository Repository
 @inject SpaceStateService Spazi
 @inject AuthStateService AuthState
-@inject NavigationManager Navigation
 
-<PageTitle>@(string.IsNullOrWhiteSpace(descrizione) ? "Spesa" : descrizione) — Eton</PageTitle>
+<PageTitle>@TitoloSchermata — Eton</PageTitle>
+
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>Importo, categoria e data rifanno il riepilogo del mese nel registro delle spese: cambiando la data la spesa passa nel mese di quella data, e sparisce dal totale e dalle percentuali del mese in cui stava prima.</p>
+        <p>Se qualcun altro salva questa spesa mentre la stai modificando, il salvataggio si ferma e ti fa scegliere fra ricaricare la sua versione e sovrascrivere con la tua.</p>
+        <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -28,14 +36,7 @@ else if (spesa is null)
 }
 else
 {
-    @if (errore is not null)
-    {
-        <div class="errore" role="alert">@errore</div>
-    }
-    @if (avviso is not null)
-    {
-        <div class="avviso" role="status">@avviso</div>
-    }
+    <NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
 
     @if (conflitto is not null)
     {
@@ -120,6 +121,15 @@ else
         }
     </fieldset>
 
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
     <div class="azioni">
         @* Anche 'conflitto is null': con la scheda del conflitto aperta il pulsante resterebbe
            acceso, perché i campi sono davvero diversi da quelli di 'spesa'. Ripremerlo risalverebbe
@@ -128,7 +138,7 @@ else
         <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !ImportoValido || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
-        <a class="btn" href="expenses">Chiudi</a>
+        <a class="btn" href="@(occupato ? null : "expenses")">Chiudi</a>
 
         @* Elimina non compare affatto quando PuoIntervenire è falso, non solo disabilitato: v. il
            commento su PuoIntervenire più sotto per il perché — un pulsante grigio inviterebbe
@@ -184,6 +194,8 @@ else
     // come Pagante() fa con la riga in più invece che con un buco di sicurezza.
     private Guid? mioId;
 
+    private string TitoloSchermata => string.IsNullOrWhiteSpace(descrizione) ? "Spesa" : descrizione;
+
     // Il pulsante resta spento anche senza un importo valido, una descrizione o una data
     // ragionevole. I primi due sono i vincoli che il database rifiuterebbe (amount > 0,
     // length(btrim(description)) between 1 and 200): farli scoprire al salvataggio significherebbe
@@ -195,7 +207,7 @@ else
     // salvataggio a vuoto, che incrementerebbe comunque la versione e farebbe scattare un
     // conflitto a chi la sta scrivendo davvero. Un 'data' azzerato a null conta come cambiato —
     // altrimenti sparirebbe anche dal confronto — ma resta comunque bloccato dalla guardia sopra.
-    private bool Cambiata => spesa is not null && (importoTesto != Denaro.Testo(spesa.Amount) || descrizione != spesa.Description
+    protected override bool Cambiata => spesa is not null && (importoTesto != Denaro.Testo(spesa.Amount) || descrizione != spesa.Description
                                                      || categoria != spesa.Category || data?.Date != spesa.SpentOn.Date);
 
     // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
@@ -239,11 +251,11 @@ else
             // duplicando esattamente la chiamata che l'invocazione corrente sta già facendo, per poi
             // essere scartata dalla guardia successiva: lavoro sprecato, esito comunque corretto.
             // Domani è la ragione vera: fra questi due await e la lettura non c'è oggi nessuna
-            // scrittura di stato, ma nelle pagine gemelle (NoteEdit.razor:200, CollectionEdit.razor:309,
-            // ItemEdit.razor:214) sì — è proprio qui che quella guardia le protegge. Chi in futuro
-            // aggiungesse una riga in questo punto, guardando le pagine gemelle per sapere cosa fare,
-            // si troverebbe qui senza la rete di protezione che là c'è: lavoro sprecato diventerebbe
-            // silenziosamente stato corrotto.
+            // scrittura di stato, ma nelle pagine gemelle (NoteEdit.razor:175-181,
+            // CollectionEdit.razor:385-394, ItemEdit.razor:225) sì — è proprio qui che quella
+            // guardia le protegge. Chi in futuro aggiungesse una riga in questo punto, guardando le
+            // pagine gemelle per sapere cosa fare, si troverebbe qui senza la rete di protezione
+            // che là c'è: lavoro sprecato diventerebbe silenziosamente stato corrotto.
             if (mia != generazione) return;
 
             var letta = await Repository.LeggiAsync(Id);
@@ -383,7 +395,7 @@ else
         {
             if (await Repository.EliminaAsync(Id))
             {
-                Navigation.NavigateTo("expenses");
+                Esci("expenses");
                 return;
             }
             errore = "Non è stato possibile eliminare la spesa.";
