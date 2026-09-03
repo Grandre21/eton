@@ -94,10 +94,10 @@ i numeri di cartella non si riusano.
 | # | Unità | Perimetro | Dipende da | Stato |
 |---|---|---|---|---|
 | 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; `Eton.Tests/PrivilegiInsertTests.cs` | — | **FATTO** — commit `8a1d438`. Gate riverificato dal capo: 267/267, 0 avvisi |
-| 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | PIANIFICATA |
-| 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | PIANIFICATA |
-| 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | PIANIFICATA |
-| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
+| 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | **FATTO** — commit `d101fdf` |
+| 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | **FATTO** — commit `3206150`. Gate riverificato dal capo |
+| 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | **FATTO** — commit `e139ce8`. Perimetro rifiutato a metà, e aveva ragione: v. RAZIONALE |
+| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | **FATTO** — commit `f4f2dbd`. 0 rilievi da tre revisori, più tre verifiche proprie dell'unità |
 | 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
 | 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
@@ -327,19 +327,42 @@ proprietario e ogni unità che ne ha bisogno deve rinunciare e dirlo.
 
 ## PROSSIMA AZIONE
 
-Unità 05 **aperta** (tetto 22 $). Quando rientra: auditare `CONTRATTI` — **la forma esatta
-del messaggio d'errore tradotto**, che le unità 08 e 10 dovranno copiare invece di
-inventarne un terzo modo — e `SCOSTAMENTI`, poi committare e scrivere il mandato
-dell'unità 06 (`ItemEdit`), che è gemella della 04 e può riusarne il mandato quasi parola
-per parola.
+Unità 07 (`SpesaEdit`) — **è l'ultima delle quattro gemelle**, e dopo di lei si prova nel
+browser. Il contratto ha retto tre adozioni senza una deroga né un `BLOCKED`: il suo mandato
+è quello della 06 con il file cambiato, più i due punti qui sotto che sono suoi soltanto.
 
-Unità 04 chiusa: commit `3206150`, gate riverificato dal capo con `-warnaserror`, 267/267.
+**Due cose che l'unità 06 le lascia in eredità, entrambe verificate da lei sul disco:**
 
-**Non** lanciare `live-testing` prima che le unità 04, 06 e 07 siano tutte rientrate: la
-guardia va provata una volta sola sulla forma finale, non quattro volte su forme
-intermedie. Le dieci prove sono già scritte in
-`handoff/03-contratto-editor/resoconto.md`, sezione `DA PROVARE NEL BROWSER`, con i criteri
-di accettazione; ogni unità successiva ne aggiunge le proprie.
+1. `Pages/SpesaEdit.razor:242-243` cita tre `file:line` come esempi di «scrittura di stato
+   fra i due `await`», e **tutte e tre sono ora stantie**: `NoteEdit.razor:200` è una riga
+   vuota (unità 03), `CollectionEdit.razor:309` è un commento sulla tavolozza di emoji
+   (unità 04/05), `ItemEdit.razor:214` è diventata la **226** (unità 06). Le prime due erano
+   già rotte prima della 06. Il file è perimetro della 07, che lo riscrive comunque:
+   correggerne una sola lascerebbe il commento sbagliato per due terzi.
+2. ~~Il caso «errore di caricamento in creazione».~~ **Non si applica**, verificato dal capo
+   prima di scrivere il mandato: `SpesaEdit.razor:1` ha la sola rotta `/expenses/{Id:guid}`
+   e **nessuna variante di creazione** — le spese si creano altrove. Di conseguenza la 07 è
+   la gemella **più piccola** delle quattro: un solo `NavigateTo` (`:386`) e quindi un solo
+   `Esci(...)`, nessun `Nuova`, nessun `replace: true`.
+
+Poi: 08, 09, 10, 11 nell'ordine della tabella. L'unità 11 raccoglie le **quattro voci di
+`app.css` già accodate** (in fondo a questo file) più quelle che 07-10 aggiungeranno.
+
+**Non** lanciare `live-testing` prima che anche l'unità 07 sia rientrata: la guardia va
+provata una volta sola sulla forma finale, non quattro volte su forme intermedie. I criteri
+di accettazione sono già scritti e **non si riscrivono**: dieci in
+`handoff/03-contratto-editor/resoconto.md`, cinque in `handoff/04-collezione-contratto/`
+(prove 1-5), sei in `handoff/06-elemento-contratto/` — queste ultime specifiche di
+`ItemEdit`, con la **prova 6 della 04 esplicitamente non ripetibile** lì.
+
+**Filone parallelo, spese ricorrenti.** Design in
+`docs/superpowers/specs/2026-09-03-spese-ricorrenti-design.md` (commit `c4a56ee`), piano in
+`docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` (commit `03c61e9`): sei task, il
+primo indipendente da tutto. **Parte a rilievi finiti**, non prima, e il motivo non è la
+collisione di file — `SpesaEdit.razor` (unità 07) e `Spese.razor` (task 4) sono diversi. È
+che il **task 6 crea un quinto editor**, `RicorrenteEdit.razor`, che deve adottare lo stesso
+`PaginaEditor` che l'unità 07 sta finendo di provare sulla quarta pagina. Scriverlo prima
+significherebbe adottare un contratto ancora in collaudo, e riaprirlo dopo.
 
 ## APERTO
 
