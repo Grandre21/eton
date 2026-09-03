@@ -61,6 +61,20 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
   giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
   `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **3 set 2026, sera** — **Unità 16: un difetto di sicurezza vero, trovato dalla 15.**
+  `Services/OAuthCallback.cs:24` legge `error_description` **dalla query, senza validarlo**;
+  `SupabaseService.cs:110` lo assegna tale e quale; `Benvenuto.razor:28` lo rende in un
+  `role="alert"` **sopra il pulsante «Entra con Google»**. Chiunque può costruire
+  `https://<dominio>/?error_description=<testo a piacere>` e mandarlo a qualcuno: il testo compare
+  dentro il riquadro d'errore del **sito legittimo**.
+  **Aperto e verificato dal capo in prima persona**, come il §5 impone per ogni rilievo di
+  sicurezza qualunque sia il verdetto: la catena è quella, i tre punti confermati sul disco.
+  **Non è XSS**, e l'etichetta del report va corretta: Razor codifica `@errore`, quindi niente
+  script né markup. È **content spoofing** — testo di un estraneo dentro il chrome del dominio di
+  fiducia, più credibile di un'email di phishing perché arriva sull'URL vero.
+  Il rimedio è una modifica di **logica** sul flusso di autenticazione, non di stringa, e per
+  questo ha un'unità sua invece di essere accodata: l'unità 15 aveva il divieto esplicito di
+  toccare quel flusso, e ha fatto bene a fermarsi.
 - **3 set 2026, sera** — **Unità 15, e il `grep` che finalmente cerca la cosa giusta.** L'unità 14
   ha chiuso i dieci punti e ne ha trovato un **undicesimo**, `Services/SupabaseService.cs:194`,
   che mostra il testo dell'eccezione a un utente **non ancora autenticato**. L'ha trovato
@@ -179,7 +193,8 @@ i numeri di cartella non si riusano.
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
 | 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
-| 15 | **L'undicesimo punto, e il rilievo 3 si chiude** | `Services/SupabaseService.cs` | 14 | **IN CORSO** |
+| 15 | L'undicesimo punto | `Services/SupabaseService.cs` | 14 | **FATTO** — commit `84217ec`. **Il rilievo 3 è chiuso, con prova**: zero righe sul `grep` dei sink. Ha trovato il difetto che diventa l'unità 16 |
+| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs` | 15 | PIANIFICATA — in attesa della posizione di `tech-advisor` |
 | 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
 
 ### MAPPA RILIEVO → UNITÀ
