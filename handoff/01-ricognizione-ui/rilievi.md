@@ -252,20 +252,49 @@ li legge come accavallati. Rifinitura.
 
 ---
 
-# DA VERIFICARE, non osservato
+# ISTRUITO E CHIUSO — non era un difetto
 
-## 15 — Un logout non riuscito non lo dice a nessuno
+## 15 — Un logout non riuscito non lo dice a nessuno · **RITIRATO** il 3 settembre 2026
 
-**Il logout è affidabile**, e il 503 di ieri era già assorbito: `SignOutAsync()` avvolge
-ogni passo nel proprio `try` (`SupabaseService.cs:282-300`), il fallimento di rete viene
-catturato e la pulizia locale procede comunque. È la difesa che funziona, non un difetto.
+**Il rilievo descriveva uno schermo che non può prodursi.** Istruito da `tech-advisor`
+contro `AuthStateService.cs`, `SupabaseService.cs`, `BrowserSessionHandler.cs`,
+`Profile.razor` e `Benvenuto.razor`; l'utente ha deciso di non correggerlo. Resta qui,
+invece di sparire, perché un rilievo cancellato senza motivo viene riaperto da qualcuno
+fra sei mesi.
 
-**Il punto aperto**: `AuthStateService.cs:84-86` usa il `bool` di ritorno solo per decidere
-`forceLoad: !uscito`. Quando l'uscita **non** è riuscita l'utente arriva comunque alla
-vetrina, senza alcun messaggio — vede una schermata che dice «sei fuori» nel caso in cui il
-codice stesso sa di non esserne certo. È lo scenario del dispositivo condiviso citato nel
-commento a `SupabaseService.cs:268-269`. Dedotto dal codice, **non riprodotto**: servirebbe
-far fallire `DestroySession()`.
+**Quel che il rilievo diceva.** `AuthStateService.cs:84-86` usa il `bool` di ritorno di
+`SignOutAsync()` solo per decidere `forceLoad: !uscito`; quando l'uscita non riesce
+l'utente arriverebbe comunque alla vetrina, vedendo «sei fuori» nel caso in cui il codice
+stesso sa di non esserne certo. Dedotto dal codice, **mai riprodotto**.
+
+**Perché non regge.** L'errore è proprio in quel `forceLoad: true`, che il rilievo leggeva
+come un dettaglio e invece è la risposta. Quando `uscito` è `false` la pagina si ricarica
+per intero: memoria azzerata, bootstrap da capo da `localStorage`. Da lì gli esiti sono
+due, ed **entrambi dicono il vero**:
+
+- la sessione su `localStorage` è stata cancellata ma la memoria non si era azzerata → dopo
+  la ricarica l'utente è **davvero fuori**, e la vetrina non mente;
+- `removeItem` è fallita e la sessione è ancora su disco → il bootstrap la rilegge,
+  `Benvenuto.razor:213-214` vede `IsLoggedInAsync()` vero e **rimanda alla Home**. L'utente
+  non vede «sei fuori»: vede l'app, cioè che è ancora dentro.
+
+Lo schermo bugiardo non esiste in nessuno dei due rami.
+
+**Quanto è raro il caso, per giunta.** `SignOutAsync` restituisce `false` solo se
+`_auth.CurrentSession` è ancora non-null dopo quattro passi ciascuno nel proprio `try`
+(`SupabaseService.cs:282-325`), e `LoadSession()` non lancia mai, restituendo `null` se la
+lettura fallisce. Il `false` pericoloso richiede che `localStorage.removeItem` lanci
+**mentre `getItem` funziona**: in pratica solo storage disabilitato dal browser.
+
+**Cosa sarebbe costato correggerlo.** Un avviso deve sopravvivere al `forceLoad`, quindi
+servirebbe un parametro in query e una gestione in Home — perché è lì che si atterra nel
+ramo che conta. Macchinario per uno scenario non riproducibile. Rinunciare alla ricarica
+per bloccare la navigazione sarebbe peggio: nel primo ramo è la ricarica stessa a
+completare l'uscita.
+
+**Se qualcuno smentisce.** Basta riuscire a premere «Esci» e vedere la vetrina con una
+sessione ancora valida su disco: allora `Benvenuto.razor:213` non fa ciò che è stato letto,
+e il difetto è lì, non in `LogoutAsync`.
 
 ---
 

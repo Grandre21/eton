@@ -11,6 +11,12 @@
 --      dipende la sicurezza di TUTTE le policy di collection_items, perche' sono scritte
 --      confrontando space_id senza mai fare join con collections.
 --
+-- Regola valida per tutto questo script: ogni 'insert into public.collections' elenca
+-- esplicitamente 'blind', perche' e' cio' che invia il client (Models/Collection.cs). Uno
+-- script che inserisce un sottoinsieme delle colonne collauda un percorso che l'applicazione
+-- non usa, ed e' esattamente il motivo per cui il difetto 42501 sulle collezioni e'
+-- sopravvissuto due settimane.
+--
 -- Come si esegue (serve Docker Desktop avviato):
 --     supabase start
 --     supabase db reset
@@ -49,13 +55,14 @@ select has_column_privilege('authenticated','public.collection_items','name','UP
 
 \echo ''
 \echo '=== 3. Privilegi di INSERT per colonna, su entrambe le tabelle ==='
-\echo '--- collections (atteso: t t t t t t f f f) ---'
+\echo '--- collections (atteso: t t t t t t t f f f) ---'
 select has_column_privilege('authenticated','public.collections','space_id','INSERT')    as ins_space,
        has_column_privilege('authenticated','public.collections','owner_id','INSERT')    as ins_owner,
        has_column_privilege('authenticated','public.collections','name','INSERT')        as ins_name,
        has_column_privilege('authenticated','public.collections','icon','INSERT')        as ins_icon,
        has_column_privilege('authenticated','public.collections','fields','INSERT')      as ins_fields,
        has_column_privilege('authenticated','public.collections','rating_max','INSERT')  as ins_rating,
+       has_column_privilege('authenticated','public.collections','blind','INSERT')       as ins_blind,
        has_column_privilege('authenticated','public.collections','version','INSERT')     as ins_version,
        has_column_privilege('authenticated','public.collections','created_at','INSERT')  as ins_created,
        has_column_privilege('authenticated','public.collections','updated_at','INSERT')  as ins_updated;
@@ -111,14 +118,14 @@ commit;
 select :'entrato' as bruno_entrato_in;
 
 \echo ''
-\echo '=== 5. ALICE crea una collezione nello spazio condiviso, con dei fields veri (atteso: 1 riga, version 1) ==='
+\echo '=== 5. ALICE crea una collezione nello spazio condiviso, con dei fields veri (atteso: 1 riga, version 1, blind f) ==='
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name, icon, fields, rating_max)
+insert into public.collections (space_id, owner_id, name, icon, fields, rating_max, blind)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Vinili', 'disco',
-        '[{"name":"artista","type":"text"},{"name":"anno","type":"number"}]'::jsonb, 10)
-returning id, version, name;
+        '[{"name":"artista","type":"text"},{"name":"anno","type":"number"}]'::jsonb, 10, false)
+returning id, version, name, blind;
 commit;
 
 select id as collezione from public.collections where name = 'Vinili' \gset
@@ -266,8 +273,8 @@ commit;
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name)
-values (:'segreto', '11111111-1111-1111-1111-111111111111', 'Segreta')
+insert into public.collections (space_id, owner_id, name, blind)
+values (:'segreto', '11111111-1111-1111-1111-111111111111', 'Segreta', false)
 returning id, name;
 commit;
 
@@ -337,8 +344,8 @@ select count(*) as elementi_nel_segreto_dopo   from public.collection_items wher
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name, fields)
-select id, '11111111-1111-1111-1111-111111111111', 'Forma sbagliata', '{"non":"un array"}'::jsonb
+insert into public.collections (space_id, owner_id, name, fields, blind)
+select id, '11111111-1111-1111-1111-111111111111', 'Forma sbagliata', '{"non":"un array"}'::jsonb, false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
 rollback;
 
@@ -346,9 +353,9 @@ rollback;
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name, fields)
+insert into public.collections (space_id, owner_id, name, fields, blind)
 select id, '11111111-1111-1111-1111-111111111111', 'Troppi campi',
-       (select jsonb_agg(jsonb_build_object('name', 'campo' || n)) from generate_series(1,41) as n)
+       (select jsonb_agg(jsonb_build_object('name', 'campo' || n)) from generate_series(1,41) as n), false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
 rollback;
 
@@ -356,8 +363,8 @@ rollback;
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name)
-select id, '11111111-1111-1111-1111-111111111111', 'Bozza'
+insert into public.collections (space_id, owner_id, name, blind)
+select id, '11111111-1111-1111-1111-111111111111', 'Bozza', false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal
 returning id, name;
 commit;
@@ -379,8 +386,8 @@ rollback;
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name, rating_max)
-select id, '11111111-1111-1111-1111-111111111111', 'Voto strano', 7
+insert into public.collections (space_id, owner_id, name, rating_max, blind)
+select id, '11111111-1111-1111-1111-111111111111', 'Voto strano', 7, false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
 rollback;
 
@@ -388,9 +395,9 @@ rollback;
 \echo '=== FINE. Riepilogo di cosa doveva succedere ==='
 \echo '  1  t t t t f f f -- in UPDATE si scrive solo name/icon/fields/rating_max'
 \echo '  2  t t t f f f f -- in UPDATE si scrive solo name/image_url/data'
-\echo '  3  t*6 f*3 (x2)  -- in INSERT mai version ne le date, su nessuna delle due tabelle'
+\echo '  3  collections t*7 f*3, collection_items t*6 f*3 -- in INSERT mai version ne le date'
 \echo '  4  f f f f (x2)  -- anon non esiste ne per collections ne per collection_items'
-\echo '  5  version 1     -- la collezione nasce con version 1'
+\echo '  5  version 1, blind f -- la collezione nasce con version 1, non cieca'
 \echo '  6  version 2     -- IL TRIGGER SCRIVE VERSION SENZA IL PRIVILEGIO DI COLONNA'
 \echo '  7  0 righe, poi version 3 -- versione vecchia respinta, versione giusta accettata'
 \echo '  8  ERRORE        -- version non si scrive a mano'

@@ -1,0 +1,24 @@
+-- =====================================================================================
+-- Eton — collezioni: concede l'INSERT sulla colonna blind, mancante dal 12 agosto 2026.
+-- Da allora ogni Insert<Collection> fallisce con 42501 permission denied for table
+-- collections: il client invia blind in ogni INSERT — l'unica colonna scrivibile
+-- dall'utente senza ignoreOnInsert (v. Models/Collection.cs) — ma
+-- 20260812230000_voto_al_buio.sql, che ha aggiunto la colonna, l'aveva riconcessa solo
+-- in UPDATE.
+-- Idempotente e rieseguibile.
+--
+-- Dipende da 20260812120000_collections.sql, che ha concesso l'INSERT colonna per
+-- colonna, e da 20260812230000_voto_al_buio.sql, che ha aggiunto blind riconcedendo solo
+-- l'UPDATE.
+-- =====================================================================================
+
+-- Elenco minimo di una sola colonna, non l'intero elenco ripetuto come fa invece
+-- l'UPDATE di 20260812230000_voto_al_buio.sql:109, per due motivi. Primo: un GRANT non
+-- revoca mai nulla, quindi ripetere l'elenco completo sembra dichiarare lo stato attuale
+-- dei privilegi ma non lo fa — induce chi legge a credere il contrario. Secondo: è
+-- proprio la forma a elenco completo che ha prodotto questo difetto. Con la forma
+-- minima, nella migrazione che aggiunge una colonna, grant insert (col) e
+-- grant update (col) stanno affiancati: un grant update (col) orfano salta all'occhio,
+-- mentre grant update (a, b, c, col) sembra completo anche quando manca il grant insert
+-- gemello.
+grant insert (blind) on public.collections to authenticated;

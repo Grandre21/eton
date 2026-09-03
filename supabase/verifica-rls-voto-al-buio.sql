@@ -10,6 +10,12 @@
 -- Ogni altro esito atteso e' un conteggio di righe, non un errore -- lo dice l'intestazione di
 -- ciascuna sezione.
 --
+-- Regola valida per tutto questo script: ogni 'insert into public.collections' elenca
+-- esplicitamente 'blind', perche' e' cio' che invia il client (Models/Collection.cs). Uno
+-- script che inserisce un sottoinsieme delle colonne collauda un percorso che l'applicazione
+-- non usa, ed e' esattamente il motivo per cui il difetto 42501 sulle collezioni e'
+-- sopravvissuto due settimane.
+--
 -- Come si esegue (serve Docker Desktop avviato):
 --     supabase start
 --     supabase db reset
@@ -47,27 +53,37 @@ commit;
 
 select :'entrato' as bruno_entrato_in;
 
+\echo '--- (scaffold) Alice crea la collezione normale, dichiarando blind false in creazione (atteso: 1 riga, blind f) ---'
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name)
-values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Liquidi')
+insert into public.collections (space_id, owner_id, name, blind)
+values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Liquidi', false)
 returning id, name, blind;
 commit;
 
 select id as collezione_normale from public.collections where name = 'Liquidi' \gset
 
+\echo '--- (scaffold) Alice crea la collezione cieca, gia blind in creazione (atteso: 1 riga, blind t) ---'
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
-insert into public.collections (space_id, owner_id, name)
-values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Segreti')
+insert into public.collections (space_id, owner_id, name, blind)
+values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Segreti', true)
 returning id, name, blind;
 commit;
 
 select id as collezione_cieca from public.collections where name = 'Segreti' \gset
 
-\echo '--- (scaffold) Alice accende blind sulla propria collezione (atteso: 1 riga, blind t) ---'
+\echo '--- (scaffold) la cecita e una regola del gioco su cui il proprietario puo ricredersi dopo la ---'
+\echo '--- creazione: Alice la spegne e la riaccende, e i due UPDATE lasciano l impianto esattamente ---'
+\echo '--- come lo hanno trovato -- cieco -- per le sezioni successive (atteso: 1 riga blind f, poi 1 riga blind t) ---'
+begin;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+update public.collections set blind = false where id = :'collezione_cieca' returning id, blind;
+commit;
+
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';

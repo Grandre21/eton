@@ -1,220 +1,302 @@
-# Piano — la vetrina che si compone, e un giro di ricognizione sull'app
+# Piano — correggere in sequenza i quindici rilievi della ricognizione
 
-Scritto a chiusura della sessione del **26 agosto 2026**. Autosufficiente: chi riprende non
-ha bisogno di leggere la conversazione da cui nasce.
+Riscritto il **3 settembre 2026** all'apertura del lavoro. Sostituisce il piano del
+26-27 agosto, i cui due lavori sono chiusi e sul remoto (`3cb5924`, `dc4ca55`); ciò che di
+quel piano resta vincolante è conservato in fondo a questo file.
+Autosufficiente: chi riprende non ha bisogno della conversazione da cui nasce.
 
----
+## OBIETTIVO
 
-## Dove siamo
+> «io vorrei correggere tutto in sequenza nel prossimo lavoro.»
+> — utente, 3 settembre 2026
 
-> **Aggiornato al 27 agosto 2026, a valle della ricognizione.** `main` è pulito e
-> **allineato al remoto fino a `3cb5924`**, la scena del grafo, pushata dall'utente. Build
-> 0 errori / 0 avvisi. Server fermo, entrambi i PID, porta 5000 libera. Entrambi i lavori
-> qui sotto sono chiusi; quello che resta aperto è **decidere cosa correggere** fra i 15
-> rilievi di `handoff/01-ricognizione-ui/rilievi.md`, a partire dal rilievo 0.
+«Tutto» = i sedici rilievi di `handoff/01-ricognizione-ui/rilievi.md` (0-15) più le tre
+pendenze minori elencate in fondo a quel file. Nessuna esclusione dichiarata.
 
-`main` è **pulito e allineato al remoto**, fino a `9e284cc`. Build 0 errori / 0 avvisi, 258
-test su 258. Il server di sviluppo è **fermo** e la porta 5000 è libera.
+## STATO DI PARTENZA
 
-Chiuso in questa sessione, già sul remoto:
+`main` pulito, **0 avanti / 0 indietro** rispetto a `origin/main`, fino a `dc4ca55`.
+Porta 5000 libera, nessun server di sviluppo vivo. I PID annotati in
+`handoff/01-ricognizione-ui/server.md` appartengono a una sessione chiusa il 27 agosto:
+sono storia, non processi da fermare.
 
-- **Gli infobutton** — `Shared/TestataPagina.razor`, il «?» accanto al titolo su tutte e
-  cinque le schermate. Provato nel browser: apre, chiude con Esc e con un clic fuori, ed è
-  disegnato sopra la barra di navigazione. Cinque su cinque.
-- **`Shared/PaginaRegistro.cs`** — la macchina di caricamento che viveva in tre copie
-  identiche in Note, Collezioni e Spese.
-- **Tre componenti condivisi** — `ErroreRiprova`, `SchedaConflitto`, `ConfermaAzione`.
-- **Il collasso dei selettori di elenco** in `.registro` / `.riga`.
-- Un difetto da perdita di dati: la conferma di eliminazione restava armata passando da
-  un'entità all'altra. Corretto con il parametro `Chiave`, e **verificato contro la
-  documentazione di .NET 10 e il sorgente del renderer** — vedi «Cosa non va ri-verificato».
+## DECISIONI
 
----
+*Append-only, datate. L'utente può appendere qui una riga in qualunque momento: ha lo
+stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
 
-## Lavoro 1 — La scena del grafo · **FATTO** il 26 agosto 2026
+- **3 set 2026** — Si corregge tutto, in sequenza. Deciso dall'utente.
+- **3 set 2026** — Rilievo 0, posizione di `tech-advisor` (confidenza alta): **solo la
+  migrazione SQL**. La toppa C# (`ignoreOnInsert` su `Blind`) è peggio del problema —
+  sposterebbe il difetto da «non si crea» a «si crea ignorando in silenzio l'interruttore
+  Voto al buio, che il modulo di creazione mostra attivo» — e A+B è contraddittoria.
+  `Models/Collection.cs` **non si tocca**: `ignoreOnInsert` e il grant sono complementari,
+  non ridondanti.
+- **3 set 2026** — Rilievo 0, **confermato dall'utente**: migrazione SQL **più** il test
+  statico in `Eton.Tests`. **La migrazione in produzione la esegue l'utente**: nessun agente
+  tocca il database vero.
+- **3 set 2026** — Rilievo 10, **deciso dall'utente**: tavolozza fissa di 16-24 emoji
+  accanto al campo di testo, che **resta** come via d'uscita. Le prime tre coincidono con
+  le emoji dei modelli predefiniti (🧪 🍺 🎬, `SchemaCampi.cs:231,239,247`). Niente
+  componente nuovo: un `static readonly string[]` in `@code` di `CollectionEdit.razor`,
+  un solo call-site. Scartate le SVG di `Shared/Icona.razor`: sono otto icone di
+  interfaccia, nessuna è un soggetto da collezione.
+- **3 set 2026** — Rilievo 7, **deciso dall'utente**: si **nasconde il link** «Gestisci
+  questo spazio» in Home quando lo spazio è personale. Nessuna funzione nuova. La rinomina
+  dello spazio personale il database la permetterebbe, ma è esclusa dall'interfaccia di
+  proposito e resta esclusa.
+- **3 set 2026** — Rilievo 15, **deciso dall'utente**: **non è un difetto, non si corregge.**
+  Si aggiorna il testo del rilievo in `rilievi.md` spiegando perché il caso è chiuso, così
+  nessuno lo riapre fra sei mesi credendolo in sospeso. L'obiettivo scende a **15 rilievi
+  su 16**, dichiarato qui. Motivo: con `forceLoad: true` gli esiti sono due, entrambi
+  onesti — o l'utente è davvero uscito, o `Benvenuto.razor:213` lo rimanda alla Home. Lo
+  schermo che il rilievo descrive non può prodursi.
+- **3 set 2026** — Rilievo 4, adottata la posizione di `tech-advisor` senza domanda perché
+  smonta la premessa del rilievo invece di scegliere fra alternative: «Più tardi» =
+  `banner.hidden = true` e nient'altro, memoria **solo in RAM**. Nessun `sessionStorage`,
+  nessun `localStorage`, nessun timer. `index.html:108` ripropone già il banner a ogni
+  avvio finché il worker è in attesa, e `:116` all'arrivo di una versione più nuova: la
+  differenza fra una X e un «Più tardi» è l'etichetta, non il meccanismo.
+- **3 set 2026** — Rilievi 1, 2, 12: la **guardia di uscita** diventa una classe base
+  `Shared/PaginaEditor.cs : ComponentBase`, la stessa forma di `PaginaRegistro.cs`.
+  Testata (12) ed esito (2) **non** entrano nell'astrazione: sono quattro applicazioni di
+  `TestataPagina` già esistente e uno spostamento di markup. Premessa corretta da
+  `tech-advisor` contro la doc .NET 10 e il sorgente di `NavigationLock`:
+  `OnBeforeInternalNavigation` **copre anche il tasto Indietro** del browser;
+  `ConfirmExternalNavigation` serve solo per chiusura scheda, ricarica e link esterni.
 
-Commit `3cb5924`, sul remoto dal 27 agosto. Build 0 errori / 0 avvisi, 258 test su 258.
-Collaudo nel browser verde su sette scenari, zero difetti: sticky attivo, i cinque tempi
-della composizione nell'ordine giusto, 181 fps dentro la scena contro 181 su una sezione
-ferma. **Non va ricollaudato.**
+## IL QUARTO ANELLO DEL RILIEVO 0
 
-Tre cose restano *da tarare*, e l'utente ha deciso di **non** toccarle: la dissolvenza di
-occhiello e titolo si esaurisce ~250px prima che la scena si agganci (coerente col resto
-della pagina, non è un difetto); l'ultimo 8% della corsa è fermo (~95px su 1183); l'onda al
-clic è sottile negli screenshot statici.
+Trovato da `tech-advisor` il 3 settembre, non era nella ricognizione, e spiega perché il
+difetto è sopravvissuto due settimane senza che nulla diventasse rosso.
 
-Quel che segue è il mandato originale, tenuto perché documenta **perché** la scena è fatta
-così — le tre ragioni per cui il canvas non è pinnato sull'intera pagina restano vere e
-vincolanti per chiunque ci rimetta mano.
+`supabase/verifica-rls-voto-al-buio.sql` (righe 53-55 e 63-65) inserisce le collezioni con
+`(space_id, owner_id, name)` — **senza `blind`** — e accende il flag con un UPDATE
+separato. Ha collaudato per intero un percorso che l'applicazione non usa. E
+`verifica-rls-collezioni.sql:53-61` verifica i privilegi di INSERT contro un **elenco
+scritto a mano** precedente a `blind`.
 
-**Deciso dall'utente**, con la posizione di `tech-advisor` già sul tavolo.
+Conseguenza operativa, da non dimenticare: **i due script di verifica vanno corretti**
+perché inseriscano come inserisce l'app. Restano comunque un controllo manuale con Docker,
+cioè il meccanismo che questo difetto ha già superato una volta.
 
-### Cosa si fa
+## PARTIZIONE
 
-La sezione **«Uno spazio, visto da dentro»** (`Pages/Benvenuto.razor:124-129`, che contiene
-già `<GrafoSpazio Persone="@Membri" Elementi="@Votate" />`) diventa una **scena alta 2,5-3
-schermate**. Il canvas resta `position: sticky` al suo interno, e mentre l'utente
-attraversa la sezione il grafo **si compone**: prima le persone, poi gli archi che le
-legano, poi i voti in transito.
+Definitiva. La numerazione parte da **02** perché `handoff/01-ricognizione-ui/` esiste già:
+i numeri di cartella non si riusano.
 
-L'ingresso è un **progresso di scorrimento smorzato**, non un valore crudo: un listener
-`scroll` passivo scrive il bersaglio, e il ciclo `requestAnimationFrame` che già esiste lo
-insegue. Il codice ha già l'idioma esatto — `el.caldo += (target - caldo) * .1` a
-`wwwroot/js/grafo-spazio.js:217` — quindi è la stessa forma applicata a un ingresso nuovo.
+| # | Unità | Perimetro | Dipende da | Stato |
+|---|---|---|---|---|
+| 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; nuovo file in `Eton.Tests/` | — | **IN CORSO** — migrazione e script FATTI e verificati dal capo; il primo tentativo ha esaurito il budget prima del test statico e del resoconto. Rilanciata con tetto a 15 $ |
+| 03 | Il contratto degli editor | `Shared/PaginaEditor.cs` (nuovo) | — | PIANIFICATA |
+| 04 | Editor Nota | `Pages/NoteEdit.razor` | 03 | PIANIFICATA |
+| 05 | Editor Collezione | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 03 | PIANIFICATA |
+| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
+| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
+| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
+| 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
+| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
+| 11 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | — | PIANIFICATA |
 
-### Perché così, e non pinnato sull'intera pagina
+Copertura dei rilievi: 02→r0 · 03+04-07→r1, r2, r12 e P1 · 05→r3, r9, r10 · 08→r7, r11,
+r12 in parte e P2 in parte · 09→r8, r13 · 10→P2 in parte · 11→r4, r5, r6, r14, P3.
+**r15 non è assegnato a nessuna unità**: deciso di non correggerlo (vedi DECISIONI). Il suo
+testo in `rilievi.md` lo aggiorna il capo, non un'unità: è un documento, non codice.
 
-L'idea di partenza era un canvas `position: fixed` per tutta la vetrina, come fa il sito di
-riferimento. **Fallisce in tre modi**, due dei quali fatali, e vale la pena che restino
-scritti perché sono tutti verificabili nel codice:
+`Services/AuthStateService.cs` **esce dal perimetro dell'unità 08** rispetto alla bozza
+precedente: era lì solo per r15.
+
+## RAZIONALE
+
+**Perché un'unità 02 che nessun rilievo nomina.** I rilievi 1, 12 e (per costruzione) 2
+sono lo stesso intervento applicato a quattro file. Quattro unità indipendenti
+produrrebbero quattro guardie di uscita divergenti — esattamente il codice quadruplicato
+che `Shared/PaginaRegistro.cs` ha appena finito di smontare in questo progetto. Un'unità
+produce il contratto, tre lo consumano.
+
+**File contesi, e a chi vanno.**
+
+- `wwwroot/css/app.css` è **l'unico** foglio di stile del progetto: non esistono
+  `.razor.css` per le pagine coinvolte. Lo possiede l'unità 10 e nessun altro. Le unità
+  03-06 e 08, se hanno bisogno di stile nuovo, usano classi già esistenti (per esempio
+  `.errore-campo`, già in `app.css:1876`) o stile inline. **Un'unità che scopre di aver
+  bisogno di `app.css` torna `BLOCKED`, non lo modifica**: va serializzata dopo la 10.
+- `Shared/TestataPagina.razor` lo **consumano** cinque unità con l'API esistente
+  (`Titolo` / `Aiuto` / `Azione`) e non lo modifica nessuno. Se una scopre di aver bisogno
+  di un'opzione nuova, è un'eccezione che torna al capo — non si risolve nell'unità.
+- Le sei stringhe «Il database ha rifiutato…» vivono in due file di proprietà diversa
+  (`SpaceDetail.razor` all'unità 07, `RecensioniElemento.razor` alla 09). Vanno tradotte
+  **allo stesso modo**: è un contratto, e l'omologo già corretto da imitare è
+  `NoteEdit.razor:278`.
+
+**Perché l'unità 01 non blocca le altre.** Nessun altro gruppo tocca le migrazioni o
+`Models/Collection.cs`. Blocca però il **collaudo** di tre cose, ed è un vincolo diverso
+dall'ordine di implementazione: `/collections/{id}/items/{id}` non è raggiungibile senza
+una collezione, quindi le unità 05 e 09 si scrivono ma non si provano nel browser; e il
+medaglione dell'unità 10 (P3) compare solo con almeno una collezione in elenco.
+
+**Trappola per l'unità 04.** Dopo che la 01 chiude il 42501, l'errore del rilievo 3 non
+sarà più riproducibile da `/collections/new`: per collaudare la traduzione del messaggio
+serve innescare un'altra eccezione Postgrest.
+
+## CONTRATTO — `Shared/PaginaEditor.cs`
+
+Lo **produce l'unità 03**, lo **consumano le unità 04-07**. Scritto qui perché i mandati
+delle consumatrici lo devono citare verbatim, e prima che la 03 rientri non esiste su
+disco. Quando la 03 rientra, la firma reale del suo resoconto **prevale su questa** e la
+divergenza va annotata.
+
+```csharp
+public abstract class PaginaEditor : ComponentBase
+{
+    [Inject] protected NavigationManager Navigation { get; set; } = default!;
+    [Inject] protected IJSRuntime JS { get; set; } = default!;
+
+    // Ogni editor ha già 'private bool Cambiata': diventa 'protected override'.
+    protected abstract bool Cambiata { get; }
+
+    // Sostituisce Navigation.NavigateTo dopo Crea() ed Elimina(): esce senza far
+    // scattare la guardia.
+    protected void Esci(string uri, bool replace = false);
+
+    // Handler per NavigationLock.OnBeforeInternalNavigation.
+    protected async Task GuardaUscita(LocationChangingContext ctx);
+}
+```
+
+Una riga di markup per editor, dentro il ramo del modulo:
+
+```razor
+<NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
+```
+
+**Perché una classe base e non un componente `<GuardiaUscita Sporca="@Cambiata" />`.** Il
+componente **non funziona**, e non per ragioni di stile: dopo `Crea()` ogni editor chiama
+`NavigateTo` con `Cambiata` **ancora vera**, e fra quella decisione e la navigazione non
+c'è nessun render. Un `[Parameter]` porta il valore catturato all'ultimo render, quindi la
+guardia chiederebbe «hai modifiche non salvate» **subito dopo un salvataggio riuscito**.
+Una classe base legge i campi vivi nell'istante dell'handler.
+
+**Due trappole per i mandati 04-07.** (1) I quattro editor hanno già
+`@inject NavigationManager Navigation`: con la base che lo dichiara `[Inject] protected`
+quella riga va **tolta**, come fa `PaginaRegistro` con `Spazi`. (2) I `NavigateTo` da
+sostituire con `Esci(...)` sono quelli che seguono `Crea()` ed `Elimina()`.
+
+## PROSSIMA AZIONE
+
+Scrivere `handoff/02-collezioni-insert/mandato.md` e aprire l'unità 02.
+
+## APERTO
+
+~~Da fare al capo: aggiornare il testo del rilievo 15.~~ **Fatto il 3 set 2026**: la
+sezione è ora «ISTRUITO E CHIUSO — non era un difetto», col ragionamento per esteso e la
+condizione che lo smentirebbe. Non sparisce dall'elenco: un rilievo cancellato senza motivo
+viene riaperto da qualcuno fra sei mesi.
+
+**Da consegnare all'utente quando l'unità 02 rientra**: la migrazione da eseguire in
+produzione. Il lavoro non è finito finché lui non l'ha eseguita, e finché non lo è, le
+unità 06 e 10 non sono collaudabili nel browser e il medaglione P3 dell'unità 11 non è
+visibile.
+
+**Dubbi miei, non ancora domande.**
+
+- L'unità 05 (`CollectionEdit.razor`) raccoglie sei rilievi e ora anche la tavolozza di
+  emoji: è la più grande dell'elenco, 150-250 righe stimate, e la prima candidata a essere
+  ripartizionata se torna `PARZIALE`.
+- La forma del GRANT (`grant insert (blind)` minimale) **devia dal precedente** di
+  `voto_al_buio.sql:109`, che ripete l'elenco completo. `conformity` la segnalerà: la
+  deviazione va dichiarata nel commento della migrazione, non nascosta.
+- `tech-advisor` dà confidenza **media** su un punto del contratto: su iOS Safari/PWA
+  `beforeunload` è notoriamente inaffidabile, quindi la chiusura dell'app sul telefono
+  resta best-effort. Il gesto Indietro, che è il caso frequente, è coperto dall'handler
+  interno. Non è un motivo per cambiare forma, è una cosa da non promettere.
+- Dopo che l'unità 02 chiude il 42501, l'errore del rilievo 3 **non sarà più riproducibile**
+  da `/collections/new`: chi collauda l'unità 05 dovrà innescare un'altra eccezione
+  Postgrest per verificare la traduzione del messaggio.
+
+## FATTI OPERATIVI CHE COSTANO CARI SE DIMENTICATI
+
+Ereditati dal piano precedente, tutti ancora validi.
+
+- **Riavvia il server prima di ogni prova nel browser**, e non far compilare nessuno mentre
+  è vivo. Il DevServer legge i manifest degli asset solo al proprio avvio: dopo qualche
+  build annuncia nomi con impronta che non esistono più, e l'app non parte. Rimedio:
+  `rm -rf obj bin`, ricompila, riavvia.
+- **Il server lo avvia e lo ferma l'orchestratore**, annotando porta e PID **su disco**. Su
+  Windows la morte del padre non uccide i figli: `dotnet run` lascia un processo DevServer
+  separato, e vanno fermati **entrambi**.
+- **Gli implementer non compilano.** `obj/` non ha lock fra processi: due build concorrenti
+  sullo stesso `.csproj` si corrompono a vicenda. Compila l'orchestratore, a fine giro.
+- **Il testo accentato non passa per gli argomenti della shell.** `printf`, `echo -e` e
+  `git commit -m` mangiano gli accenti su questo setup. Heredoc quotato, o `git commit -F`
+  su file UTF-8. I file si scrivono con `Write`, che scrive UTF-8 nativamente.
+- **Il Chrome giusto** ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`. Identifica per
+  deviceId, **mai** per nome visualizzato: i nomi si scambiano a ogni riconnessione, e
+  l'altro non raggiunge `localhost`.
+- **Il login su `localhost` non arriva all'agente da solo.** `launchBrowser: true` in
+  `Properties/launchSettings.json` fa aprire a `dotnet run` il browser predefinito di
+  sistema, che è un profilo diverso da quello dell'estensione. Apri **tu** la scheda con
+  `navigate`, poi chiedi all'utente di accedere in quella scheda.
+- **`resize_window` non scende sotto ~526px** su questo PC. Per misurare un layout stretto,
+  restringi il contenitore via JS replicando a mano le media query attive a quella
+  larghezza.
+- **La spesa di prova «PROVA AGENTE»**, 12,50 € del 20 agosto, **la cancella l'utente**.
+  Nessun agente la tocca.
+- **Lo sviluppo gira contro il database vero.** `wwwroot/appsettings.json:3` è l'unico
+  appsettings e punta a `fdqedhgvpneuybtykamf.supabase.co`; non esiste
+  `appsettings.Development.json`. Ogni prova nel browser scrive sui dati reali.
+- **Il budget di un'unità si prezza sui giri di protocollo, non sulle righe di diff.**
+  Misurato il 3 settembre: l'unità 02 — una riga di SQL e un test — ha esaurito **4 dollari**
+  completando due obiettivi su tre. Il costo fisso di un'unità (brief, `implementer`,
+  revisori, istruttoria, adjudica) domina quello variabile. Regola pratica ricavata:
+  **≥ 12 $ per un'unità a giro singolo**, di più se i file sono molti o i revisori sono
+  quattro. Un tetto troppo stretto non protegge: fa perdere il lavoro non ancora scritto su
+  disco, e il resoconto è la prima cosa che salta.
+
+## COSA NON VA RI-VERIFICATO
+
+- **La scena del grafo** (`3cb5924`): collaudata su sette scenari, 181 fps, zero difetti.
+  Le tre cose non tarate — dissolvenza dell'occhiello, ultimo 8% della corsa fermo, onda al
+  clic sottile — l'utente ha deciso di **non** toccarle.
+- **La misura di `thewatch.60fps.fr`**: nessuna libreria di animazione, scroll nativo non
+  addolcito, Three.js + WebGL2, 11,77 MB di cui 8,59 per il modello, zero
+  `animation-timeline`. Le sue transizioni CSS sono più semplici di quelle che Eton ha già.
+- **La testata a 360px**: +8,5px di margine sui 328 di area utile nel caso peggiore.
+- **Il disarmo della conferma di eliminazione**: verificato contro la documentazione di
+  .NET 10 e il sorgente del renderer.
+- **Il banner PWA che riappare in sviluppo dopo il clic** non è un difetto:
+  `service-worker.js` è no-op e non ha listener `message`, quindi lo SKIP_WAITING cade nel
+  vuoto; il worker pubblicato il listener ce l'ha (`service-worker.published.js:15-16`).
+  Chi collauda l'unità 10 non ci perda un'ora.
+
+## VINCOLI EREDITATI DALLA SCENA DEL GRAFO — lavoro chiuso, non riaprire
+
+Conservati dal piano precedente perché documentano **perché** la scena è fatta così, e
+restano vincolanti per chiunque ci rimetta mano. L'idea di partenza era un canvas
+`position: fixed` per tutta la vetrina, come fa il sito di riferimento. Fallisce in tre
+modi, tutti verificabili nel codice:
 
 1. **Il grafo è fatto di luce.** `grafo-spazio.js:230` disegna con
    `globalCompositeOperation = "lighter"`: i colori si sommano al fondo invece di coprirlo.
    Funziona su nero pieno; su fondo chiaro satura verso il bianco e l'oggetto sparisce. E
    la vetrina ha una `<section class="spazi chiara">` a fondo chiaro **per scelta
-   documentata** (`Benvenuto.razor:92-95`). Il sito di riferimento può pinnare per 25.000px
-   perché è cromaticamente omogeneo; questa vetrina non lo è.
-2. **Il grafo è l'unica cosa toccabile della vetrina** («Passaci sopra il mouse, o
-   toccalo»), e ha `pointermove` / `pointerdown`. Un canvas fisso a piena pagina o sta
-   sotto il contenuto con `pointer-events: none` — e perde ciò che lo rende interessante —
-   o sta sopra, e intercetta i click sul pulsante «Entra con Google». Non c'è una terza
-   configurazione.
+   documentata** (`Benvenuto.razor:92-95`).
+2. **Il grafo è l'unica cosa toccabile della vetrina**, e ha `pointermove` / `pointerdown`.
+   Un canvas fisso a piena pagina o sta sotto il contenuto con `pointer-events: none` — e
+   perde ciò che lo rende interessante — o sta sopra, e intercetta i click sul pulsante
+   «Entra con Google». Non c'è una terza configurazione.
 3. **Il costo per fotogramma.** Oggi il canvas è grande quanto la sua sezione e si spegne
    fuori vista. A piena pagina significa full-viewport a `devicePixelRatio` 2, con una
    `createRadialGradient` per ogni alone a ogni frame, su **CPU** — è Canvas 2D, non il
-   WebGL2 del riferimento. Su un telefono di fascia media è il candidato ideale al jank.
+   WebGL2 del riferimento.
 
-Confinare la scena nella sezione toglie tutti e tre: resta nel proprio capitolo scuro,
-mentre è pinnato è l'unica cosa a schermo, e il costo è limitato a quel tratto di scorrimento.
+Vincoli tecnici che restano attivi:
 
-### Vincoli tecnici da rispettare
-
-- **Nessuna dipendenza nuova.** `grafo-spazio.js:9-11` lo dichiara per iscritto: «Canvas 2D
-  e non WebGL, e nessuna libreria: il sito sta su GitHub Pages e deve funzionare offline
-  come PWA». Non è negoziabile ottimizzando gli asset — anche un modello 3D da 50 KB
-  richiederebbe comunque la libreria.
-- **Non aggiungere altro `animation-timeline`.** Quello che c'è, incapsulato in
-  `@supports` con stato di partenza visibile, è il pattern giusto per decorazione non
-  critica: si lascia com'è, e non ci si costruisce sopra un doppio binario per Firefox.
-  Nota che la scena sticky, essendo guidata da JS, **funziona anche su Firefox** — dove le
-  animazioni scroll-driven della vetrina oggi non partono.
-- **`overflow: hidden` sul wrapper alto della scena romperebbe `sticky`.** `.hero` ce l'ha;
-  la sezione nuova non deve averlo. Verificato che `Layout/VetrinaLayout.razor.css` non ha
-  `transform`/`overflow`/`filter` che interferiscano.
-- L'`IntersectionObserver` che oggi sospende il ciclo fuori vista **resta valido** e va
-  tenuto: fuori dalla sezione la scena si spegne ancora.
-
-### Dove può sbagliare
-
-Due segnali, da `tech-advisor`, che vale la pena riconoscere presto:
-
-- Se il collaudo mostra che ridisegnare il grafo a ogni frame **durante lo scorrimento**
-  scatta su mobile, il costo stimato accettabile non lo è, e la scena degrada alla variante
-  minima: **composizione a soglie** (stati commutati una volta) invece che agganciata di
-  continuo allo scorrimento.
-- Se l'utente, rivedendo il riferimento, dice che ciò che voleva è la **materia** dell'oggetto
-  3D — la luce sul metallo — e non il pattern di scorrimento, allora la risposta onesta è
-  «quel carattere non è replicabile dentro i vincoli di questo progetto», non questa scena.
-
-L'altezza esatta della sezione e la coreografia della composizione **si tarano nel browser**,
-non a tavolino: `tech-advisor` dà confidenza media su quel punto e alta su tutto il resto.
-
----
-
-## Lavoro 2 — Ricognizione UI/UX dell'app · **FATTA** il 27 agosto 2026
-
-**Il prodotto è in `handoff/01-ricognizione-ui/rilievi.md`**: 15 rilievi ordinati per
-gravità, più un elenco di ciò che funziona e va protetto. Nessuna correzione applicata:
-le decisioni spettano all'utente, ed è il senso di aver guardato prima.
-
-**Il reperto che cambia le priorità** è il rilievo 0, e non era in programma:
-**creare una collezione è impossibile in produzione dal 12 agosto 2026**.
-`20260812230000_voto_al_buio.sql` aggiunge la colonna `blind` e la riconcede solo in
-UPDATE; il grant di INSERT di `20260812120000_collections.sql:221` non la contiene; e
-`Models/Collection.cs:40` la invia comunque, perché è l'unica colonna non concessa priva di
-`ignoreOnInsert: true`. Postgres rifiuta l'intera istruzione con
-`permission denied for table collections`. È anche il motivo per cui lo spazio dell'utente
-ha 0 collezioni — non una coincidenza dei dati, come si era creduto.
-
-Restano perciò **non viste** `/collections/{id}`, `/collections/{id}/edit` e
-`/collections/{id}/items/{id}`: la parte di voti e recensioni non è raggiungibile finché il
-rilievo 0 non è corretto. Vanno guardate in un secondo giro, che a quel punto sarà breve.
-
-Il mandato originale, per memoria:
-
-**Deciso dall'utente**: prima si guarda, poi si propone. Nessun miglioramento è stato
-deciso, e indovinarli senza aver guardato sarebbe peggio che chiedere.
-
-Un giro di `live-testing` in sola lettura che attraversi l'applicazione cercando **attriti
-concreti**: passaggi che richiedono un tocco di troppo, stati che non dicono cosa sta
-succedendo, cose che si scoprono solo per tentativi. Il prodotto è un **elenco ordinato per
-gravità**, non un intervento.
-
-**Vincolo sui dati**: lo spazio personale dell'utente ha 0 note, 0 collezioni e 1 sola
-spesa. Tre verifiche sono già cadute per questo motivo in questa sessione (vedi sotto). Se
-la ricognizione ha bisogno di elenchi popolati, **va chiesto all'utente**, non creato:
-sono dati veri.
-
----
-
-## Pendenze minori, tutte già individuate
-
-| Cosa | Dove | Nota |
-|---|---|---|
-| Il segnaposto dell'editor Markdown mostra i codici `&#10;` invece di andare a capo | `Pages/NoteEdit.razor:77` | Trappola di Blazor, non un refuso: il compilatore Razor emette l'attributo come stringa letterale e il renderer lo passa a `setAttribute`, quindi **nessuno decodifica le entità HTML**. Si risolve dicendo l'a-capo in C#: `placeholder="@("… \n\n …")"`. Unico caso nel progetto. |
-| Sei stringhe «Il database ha rifiutato…» | `Pages/SpaceDetail.razor:189, 217, 243, 271` · `Shared/RecensioniElemento.razor:434, 547` | Nominano il meccanismo invece della causa, e cinque su sei non dicono cosa fare. È **RLS che fa il proprio mestiere**, non un guasto: la difesa regge, è l'interfaccia che traduce male una risposta corretta. Omologo già corretto da imitare: `NoteEdit.razor:278`. |
-| Il medaglione 📋 delle collezioni | `Pages/Collections.razor:73` · `Pages/Home.razor:193` | `.icona-collezione` da portare a un contenitore 40×40. Ereditato da un ciclo precedente. |
-| La spesa di prova «PROVA AGENTE», 12,50 € del 20 agosto | spazio personale dell'utente | **La cancella l'utente.** Nessun agente deve toccarla. |
-
----
-
-## Cosa NON va ri-verificato
-
-Costa caro rifarlo, ed è già fatto.
-
-- **La misura del sito di riferimento** (`thewatch.60fps.fr`) è in memoria, con tutti i
-  numeri. In sintesi: nessuna libreria di animazione, **scroll nativo non addolcito**,
-  Three.js + WebGL2 su canvas `fixed`, **11,77 MB** di cui 8,59 per il solo modello, e
-  **zero** `animation-timeline` nei loro fogli di stile. Le sue transizioni CSS sono più
-  semplici di quelle che Eton ha già: copiarle sarebbe un regresso.
-- **La testata a 360px**: misurata nel browser, **+8,5px di margine** sui 328 di area utile
-  per il caso peggiore («Collezioni» + «Nuova collezione»). Il commento sopra la regola a
-  `wwwroot/css/app.css` porta il numero e spiega perché una misura di `scrollWidth` lì dà
-  un falso «tutto a posto».
-- **Il disarmo della conferma di eliminazione**: verificato contro la documentazione di
-  .NET 10 e il sorgente del renderer. Il framework **non** invoca `OnParametersSet` a ogni
-  ri-render — lo salta del tutto quando ogni parametro è di tipo noto immutabile e nessuno
-  è cambiato. Qui scatta perché `Chiave` è precisamente il parametro che cambia.
-
-**Rimasto non provato nel browser**, e va detto: la transizione A→B della conferma di
-eliminazione (manca un secondo oggetto), gli elenchi di Note e Collezioni (vuoti), la
-scheda di conflitto (richiede due salvataggi in corsa).
-
----
-
-## Fatti operativi che costano cari se dimenticati
-
-- **Riavvia il server prima di ogni prova nel browser**, e non far compilare nessuno mentre
-  è vivo. Il DevServer legge i manifest degli asset solo al proprio avvio: dopo qualche
-  build annuncia nomi con impronta che non esistono più, e l'app non parte. È successo
-  stasera. Il rimedio, se accade: `rm -rf obj bin`, ricompila, riavvia.
-- **Il server lo avvia e lo ferma l'orchestratore**, annotando porta e PID. Su Windows la
-  morte del padre non uccide i figli: `dotnet run` lascia un processo DevServer separato,
-  e vanno fermati entrambi.
-- **Gli implementer non compilano.** `obj/` non ha lock fra processi: due build concorrenti
-  sullo stesso `.csproj` si corrompono a vicenda. Compila l'orchestratore, una volta, a
-  fine giro.
-- **Il testo accentato non passa per gli argomenti della shell.** `printf`, `echo -e` e
-  `git commit -m` mangiano gli accenti su questo setup: «è» → «e», «più» → «piu». Usa un
-  heredoc quotato, o un file UTF-8 con `git commit -F`. Il corpo del commit `33f5c08` ne
-  porta la cicatrice.
-- **Il Chrome giusto** ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`. Identifica per
-  deviceId, **mai** per nome visualizzato: i nomi si scambiano a ogni riconnessione, e
-  l'altro non raggiunge `localhost`.
-- **Il login su `localhost` non arriva all'agente da solo.** `launchBrowser: true` in
-  `Properties/launchSettings.json` fa aprire a `dotnet run` il browser **predefinito di
-  sistema**, che è un profilo diverso da quello dell'estensione. Apri **tu** la scheda con
-  `navigate`, poi chiedi all'utente di accedere **in quella scheda**.
-- **`resize_window` non scende sotto ~526px** su questo PC. Per misurare un layout stretto,
-  restringi il contenitore via JS **replicando a mano le media query attive a quella
-  larghezza** — altrimenti misuri con i valori sbagliati.
+- **Nessuna dipendenza nuova.** `grafo-spazio.js:9-11` lo dichiara per iscritto: il sito sta
+  su GitHub Pages e deve funzionare offline come PWA. Vale per tutto il progetto, e quindi
+  anche per il selettore di icona del rilievo 10.
+- **Non aggiungere altro `animation-timeline`.** Quello che c'è, incapsulato in `@supports`
+  con stato di partenza visibile, è il pattern giusto per decorazione non critica.
+- **`overflow: hidden` su un wrapper alto romperebbe `sticky`.** La sezione della scena non
+  deve averlo.
+- L'`IntersectionObserver` che sospende il ciclo fuori vista **resta valido** e va tenuto.
