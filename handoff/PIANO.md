@@ -171,6 +171,13 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   `tech-advisor` contro la doc .NET 10 e il sorgente di `NavigationLock`:
   `OnBeforeInternalNavigation` **copre anche il tasto Indietro** del browser;
   `ConfirmExternalNavigation` serve solo per chiusura scheda, ricarica e link esterni.
+- **4 set 2026** — **L'ottava voce dell'unità 11 non si fa**, deciso dal capo con l'utente
+  assente. Era la rinomina `.scelta-categoria` → `.scelta-pastiglie`: un nome di classe più
+  onesto, che però tocca tre `.razor` fuori dal perimetro di chi possiede il foglio di stile
+  e **non cambia un solo pixel a schermo**. Le altre quindici voci erano difetti che un
+  utente vede; questa è cosmesi di sorgente, e il costo di riaprire tre file per un nome
+  supera il beneficio. Il consiglio resta scritto nel `FUORI SCOPE` del resoconto 11 per chi
+  toccherà quelle pagine per altri motivi.
 
 ## IL QUARTO ANELLO DEL RILIEVO 0
 
@@ -203,11 +210,11 @@ i numeri di cartella non si riusano.
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
 | 09 | Registri vuoti | `Pages/Notes.razor`, `Pages/Collections.razor` | — | **FATTO** — due righe di codice; ha trovato l'orfano `CollectionDetail.razor`. `ConfermaAzione` tolto dal perimetro: era lì per il rilievo 8, ora dell'unità 11 |
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
-| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, `Pages/NoteEdit.razor` (voce 5), **`Shared/ConfermaAzione.razor`** (voce 4, autorizzata al rilancio) | tutte | **6/8 FATTE** — commit `ef61a22`. Rilanciata per la sola voce 4 |
-| 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
+| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, `Pages/NoteEdit.razor` (voce 5), **`Shared/ConfermaAzione.razor`** (voce 4, autorizzata al rilancio) | tutte | **FATTO** — 7/8 voci, commit `ef61a22` (sei voci) + `d2c9c67` (voce 4, al rilancio). L'ottava è una rinomina cosmetica di classe, chiusa per decisione del capo: v. DECISIONI |
+| 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **FATTO** — commit `8a4a89f`. Eseguita fuori numero, subito dopo la 07. 273 test (267+6) |
 | 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
 | 15 | L'undicesimo punto | `Services/SupabaseService.cs` | 14 | **FATTO** — commit `84217ec`. **Il rilievo 3 è chiuso, con prova**: zero righe sul `grep` dei sink. Ha trovato il difetto che diventa l'unità 16 |
-| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs` | 15 | PIANIFICATA — in attesa della posizione di `tech-advisor` |
+| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 15 | **IN CORSO** — mandato `4bb9267`, lanciata il 4 set. Insieme chiuso, `Errore` diventa un `enum`. Unica unità del piano con tutti e quattro i revisori |
 | 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
 
 ### MAPPA RILIEVO → UNITÀ
@@ -221,20 +228,21 @@ partizione aggiorna anche questa tabella.*
 | 0 — creare una collezione è impossibile | 02 | **chiuso** `8a1d438` |
 | 1 — il lavoro non salvato si perde | 03, 04, 06, 07 | **chiuso** su tutti e quattro gli editor |
 | 2 — l'esito compare dove non guardi | 03, 04, 05, 06, 07 | **chiuso** |
-| 3 — il messaggio d'errore è JSON grezzo | 05 + **10** + **13** (sei file) + **14** (gli ultimi dieci punti) | **parziale — chiuso solo quando la 14 rientra** |
-| 4 — l'avviso di aggiornamento non si rimanda | 11 | pianificato |
-| 5 — bersagli categorie alti 22px | 11 | pianificato |
-| 6 — «Anteprima» fa saltare il layout di 358px | 11 | pianificato |
-| 7 — «Gestisci questo spazio» non gestisce niente | 08 | pianificato |
-| 8 — «Elimina» a 55px da «Chiudi» | 11 | pianificato |
-| 9 — pulsante spento che non dice cosa manca | 05 (`CollectionEdit`) + **13** (gli altri) + 11 (la metà visiva) | **parziale** |
+| 3 — il messaggio d'errore è JSON grezzo | 05 + **10** + **13** (sei file) + **14** (altri sei) + **15** (l'undicesimo punto) | **chiuso `84217ec`, con prova**: il `grep` dei sink torna zero righe. Creduto chiuso tre volte prima di esserlo |
+| 4 — l'avviso di aggiornamento non si rimanda | 11 | **chiuso** `ef61a22` — «Più tardi», e la memoria sta solo in memoria |
+| 5 — bersagli categorie alti 22px | 11 | **chiuso** `ef61a22` — una regola, tre pagine, 48px |
+| 6 — «Anteprima» fa saltare il layout di 358px | 11 | **chiuso** `ef61a22` — CSS più una parola tolta al markup della nota |
+| 7 — «Gestisci questo spazio» non gestisce niente | 08 | **chiuso** `bdd858a` |
+| 8 — «Elimina» a 55px da «Chiudi» | 11 (2° giro) | **chiuso** `d2c9c67` — un file, non quattro: gli editor delegano a `ConfermaAzione` |
+| 9 — pulsante spento che non dice cosa manca | 05 (`CollectionEdit`) + **13** (gli altri) + 11 (la metà visiva) | **chiuso** — la metà visiva in `ef61a22`: il blu al 50% restava la cosa più accesa dello schermo |
 | 10 — l'icona è un campo di testo libero | 05 | **chiuso** `e139ce8` |
-| 11 — «Spesa 100%» non dice di essere una categoria | 08 | pianificato |
-| 12 — due schermate non si spiegano | 03-07 (editor) + 08 (`/spaces`, `/profile`) | **parziale** |
-| 13 — lo stato vuoto invita all'azione lontano | 09 | pianificato |
-| 14 — selettore spazio e «Profilo» accavallati | 11 | pianificato |
+| 11 — «Spesa 100%» non dice di essere una categoria | 08 | **chiuso** `bdd858a` |
+| 12 — due schermate non si spiegano | 03-07 (editor) + 08 (`/spaces`, `/profile`) | **chiuso** su tutte |
+| 13 — lo stato vuoto invita all'azione lontano | 09 | **chiuso** `d05416b` — due righe di codice |
+| 14 — selettore spazio e «Profilo» accavallati | 11 | **chiuso** `ef61a22` — l'origine si è stabilita dal codice, non serviva la misura |
 | 15 — logout non riuscito | — | **ritirato**, non era un difetto |
-| *(fuori elenco)* spese ≥ 1.000 € non modificabili | 12 | in corso |
+| *(fuori elenco)* spese ≥ 1.000 € non modificabili | 12 | **chiuso** `8a4a89f` — trovato dall'unità 07 |
+| *(fuori elenco)* content spoofing sul ritorno OAuth | 16 | **in corso** — trovato dall'unità 15 |
 
 **Tre assegnazioni decise dal capo il 3 set sera**, perché nessuna era nel piano originale:
 
@@ -490,59 +498,46 @@ quello vede `localhost`.
 **La cache della PWA non falsa le prove in sviluppo** — il service worker di dev è un no-op
 verificato — e il banner «versione nuova» che riappare lì **non è un difetto**.
 
-## DA PORTARE NEL MANDATO DELL'UNITÀ 11 — il foglio di stile
+## LA CODA DEL FOGLIO DI STILE — esaurita il 4 set 2026
 
-Si accumulano qui man mano che le unità le segnalano, perché `app.css` ha un solo
-proprietario e ogni unità che ne ha bisogno deve rinunciare e dirlo.
+Le quattro voci che le unità 04, 05 e 06 avevano accodato qui, perché `app.css` ha un solo
+proprietario, sono chiuse: le prime tre nei commit `ef61a22` e `d2c9c67`, la quarta per
+decisione dichiarata in `DECISIONI`. Il dettaglio di ognuna sta in
+`handoff/11-foglio-di-stile/resoconto.md`, che è anche la fonte dei criteri del **giro D** del
+collaudo — l'unico lavoro del piano che non si verifica leggendo il codice.
 
-1. **`a.btn:not([href])` accodato a `.btn:disabled`** (`app.css:704-709`). Senza, i due
-   link «Chiudi» delle unità 04 e 05 sono funzionalmente inerti ma **non spenti
-   visivamente**: sembrano premibili e non lo sono.
-2. **La stessa regola `.btn:disabled` risolve la metà visiva del rilievo 9**: «Salva» spento
-   è reso con `opacity: .5` su fondo blu pieno, e su nero resta saturo. L'unità 05 ha fatto
-   la metà che si poteva fare senza CSS — dire *cosa manca* — quindi oggi il pulsante spiega
-   il perché ma non sembra spento.
-3. **`min-height: var(--tocco)` su `.scelta-categoria .pastiglia`.** Le pastiglie sono alte
-   ~21px contro i 48px che il progetto stesso dichiara in `--tocco` (`app.css:190`) e già
-   applica a `.barra-elenco .pastiglia`. **Vale per tre file** — `Spese.razor`,
-   `SpesaEdit.razor` e ora `CollectionEdit.razor` — ed è lo stesso difetto del rilievo 5. Una
-   riga in `app.css` lo chiude in tutti e tre; uno stile inline lo chiuderebbe in uno solo,
-   lasciando due misure diverse della stessa pastiglia. L'unità 05 ha messo un
-   `font-size: var(--t-lg)` inline come rimedio parziale dichiarato: **valutare se togliere**
-   quando arriva la regola vera.
-4. **`.scelta-categoria` ha ora due domini e un nome solo**: la usano le categorie di spesa e
-   le icone di collezione, ma il nome parla di spese. Cosmesi di nomenclatura, non urgente —
-   `.scelta-pastiglie` costerebbe tre sostituzioni. Decide chi possiede il file.
+Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sezione.
 
 ## PROSSIMA AZIONE
 
-Unità 07 (`SpesaEdit`) — **è l'ultima delle quattro gemelle**, e dopo di lei si prova nel
-browser. Il contratto ha retto tre adozioni senza una deroga né un `BLOCKED`: il suo mandato
-è quello della 06 con il file cambiato, più i due punti qui sotto che sono suoi soltanto.
+**Unità 16 lanciata il 4 settembre 2026** (`claude -p`, tetto 20 dollari, in background). È
+l'ultima unità di codice del piano: quando rientra, **tutti e sedici i rilievi sono chiusi
+o ritirati** e non resta niente da scrivere prima del browser.
 
-**Due cose che l'unità 06 le lascia in eredità, entrambe verificate da lei sul disco:**
+Al suo resoconto, in quest'ordine:
 
-1. `Pages/SpesaEdit.razor:242-243` cita tre `file:line` come esempi di «scrittura di stato
-   fra i due `await`», e **tutte e tre sono ora stantie**: `NoteEdit.razor:200` è una riga
-   vuota (unità 03), `CollectionEdit.razor:309` è un commento sulla tavolozza di emoji
-   (unità 04/05), `ItemEdit.razor:214` è diventata la **226** (unità 06). Le prime due erano
-   già rotte prima della 06. Il file è perimetro della 07, che lo riscrive comunque:
-   correggerne una sola lascerebbe il commento sbagliato per due terzi.
-2. ~~Il caso «errore di caricamento in creazione».~~ **Non si applica**, verificato dal capo
-   prima di scrivere il mandato: `SpesaEdit.razor:1` ha la sola rotta `/expenses/{Id:guid}`
-   e **nessuna variante di creazione** — le spese si creano altrove. Di conseguenza la 07 è
-   la gemella **più piccola** delle quattro: un solo `NavigateTo` (`:386`) e quindi un solo
-   `Esci(...)`, nessun `Nuova`, nessun `replace: true`.
+1. **Audita `CONTRATTI` e `SCOSTAMENTI`**, non ri-adjudicare i rilievi. Due cose sole
+   contano: che l'`enum` sia atterrato con quattro valori e nessuna classe attorno, e che la
+   sezione `IL DIFETTO È CHIUSO?` risponda **con un test che fallirebbe**, non con una
+   dichiarazione. Il difetto tocca la sicurezza: per il §5 il codice lo apri comunque tu.
+2. **Committa** — l'unità ha ordine di non farlo. Messaggio con `git commit -F` su file
+   UTF-8 scritto con `Write`: gli accenti si perdono negli argomenti della shell.
+3. **Aggiorna questa tabella e la mappa**, che è lo stesso atto del punto 1, non uno in più.
 
-Poi: 08, 09, 10, 11 nell'ordine della tabella. L'unità 11 raccoglie le **quattro voci di
-`app.css` già accodate** (in fondo a questo file) più quelle che 07-10 aggiungeranno.
+Poi **il collaudo**, la cui forma è già decisa nella sezione `IL COLLAUDO` più sopra: quattro
+giri tematici sequenziali (A il bloccante, B il contratto degli editor, C i testi, D le
+misure di CSS), server avviato **dal capo** con porta e PID su `handoff/server.md`, riavviato
+prima di ogni giro, entrambi i processi fermati alla fine.
 
-**Non** lanciare `live-testing` prima che anche l'unità 07 sia rientrata: la guardia va
-provata una volta sola sulla forma finale, non quattro volte su forme intermedie. I criteri
-di accettazione sono già scritti e **non si riscrivono**: dieci in
+I criteri di accettazione **sono già scritti e non si riscrivono**: dieci in
 `handoff/03-contratto-editor/resoconto.md`, cinque in `handoff/04-collezione-contratto/`
 (prove 1-5), sei in `handoff/06-elemento-contratto/` — queste ultime specifiche di
-`ItemEdit`, con la **prova 6 della 04 esplicitamente non ripetibile** lì.
+`ItemEdit`, con la **prova 6 della 04 esplicitamente non ripetibile** lì. Il resoconto 16 ne
+aggiunge tre col loro URL esatto, fra cui l'unica prova che nessuna lettura può dare: un
+annullamento **vero** sulla schermata di Google.
+
+Dopo il collaudo, la **sessione di chiusura** secondo `~/.claude/architettura-sessioni.md`.
+Solo allora il filone delle spese ricorrenti, qui sotto.
 
 **Filone parallelo, spese ricorrenti.** Design in
 `docs/superpowers/specs/2026-09-03-spese-ricorrenti-design.md` (commit `c4a56ee`), piano in
