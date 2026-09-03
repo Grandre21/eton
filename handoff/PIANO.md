@@ -32,6 +32,33 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   Voto al buio, che il modulo di creazione mostra attivo» — e A+B è contraddittoria.
   `Models/Collection.cs` **non si tocca**: `ignoreOnInsert` e il grant sono complementari,
   non ridondanti.
+- **3 set 2026, sera** — **L'utente si è allontanato** dopo aver scritto: «procedi in autonomia
+  fino a completamento, non guardo più il pc». Da qui in avanti **non si fanno domande**: le
+  scelte che sarebbero andate a lui si prendono e si dichiarano in questo campo, col motivo.
+  L'unica eccezione resta l'**SQL di produzione**, che nessun agente esegue: le migrazioni si
+  scrivono, si committano, e si consegnano nel rapporto finale.
+- **3 set 2026, sera** — **Unità 12, decisa da me in autonomia.** L'unità 07 ha trovato un
+  difetto **funzionale bloccante** e preesistente: una spesa da 1.000 € in su non è modificabile
+  da nessuno, perché `Denaro.Testo` produce `"1.284,50"` e `Denaro.Verifica` rifiuta le stringhe
+  con più di un separatore (`Services/Denaro.cs:80`). Il §5 vorrebbe che un rilievo fondato fuori
+  scope andasse all'utente: non c'è, e lasciare in produzione un difetto di questa classe sarebbe
+  peggio che decidere. **Non è risolto di nascosto**: è scritto qui, ha un mandato proprio, e
+  finisce nel rapporto di chiusura.
+  Rimedio scelto — **additivo**: nasce `Denaro.TestoDigitabile`, `Verifica` non si tocca.
+  `tech-advisor` (confidenza alta) concorda e aggiunge il punto che mancava: i call-site sono
+  **quattro**, non tre — il quarto è `Cambiata`, e saltarlo renderebbe la pagina sempre
+  «modificata». Il motivo di fondo: un campo modificabile deve contenere il valore nella
+  grammatica di **input**, non in quella di visualizzazione. Allargare `Verifica` non elimina la
+  classe di difetto, la sposta — «1.284,50» corretto in «1.2845,50» verrebbe rifiutato **mentre
+  si digita un numero valido**.
+  **Sul nome ho deciso contro `tech-advisor`**, che proponeva `TestoPerInput`: il progetto nomina
+  in italiano (`Testo`, `Prova`, `Verifica`), e la coerenza linguistica è un fatto verificabile,
+  non una preferenza.
+- **3 set 2026, sera** — **Rilievo 14 assegnato all'unità 11**, che già possiede `app.css`. Non
+  era in nessun perimetro della tabella: la barra laterale è `Shared/Navigazione.razor` +
+  `Shared/SelettoreSpazio.razor`, e il difetto (basi disallineate, 820 contro 838) è
+  presumibilmente CSS puro. L'unità 11 prova col solo foglio di stile e ha i due file in
+  perimetro **solo se non basta**.
 - **3 set 2026** — Rilievo 0, **confermato dall'utente**: migrazione SQL **più** il test
   statico in `Eton.Tests`. **La migrazione in produzione la esegue l'utente**: nessun agente
   tocca il database vero.
@@ -98,11 +125,12 @@ i numeri di cartella non si riusano.
 | 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | **FATTO** — commit `3206150`. Gate riverificato dal capo |
 | 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | **FATTO** — commit `e139ce8`. Perimetro rifiutato a metà, e aveva ragione: v. RAZIONALE |
 | 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | **FATTO** — commit `f4f2dbd`. 0 rilievi da tre revisori, più tre verifiche proprie dell'unità |
-| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
+| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | **FATTO** — commit `4327598`. Quarta e ultima gemella; ha trovato il difetto che diventa l'unità 12 |
 | 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
 | 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
-| 11 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | tutte | PIANIFICATA |
+| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
+| 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
 
 **`CollectionEdit.razor` spezzato in due unità sequenziali, deciso il 3 set 2026.** Il piano
 segnalava già la 04 come «la più grande dell'elenco e la prima candidata a essere
