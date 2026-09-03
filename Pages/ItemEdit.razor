@@ -2,13 +2,21 @@
 @page "/collections/{Id:guid}/items/{ItemId:guid}"
 @using Eton.Models
 @using Eton.Services
+@inherits PaginaEditor
 @inject CollectionRepository CollectionRepository
 @inject CollectionItemRepository Repository
 @inject SpaceStateService Spazi
 @inject AuthStateService AuthState
-@inject NavigationManager Navigation
 
-<PageTitle>@(string.IsNullOrWhiteSpace(nome) ? "Elemento" : nome) — Eton</PageTitle>
+<PageTitle>@TitoloSchermata — Eton</PageTitle>
+
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>Nei campi della collezione un valore che non si riesce a interpretare — per esempio un numero con delle lettere dentro — non viene salvato: il salvataggio riesce lo stesso, e quel campo torna vuoto.</p>
+        <p>Se qualcun altro salva questo elemento mentre lo stai modificando, il salvataggio si ferma e ti fa scegliere fra ricaricare la sua versione e sovrascrivere con la tua.</p>
+        <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
+    </Aiuto>
+</TestataPagina>
 
 @if (!caricato)
 {
@@ -36,14 +44,7 @@ else if (collezione is null)
 }
 else
 {
-    @if (errore is not null)
-    {
-        <div class="errore" role="alert">@errore</div>
-    }
-    @if (avviso is not null)
-    {
-        <div class="avviso" role="status">@avviso</div>
-    }
+    <NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
 
     @if (conflitto is not null)
     {
@@ -97,8 +98,17 @@ else
         }
     }
 
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
     <div class="azioni">
-        @* Anche 'conflitto is null', per lo stesso motivo di NoteEdit.razor:79-82: con la scheda del
+        @* Anche 'conflitto is null', per lo stesso motivo di NoteEdit.razor:91-94: con la scheda del
            conflitto aperta il pulsante resterebbe acceso, perché lo stato è davvero diverso da
            quello di 'elemento'. Ripremerlo risalverebbe con la versione vecchia — stesso conflitto,
            altro giro a vuoto — e scavalcherebbe in silenzio la scelta fra Ricarica e Sovrascrivi,
@@ -106,7 +116,7 @@ else
         <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
-        <a class="btn" href="collections/@Id">Chiudi</a>
+        <a class="btn" href="@(occupato ? null : $"collections/{Id}")">Chiudi</a>
 
         @* Elimina non compare affatto quando PuoIntervenire è falso, non solo disabilitato: v. il
            commento su PuoIntervenire più sotto per il perché — un pulsante grigio inviterebbe
@@ -152,6 +162,8 @@ else
 
     private bool Nuovo => ItemId is null;
 
+    private string TitoloSchermata => string.IsNullOrWhiteSpace(nome) ? "Elemento" : nome;
+
     // La regola è comune a quattro entità (note, collezioni, elementi di collezione, spese): v.
     // Services/Permessi.cs per il perché di ogni scelta — perché non è un controllo di sicurezza,
     // perché guarda Spazi.Elenco e non Spazi.Attivo, perché fallisce chiuso, e perché non si
@@ -162,7 +174,7 @@ else
 
     // Come il pulsante Salva di NoteEdit e CollectionEdit: resta spento finché non c'è niente da
     // salvare. Per un elemento nuovo basta il nome, come negli altri due editor.
-    private bool Cambiata => Nuovo
+    protected override bool Cambiata => Nuovo
         ? !string.IsNullOrWhiteSpace(nome)
         : elemento is not null && (
             nome != elemento.Name ||
@@ -243,7 +255,7 @@ else
 
             // NON si accende 'sparito': quello significa "il database ha risposto che non c'è", e
             // qui il database non ha risposto affatto. Si azzera invece tutto ciò che era a schermo,
-            // come fa NoteEdit.razor:161 — e non per simmetria, ma perché tenere i dati precedenti
+            // come fa NoteEdit.razor:213 — e non per simmetria, ma perché tenere i dati precedenti
             // è attivamente pericoloso su questa pagina. Se il caricamento fallito è quello
             // dell'elemento B raggiunto da /items/A, 'elemento' resterebbe A mentre ItemId ormai
             // vale B: SalvaAsync riga 304 usa ItemId, non elemento.Id, quindi salvare scriverebbe i
@@ -343,12 +355,13 @@ else
 
         var creato = await Repository.CreaAsync(Id, collezione!.SpaceId, autore, nome, immagine, CostruisciDati());
 
-        // replace: true per lo stesso motivo di NoteEdit.razor:209-212: .../items/new non è un
+        // replace: true per lo stesso motivo di NoteEdit.razor:260-263: .../items/new non è un
         // posto in cui tornare col tasto Indietro — l'elemento ormai esiste, e ripresentare la
         // schermata vuota ne farebbe creare uno secondo. Il cambio di rotta rilancia
         // OnParametersSetAsync su questa stessa istanza, che rilegge l'elemento: solo da quel
         // momento c'è una versione con cui fare concorrenza ottimistica.
-        Navigation.NavigateTo($"collections/{Id}/items/{creato.Id}", replace: true);
+        // Esci e non NavigateTo: qui la guardia va disarmata, il salvataggio è riuscito (v. PaginaEditor.Esci).
+        Esci($"collections/{Id}/items/{creato.Id}", replace: true);
     }
 
     private async Task SalvaCon(int versione)
@@ -428,7 +441,8 @@ else
         {
             if (await Repository.EliminaAsync(ItemId!.Value))
             {
-                Navigation.NavigateTo($"collections/{Id}");
+                // Esci e non NavigateTo: qui la guardia va disarmata, l'eliminazione è riuscita (v. PaginaEditor.Esci).
+                Esci($"collections/{Id}");
                 return;
             }
             errore = "Non è stato possibile eliminare l'elemento.";
