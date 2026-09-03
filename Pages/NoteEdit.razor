@@ -95,7 +95,7 @@ else
         <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
-        <a class="btn" href="notes">Chiudi</a>
+        <a class="btn" href="@(occupato ? null : "notes")">Chiudi</a>
 
         @* Elimina sparisce del tutto quando PuoIntervenire è falso, non si disabilita — un pulsante
            grigio inviterebbe comunque a chiedersi il motivo, e qui la risposta non starebbe da

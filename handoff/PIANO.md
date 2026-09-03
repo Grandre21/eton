@@ -95,13 +95,22 @@ i numeri di cartella non si riusano.
 |---|---|---|---|---|
 | 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; `Eton.Tests/PrivilegiInsertTests.cs` | — | **FATTO** — commit `8a1d438`. Gate riverificato dal capo: 267/267, 0 avvisi |
 | 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | PIANIFICATA |
-| 04 | Editor Collezione | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 03 | PIANIFICATA |
-| 05 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
-| 06 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
-| 07 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
-| 08 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
-| 09 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
-| 10 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | — | PIANIFICATA |
+| 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | PIANIFICATA |
+| 05 | Collezione, i suoi tre rilievi propri | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | PIANIFICATA |
+| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | PIANIFICATA |
+| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | PIANIFICATA |
+| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | PIANIFICATA |
+| 09 | Conferma e registri vuoti | `Shared/ConfermaAzione.razor`, `Pages/Notes.razor`, `Pages/Collections.razor` | — | PIANIFICATA |
+| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | PIANIFICATA |
+| 11 | Foglio di stile e banner PWA | `wwwroot/css/app.css`, `wwwroot/index.html` | tutte | PIANIFICATA |
+
+**`CollectionEdit.razor` spezzato in due unità sequenziali, deciso il 3 set 2026.** Il piano
+segnalava già la 04 come «la più grande dell'elenco e la prima candidata a essere
+ripartizionata se torna `PARZIALE`»: ripartizionarla **prima** costa un giro in più e
+risparmia di scoprirlo dopo. Il taglio non è per dimensione ma per **tema**: la 04 fa
+l'adozione del contratto, identica per forma alle unità 06 e 07 sugli altri due editor; la
+05 fa i tre rilievi che appartengono solo a questa pagina. Due unità sullo stesso file non
+si contendono nulla perché sono sequenziali, e la seconda trova la prima già committata.
 
 Copertura dei rilievi: 02→r0 · 03→il contratto, più r1, r2, r12 e P1 su NoteEdit ·
 04→r1, r2, r12 su CollectionEdit, più r3, r9, r10 · 05 e 06→r1, r2, r12 sui rispettivi
@@ -143,15 +152,21 @@ produce il contratto, tre lo consumano.
   **allo stesso modo**: è un contratto, e l'omologo già corretto da imitare è
   `NoteEdit.razor:278`.
 
-**Perché l'unità 01 non blocca le altre.** Nessun altro gruppo tocca le migrazioni o
-`Models/Collection.cs`. Blocca però il **collaudo** di tre cose, ed è un vincolo diverso
-dall'ordine di implementazione: `/collections/{id}/items/{id}` non è raggiungibile senza
-una collezione, quindi le unità 05 e 09 si scrivono ma non si provano nel browser; e il
-medaglione dell'unità 10 (P3) compare solo con almeno una collezione in elenco.
+**La proprietà di un file si riassegna quando l'unità che lo teneva chiude.** È il motivo
+per cui `Pages/NoteEdit.razor`, prodotto dell'unità 03, entra nel perimetro dell'unità 04
+per il gate di «Chiudi». La proprietà esclusiva serve a impedire che **due unità vive**
+scrivano lo stesso file; non è un vincolo perpetuo, e trattarla come tale produrrebbe
+un'unità in più per ogni ripensamento. Le unità sono sequenziali: la 03 è chiusa e
+committata, quindi non c'è contesa.
 
-**Trappola per l'unità 04.** Dopo che la 01 chiude il 42501, l'errore del rilievo 3 non
-sarà più riproducibile da `/collections/new`: per collaudare la traduzione del messaggio
-serve innescare un'altra eccezione Postgrest.
+**L'unità 02 non bloccava le altre**, e ora è chiusa: la migrazione è stata eseguita in
+produzione il 3 settembre, quindi anche il vincolo di **collaudo** è caduto.
+`/collections/{id}/items/{id}` è di nuovo raggiungibile, e il medaglione P3 dell'unità 10
+torna visibile con almeno una collezione in elenco.
+
+**Trappola per l'unità 04.** Ora che il 42501 è chiuso, l'errore del rilievo 3 non è più
+riproducibile da `/collections/new`: per collaudare la traduzione del messaggio serve
+innescare un'altra eccezione Postgrest.
 
 ## CONTRATTO — `Shared/PaginaEditor.cs`
 
@@ -198,6 +213,62 @@ grezzo con lo stesso esito — ma ora c'è un posto solo dove correggerlo per qu
 `Esci` esce subito se il componente è smontato: l'oggetto creato resta creato, si abbandona
 solo la navigazione.
 
+### Il gate di «Chiudi» durante un salvataggio — deciso il 3 set 2026
+
+Vale per **tutti e quattro** gli editor, `NoteEdit` compreso, che l'unità 03 ha chiuso senza
+questo pezzo. In tutti e quattro, «Chiudi» è **l'unico** controllo del gruppo `.azioni` che
+non guarda `occupato`: ogni input, «Salva», `SchedaConflitto` e `ConfermaAzione` lo leggono.
+
+**La forma, e la base non c'entra:**
+
+```razor
+<a class="btn" href="@(occupato ? null : "notes")">Chiudi</a>
+```
+
+Il gate sta nel **markup**, nella stessa riga in cui sta quello di «Salva». `PaginaEditor`
+**non deve vedere `occupato`**: costerebbe un membro astratto in più in quattro pagine per
+una finestra di un round-trip.
+
+**Divieto esplicito, ed è la via che un implementer prenderebbe da solo:** non trasformare
+«Chiudi» in un `<button>`. Servirebbe navigare dalla pagina, e l'unica navigazione che la
+base espone è `Esci`, che **disarma la guardia** — un «Chiudi» via `Esci` uscirebbe senza
+chiedere niente, cioè reintrodurrebbe il difetto che questo lavoro sta correggendo.
+
+**Perché non basta dire «tanto la scrittura arriva comunque».** Con esito `Salvata` è solo
+incertezza. Ma con `Conflitto` o `Rifiutata` la modifica **non** è stata scritta, la pagina
+è morta e nessuno lo dirà mai all'utente — che per giunta ha appena letto una domanda («se
+esci le perdi») che gli è sembrata falsa perché aveva premuto Salva. Su `Crea`, uscire
+produce una nota che l'utente crede scartata, e un duplicato al secondo tentativo.
+
+**Verificato da `doc-checker` contro il sorgente di ASP.NET Core 10.0.10** — la versione
+pinnata in `Eton.csproj:36` — e **non va riverificato**. `RenderTreeBuilder.AddAttribute(int,
+string, string?)` chiama `TrackAttributeName` invece di aggiungere il frame quando il valore
+è `null` **e** il target non è un componente: `href` non compare affatto nel markup. Due
+trappole che vengono dallo stesso sorgente e vanno nei mandati:
+
+- **`""` non viene omesso.** La condizione è `value != null`, non un controllo su stringa
+  vuota: un `?? ""` messo per prudenza produrrebbe `href=""`, cioè un link valido **verso la
+  radice dell'applicazione**. Il valore dev'essere letteralmente `null`.
+- **Per `bool` il trigger di omissione è `false`, non `null`.** Le due regole si somigliano
+  ma non sono interscambiabili.
+- Su un **componente** (non un elemento HTML) `null` e `false` non vengono **mai** omessi:
+  sono valori legittimi passati al parametro. Non generalizzare la regola a
+  `<TestataPagina>` e simili.
+
+**Il selettore CSS appartiene all'unità 11**, che possiede `app.css`: la regola a
+`app.css:704` diventa `.btn:disabled, a.btn:not([href]) { … }`. Fino ad allora il link è
+**funzionalmente inerte ma non spento visivamente**: stato intermedio accettabile perché il
+collaudo nel browser avviene alla fine. Se l'unità 10 dimentica quel selettore, resta un
+link che sembra premibile e non lo è — va nel suo mandato come voce esplicita.
+
+**Una crepa nota di `smontata`, da annotare nel commento e non da correggere ora.** I
+quattro editor **riusano l'istanza** sulla stessa rotta con parametro diverso. Andando
+Indietro da `/notes/a` a `/notes/b` mentre un Elimina è in volo, l'istanza è riusata,
+`smontata` resta falso, e l'`Esci` tardivo scarica sull'elenco l'utente appena arrivato su
+b — a guardia disarmata. Perdita reale solo se ha digitato entro il round-trip: finestra
+minuscola. Il commento a `PaginaEditor.cs:56-62` oggi promette più di quanto il codice
+mantenga, ed è quello che va corretto.
+
 **Verificato con `doc-checker` contro il sorgente ASP.NET Core al tag `v10.0.10`** (la
 versione pinnata in `Eton.csproj:36`), e **non va riverificato**: `ComponentFactory` cerca
 le proprietà `[Inject]` con `BindingFlags.Instance | Public | NonPublic` e risale la
@@ -217,19 +288,24 @@ c'è nessun render. Un `[Parameter]` porta il valore catturato all'ultimo render
 guardia chiederebbe «hai modifiche non salvate» **subito dopo un salvataggio riuscito**.
 Una classe base legge i campi vivi nell'istante dell'handler.
 
-**Due trappole per i mandati 04-07.** (1) I quattro editor hanno già
-`@inject NavigationManager Navigation`: con la base che lo dichiara `[Inject] protected`
-quella riga va **tolta**, come fa `PaginaRegistro` con `Spazi`. (2) I `NavigateTo` da
-sostituire con `Esci(...)` sono quelli che seguono `Crea()` ed `Elimina()`.
+**Due trappole per i mandati 04, 05 e 06.** (1) I tre editor rimasti hanno già
+`@inject NavigationManager Navigation`: la riga va **tolta**, come fa `PaginaRegistro` con
+`Spazi`. Se una pagina scoprisse di dover navigare per altro, la **rimette** — con la base
+`private` questo non produce CS0108. (2) I `NavigateTo` da sostituire con `Esci(...)` sono
+quelli che seguono `Crea()` ed `Elimina()`, e sono cinque in tutto: due in
+`CollectionEdit`, due in `ItemEdit`, uno in `SpesaEdit`, che non ha `Crea`.
 
 ## PROSSIMA AZIONE
 
-Unità 03 **aperta** (tetto 20 $). Quando rientra: auditare `CONTRATTI` — la firma reale di
-`PaginaEditor` è ciò che finirà nei mandati 04, 05 e 06 — e `SCOSTAMENTI`, poi scrivere il
-mandato dell'unità 04.
+Unità 04 **aperta** (tetto 22 $). Quando rientra: auditare `CONTRATTI` — come ha consumato
+`PaginaEditor`, perché le unità 06 e 07 faranno lo stesso — e `SCOSTAMENTI`, poi committare
+e scrivere il mandato dell'unità 05.
 
-**Non** lanciare `live-testing` prima che le unità 03-06 siano tutte rientrate: il
-comportamento della guardia va provato una volta sola sulla forma finale.
+**Non** lanciare `live-testing` prima che le unità 04, 06 e 07 siano tutte rientrate: la
+guardia va provata una volta sola sulla forma finale, non quattro volte su forme
+intermedie. Le dieci prove sono già scritte in
+`handoff/03-contratto-editor/resoconto.md`, sezione `DA PROVARE NEL BROWSER`, con i criteri
+di accettazione; ogni unità successiva ne aggiunge le proprie.
 
 ## APERTO
 
