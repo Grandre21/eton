@@ -171,6 +171,21 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   `tech-advisor` contro la doc .NET 10 e il sorgente di `NavigationLock`:
   `OnBeforeInternalNavigation` **copre anche il tasto Indietro** del browser;
   `ConfirmExternalNavigation` serve solo per chiusura scheda, ricarica e link esterni.
+- **4 set 2026** — **Il collaudo gira contro il database di PRODUZIONE, e si accetta.** Non
+  c'è alternativa: esiste un solo `wwwroot/appsettings.json`, punta al Supabase cloud, non
+  c'è un `appsettings.Development.json` e **non esiste un account di collaudo** nel codice.
+  Il precedente è già stato accettato dall'utente il 27 agosto, quando la ricognizione lasciò
+  la spesa «PROVA AGENTE» da 12,50 €. Vincoli scritti in `handoff/17-collaudo/ambiente.md` e
+  ripetuti in ogni brief: **nome `COLLAUDO 4 SET`** su tutto ciò che si crea, il minimo
+  indispensabile, **niente cancellazioni di dati che l'agente non abbia creato lui**, e
+  l'elenco di ciò che resta in ogni esito. Lo spazio «Personale» era vuoto: verificato dal
+  capo.
+- **4 set 2026** — **Il browser si sceglie senza chiedere.** Il plugin pretende una domanda
+  all'utente quando trova due Chrome collegati, ed entrambi si dichiarano locali. L'utente non
+  è raggiungibile e **la risposta è già registrata in memoria**: solo
+  `d3148d48-d283-4d4a-a07a-95a77fa72150` vede `localhost`, e i nomi si scambiano a ogni
+  riconnessione, quindi si identifica per `deviceId`. Porre una domanda già risposta a un
+  utente assente fermerebbe il collaudo per niente.
 - **4 set 2026** — **Le tre domande dell'unità 16, decise dal capo.** (a) **L'helper
   `FraseRifiuto` non si fa ora.** Il codice di autenticazione è la superficie dove un errore
   costa di più, i gate sono verdi e il collaudo deve provare **questa** forma: cambiarla adesso
