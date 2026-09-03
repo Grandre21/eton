@@ -191,7 +191,22 @@ public class SupabaseService
         }
         catch (Exception ex)
         {
-            ErroreAccesso = $"Accesso non riuscito: {ex.Message}";
+            // Il .Message NON va all'utente: è l'unico messaggio del progetto che un visitatore
+            // ANONIMO può far comparire, e quello di una GotrueException è il corpo della risposta
+            // dell'Auth server. In console per esteso, col marcatore [Auth] che il file già usa.
+            //
+            // «Connessione» qui è lecita — ExchangeCodeForSession è una POST a /auth/v1/token —
+            // mentre nella frase gemella di Benvenuto.razor:241 non lo era. Il permesso negato su
+            // Google invece non arriva MAI qui: torna come ?error=, che OAuthCallback.Analizza
+            // intercetta e che finisce a ErroreAccesso nel bootstrap. Resta il rifiuto dello
+            // scambio, che per chi legge è una cosa sola: l'autorizzazione è monouso e dura poco.
+            //
+            // L'azione nomina il pulsante vero (Benvenuto.razor:31 e :177) e non dice «torna alla
+            // pagina d'ingresso»: chi legge ci è già, perché AuthRedirect.razor:68 lo ha rimbalzato
+            // lì senza forceLoad — è così che questa proprietà sopravvive fino a Benvenuto:211.
+            // Niente «esci e rientra»: non c'è nessuna sessione da rifare.
+            Console.Error.WriteLine($"[Auth] Scambio del codice PKCE non riuscito: {ex.Message}");
+            ErroreAccesso = "Non è stato possibile completare l'accesso: può essere la connessione, oppure l'autorizzazione appena rilasciata da Google, che vale una sola volta e per pochi minuti. Prova di nuovo a entrare con Google.";
         }
         finally
         {

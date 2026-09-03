@@ -61,6 +61,19 @@ stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA 
   mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
   giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
   `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
+- **3 set 2026, sera** — **Unità 15, e il `grep` che finalmente cerca la cosa giusta.** L'unità 14
+  ha chiuso i dieci punti e ne ha trovato un **undicesimo**, `Services/SupabaseService.cs:194`,
+  che mostra il testo dell'eccezione a un utente **non ancora autenticato**. L'ha trovato
+  cambiando il modo di cercare: non più `ex.Message` — la **sorgente**, che ha un punto cieco
+  perché ogni riga di `Console.Error.WriteLine` legittima la sporca — ma i **sink**, cioè i nomi
+  delle proprietà che finiscono a schermo (`errore`, `avviso`, `ErroreAccesso`, `Messaggio`).
+  **È il `grep` che va usato d'ora in poi**, ed è nel mandato della 15.
+  **In `Services/` questa volta si scrive, e la deroga è motivata**: il divieto delle unità 05,
+  10, 13 e 14 esiste perché dentro un repository sai *quale query* è fallita e non *quale
+  schermata* la stava aspettando. `ErroreAccesso` non è un errore di repository — è una proprietà
+  di stato del servizio di autenticazione, con **una sola** schermata che la mostra. Il mandato
+  chiede all'unità di **verificare** che il consumatore sia uno solo, e di tornare `BLOCKED` se
+  ne trova un secondo.
 - **3 set 2026, sera** — **Unità 14, e il rilievo 3 creduto chiuso per la seconda volta.**
   L'unità 13 è nata perché il rilievo 3 risultava chiuso essendolo su **una pagina su sei**. La 13
   ha chiuso quelle sei e, censendo, ne ha trovate **dieci in quattro file ancora aperte** — fra cui
@@ -165,7 +178,8 @@ i numeri di cartella non si riusano.
 | 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
 | 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, e **solo se il CSS non basta** `Shared/Navigazione.razor`, `Shared/SelettoreSpazio.razor` | tutte | PIANIFICATA |
 | 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **IN CORSO** — eseguita fuori numero, subito dopo la 07 |
-| 14 | **Il rilievo 3 si chiude davvero** — dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **IN CORSO** |
+| 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
+| 15 | **L'undicesimo punto, e il rilievo 3 si chiude** | `Services/SupabaseService.cs` | 14 | **IN CORSO** |
 | 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
 
 ### MAPPA RILIEVO → UNITÀ
