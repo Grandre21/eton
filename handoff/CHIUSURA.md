@@ -132,6 +132,19 @@ e mettile in fondo, sotto un titolo `DA PORTARE ALL'UTENTE`:
 3. **La proposta di ricognire `/collections/{id}` e tutta l'area voto/recensioni**: la
    ricognizione del 27 agosto non le ha mai viste, quindi i sedici rilievi non le coprono.
    L'unità 09 ha trovato lì un orfano (`CollectionDetail.razor`) senza cercarlo.
+4. **La guardia d'uscita non è provabile da un agente, e resta l'unica correzione grave del
+   piano verificata solo per lettura.** Il rilievo 1 — «il lavoro non salvato si perde senza
+   una domanda» — si manifesta come un **dialogo nativo del browser** (`confirm`,
+   `beforeunload`), e un dialogo nativo blocca il plugin che comanda Chrome: l'estensione
+   smette di ricevere ordini finché qualcuno non lo chiude a mano. Il giro B non l'ha
+   provocato di proposito, ed è la scelta corretta — è un limite dello strumento da riportare,
+   non da aggirare, e **Playwright non è un'alternativa: non si usa, non si installa, non si
+   propone**. Cinque prove su ventisette cadono qui. **All'utente basta un minuto**: aprire una
+   nota, scrivere qualcosa **senza salvare**, e (a) premere il tasto **Indietro** del browser,
+   (b) premere **F5**. Entrambe devono chiedere conferma prima di buttare via il lavoro; su
+   «Annulla» si resta sulla pagina col testo intatto. Il giro B ha verificato il controllo
+   opposto — F5 su una nota **senza** modifiche pendenti ricarica pulito, nessun dialogo —
+   quindi si sa già che la guardia non scatta a sproposito. Manca la metà che scatta.
 
 ---
 
@@ -146,6 +159,12 @@ frase, il collaudo non è stato fatto e la sessione di chiusura non va aperta.*
   collezione «COLLAUDO 4 SET» (`21cb3ec5-1286-4026-8d0f-2736d00b863c`), che l'utente rimuove
   quando vuole. Console pulita a parte un'eccezione di un'estensione di Chrome, estranea
   all'app.
-- **Giro B — il contratto degli editor**: *da riempire*
+- **Giro B — il contratto degli editor**: **PASSA sul provabile**, 4 set. **19 prove su 27
+  eseguite, tutte passate**; il controllo più delicato — «Elimina» armato che sopravvive a un
+  cambio di entità, cioè un clic che cancellerebbe una cosa che nessuno ha chiesto di
+  cancellare — è **sicuro**. Otto non eseguibili, tutte con motivo: **cinque richiedono un
+  dialogo nativo** (v. sotto, è il limite che pesa), due un secondo account reale, una la
+  disattivazione della rete dagli strumenti per sviluppatori. In più ha riconfermato dal vivo
+  che gli importi ≥ 1.000 € non danno più errore, verificandolo anche nel sorgente.
 - **Giro C — testo e messaggi**: *da riempire*
 - **Giro D — le misure**: *da riempire*
