@@ -1,5 +1,10 @@
 # Server di sviluppo — collaudo del 4 settembre 2026
 
+> **FERMATO il 4 settembre alle 03:30**, alla chiusura della sessione. Entrambi i PID uccisi,
+> **porta 5000 verificata libera**, nessun processo `dotnet` residuo. I numeri qui sotto sono
+> storia: chi riprende il collaudo riavvia il server e **riscrive questa tabella**, perché i
+> PID cambiano.
+
 Avviato dal **capo**, non da un agente: su Windows la morte del padre non uccide i figli, e un
 agente effimero che avvia il server lascia il processo vivo e la porta occupata. Il ciclo
 successivo si collegherebbe a una **build vecchia ancora in ascolto**, riportando un esito

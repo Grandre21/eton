@@ -540,21 +540,48 @@ Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sez
 
 ## PROSSIMA AZIONE
 
-**Il codice è finito.** L'unità 16 è rientrata `FATTO` il 4 settembre: sedici unità chiuse,
-tutti i rilievi chiusi o ritirati, 287 test verdi e 0 avvisi riverificati dal capo. Non resta
-niente da scrivere prima del browser.
+**Il codice è finito, e tre giri di collaudo su quattro sono fatti.** Stato al 4 settembre,
+ore 03:30, quando l'utente ha chiuso la sessione:
 
-**Il collaudo**, la cui forma è decisa nella sezione `IL COLLAUDO` più sopra: quattro giri
-tematici sequenziali (A il bloccante, B il contratto degli editor, C i testi, D le misure di
-CSS), server avviato **dal capo** con porta e PID su `handoff/server.md`, riavviato prima di
-ogni giro, entrambi i processi fermati alla fine.
+| | | |
+|---|---|---|
+| **16 unità** | tutte `FATTO` | 287 test, 0 avvisi, `c08bbb3` |
+| **Giro A** — il bloccante | **PASSA** | `4f762e5` |
+| **Giro B** — contratto editor | **PASSA sul provabile**, 19/27 | `8d5f202` |
+| **Giro C** — testo e messaggi | **PARZIALE, zero difetti** | v. `C-esito.md` |
+| **Giro D** — le misure | **da fare** | brief pronto, non riscriverlo |
 
-**Il giro C acquisisce tre prove nuove dall'unità 16**, con l'URL esatto già scritto nel suo
-resoconto: l'URL dell'attacco che **non deve mostrare niente**, e i due che devono produrre le
-frasi «annullato» e «generico» — quest'ultima è il caso che giustifica l'intera coppia
-`(error, error_code)`. Attenzione a **dove** guardare: Google riporta sulla radice, che è rotta
-privata, e `AuthRedirect` rimbalza l'anonimo su `/benvenuto`; il riquadro si legge lì, non
-sull'URL che si è incollato.
+### RIPRENDERE DA QUI, in quest'ordine
+
+1. **Riavvia il server**: `dotnet run --launch-profile Eton` dalla radice, **avviato dal capo**,
+   poi **riscrivi la tabella dei PID in `handoff/server.md`** — quelli scritti là sono morti.
+   Sono due processi e vanno fermati entrambi a fine giro.
+2. **Lancia il giro D**, `live-testing` col brief `handoff/17-collaudo/D-brief.md`. Nel prompt
+   digli che collezione, elemento e nota `COLLAUDO 4 SET` esistono già nello spazio Personale, e
+   che **non deve innescare dialoghi nativi** — è il limite su cui il giro B ha perso cinque
+   prove, e non è aggirabile.
+3. **Poi la sessione di chiusura**, il cui prompt è già scritto in `handoff/CHIUSURA.md`. Prima
+   di aprirla si riempie il suo campo `ESITO DEL COLLAUDO` con la riga del giro D: le altre tre
+   ci sono già.
+4. **Poi le spese ricorrenti**, qui sotto.
+
+### QUATTRO COSE CHE SI SANNO SOLO ADESSO, e che valgono per chi riprende
+
+- **I dialoghi nativi bloccano il plugin**, e con essi la guardia d'uscita: cinque prove su
+  ventisette. È un limite dello strumento, **non aggirabile e non aggirato** — Playwright non si
+  usa, non si installa, non si propone. La prova costa un minuto all'utente ed è scritta come
+  punto 4 di `DA PORTARE ALL'UTENTE` in `CHIUSURA.md`.
+- **Il giro C non ha visto un solo JSON grezzo**: il rilievo 3 è chiuso *dal vivo*, non più solo
+  col `grep`. Le tre frasi d'errore provocate sono uscite verbatim come le unità le avevano
+  scritte.
+- **Le tre prove OAuth dell'unità 16 restano non eseguite**: richiedono di essere disconnessi, e
+  per un agente il logout è irreversibile — non può rientrare con Google. Vanno all'utente
+  insieme all'annullamento vero sulla schermata di Google, che è la prova che chiude il dubbio
+  residuo sulla classificazione.
+- **Esiste un solo spazio, «Personale»**, e questo ha reso non eseguibili gli stati vuoti dei
+  registri e tutto il pannello dello spazio condiviso. Se si vuole coprirli, la prima mossa del
+  prossimo collaudo è **creare un secondo spazio** — che però è un dato vero in produzione, e
+  quindi è una decisione dell'utente, non del capo.
 
 I criteri di accettazione **sono già scritti e non si riscrivono**: dieci in
 `handoff/03-contratto-editor/resoconto.md`, cinque in `handoff/04-collezione-contratto/`

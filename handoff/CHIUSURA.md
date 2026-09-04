@@ -146,6 +146,17 @@ e mettile in fondo, sotto un titolo `DA PORTARE ALL'UTENTE`:
    opposto — F5 su una nota **senza** modifiche pendenti ricarica pulito, nessun dialogo —
    quindi si sa già che la guardia non scatta a sproposito. Manca la metà che scatta.
 
+5. **I dati di collaudo lasciati in produzione**, che l'utente rimuove quando vuole. Nello
+   spazio **Personale**, tutti chiamati **`COLLAUDO 4 SET`**: una **collezione**
+   (`21cb3ec5-1286-4026-8d0f-2736d00b863c`, 5 campi, Voto al buio acceso) con dentro un
+   **elemento** omonimo, e una **nota**. Nessuna spesa: quella creata è stata eliminata come
+   parte di una prova. Tutto ciò che i giri hanno cancellato l'avevano creato loro — **nessun
+   dato dell'utente è stato toccato**, verificato sui tre esiti.
+6. **Le tre prove OAuth dell'unità 16 e l'annullamento vero su Google**: entrambe richiedono di
+   essere disconnessi, e per un agente il logout è irreversibile — non ha modo di rientrare. Gli
+   URL esatti e la ricetta stanno in `handoff/16-oauth-insieme-chiuso/resoconto.md`, sezione
+   `DA PROVARE NEL BROWSER`.
+
 ---
 
 ## ESITO DEL COLLAUDO
@@ -166,5 +177,15 @@ frase, il collaudo non è stato fatto e la sessione di chiusura non va aperta.*
   dialogo nativo** (v. sotto, è il limite che pesa), due un secondo account reale, una la
   disattivazione della rete dagli strumenti per sviluppatori. In più ha riconfermato dal vivo
   che gli importi ≥ 1.000 € non danno più errore, verificandolo anche nel sorgente.
-- **Giro C — testo e messaggi**: *da riempire*
-- **Giro D — le misure**: *da riempire*
+- **Giro C — testo e messaggi**: **PARZIALE**, 4 set — e il parziale è per copertura, non per
+  difetti: **zero difetti su tutto ciò che ha provato**. La riga che conta: **nessun JSON grezzo
+  da nessuna parte**, il che chiude il rilievo 3 *dal vivo* e non più solo col `grep`. Ha
+  provocato **tre errori veri** su tre file diversi sovrascrivendo `window.fetch` (dichiarato,
+  e ripristinato ogni volta) e tutte e tre le frasi sono uscite in italiano, **verbatim** come
+  le unità 13 e 14 le avevano scritte, con la diagnosi in console e mai a schermo. Confermati
+  anche l'importo `1284,50` riletto due volte e «Salva» spento con la frase che dice perché.
+  Non eseguite: le tre prove OAuth (richiedono la disconnessione, irreversibile per un agente),
+  gli stati vuoti dei registri e il pannello dello spazio condiviso (**serve un secondo spazio,
+  e ne esiste uno solo**), i messaggi delle recensioni.
+- **Giro D — le misure**: **NON ESEGUITO.** La sessione è stata chiusa dall'utente prima del
+  quarto giro. Il brief è pronto in `handoff/17-collaudo/D-brief.md` e non va riscritto.
