@@ -30,6 +30,12 @@ stare.
 sviluppo annuncia asset che non esistono più, e la pagina si rompe per un motivo che non c'entra
 con ciò che si sta provando. Chi riavvia **aggiorna i due PID qui sopra**, perché cambiano.
 
+**Fra il giro A e il giro B il capo NON ha riavviato, deliberatamente.** La regola esiste perché
+il dev-server annuncia asset di build **successive al proprio avvio**: questo è stato lanciato
+dopo l'ultima compilazione e da allora nessuno ha compilato, quindi non c'è nulla che possa
+essersi sfasato. Riavviare avrebbe cambiato i PID di questa pagina in cambio di niente. **Se fra
+un giro e l'altro qualcuno compila, il riavvio torna obbligatorio.**
+
 ## Cosa non è un difetto, in sviluppo
 
 - La **cache della PWA non falsa le prove**: il service worker di dev è un no-op, verificato.

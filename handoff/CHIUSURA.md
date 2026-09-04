@@ -140,7 +140,12 @@ e mettile in fondo, sotto un titolo `DA PORTARE ALL'UTENTE`:
 *Lo riempie il capo prima di aprire questa sessione, con una riga per giro. Finché c'è questa
 frase, il collaudo non è stato fatto e la sessione di chiusura non va aperta.*
 
-- **Giro A — il bloccante** (creare una collezione): *da riempire*
+- **Giro A — il bloccante** (creare una collezione): **PASSA**, 4 set. Salvataggio riuscito,
+  nessun `permission denied`, e **«Voto al buio» ancora acceso in due riaperture indipendenti**
+  — il criterio che distingue la migrazione dalla toppa scartata. Resta in produzione la
+  collezione «COLLAUDO 4 SET» (`21cb3ec5-1286-4026-8d0f-2736d00b863c`), che l'utente rimuove
+  quando vuole. Console pulita a parte un'eccezione di un'estensione di Chrome, estranea
+  all'app.
 - **Giro B — il contratto degli editor**: *da riempire*
 - **Giro C — testo e messaggi**: *da riempire*
 - **Giro D — le misure**: *da riempire*
