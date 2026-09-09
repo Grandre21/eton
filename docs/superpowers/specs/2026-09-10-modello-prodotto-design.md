@@ -366,6 +366,27 @@ utenti che li installano, in numero tale da rendere sensato che qualcuno li pagh
 
 ---
 
+### Il debito visivo, misurato — e il vincolo su dove cade
+
+Il 10 settembre `ui-critic` ha prodotto **cinque rilievi**, ognuno con il valore letto dal DOM e
+la misura attesa dopo il fix. Stanno in
+**`docs/superpowers/specs/2026-09-10-rilievi-ui-critic.md`**, e sono tutti **preesistenti e fuori
+dal perimetro** del lavoro dei sedici rilievi: nessuno dei sedici li nominava.
+
+Non sono una fase, perché non sono un progetto: sono debito con un numero. Ma hanno un **vincolo
+di collocazione**, e non è una preferenza:
+
+> **Due dei cinque si correggono in un punto solo e valgono per tutta l'applicazione** — il token
+> `--testo-fioco` (contrasto di ogni micro-etichetta) e il pavimento di tocco a 48px. Correggerli
+> **prima della fase 3** significa che ogni schermata nuova del catalogo li eredita già giusti.
+> Correggerli dopo significa toccare anche le schermate nuove.
+
+Il rilievo più urgente è il secondo — l'icona di «Profilo» disegnata a cavallo del selettore di
+spazio su ogni schermata larga, 9px di sovrapposizione — e ha la particolarità che **la
+correzione proposta dall'agente è sbagliata**: nasconderebbe l'etichetta con `display: none`,
+togliendo al link il suo unico nome accessibile. Il file spiega qual è il fix giusto, che il
+progetto già possiede.
+
 ## 5. La linea gratis / a pagamento
 
 Proposta, da confermare alla fase 6.4 sui numeri veri raccolti nella fase 5:
@@ -426,6 +447,20 @@ li fissa invecchia peggio di uno che dice dove guardare. Gli assi su cui confron
    un corrispettivo che a una liberalità. Il §3.4 dice di restare sulla donazione pura: se si
    abilita il sostegno mensile, lo si fa sapendo che avvicina la fase 1 alla fase 7, non prima
    di averne parlato con un commercialista.
+
+**4 — La fase dedicata all'interfaccia: manca da questo piano, e va collocata.** L'utente ha
+approvato il **13 agosto 2026** un mandato pieno sulla UI/UX, con la direzione SLY (luce additiva
+su nero pieno, non neon) e il lavoro fatto con un browser vero. **Questo documento non lo
+contiene**, perché nasce dagli appunti del 9 settembre, che parlavano di modello di prodotto.
+
+Non è la stessa cosa dei cinque rilievi di `2026-09-10-rilievi-ui-critic.md`: quelli sono debito
+con un numero, si chiudono in ore e hanno solo un vincolo di collocazione. Il mandato UI/UX è un
+**progetto di settimane** con una direzione estetica da tradurre in decisioni. Le due cose non si
+sostituiscono a vicenda, e infilare la seconda dentro la prima farebbe sparire la più grande.
+
+Va deciso **dove cade nella sequenza**, e chi decide è l'utente. Il rischio se non si decide: la
+fase 3 costruisce il catalogo dei template, la fase 5 i tool con dati esterni, e il mandato UI/UX
+arriva su un numero di schermate molto maggiore di adesso.
 
 ---
 

@@ -540,8 +540,7 @@ Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sez
 
 ## PROSSIMA AZIONE
 
-**Il codice è finito, e tre giri di collaudo su quattro sono fatti.** Stato al 4 settembre,
-ore 03:30, quando l'utente ha chiuso la sessione:
+**Il codice è finito e il collaudo è completo.** Stato al **10 settembre 2026**:
 
 | | | |
 |---|---|---|
@@ -549,21 +548,41 @@ ore 03:30, quando l'utente ha chiuso la sessione:
 | **Giro A** — il bloccante | **PASSA** | `4f762e5` |
 | **Giro B** — contratto editor | **PASSA sul provabile**, 19/27 | `8d5f202` |
 | **Giro C** — testo e messaggi | **PARZIALE, zero difetti** | v. `C-esito.md` |
-| **Giro D** — le misure | **da fare** | brief pronto, non riscriverlo |
+| **Giro D** — le misure | **PASSA, 7/7, zero difetti** | 10 set, v. `CHIUSURA.md` |
+
+**Zero difetti in tutti e quattro i giri.** I parziali di B e C sono di copertura, mai di
+esito: le otto prove non eseguite del giro B hanno ognuna il proprio motivo, e il giro D ha
+coperto per intero il proprio mandato.
 
 ### RIPRENDERE DA QUI, in quest'ordine
 
-1. **Riavvia il server**: `dotnet run --launch-profile Eton` dalla radice, **avviato dal capo**,
-   poi **riscrivi la tabella dei PID in `handoff/server.md`** — quelli scritti là sono morti.
-   Sono due processi e vanno fermati entrambi a fine giro.
-2. **Lancia il giro D**, `live-testing` col brief `handoff/17-collaudo/D-brief.md`. Nel prompt
-   digli che collezione, elemento e nota `COLLAUDO 4 SET` esistono già nello spazio Personale, e
-   che **non deve innescare dialoghi nativi** — è il limite su cui il giro B ha perso cinque
-   prove, e non è aggirabile.
-3. **Poi la sessione di chiusura**, il cui prompt è già scritto in `handoff/CHIUSURA.md`. Prima
-   di aprirla si riempie il suo campo `ESITO DEL COLLAUDO` con la riga del giro D: le altre tre
-   ci sono già.
-4. **Poi le spese ricorrenti**, qui sotto.
+1. ~~Riavviare il server e lanciare il giro D.~~ **Fatto il 10 settembre.** Il server è stato
+   riavviato dal capo (PID annotati e poi fermati, v. `handoff/server.md`) e `live-testing` ha
+   restituito `ESITO: verde`, 7 misure su 7.
+2. **`ui-critic` sull'interfaccia resa** — lanciato il 10 settembre subito dopo il giro D, come
+   prescrive il §7 del protocollo su un `live-testing` verde con `app.css` nel diff. Non è un
+   revisore del diff: i suoi rilievi `TIPO: progetto` sono l'ingresso della fase dedicata
+   all'interfaccia.
+3. **La sessione di chiusura**, il cui prompt è già scritto in `handoff/CHIUSURA.md`. Il campo
+   `ESITO DEL COLLAUDO` **è stato riempito** con tutte e quattro le righe: la sessione può essere
+   aperta.
+4. **Poi le spese**, che non sono più «un filone parallelo»: sono la **fase 2** del piano di
+   prodotto del 10 settembre — v. `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`.
+
+### IL PIANO DI PRODOTTO HA SOSTITUITO L'ORIZZONTE DI QUESTO FILE
+
+Il 10 settembre l'utente ha aperto un cambio di modello di prodotto, decomposto in **nove fasi**
+in `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`. Questo `PIANO.md` resta la
+verità su **ciò che è stato fatto fino al 10 settembre** e sulle pendenze qui sotto; il *dopo* lo
+governa quel documento. Chi riprende legge prima quello.
+
+Tre decisioni dell'utente del 10 settembre che toccano cose scritte in questo file:
+
+- **Le spese si fanno**, con la direzione «più tabellare, gestione puntuale, non un tool da app
+  scema» — che coincide con la decomposizione già approvata il 3 settembre.
+- **L'applicazione non deve funzionare offline.** Cade il divieto di asset remoti di
+  `README.md:157`, che va riscritto nella fase che introduce la prima immagine remota.
+- **Nessun wrapper desktop** e **nessun proxy verso API arbitrarie**: esclusi con motivo.
 
 ### QUATTRO COSE CHE SI SANNO SOLO ADESSO, e che valgono per chi riprende
 

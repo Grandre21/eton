@@ -1,8 +1,12 @@
 # Server di sviluppo — collaudo, giro D, 10 settembre 2026
 
-> **VIVO.** Riavviato il **10 settembre 2026** dal capo per il giro D, l'ultimo dei quattro.
-> I PID nella tabella sono quelli di adesso e vanno fermati **entrambi** a giro chiuso.
-> Il ciclo del 4 settembre è chiuso: quei processi furono uccisi e la porta verificata libera.
+> **FERMATO il 10 settembre 2026**, a giro D concluso e dopo `ui-critic`. Entrambi i PID uccisi,
+> **nessun processo `dotnet` residuo**, nessun socket in `LISTENING` sulla 5000 — restavano solo
+> connessioni in `TIME_WAIT`, che si chiudono da sole. I numeri qui sotto sono storia: chi
+> riprende riavvia il server e **riscrive la tabella**, perché i PID cambiano.
+>
+> Il collaudo è **completo**: quattro giri su quattro, zero difetti. Non serve riavviarlo per
+> la sessione di chiusura, che non usa il browser.
 
 Avviato dal **capo**, non da un agente: su Windows la morte del padre non uccide i figli, e un
 agente effimero che avvia il server lascia il processo vivo e la porta occupata. Il ciclo

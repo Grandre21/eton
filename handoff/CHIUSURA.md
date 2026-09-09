@@ -161,8 +161,11 @@ e mettile in fondo, sotto un titolo `DA PORTARE ALL'UTENTE`:
 
 ## ESITO DEL COLLAUDO
 
-*Lo riempie il capo prima di aprire questa sessione, con una riga per giro. Finché c'è questa
-frase, il collaudo non è stato fatto e la sessione di chiusura non va aperta.*
+*Lo riempie il capo prima di aprire questa sessione, con una riga per giro.*
+
+> **COLLAUDO COMPLETO — 10 settembre 2026.** Tutti e quattro i giri sono stati eseguiti.
+> **Zero difetti trovati** in tutto il collaudo: i parziali sono di copertura, mai di esito.
+> La sessione di chiusura può essere aperta.
 
 - **Giro A — il bloccante** (creare una collezione): **PASSA**, 4 set. Salvataggio riuscito,
   nessun `permission denied`, e **«Voto al buio» ancora acceso in due riaperture indipendenti**
@@ -187,5 +190,25 @@ frase, il collaudo non è stato fatto e la sessione di chiusura non va aperta.*
   Non eseguite: le tre prove OAuth (richiedono la disconnessione, irreversibile per un agente),
   gli stati vuoti dei registri e il pannello dello spazio condiviso (**serve un secondo spazio,
   e ne esiste uno solo**), i messaggi delle recensioni.
-- **Giro D — le misure**: **NON ESEGUITO.** La sessione è stata chiusa dall'utente prima del
-  quarto giro. Il brief è pronto in `handoff/17-collaudo/D-brief.md` e non va riscritto.
+- **Giro D — le misure**: **PASSA**, 10 set. **7 misure su 7 eseguite, zero difetti**, ed è
+  l'unico giro che ha coperto per intero il proprio mandato. Tutti i numeri letti dal DOM, non
+  impressioni: le pastiglie delle categorie sono a **48px** in entrambi i posti richiesti (erano
+  21) e a **56,6px** in `CollectionEdit`, dove restano allineate a `.icona-input`; «Segna» spento
+  è `rgb(27,27,27)` a `opacity 0.5` contro un acceso a `rgb(76,141,255)`; «Chiudi» durante il
+  salvataggio è stato **colto a metà transizione** — `opacity 0.9397` in discesa verso 0.5,
+  `cursor: default`, `href` rimosso — e ripristinato dopo; l'anteprima della nota sposta le azioni
+  di **~7px** su una nota corta (erano 358) e `.corpo-nota` resta a 40vh esatti; selettore spazio
+  e «Profilo» hanno lo **stesso `bottom`, scarto 0** (erano 18px); il banner «versione nuova»
+  lascia **24px** di margine sulle azioni e «Più tardi» non genera né richieste di rete né chiavi
+  in storage; «Elimina» è a filo del bordo destro, a **494px** da «Chiudi» (erano 8), e **tutti e
+  quattro i controesempi** — «Esci» nel profilo, la conferma di eliminazione di uno spazio, la
+  scheda di conflitto, «Sì, togli» nei campi di una collezione — sono rimasti a `margin-left: 0`.
+  L'agente ha verificato anche il **quinto call-site** che nessuno gli aveva chiesto (la rimozione
+  di una recensione), raggiungendo un **vero conflitto di salvataggio** con due schede concorrenti.
+  **Niente resta nel database**: spesa di prova, recensione di prova e spazio di prova rimossi, e
+  il testo della nota `COLLAUDO 4 SET` ripristinato carattere per carattere. Console pulita, tutte
+  le richieste Supabase a 200.
+  *Limite di metodo dichiarato dall'agente:* la finestra non è stata portata esattamente ai
+  1414px del resoconto — `resize_window` non ha avuto effetto osservabile — quindi la prova 5 è
+  stata condotta fra 1198 e 1296px, comunque sopra il breakpoint di 1024px che governa quel
+  layout. È un limite dello strumento, non dell'applicazione.
