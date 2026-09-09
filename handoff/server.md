@@ -1,9 +1,8 @@
-# Server di sviluppo — collaudo del 4 settembre 2026
+# Server di sviluppo — collaudo, giro D, 10 settembre 2026
 
-> **FERMATO il 4 settembre alle 03:30**, alla chiusura della sessione. Entrambi i PID uccisi,
-> **porta 5000 verificata libera**, nessun processo `dotnet` residuo. I numeri qui sotto sono
-> storia: chi riprende il collaudo riavvia il server e **riscrive questa tabella**, perché i
-> PID cambiano.
+> **VIVO.** Riavviato il **10 settembre 2026** dal capo per il giro D, l'ultimo dei quattro.
+> I PID nella tabella sono quelli di adesso e vanno fermati **entrambi** a giro chiuso.
+> Il ciclo del 4 settembre è chiuso: quei processi furono uccisi e la porta verificata libera.
 
 Avviato dal **capo**, non da un agente: su Windows la morte del padre non uccide i figli, e un
 agente effimero che avvia il server lascia il processo vivo e la porta occupata. Il ciclo
@@ -20,8 +19,8 @@ falso.
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **5752** | `dotnet run --launch-profile Eton` | padre |
-| **2376** | `blazor-devserver.dll` | figlio, **è lui che ascolta sulla 5000** |
+| **10940** | `dotnet run --launch-profile Eton` | padre |
+| **6036** | `blazor-devserver.dll` | figlio, **è lui che ascolta sulla 5000** (verificato con `netstat`) |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si
 verifica che la 5000 sia tornata libera.
