@@ -60,6 +60,13 @@ public abstract class PaginaEditor : ComponentBase, IDisposable
         // stia guardando in quel momento, senza che l'abbia chiesto. L'oggetto creato o eliminato
         // resta creato o eliminato: è solo la navigazione ad essere abbandonata, e l'utente lo
         // ritroverà nell'elenco.
+        //
+        // Limite noto, accettato e non corretto: smontata si alza solo se il componente viene
+        // smontato davvero. I quattro editor riusano l'istanza sulla stessa rotta con parametro
+        // diverso — da /notes/a a /notes/b, tasto Indietro compreso — e lì Dispose non viene
+        // chiamato. Se un Crea() o un Elimina() avviato su a rientra quando si è già su b, Esci
+        // naviga lo stesso e porta via da b chi ci era appena arrivato, a guardia disarmata: si
+        // perde solo ciò che su b era già stato digitato entro quel round-trip.
         if (smontata) return;
 
         disarmata = true;
