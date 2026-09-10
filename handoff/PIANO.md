@@ -540,15 +540,27 @@ Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sez
 
 ## PROSSIMA AZIONE
 
+PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova
+
+**Chiuso il 10 settembre 2026.** Il rapporto della sessione di chiusura sta in testa a
+**`handoff/CHIUSURA.md`**, integrato su `main` con `182ac0d`: 15 unità su 15 `FATTO`, 19 clausole
+dell'obiettivo coperte su 20, tutti i contratti convergenti, build a 0 avvisi e 287/287 test. La
+clausola scoperta è la pendenza del medaglione 📋, che nessuna unità aveva in mandato. **Un capo che
+rilegge questo file e trova la riga qui sopra ha una mossa sola**: scrivere il messaggio di
+passaggio e terminare. Il prossimo obiettivo lo scrive l'utente, e il suo orizzonte è
+`docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`.
+
+*Quello che segue è storia: lo stato al momento della chiusura, e perché.*
+
 **Il codice è finito e il collaudo è completo.** Stato al **10 settembre 2026**:
 
 | | | |
 |---|---|---|
-| **16 unità** | tutte `FATTO` | 287 test, 0 avvisi, `c08bbb3` |
+| **15 unità** (per **16 rilievi**) | tutte `FATTO` | 287 test, 0 avvisi, `c08bbb3` |
 | **Giro A** — il bloccante | **PASSA** | `4f762e5` |
 | **Giro B** — contratto editor | **PASSA sul provabile**, 19/27 | `8d5f202` |
 | **Giro C** — testo e messaggi | **PARZIALE, zero difetti** | v. `C-esito.md` |
-| **Giro D** — le misure | **PASSA, 7/7, zero difetti** | 10 set, v. `CHIUSURA.md` |
+| **Giro D** — le misure | **PASSA, 7/7, zero difetti** | 10 set, v. `D-esito.md` |
 
 **Zero difetti in tutti e quattro i giri.** I parziali di B e C sono di copertura, mai di
 esito: le otto prove non eseguite del giro B hanno ognuna il proprio motivo, e il giro D ha
@@ -563,9 +575,11 @@ coperto per intero il proprio mandato.
    prescrive il §7 del protocollo su un `live-testing` verde con `app.css` nel diff. Non è un
    revisore del diff: i suoi rilievi `TIPO: progetto` sono l'ingresso della fase dedicata
    all'interfaccia.
-3. **La sessione di chiusura**, il cui prompt è già scritto in `handoff/CHIUSURA.md`. Il campo
-   `ESITO DEL COLLAUDO` **è stato riempito** con tutte e quattro le righe: la sessione può essere
-   aperta.
+3. ~~La sessione di chiusura.~~ **Fatta il 10 settembre**, aperta con `claude --bg` e non con il
+   `claude -p` che il mandato del 4 settembre prescriveva: la decisione del 7 settembre, registrata
+   in `~/.claude/architettura-sessioni.md`, l'ha superato. Ha lavorato in un worktree proprio —
+   `main` era estratto nella sessione del capo — e ha lasciato al capo il fast-forward, fatto con
+   `182ac0d`. Worktree, branch locale e branch remoto rimossi dopo l'integrazione.
 4. **Poi le spese**, che non sono più «un filone parallelo»: sono la **fase 2** del piano di
    prodotto del 10 settembre — v. `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`.
 
