@@ -1,15 +1,17 @@
 # CHIUSURA — il rapporto
 
-*Scritto dalla sessione di chiusura il **19 settembre 2026**, sullo stato finale `a6b23b9`, in un
-worktree proprio. Il mandato che lo commissiona sta più sotto, invariato.*
+*Scritto dalla sessione di chiusura il **19 settembre 2026**. Le tre verifiche sono state fatte
+sullo stato finale `a6b23b9`; la correzione che ne è nata è `d8401c4`, entrata su `main` con
+`af2daf6`. Il mandato che lo commissiona sta più sotto, invariato.*
 
 ```
 CHIUSURA: 7 unità — FATTO 7 · PARZIALE 0 · BLOCKED 0
 COPERTURA: 27 clausole — coperte 24 · scoperte 1 · rinviate 2
 CONTRATTI: 6 aperti sul codice reale — convergenti 6 · divergenti 0
-COMBINATO: <IN ATTESA>
+COMBINATO: 4 rilievi — fondati 4 · corretti 3 · rimandato al capo 1
 GATE: dotnet build Eton.sln -warnaserror --no-incremental → Avvisi: 0  Errori: 0
       dotnet test Eton.sln → Non superati: 0. Superati: 310. Ignorati: 0. Totale: 310.
+      (rieseguiti due volte: su a6b23b9 e dopo la correzione, con lo stesso esito)
 FUORI SCOPE: 25 voci — 10 lasciate per decisione dal collaudo · 12 aperte dalle unità ·
              3 misurate e non adjudicate
 ARCHIVIATO: 7 cartelle, da handoff/01-foglio-di-stile a handoff/07-pastiglie-e-ancore,
@@ -199,7 +201,138 @@ serve, e c'è.
 
 ## 3 — COMBINATO
 
-<SEGNAPOSTO-COMBINATO>
+`bug-hunter` lanciato sul **diff combinato dei venti commit** (`6b7e8b4..a6b23b9`, 22 file sorgente,
+895 inserzioni) con le sette cuciture in chiaro: i file che **più d'una** unità ha toccato, e i punti
+in cui produttore e consumatore stanno in unità diverse. Non sul diff di una singola unità: quelli
+erano già stati revisionati e adjudicati, e rifarli sarebbe stato il lavoro di un quarto revisore,
+che questa sessione non è.
+
+**`RILIEVI: 4`**, tutti `SEVERITY: bassa`, tutti su difetti che nessuna delle sette unità poteva
+vedere da sola. Istruiti dal `checker`, come impone il §4 quando i rilievi non sono zero.
+
+    review del diff combinato:
+      bug-hunter      RILIEVI: 4
+      checker         VERDETTI: fondati 4 · infondati 0 · fuori scope 0 · non verificabili 0
+      checker (fix)   VERDETTI: risolti 13 · non risolti 0 · non verificabili 0
+      review del diff della correzione:
+                      nessuna — commenti
+                      3 files changed, 12 insertions(+), 7 deletions(-)
+      coverage        non lanciato — la verifica di copertura di questa sessione **è** il punto 1
+                      del mandato, e la sua riga sta in testa a questo rapporto:
+                      COPERTURA: 27 clausole — coperte 24 · scoperte 1 · rinviate 2
+
+**Sulla riga `nessuna — commenti`**: è la prima classe della tabella del §3, non un'esenzione
+coniata, e non è stata scritta per fiducia. La misura che la regge l'ha **rifatta il `checker`**, non
+l'implementer che aveva scritto il codice: 19 righe cambiate, dichiarate **una per una**, tutte
+commento — sette `//` in C#, tre dentro il blocco `@* … *@` di `CollectionEdit.razor`, nove dentro il
+blocco `/* … */` di `app.css`. In più ha controllato l'unico modo in cui un fix di soli commenti può
+rompere qualcosa di visibile: che il `*/` di chiusura sia al suo posto. Lo è, e il conteggio dei
+delimitatori è **invariato** — 218 `/*` e 218 `*/` prima e dopo. Un `/*` lasciato aperto in `app.css`
+avrebbe spento in silenzio tutte le regole successive.
+
+### I tre corretti — `d8401c4`
+
+Tutti e tre sono **la stessa forma di difetto**: un'affermazione scritta accanto al codice che il
+codice smentisce. È la classe che questo goal ha passato il tempo a combattere, e due di esse sono
+nate **dentro lo stesso commit** che le rende false.
+
+**1. `wwwroot/css/app.css` — il commento di `.testa-registro a` enumera male le testate del
+progetto.** Diceva «le altre sei testate contengono solo `<span>`». Delle sei, **cinque** sì; la
+sesta è `Pages/Spese.razor`, la cui `.testa-registro` contiene un `<div class="navigazione-mese">`
+con due `<button class="btn compatto">` che da `.btn` prendono già `min-height: var(--tocco)`.
+⚠️ **E il `checker` ha spostato l'attribuzione, che è la parte che vale.** La frase **non** l'ha resa
+falsa l'unità 07: l'ha scritta l'unità **01** in `b27600f`, e **era già falsa alla nascita** — l'ho
+riverificato io con `git show b27600f:Pages/Spese.razor`, e a quel commit quella testata conteneva
+già due `<button class="btn piccolo">`. Non è un commento invecchiato di quattro commit: è
+un'enumerazione sbagliata nel commit che la introduce, cioè in quello intitolato «sette commenti
+dicevano il falso».
+Il testo nuovo nomina la sesta ancorandola a `class="navigazione-mese"` — frammento cercabile, non
+numero di riga — e attribuisce i «~3,9px» di crescita alle **due testate della Home**, che è l'unico
+posto dove quel selettore aggancia qualcosa.
+
+**2. `Pages/CollectionEdit.razor` — un'ancora che questo goal ha fatto scadere.** Il commento citava
+`SpesaEdit.razor:105-106` per un `<fieldset>`/`<legend>`; oggi quelle righe sono **una graffa di
+chiusura e una riga vuota**, e il `<fieldset>` sta 27 righe più giù. L'ancora era **corretta quando è
+stata scritta** (il `checker` l'ha datata a `e139ce88`, 3 settembre) ed è scaduta da sé: di una riga
+fuori dal goal, di 27 dentro. Sostituita con `<fieldset class="scelta-categoria">`, che un `grep`
+trova in entrambi i file citati.
+⚠️ **Una parte del rilievo non reggeva, e l'ho riverificata di persona**, come il §5 impone sul
+campione degli infondati: il `bug-hunter` metteva in dubbio **entrambe** le ancore, ma
+`Pages/Spese.razor:93-94` è **ancora valida** — l'ho aperta e sono esattamente
+`<fieldset class="scelta-categoria">` e `<legend class="etichetta-campo">Categoria</legend>`. Il
+`checker` l'aveva dichiarata `infondata`, e concordo: su due ancore, una sola era scaduta. La
+correzione le ha comunque ancorate entrambe al frammento, perché la seconda era della stessa forma
+fragile.
+
+**3. `Eton.Tests/SchemaCampiTests.cs` — un commento che giustifica il test col ragionamento
+invertito.** Diceva che un test coi valori ricopiati «resterebbe verde anche se tavolozza e modelli
+cambiassero **insieme**, cioè proprio nel caso in cui il legame si è rotto». È il contrario: se
+cambiano insieme il legame **regge**, e quel test diventerebbe rosso; il legame si rompe nel caso
+**asimmetrico**, e lì il test ricopiato resterebbe verde. **L'asserzione reale era ed è quella
+giusta** — il `checker` l'ha provato su entrambi i casi — quindi il difetto è confinato al commento,
+ed è comunque un difetto: insegna il ragionamento sbagliato a chi un domani vorrà cambiare
+quell'asserzione.
+
+### Il rimandato al capo — **1**
+
+**`Pages/ItemEdit.razor:475` — la stessa identica frase compare due volte a schermo.** Con la scheda
+di conflitto aperta e il nome svuotato, «Il nome dell'elemento non può essere vuoto.» è resa **sia**
+dalla riga `.errore-campo` a `:77-80` (unità 03) **sia** dal riquadro `.errore` a `:114-117`,
+alimentato dalla guardia che l'unità 04 ha messo dentro `Sovrascrivi()`. Nessuno dei due blocchi è
+condizionato a `conflitto is null` — e il `checker` ha mostrato che il file quella condizione la sa
+scrivere, perché la usa a `:131` dove serve.
+
+Il sub-claim che lo rende più di una ridondanza: **lo stesso file dichiara il principio opposto tre
+metodi più sopra**, dentro `Salva()` a `:363-368` — *«Un messaggio scritto qui sarebbe la seconda
+voce sullo stesso difetto, e per giunta l'unica delle due a sopravvivere alla correzione del
+campo.»* E l'omologo che l'unità 04 dichiara di ricalcare, `SpesaEdit.Sovrascrivi()`, usa una frase
+**diversa** proprio perché i suoi `.errore-campo` sono già a schermo.
+
+⚠️ **Il `checker` ha però trovato nel file anche la contro-argomentazione**, a `:465-472`, scritta e
+consapevole: là il pulsante è spento dal solo permesso, quindi «senza questo messaggio il pulsante
+sembrerebbe inerte». Regge sul **perché serve un controllo**; non sul **perché serva una seconda
+frase identica**.
+
+**Perché non l'ho corretto io, e non è timidezza.** Le due strade sono: cambiare la frase come fa
+`SpesaEdit`, oppure spegnere il pulsante con `SovrascriviAbilitato="@(NomeValido && PuoIntervenire)"`.
+**La seconda è esattamente quella che il capo ha escluso per iscritto il 19 settembre** — «il
+pulsante «Sovrascrivi» di `ItemEdit` resta spento dal solo permesso… e le confermo» — e la prima
+cambia un testo che quella stessa decisione ha esaminato, giudicandolo utile *perché* raggiungibile.
+Scegliere fra le due è rivedere quella decisione, e il confine del mio mandato dice che ciò che tocca
+una decisione fra unità torna al capo invece di essere risolto di nascosto. **Il fatto nuovo che il
+capo non aveva** quando ha deciso è che la frase è **identica** a quella già a schermo: la sua
+decisione riguardava la sopravvivenza del messaggio alla correzione, non la sua duplicazione.
+
+### Le sette cuciture verificate e trovate pulite
+
+Non sono un contorno: sono la parte del lavoro che dice che il goal **regge**, e senza di esse
+`RILIEVI: 4` non si distingue da una ricerca superficiale.
+
+1. **`SpesaEdit` in sola lettura non può accendere `Cambiata`.** `importoTesto` è scritto da
+   `TestoDigitabile` fuori da ogni ramo di permesso, e `Cambiata` confronta contro la stessa
+   funzione; il `<p>` del ramo `else` rende `Denaro.Testo` **in uscita** e non riscrive niente.
+   `NavigationLock ConfirmExternalNavigation="@Cambiata"` resta quindi spento.
+2. **`ItemEdit`, interazione 03/04**: la guardia della 04 non viene spenta dalla condizione della 03
+   — sono due rami indipendenti. Il difetto è l'opposto, convivono, ed è il rilievo rimandato.
+3. **`CollectionEdit`**: `erroriValidazione = [];` dell'unità 03 è **sopravvissuto** alla riscrittura
+   della tavolozza fatta dalla 04. Le 18 righe tolte erano altrove.
+4. **Il call-site della 06 in `SupabaseService` non può far fallire il bootstrap**: `AllineaAsync`
+   ha un `catch (Exception)` sull'intero corpo, sta **fuori** dal lock (`_initLock.Release()` è nel
+   `finally` che lo precede), non rientra in `GetClientAsync()`, e `dopoAccesso` è corretto su tutti
+   e tre i rami d'ingresso.
+5. **`app.css`, la fusione della 07 contro le cinque correzioni della 01**: nessuno scavalca l'altro,
+   e il caso che avrebbe rotto la fusione — un `.pastiglia` **non**-`<button>` dentro un luogo che
+   prima gliele dava — è stato cercato e non esiste.
+6. **La guardia di generazione della 03** è sulla variabile giusta e copre tutte le uscite; l'unico
+   punto che scrive senza guardia è irraggiungibile da una generazione sorpassata, perché fra
+   l'ultimo `await` e quel punto non c'è sospensione.
+7. **Le due rese di `Denaro` non si incrociano**, e le docstring nuove sono accurate contro il
+   codice: `Verifica` rifiuta come `NonNumerico` qualunque stringa con più di un separatore, e
+   `Denaro.Testo(1000m)` ne ha due — che è la ragione per cui `TestoDigitabile` esiste.
+
+**I gate sono stati rieseguiti dopo la correzione**, e sono gli stessi: `Avvisi: 0  Errori: 0` e
+`310/310`. Un fix di soli commenti non può muovere quei numeri — il loro valore qui è solo negativo,
+cioè che il blocco `/* */` di `app.css` non è rimasto aperto.
 
 ---
 
@@ -297,9 +430,29 @@ ora archiviato:
     `app.css` non ha un reset dei margini di `p` e i margini dei figli di un flex container non
     collassano. **Preesistente al diff della 07 e non peggiorato da lei.** Rimedio: una riga,
     `margin: 0`.
-20. **Un rimando scaduto fuori dal perimetro della 07**: `Pages/CollectionEdit.razor:75`. Il fatto
-    largo è che **la convenzione nuova vive nell'intestazione di `app.css`, ma il difetto che cura
-    esiste anche nei `.razor`**, dove nessuna intestazione la dichiara.
+20. **Tre ancore per numero di riga in `Pages/CollectionEdit.razor` mandano a leggere codice che non
+    c'entra nulla, e lo scarto è misurato.** Sono quelle a `:80`, `:86` e `:93`, che citano
+    `app.css:1885-1896`, `app.css:1370` e `app.css:1375`. Il `checker` ha misurato dove cadono oggi:
+    `.scelta-categoria` sta a `app.css:2100` e `.icona-input` a `:1555`, cioè **scarti di 185-215
+    righe**; le tre ancore puntano rispettivamente a una riga vuota, a metà del commento di
+    `.medaglione`, e ancora lì dentro. Il quarto rimando dello stesso blocco, quello a `:75`, **è
+    stato corretto** — v. `COMBINATO`.
+    ⚠️ **Le altre tre non le ho fatte correggere, di proposito**: il rilievo istruito riguardava la
+    sola ancora di `:75`; queste il `bug-hunter` non le aveva trovate e il `checker` le ha notate
+    come *extra*, dichiarando di **non** averle istruite. Correggere ciò che nessuno ha adjudicato è
+    esattamente il passo che il §5 vieta, e il brief dell'implementer le metteva in `NON TOCCARE`.
+    Va detto che il fix 1 ne ha peggiorata **una** di tre righe, allungando un commento che le sta
+    sopra: su uno scarto di 215, è rumore, ma è misurato invece che taciuto.
+    **E il fatto largo, che l'unità 07 aveva già nominato**, ora con un numero: la convenzione «mai
+    un numero di riga» vive nell'intestazione di `app.css` e per come è scritta copre **anche** i
+    rimandi verso altri file, ma è stata applicata solo dentro `app.css`. I rimandi `file:riga`
+    superstiti nei `.razor`/`.cs` sono **27**, fra cui `Pages/CollectionDetail.razor` (sei),
+    `Layout/MainLayout.razor` (tre) e `Services/SupabaseService.cs` (tre).
+    ⚠️ **Un ultimo che nessuno aveva visto**, e che è la stessa classe in forma nuova:
+    `app.css:1444` — riga preesistente, non toccata da nessuno — ancora a `<a>…Tutte</a>`, che **coi
+    puntini di sospensione non è cercabile**. Le righe reali sono `<a href="notes">Tutte</a>` e
+    `<a href="collections">Tutte</a>`. Un'ancora dichiarata «cercabile» che il grep non trova è
+    peggio di un numero di riga, perché sembra già conforme alla convenzione.
 21. **Due proprietà ridondanti in `.barra-elenco .pastiglia`** (07), tenute perché il mandato le
     metteva in `NON TOCCARE`.
 22. **Il commento di `.btn.compatto` (`app.css:764`) è diventato più stretto della realtà** (07): dice
@@ -391,6 +544,12 @@ non è mai stato visto, e chi legge deve saperlo:
 
 Oltre ai tre gesti del §6.1, che sono la cosa più concreta.
 
+0. ⚠️ **`main` porta in questo momento un rapporto di chiusura incompleto, ed è pushato.** `af2daf6`
+   ha integrato il lavoro di questa sessione **prima che finisse**, quando `COMBINATO` era ancora un
+   segnaposto. Il completamento sta nel branch `worktree-chiusura-rapporto-completo` e tocca **un
+   solo file**. Dettaglio, con i genitori del merge e come me ne sono accorto, nel §9. È la prima
+   cosa da fare, perché finché non è fatta l'artefatto che chiude il goal dice meno di quanto sa.
+
 1. **La contraddizione d'ambiente, segnalata da quattro unità su sette e da undici implementer.**
    Il blocco di istruzioni di un server MCP, sotto «While auto mode is active», prescrive di
    modificare i file via `Bash` con `sed`, heredoc o script brevi «invece degli strumenti dedicati».
@@ -436,15 +595,40 @@ letto; `handoff/collaudo/`, che il mandato esclude esplicitamente; e `server.md`
 
 ## 9 — DOVE STA QUESTO LAVORO
 
-Sessione in background, quindi worktree isolato, come per le sette unità:
+Sessione in background, quindi worktree isolato, come per le sette unità. **Ma è andata in due
+tempi, e il secondo va spiegato perché non è una scelta mia.**
 
-    branch:    worktree-chiusura-sedici-rilievi
-    percorso:  G:\Sviluppo\Eton\.claude\worktrees\chiusura-sedici-rilievi
-    contiene:  questo rapporto in testa a handoff/CHIUSURA.md, e le sette cartelle
-               spostate in storico/handoff/ con git mv
+**Primo worktree — `worktree-chiusura-sedici-rilievi`.** Ci sono finiti l'archiviazione delle sette
+cartelle, la prima stesura del rapporto e la correzione dei tre commenti. Il lavoro è stato
+**committato come `d8401c4` e integrato su `main` come `af2daf6`** — un merge con `a6b23b9` e
+`d8401c4` come genitori — e il worktree è stato rimosso. **Nessuno dei tre gesti l'ho fatto io**, e
+sono avvenuti **mentre la sessione stava ancora lavorando**: il `checker` del fix se n'è accorto a
+metà istruttoria e l'ha segnalato, e io l'ho verificato dal reflog e dai genitori del merge.
 
-**L'integrazione su `main` spetta al capo**, come per ogni unità di questo goal. Nessun file sorgente
-è stato modificato da questa sessione: il diff è **solo** `handoff/` e `storico/handoff/`.
+⚠️ **La conseguenza da sapere, perché è l'unica che costa qualcosa.** Al momento dell'integrazione il
+rapporto **non era finito**: il campo `COMBINATO` portava ancora `<IN ATTESA>` e il corpo un
+segnaposto, perché `bug-hunter`, `checker` e la correzione non erano ancora rientrati. Quindi
+`af2daf6`, che è **pushato** su `origin/main`, contiene un rapporto di chiusura **incompleto**. Non
+è un difetto del lavoro: è un'integrazione arrivata prima della fine.
+
+**Secondo worktree — `worktree-chiusura-rapporto-completo`**, aperto proprio per questo:
+
+    branch:    worktree-chiusura-rapporto-completo
+    percorso:  G:\Sviluppo\Eton\.claude\worktrees\chiusura-rapporto-completo
+    nasce da:  af2daf6 (origin/main)
+    contiene:  SOLO handoff/CHIUSURA.md — il campo COMBINATO, la sezione 3 che era un
+               segnaposto, la voce 20 del FUORI SCOPE riscritta sulla misura del checker,
+               e questa sezione
+
+**Serve un secondo merge**, e questa volta è l'ultimo: senza, `main` resta con il segnaposto. Nessun
+file sorgente è toccato da questo secondo branch — il diff è **un solo file**.
+
+**Correzione a una frase che avevo scritto nella prima stesura.** Lì dicevo «nessun file sorgente è
+stato modificato da questa sessione». Era vero quando l'ho scritta e **non lo è più**: la sessione ha
+poi dispacciato un `implementer` sui tre commenti, e `wwwroot/css/app.css`,
+`Pages/CollectionEdit.razor` ed `Eton.Tests/SchemaCampiTests.cs` sono nel diff di `d8401c4`. Sono
+dodici righe di commento e zero righe eseguibili — misurato, v. `COMBINATO` — ma «nessun file
+sorgente» sarebbe falso e non lo lascio in piedi.
 
 ---
 
