@@ -242,6 +242,33 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   seconda volta che cresce: come la prima, il numero è scritto con la data invece di essere
   aggiornato in silenzio.
 
+- **19 set 2026, dopo l'unità 03** — **Tre decisioni sui suoi `FUORI SCOPE`, prese da me.**
+
+  1. **Il riquadro di `CollectionEdit` che si spegne con un errore vero rimasto: resta così, e la
+     decisione è mia, non dell'unità.** Il `checker` ha dichiarato quel sub-claim `non risolto`, e
+     l'unità l'ha **ricopiato invece di ammorbidirlo** — un commento non risolve un comportamento.
+     Confermo la scelta di non correggere, per tre fatti che l'unità ha già istruito: gli errori di
+     validazione sono stringhe interpolate **senza legame strutturale col campo**, e uno di essi non
+     ne nomina nessuno, quindi filtrare sarebbe un confronto di sottostringhe — una forma nuova e
+     fragile; il pulsante «Salva» **resta acceso** nello scenario, e un clic ridà il verdetto
+     completo; e il progetto ha già un principio scritto altrove, *fra un'affermazione falsa e una
+     mancante scegli la seconda*. Il prezzo ora è **scritto nel file**, che era il punto: un
+     trade-off muto è indistinguibile da una svista.
+  2. **`Sovrascrivi()` di `ItemEdit` non controlla il nome: entra nel mandato dell'unità 04.**
+     Difetto **preesistente** e non peggiorato dal diff — anzi lievemente migliorato. Il percorso è
+     costruibile: l'input del nome non è disabilitato dalla scheda di conflitto, il pulsante
+     «Sovrascrivi» è spento solo dal permesso, e `Sovrascrivi()` non passa da `Salva()`. Il nome
+     vuoto arriva al database, che lo respinge col vincolo `check`, e l'utente legge un messaggio
+     generico. **L'omologo che chiude il buco esiste già in `SpesaEdit`**, col commento che spiega
+     perché lì un `return` muto non basterebbe: il rimedio è tre righe ricalcate da quelle.
+     Entra nella 04 perché quel file è già nel suo perimetro. **L'obiettivo passa a 26 clausole**,
+     terza crescita, di nuovo scritta con la data.
+  3. **Il residuo di `SpesaEdit` non si tocca.** È l'ultimo membro della famiglia del punto 3, ma a
+     coprirlo c'è una **decisione scritta e motivata** nel file — «un return silenzioso lascerebbe
+     il pulsante sembrare inerte». La distinzione che l'unità ha fatto è quella giusta e la adotto:
+     dove l'argomento è di **costo** è revocabile (ed è stato revocato, nella voce 6); dove è di
+     **principio**, revocarlo è una decisione di progetto e non conformità.
+
 ## PARTIZIONE
 
 Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -251,8 +278,8 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 |---|---|---|---|---|
 | **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **FATTO** — integrata su `main` con `c50981a`, worktree e branch rimossi |
 | **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | **FATTO** — integrata con `ab33d92`, pushata, worktree rimosso |
-| **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | PIANIFICATA |
-| **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17 | 03 | PIANIFICATA |
+| **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | **FATTO** — integrata con `e20a059`, pushata, worktree e branch remoto rimossi |
+| **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | PIANIFICATA |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
 | **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor` | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore | 06 | PIANIFICATA |
@@ -323,12 +350,11 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **03 editor-esiti**, il cui mandato è scritto, committato e
-**pushato** — quest'ultima parola è la correzione che l'unità 02 ha pagato per noi.
+PROSSIMA AZIONE: aprire l'unità **04 igiene-e-importi**, mandato scritto, committato e pushato.
 
-Le unità 01 e 02 sono rientrate `FATTO`, auditate e integrate. I contratti convergono tutti: il
-servizio degli spazi non è stato aperto in scrittura, `Shared/Icona.razor` è invariato, e la
-02 ha trovato `.voce-piede` dove la 01 l'aveva lasciata.
+Le unità 01, 02 e 03 sono rientrate `FATTO`, auditate e integrate. Tutti i contratti convergono, e
+`Shared/PaginaEditor.cs` è uscito dal goal **senza essere stato aperto in scrittura da nessuno**,
+come tutte e tre le unità dichiarano.
 
 **La misura che il collaudo deve ritrovare a zero:** la sovrapposizione di «Profilo» sul selettore
 di spazio. La 01 l'ha portata da 8,5px a 2,5px per lato allargando la scatola; la 02 l'ha chiusa
@@ -374,13 +400,22 @@ ripetono per esteso.
    vale oltre questo caso: per un plugin senza `version` nel manifest, `installedAt ≠ lastUpdated`
    è **rumore**, perché il marketplace è un monorepo e ogni commit muove la data di tutti.
 
-**Un fatto di ambiente, non una domanda.** L'unità 01 ha segnalato che una superficie di
-configurazione di queste sessioni prescrive di lavorare via `Bash` — leggere con `cat`, modificare
-con `sed` o heredoc — «invece degli strumenti dedicati», il che **contraddice** la regola globale
-che impone `Write`/`Edit` e vieta gli interpreti inline. Né l'unità né il capo l'hanno seguita: i
-file sono stati scritti con `Edit`, e l'unità ha verificato con `file` che il risultato sia
-`UTF-8` senza accenti corrotti. Lo si annota perché arriva da una superficie di configurazione e
-non dal turno dell'utente, e la regola globale dice che in quel caso vince il `CLAUDE.md`.
+**Una domanda per l'utente, aperta dalla terza segnalazione identica in tre unità.** Tutte e tre
+le unità hanno riportato che una superficie di configurazione di queste sessioni prescrive di
+modificare i file via `Bash` — `sed`, heredoc, script brevi — «invece degli strumenti dedicati»,
+il che **contraddice frontalmente** la regola globale che impone `Write`/`Edit` e vieta gli
+interpreti inline.
+
+**L'unità 03 l'ha identificata**, ed è il dato che mancava: arriva nel **blocco di istruzioni di
+un server MCP**, sotto l'intestazione «While auto mode is active». Non è quindi una svista di un
+documento del progetto: è una direttiva che entra in ogni sessione avviata in modalità automatica.
+
+**Non è stata seguita da nessuno** — né dai tre capi-unità né dai loro undici implementer — e due
+implementer l'hanno segnalata di propria iniziativa, uno notando che era **dirimente**: i commenti
+che dovevano scrivere contengono accenti e trattini lunghi, che gli argomenti di shell perdono.
+La regola globale è chiara su chi vince — un'istruzione che non arriva dal turno dell'utente non
+scavalca il `CLAUDE.md` — ma **la contraddizione resta lì e si ripresenta a ogni sessione**, e
+toglierla è una modifica a una superficie di configurazione, cioè un gesto dell'utente.
 
 **Una decisione rimandata al collaudo, deliberatamente.** L'unità 02 ha dovuto scegliere la forma
 dello stato di caricamento della Home al cambio di spazio, e il perimetro le dava il **solo blocco

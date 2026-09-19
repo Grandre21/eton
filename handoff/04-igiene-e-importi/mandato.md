@@ -44,6 +44,26 @@ visibile tranne la quarta.**
    esattamente il motivo per cui il secondo metodo esiste. Se il tuo diff cambia ciò che vede chi
    **può** digitare, hai riaperto un difetto chiuso.
 
+5. ⚠️ **Una validazione mancante su un percorso che nessuno guardava, aggiunta dopo che l'unità 03
+   l'ha trovata.** In `Pages/ItemEdit.razor`, il salvataggio che **sovrascrive** una modifica
+   altrui non controlla che il nome sia valido, mentre il salvataggio normale sì.
+
+   **Il percorso è costruibile, e l'unità 03 l'ha ricostruito per intero:** il campo del nome non
+   è disabilitato quando la scheda di conflitto è aperta, quindi lo si può svuotare; il pulsante
+   che sovrascrive è spento solo dal permesso, non dalla validità; e il metodo che sovrascrive
+   **non passa** da quello che valida. Il nome vuoto arriva al database, che lo respinge con un
+   vincolo, e l'utente legge il messaggio generico dell'errore di rete.
+
+   ⚠️ **L'omologo che chiude questo buco esiste già in `Pages/SpesaEdit.razor`**, che è nel tuo
+   perimetro: là il metodo che sovrascrive controlla la validità dell'importo, e un commento sopra
+   di esso spiega perché lì un `return` muto **non** basterebbe — le due azioni scrivono entrambe
+   nel database, quindi vanno fermate dalla stessa soglia di validità. **Il rimedio è tre righe
+   ricalcate da quelle**, e il commento va letto prima di ricopiarle: dice quale forma serve, non
+   solo quale codice.
+
+   Il difetto è **preesistente** e il diff dell'unità 03 non lo peggiora — lo migliora appena.
+   Se leggendo concludi che il percorso non è costruibile, **dillo con la riga che lo dimostra**.
+
 **Le fonti dei criteri, da leggere per prime:**
 
 - `storico/handoff/CHIUSURA.md`, `FUORI SCOPE` **voci 11, 14, 16, 17**.
@@ -119,6 +139,13 @@ Ti precedono, tutte rientrate:
 
 **Il resoconto della 03 lo leggi davvero**, non per adempimento: tre dei tuoi file sono i suoi, e
 il suo campo `TOCCATI` ti dice di quanto si sono spostate le righe.
+
+⚠️ **Due numeri che ti ha lasciato scritti, e che valgono più di una rilettura:** in
+`Pages/ItemEdit.razor` **tutto ciò che stava oltre la riga 68 è sceso di 21 righe**, perché
+l'unità ha inserito un blocco di markup, una proprietà calcolata e una frase in un commento. Il
+call-site del componente delle recensioni, che il resoconto della 02 citava a `:150`, è ora a
+`:165`. Il campo `FUORI SCOPE 2` di quel resoconto contiene il percorso completo della voce 5 di
+questo mandato: leggilo, è già istruito.
 
 ## GATE
 
