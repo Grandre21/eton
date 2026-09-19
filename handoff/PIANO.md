@@ -361,7 +361,7 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | **FATTO** — integrata con `e20a059`, pushata, worktree e branch remoto rimossi |
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | **FATTO** — integrata con `6ce6ee3`, pushata, worktree rimosso. **288 test** |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 18 · **9 istruita e non determinata** | 04 | **FATTO** — integrata con `8804763`, pushata. **290 test** |
-| **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
+| **06 profilo-allineato** | `Services/AuthStateService.cs`, **due** servizi nuovi (`AllineatoreProfilo`, `IdentitaGoogle`), `Program.cs`, un call-site in `Services/SupabaseService.cs`, due suite di test | il difetto da `APERTO` | 05 | **FATTO** — integrata con `b3afb1d`, pushata. **310 test** |
 | **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor`, **+ due righe di `Pages/SpesaEdit.razor`** | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore, **+ il `<label>` senza controllo** | 06 | PIANIFICATA |
 
 ⚠️ **L'unità 07 revoca un contratto dell'unità 01**, e va detto invece di lasciarlo scoprire: il
@@ -430,7 +430,24 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **06 profilo-allineato**, l'ultima delle sei pianificate, mandato scritto, committato e pushato. Poi la **07**, poi il collaudo nel browser.
+PROSSIMA AZIONE: aprire l'unità **07 pastiglie-e-ancore**, l'ultima del goal, mandato scritto,
+committato e pushato. Poi il **collaudo nel browser**, che è lavoro del capo e non di un'unità.
+
+**Le sei unità pianificate sono tutte `FATTO`**, integrate su `main` e pushate, da 287 a **310
+test**, sempre 0 avvisi. Nessuna è tornata `PARZIALE`, nessuna `BLOCKED`.
+
+**Quando apro la 07, il piano del collaudo è già scritto**: ogni resoconto ha lasciato le proprie
+misure attese, e il brief di `live-testing` si compone ricopiandole invece di inventarle. Le più
+importanti, per non perderle:
+
+- **la sovrapposizione di «Profilo»** deve essere a zero (`scrollWidth === clientWidth`), e **il
+  nome accessibile del collegamento deve essere ancora «Profilo»** — la sola misura il cui
+  fallimento avrebbe scambiato un difetto visibile con uno invisibile;
+- **l'importo sopra il migliaio**, in sola lettura `1.284,50 €` e modificabile `1284,50`, e alla
+  chiusura **nessuna** domanda «hai modifiche non salvate»: se comparisse, `Cambiata` è vera
+  all'apertura e si è riaperto un difetto chiuso a settembre;
+- **il costo zero del profilo**: al secondo avvio consecutivo senza cambiamenti, **nessun `PATCH`**
+  su `/rest/v1/profiles` nel pannello di rete. È la prova dell'intero vincolo, e sta in una riga.
 
 Le unità 01, 02 e 03 sono rientrate `FATTO`, auditate e integrate. Tutti i contratti convergono, e
 `Shared/PaginaEditor.cs` è uscito dal goal **senza essere stato aperto in scrittura da nessuno**,
