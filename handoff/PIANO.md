@@ -307,6 +307,48 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   sopravvive alla correzione del campo è la stessa famiglia chiusa dall'unità 03 su `SpesaEdit`,
   dove a tenerla c'è una decisione di **principio**: riaprirla qui sarebbe stato deciderla da capo.
 
+- **19 set 2026, dopo l'unità 05** — **Il mio mandato diceva «tutte e quattro» e si sbagliava sulla
+  quarta: l'unità ha fatto l'opposto, e aveva ragione.** Lo registro qui perché è una deviazione
+  sostanziale da un mandato, non una sfumatura.
+  Il mandato ordinava di proteggere **quattro** chiamate a `localStorage`, inclusa quella
+  nell'avvio dell'accesso con Google che «non ha alcun `try` in tutta la sua lunghezza». Vero — ma
+  quel metodo ha **un solo call-site in tutto il progetto**, e lì è invocato dentro un `try/catch`
+  che già scrive in console, già rimette il pulsante premibile, e già mostra una frase **mirata
+  proprio a quel caso**: «può essere il browser che non lascia salvare i dati di questo sito —
+  succede con la navigazione anonima…».
+  **Proteggerla sarebbe stato un peggioramento misurabile:** avrebbe reso morto quel `catch`,
+  l'applicazione sarebbe partita verso Google con un verificatore mai salvato, e l'utente avrebbe
+  ricevuto al ritorno un messaggio generico invece della frase mirata che oggi riceve **subito**.
+  Il precedente che il mandato stesso indicava conferma la lettura: quel servizio protegge la
+  lettura e lascia scoperte scrittura e cancellazione. **Non dice «proteggi tutto»: dice «proteggi
+  dove esiste un ripiego onesto».** Per la lettura il ripiego è `null`; per la cancellazione è
+  «niente», e il valore è monouso; per il salvataggio non esiste, e l'unica cosa giusta è non
+  partire.
+  L'unità ha portato il bivio a `tech-advisor` **prima** di scrivere i brief, con le tre opzioni in
+  chiaro e l'invito a smentirla, e ha eseguito la condizione che lui ha aggiunto: un commento che
+  dichiara **dove** vive la copertura, così che il prossimo lettore non «uniformi» i tre metodi
+  spegnendo la frase. Senza quel commento la regressione sarebbe stata a un passo, e sarebbe
+  sembrata una pulizia.
+
+- **19 set 2026** — **La voce 9, la barra gialla di Blazor: istruita, non determinata, e resta
+  aperta.** Il mandato ammetteva tre forme di chiusura e l'unità ha usato la terza — «non
+  determinato, e ho escluso …» — che è la sola onesta quando le prove non bastano.
+  **Cosa ha escluso, con la riga per ognuna:** i percorsi di salvataggio delle tre schermate in cui
+  la barra è comparsa, tutti dentro `try/catch` e tutti produttori del messaggio italiano osservato;
+  il metodo comune ai 52 call-site, che non propaga eccezioni di rete; l'altro servizio che tocca
+  `localStorage`, protetto su tutte e tre le chiamate; il **refresh automatico di Gotrue**, che era
+  l'ipotesi più forte e che `doc-checker` ha smentito **sul sorgente della versione installata** —
+  il timer esiste e il suo handler avvolge tutto in un `catch` che non rilancia mai; il service
+  worker; e i componenti condivisi montati su ogni pagina privata.
+  ⚠️ **E ha smentito la voce stessa**: la barra **non è mai stata osservata sul percorso d'accesso**
+  — le prove OAuth del giro C stanno fra i «non provato», perché richiedevano di essere disconnessi.
+  Quindi il punto 1 non poteva farla sparire, contrariamente a quanto la voce ipotizzava.
+  **Ciò che non è escludibile** è la forma esatta della sovrascrittura di `window.fetch` usata nella
+  simulazione: se sostituiva `fetch` con una funzione che **lancia sincronamente** invece di
+  restituire una Promise rifiutata, il punto di fallimento si sposta dentro il marshalling di Blazor
+  e può non essere catturabile dal `catch` C#. Senza il codice della simulazione l'ipotesi non è né
+  confermabile né escludibile. **Va nel rapporto finale come clausola non chiusa, con il motivo.**
+
 ## PARTIZIONE
 
 Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -318,7 +360,7 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | **FATTO** — integrata con `ab33d92`, pushata, worktree rimosso |
 | **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | **FATTO** — integrata con `e20a059`, pushata, worktree e branch remoto rimossi |
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | **FATTO** — integrata con `6ce6ee3`, pushata, worktree rimosso. **288 test** |
-| **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
+| **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 18 · **9 istruita e non determinata** | 04 | **FATTO** — integrata con `8804763`, pushata. **290 test** |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
 | **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor`, **+ due righe di `Pages/SpesaEdit.razor`** | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore, **+ il `<label>` senza controllo** | 06 | PIANIFICATA |
 
@@ -388,7 +430,7 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **05 accesso**, mandato scritto, committato e pushato.
+PROSSIMA AZIONE: aprire l'unità **06 profilo-allineato**, l'ultima delle sei pianificate, mandato scritto, committato e pushato. Poi la **07**, poi il collaudo nel browser.
 
 Le unità 01, 02 e 03 sono rientrate `FATTO`, auditate e integrate. Tutti i contratti convergono, e
 `Shared/PaginaEditor.cs` è uscito dal goal **senza essere stato aperto in scrittura da nessuno**,
