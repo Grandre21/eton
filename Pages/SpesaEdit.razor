@@ -62,19 +62,27 @@ else
     }
 
     <div class="campi-spesa">
-        <label class="campo">
-            <span class="etichetta-campo">Importo</span>
-            @* Chi non può intervenire legge un testo, non un campo spento: un <input> mostra la
-               grammatica di chi digita — nessun separatore delle migliaia, nessun simbolo — e chi
-               arriva qui dall'elenco ha appena letto «1.284,50 €» sulla stessa cifra. La resa di
-               visualizzazione è Denaro.Testo, la stessa di Pages/Spese.razor e Pages/Home.razor.
-               Il campo modificabile resta su Denaro.TestoDigitabile e non si tocca: Denaro.Verifica
-               rifiuta le stringhe con più di un separatore, quindi un importo con le migliaia
-               dentro un campo in cui si digita renderebbe la pagina non salvabile sopra i mille
-               euro. Le due rese hanno due pubblici diversi, ed è la ragione per cui esistono
-               entrambe. *@
-            @if (PuoIntervenire)
-            {
+        @{
+            RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
+        }
+        @* Chi non può intervenire legge un testo, non un campo spento: un <input> mostra la
+           grammatica di chi digita — nessun separatore delle migliaia, nessun simbolo — e chi
+           arriva qui dall'elenco ha appena letto «1.284,50 €» sulla stessa cifra. La resa di
+           visualizzazione è Denaro.Testo, la stessa di Pages/Spese.razor e Pages/Home.razor.
+           Il campo modificabile resta su Denaro.TestoDigitabile e non si tocca: Denaro.Verifica
+           rifiuta le stringhe con più di un separatore, quindi un importo con le migliaia
+           dentro un campo in cui si digita renderebbe la pagina non salvabile sopra i mille
+           euro. Le due rese hanno due pubblici diversi, ed è la ragione per cui esistono
+           entrambe.
+
+           E lo legge dentro un <div>, non dentro un <label>: un <label> senza controllo è
+           un'etichetta per niente. L'impilamento glielo rimette .campo-lettura, e il perché
+           serva una classe in più sta in app.css, accanto a quella regola. L'etichetta è
+           scritta una volta sola e resa nei due rami. *@
+        @if (PuoIntervenire)
+        {
+            <label class="campo">
+                @etichettaImporto
                 @* type="text" e non type="number": type="number" si comporta in modo diverso da browser a
                    browser sul separatore decimale, accetta la rotellina del mouse che cambia il valore per
                    sbaglio, e su alcuni browser rifiuta la virgola in silenzio svuotando il campo.
@@ -82,12 +90,15 @@ else
                    niente di tutto questo. *@
                 <input class="importo-spesa dato" type="text" inputmode="decimal"
                        placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
-            }
-            else
-            {
+            </label>
+        }
+        else
+        {
+            <div class="campo campo-lettura">
+                @etichettaImporto
                 <p class="importo-spesa dato">@Denaro.Testo(spesa.Amount)&#160;€</p>
-            }
-        </label>
+            </div>
+        }
         @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
         {
             <p class="errore-campo">@erroreImporto</p>

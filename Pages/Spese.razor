@@ -128,8 +128,8 @@ else
                 <div class="navigazione-mese">
                     @* rileggoMese in più su entrambe: due click rapidi lancerebbero due letture che
                        possono tornare in ordine inverso, lasciando mostrato il mese sbagliato. *@
-                    <button type="button" class="btn piccolo" @onclick="MesePrecedente" disabled="@rileggoMese" aria-label="Mese precedente">‹</button>
-                    <button type="button" class="btn piccolo" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti || rileggoMese)" aria-label="Mese successivo">›</button>
+                    <button type="button" class="btn compatto" @onclick="MesePrecedente" disabled="@rileggoMese" aria-label="Mese precedente">‹</button>
+                    <button type="button" class="btn compatto" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti || rileggoMese)" aria-label="Mese successivo">›</button>
                 </div>
             </div>
 

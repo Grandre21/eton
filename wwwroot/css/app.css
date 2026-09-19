@@ -9,6 +9,13 @@
    Un colore scritto a mano dentro una regola è un colore che non seguirà il
    giorno in cui la tavolozza cambia.
 
+   I RIMANDI SI ANCORANO A CIÒ CHE UN GREP TROVA. Dentro il file si cita il SELETTORE,
+   verso gli altri file il nome del file più un frammento cercabile (class="…",
+   @onclick="…", il testo di un <h3>). Mai un numero di riga: si rompe a ogni inserzione e
+   nessuno lo risincronizza — al censimento del 19 settembre 2026 sette rimandi su
+   ventidue erano già scaduti, e un rimando falso costa più di un rimando assente, perché
+   manda a leggere la riga sbagliata con la stessa fiducia.
+
    DUE ACCENTI, DUE SIGNIFICATI. Non sono intercambiabili, e non è una
    preferenza estetica: il blu è dove si preme (pulsanti, collegamenti, voce di
    navigazione attiva, campo a fuoco), il verde acido è dove si constata (voti,
@@ -244,7 +251,7 @@ html, body {
 }
 
 /* La gutter della barra di scorrimento si riserva SEMPRE, anche dove la pagina non
-   scorre. Senza, .app-layout (v. riga 409) si centra con margin:0 auto in uno spazio
+   scorre. Senza, .app-layout si centra con margin:0 auto in uno spazio
    che vale quindici pixel in meno sulle pagine che scorrono e quindici in più su
    quelle corte: la colonna slitta di 7,6px, e passando da un elenco al suo editor
    l'h1 salta. 'stable' tiene lo spazio riservato «regardless of whether the box is
@@ -754,8 +761,10 @@ a { color: var(--accento); }
 /* Non è .btn.piccolo alzato: quello resta 2.2rem (~35px, sotto i 48px di
    --tocco) di proposito, perché vive dentro righe di elenco dove un pulsante
    alto quanto il dito cambierebbe l'altezza di ogni riga della lista.
-   .btn.compatto serve altrove — nella testata di schermata, dove si preme col
-   pollice come ovunque — quindi tiene l'altezza piena e stringe solo la
+   .btn.compatto serve altrove — in una TESTATA: di schermata (Pages/Collections.razor e
+   Pages/Notes.razor, class="btn primario compatto") oppure di scheda (le frecce di
+   .navigazione-mese, più sotto). Lì si preme col pollice come ovunque, quindi tiene
+   l'altezza piena e stringe solo la
    larghezza: meno padding orizzontale di .btn, corpo piccolo come .piccolo, e
    niente a capo, perché "Nuova collezione" spezzato su due righe dentro una
    riga larga quanto il titolo sarebbe illeggibile. */
@@ -766,7 +775,7 @@ a { color: var(--accento); }
 }
 
 /* a.btn:not([href]) accanto a :disabled, e non al suo posto: i quattro editor spengono
-   «Chiudi» durante un salvataggio togliendogli l'href (v. Pages/NoteEdit.razor:114), e un <a>
+   «Chiudi» durante un salvataggio togliendogli l'href (v. Pages/NoteEdit.razor, href="@(occupato ? null : "notes")"), e un <a>
    senza href davvero non naviga né prende il fuoco — ma :disabled non lo raggiunge, perché
    non è un controllo di modulo, e senza questa riga resta acceso all'occhio: sembra premibile
    e non lo è. */
@@ -786,7 +795,7 @@ a.btn:not([href]) {
    :not(.occupato) perché un pulsante che sta salvando è disabled anche lui, ma non è spento:
    .btn.occupato lo dice con una pulsazione e non ridichiara i colori, quindi senza questa
    esclusione il grigio di qui vincerebbe per specificità proprio sul caso che quella classe
-   esiste per distinguere — «Segna» di Pages/Spese.razor:103 è l'unico punto dove le due cose
+   esiste per distinguere — «Segna» di Pages/Spese.razor (@onclick="Segna") è l'unico punto dove le due cose
    capitano insieme, ed è dove si vedrebbe. */
 .btn.primario:disabled:not(.occupato) {
     background: var(--superficie-alta);
@@ -875,8 +884,19 @@ textarea { resize: vertical; }
 .campo { display: flex; gap: var(--s2); align-items: center; }
 .campo input { flex: 1; min-width: 0; }
 
-/* Una label che avvolge etichetta e controllo: vanno impilati, non affiancati. */
-label.campo { flex-direction: column; align-items: stretch; gap: var(--s1); }
+/* Un contenitore che avvolge etichetta e controllo: vanno impilati, non affiancati. La
+   label lo fa perché ha un controllo dentro; .campo-lettura è il caso in cui il controllo
+   non c'è — in Pages/SpesaEdit.razor chi non può intervenire legge l'importo invece di
+   digitarlo, e un <label> senza controllo annuncia un'etichetta per qualcosa che non
+   esiste. Cambia l'elemento, non la resa: stessa classe .campo, più questa che rimette
+   l'impilamento che il solo selettore d'elemento dava.
+   Non `.campo:has(> .etichetta-campo)`, che sarebbe stato il selettore elegante: una lista
+   di selettori NON è forgiving, quindi su un motore senza :has() cadrebbe la regola intera
+   e tutti i moduli del progetto diventerebbero righe orizzontali. E sarebbe falso comunque:
+   .etichetta-piccola è dichiarata sinonimo di .etichetta-campo qui sopra, ma
+   Shared/VotoInput.razor è un div.campo con etichetta-piccola che sulla resa in riga ci si
+   regge. */
+label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
 .campo-dinamico { margin-bottom: var(--s3); }
 
@@ -1345,12 +1365,12 @@ li:last-child > .riga { border-bottom: none; }
    grande che entra senza far crescere le righe del registro delle collezioni, dove il
    medaglione vive, mentre 48 le porterebbe a 72. Non vale per ogni riga dell'applicazione,
    e dirlo eviterebbe un'uniformata sbagliata: .miniatura è già 48 e sta dentro una
-   .riga-elemento (Pages/CollectionDetail.razor:129), che infatti oggi è resa a 72px, perché
+   .riga-elemento (Pages/CollectionDetail.razor, class="riga riga-elemento"), che infatti oggi è resa a 72px, perché
    min-height è un pavimento e non un tetto. Le due misure convivono nella stessa schermata
    — il medaglione nell'intestazione, le miniature nelle righe sotto — e non sono una
    divergenza: sono due contenitori in due posti diversi, con due vincoli diversi.
    Regge anche nel terzo punto in cui compare, l'intestazione di
-   Pages/CollectionDetail.razor:40, dove sta accanto a un <h1> a --t-2xl con line-height
+   Pages/CollectionDetail.razor (class="icona-collezione"), dove sta accanto a un <h1> a --t-2xl con line-height
    1.08, cioè 38,9px di riga: quaranta contro 38,9 si legge come una riga sola, e
    l'intestazione cresce di un pixel e un decimo.
    Un anello e non un fondo pieno, ed è ciò che tiene insieme i tre punti: il medaglione
@@ -1366,10 +1386,10 @@ li:last-child > .riga { border-bottom: none; }
    Niente hover e niente transizione: la riga ha già il suo filo blu quando la si punta, e un
    secondo segnale su quaranta pixel competerebbe con quello.
    display:grid con place-items:center è letteralmente la coppia con cui .avatar.segnaposto
-   (v. riga 1461) centra un glifo dentro un contenitore tondo dentro una riga, e il tondo è
+   centra un glifo dentro un contenitore tondo dentro una riga, e il tondo è
    già la forma con cui questo progetto dice CHI: .avatar è l'identità di una persona, questo
    è l'identità di una collezione. I 40px sono la misura esterna, bordo compreso, per la
-   regola universale di riga 227. */
+   regola universale `* { box-sizing: border-box }`. */
 .icona-collezione {
     flex: none;
     display: grid;
@@ -1421,7 +1441,7 @@ li:last-child > .riga { border-bottom: none; }
    Non la shorthand `margin`, e non `margin-inline`: azzererebbero il margin-left:auto che
    spinge il link in fondo alla testata. Il link è ancorato a destra da quello, quindi
    basta compensare il lato che ancorato non è.
-   Il selettore tocca esattamente i due «Tutte» della Home (Pages/Home.razor:144 e :181):
+   Il selettore tocca esattamente i due «Tutte» della Home (Pages/Home.razor, i due <a>…Tutte</a> dentro .testa-registro):
    sono gli unici <a> dentro una .testa-registro di tutto il progetto, le altre sei testate
    contengono solo <span>. La testata cresce di ~3,9px, perché il margin-box del link passa
    da 20,15 a 24 — è atteso e accettato, non un difetto da inseguire. */
@@ -1647,11 +1667,14 @@ li:last-child > .riga { border-bottom: none; }
     max-width: 20rem;
 }
 
+/* Le tre misure — altezza, respiro orizzontale, corpo — non stanno più qui: le porta
+   button.pastiglia, perché sono di ciò che si preme e non del posto in cui si preme.
+   Restano le quattro che questa regola ha OLTRE a quelle: flex:none, perché la barra è
+   un flex container e la pastiglia non deve allargarsi accanto al selettore, e
+   cursor/touch-action/transition, che qui valgono per qualunque elemento e non solo per
+   i <button>. */
 .barra-elenco .pastiglia {
     flex: none;
-    min-height: var(--tocco);
-    padding: 0 var(--s4);
-    font-size: var(--t-sm);
     cursor: pointer;
     touch-action: manipulation;
     transition: background var(--transizione), border-color var(--transizione), color var(--transizione);
@@ -1793,33 +1816,16 @@ li:last-child > .riga { border-bottom: none; }
 .voto-input { flex-wrap: wrap; }
 .voto-input > .etichetta-piccola { flex-basis: 100%; }
 
-/* «Nessun voto» è un <button class="pastiglia"> (Shared/VotoInput.razor:22) ed era alto
-   ventidue pixel: non solo sotto i 48 di --tocco, ma sotto perfino i 24 che WCAG 2.5.8
-   pone come minimo assoluto. Le tre proprietà sono quelle di .scelta-categoria .pastiglia
-   (v. riga 2139) perché sono la stessa cosa in due posti — una pastiglia che si preme col
-   pollice — e vederle di due misure direbbe che sono due cose diverse. Il corpo a --t-sm
-   non è decorativo, ed è la ragione già scritta lì: a --t-xs dentro quarantotto pixel il
-   testo sarebbe un filo in mezzo al vuoto.
-   È una regola sua e non il selettore di quella allungato. Il precedente di fatto c'è —
-   .scelta-categoria .pastiglia a sua volta RIPETE le proprietà di .barra-elenco .pastiglia
-   (v. riga 1650) invece di condividerne il selettore — ma la ragione qui sotto non è scritta
-   lì e non gliela si attribuisce: è una scelta presa in questa regola. Le tre vivono in
-   sezioni diverse del file, e chi cerca perché «Nessun voto» è alto 48px lo cerca nella
-   sezione del voto, non in quella delle spese. Raggrupparle non sarebbe stato comunque un
-   accorpamento neutro: .barra-elenco .pastiglia porta quattro proprietà in più — flex,
-   cursor, touch-action e transition — che un selettore a tre avrebbe steso anche sulle altre
-   due.
-   L'ultima riga di .voto-input cresce da ~25px a 48, e va detto perché è l'unico effetto che
-   esce da questo bottone: l'etichetta e il cursore hanno già una riga per sé (flex-basis e
-   width al 100% qui sopra), quindi lì restano .voto-cifre — che non ha min-height ed è
-   ~24,8px — e la pastiglia, che era 22. La scheda «La tua recensione»
-   (Shared/RecensioniElemento.razor:54) si allunga di conseguenza. È voluto: un bersaglio non
-   passa da ventidue a quarantotto pixel senza che la riga che lo contiene cresca. */
-.voto-input .pastiglia {
-    min-height: var(--tocco);
-    padding: 0 var(--s4);
-    font-size: var(--t-sm);
-}
+/* «Nessun voto» (Shared/VotoInput.razor, @onclick="Azzera") è un <button class="pastiglia">
+   e prende da button.pastiglia il pavimento di --tocco: qui non serve nessuna regola, e
+   prima ce n'era una che ripeteva parola per parola quella della scelta categoria.
+   Resta scritto l'effetto, perché è l'unico che esce da quel bottone: l'ultima riga di
+   .voto-input è alta 48px e non ~25. L'etichetta e il cursore hanno già una riga per sé
+   (flex-basis e width al 100% qui sopra), quindi lì restano .voto-cifre — che non ha
+   min-height ed è ~24,8px — e la pastiglia. La scheda «La tua recensione»
+   (Shared/RecensioniElemento.razor, <h3>La tua recensione</h3>) si allunga di conseguenza.
+   È voluto: un bersaglio non sta sotto i quarantotto pixel perché la riga che lo contiene
+   preferirebbe restare stretta. */
 
 .voto-input input[type=range] {
     -webkit-appearance: none;
@@ -1883,7 +1889,7 @@ li:last-child > .riga { border-bottom: none; }
    da lì e stacca il pannello dalla prima riga del registro che segue, senza
    bisogno di ridichiararla qui proprietà per proprietà. Lo faceva, prima: sei
    dichiarazioni identiche a quelle di .scheda, lo stesso genere di doppione che
-   il file condanna altrove (v. il commento a riga 1039, sulla Home). Non resta
+   il file condanna altrove (v. il commento sulla Home, «un elenco "compatto" tutto suo»). Non resta
    altro da aggiungere o sovrascrivere, quindi la regola sparisce: .riepilogo-mese
    continua a esistere come selettore, per ambientare .testa-registro qui sotto. */
 
@@ -1896,28 +1902,13 @@ li:last-child > .riga { border-bottom: none; }
 
 .navigazione-mese { display: flex; gap: var(--s2); margin-left: auto; }
 
-/* Le due frecce di mese (Pages/Spese.razor:131) misuravano 33 × 35, e il difetto è su
-   ENTRAMBI gli assi: da qui il min-width accanto al min-height. .btn.piccolo porta
-   `padding: 0 var(--s3)` e dentro c'è un carattere solo, «‹», quindi con la sola altezza il
-   bersaglio resterebbe largo un terzo di quanto è alto.
-   Questa regola NON allarga e NON toglie l'esenzione di .btn.piccolo (v. riga 754): aggancia
-   i soli due pulsanti di .navigazione-mese, che stanno nella testata di una scheda — dove si
-   preme col pollice come ovunque — e non in una riga di elenco, che è il caso per cui quella
-   esenzione esiste. Specificità 0-3-0 contro 0-2-0, quindi vince senza dipendere dall'ordine
-   nel file. La testata della scheda passa da ~35px a 48: è l'effetto atteso, non un
-   contraccolpo da compensare.
-   «Dove si preme col pollice come ovunque» è la ragione con cui .btn.compatto (v. riga 762)
-   esiste già, ed era quella la classe fatta per questo caso. Non è stata usata per due
-   motivi, e il secondo conta più del primo: il markup dice class="btn piccolo"
-   (Pages/Spese.razor:131) e cambiarlo stava fuori dal perimetro di chi ha scritto questa
-   regola, che era il solo foglio di stile; ma non sarebbe bastato comunque, perché
-   .btn.compatto dichiara padding, font-size e white-space e NESSUN min-width — avrebbe
-   chiuso l'asse verticale ereditando i 48px di .btn e lasciato aperto quello orizzontale,
-   mentre il difetto misurato era 33 × 35, cioè su tutti e due. */
-.navigazione-mese .btn.piccolo {
-    min-height: var(--tocco);
-    min-width: var(--tocco);
-}
+/* Le due frecce di mese (Pages/Spese.razor, aria-label="Mese precedente") sono .btn.compatto,
+   e da .btn ereditano i 48px di --tocco e il raggio di --raggio: perché quella variante e non
+   .piccolo sta scritto alla sua definizione, che è dove lo si cerca.
+   Resta aperto il solo asse della larghezza: dentro c'è un carattere solo, «‹», e con
+   `padding: 0 var(--s3)` il bersaglio sarebbe largo un terzo di quanto è alto. Da qui il
+   min-width, ed è tutto ciò che serve. */
+.navigazione-mese .btn { min-width: var(--tocco); }
 
 /* Il numero più grande della pagina: è la sola cosa per cui si apre questa
    schermata. Stesso corpo del voto (--t-3xl, il solo altro punto dell'app che lo
@@ -1933,7 +1924,7 @@ li:last-child > .riga { border-bottom: none; }
     margin: 0 0 var(--s2);
 }
 
-/* Fra il totale del mese e le barre delle categorie: .testo-tenue (v. riga 306)
+/* Fra il totale del mese e le barre delle categorie: .testo-tenue
    le dà già un margine sotto, ma un valore diverso da quello con cui
    .barre-categorie apre (margin-top: var(--s5), più sotto) lascerebbe lo stacco
    in mano al collasso dei margini fra fratelli invece che a una scelta
@@ -2069,9 +2060,11 @@ li:last-child > .riga { border-bottom: none; }
     margin-bottom: var(--s5);
 }
 
-/* Su telefono i tre campi si impilano: .campo (già flex-column via label.campo,
-   v. sopra) fa già da blocco verticale, qui serve solo il ritmo fra un campo e
-   il successivo. La coppia affiancata arriva nella media query. */
+/* Su telefono i tre campi si impilano, e .campo è già flex-column per due vie (v. sopra):
+   label.campo per i due che avvolgono un controllo, .campo-lettura per l'Importo di chi
+   non può intervenire, che un controllo non ce l'ha. Fa quindi già da blocco verticale, e
+   qui serve solo il ritmo fra un campo e il successivo. La coppia affiancata arriva nella
+   media query. */
 .campi-spesa {
     display: flex;
     flex-direction: column;
@@ -2118,29 +2111,39 @@ li:last-child > .riga { border-bottom: none; }
    <button>: il browser gli darebbe un font di sistema (non Inter) invece di
    ereditarlo, e un cursore a freccia invece che a mano — la stessa ragione per
    cui .btn dichiara `font: inherit` fin dalla sua prima riga. Non si riscrive
-   .pastiglia: si aggiunge solo ciò che un elemento <button> porta di suo. */
+   .pastiglia: si aggiunge solo ciò che un elemento <button> porta di suo.
+
+   E porta di suo anche il pavimento di --tocco: una pastiglia che si preme è un BERSAGLIO,
+   e la misura è di ciò che si preme, non del posto in cui si preme — quindi un
+   <button class="pastiglia"> nuovo la prende ovunque nasca, invece di aspettare che
+   qualcuno se ne accorga, che è ciò che è servito fare a mano sul voto. Il corpo a --t-sm
+   non è decorativo: a --t-xs dentro quarantotto pixel il testo sarebbe un filo in mezzo
+   al vuoto.
+
+   Queste tre stavano scritte identiche in tre regole di LUOGO — .barra-elenco .pastiglia,
+   .voto-input .pastiglia, .scelta-categoria .pastiglia. Raggrupparne i selettori sarebbe
+   stata la strada sbagliata, e resta sbagliata: avrebbe steso su tutte e tre anche le
+   quattro proprietà che solo .barra-elenco .pastiglia porta. Qui il selettore non somma
+   luoghi, cambia di natura.
+
+   L'inline vince comunque, e deve: le pastiglie-emoji di Pages/CollectionEdit.razor
+   (style="font-size: var(--t-lg)") stanno grandi quanto la .icona-input accanto, perché
+   un'emoji e una parola non si leggono alla stessa misura. */
 button.pastiglia {
     font-family: inherit;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
     touch-action: manipulation;
-}
-
-/* Le pastiglie dentro una scelta non sono etichette da leggere ma bersagli da premere col
-   pollice, ed erano alte ventun pixel: meno della metà dei 48 che questo file dichiara in
-   --tocco. La misura è quella che .barra-elenco .pastiglia (più sopra) dà già alle proprie —
-   stessa altezza, stesso respiro orizzontale, stesso corpo — perché sono la stessa cosa in
-   due posti e vederle di due misure direbbe che sono due cose diverse. A --t-xs dentro
-   quarantotto pixel il testo sarebbe un filo in mezzo al vuoto.
-   Il corpo non tocca le pastiglie-emoji di Pages/CollectionEdit.razor:104, che lo dichiarano
-   inline a --t-lg per stare grandi quanto la .icona-input accanto: un'emoji e una parola non
-   si leggono alla stessa misura, e l'inline vince su questa regola per costruzione. */
-.scelta-categoria .pastiglia {
     min-height: var(--tocco);
     padding: 0 var(--s4);
     font-size: var(--t-sm);
 }
+
+/* Le pastiglie di questa scelta non hanno più una regola propria: altezza, respiro e corpo
+   arrivano da button.pastiglia (più sopra), che è dove stanno da quando la misura è di ciò
+   che si preme e non del posto in cui si preme. .scelta-categoria continua a esistere come
+   selettore, per il fieldset e la sua legenda qui sopra. */
 
 /* ------------------------------------------------------- riepilogo Home --- */
 
@@ -2200,13 +2203,13 @@ button.pastiglia {
 .voce-profilo-stretto:hover, .voce-profilo-stretto:active { background: var(--superficie); color: var(--testo); }
 
 /* .etichetta-piccola porta di suo un margin-bottom, pensato per stare SOPRA
-   qualcosa (v. riga 330): qui sta ACCANTO all'icona, non sopra, e va azzerato
+   qualcosa: qui sta ACCANTO all'icona, non sopra, e va azzerato
    come già in .striscia-spese .etichetta-piccola più sopra — altrimenti il
    margine sposta il centro ottico del testo rispetto all'icona.
 
    Il collegamento vive dentro <header class="intestazione solo-stretto">
    accanto a <SelettoreSpazio />, la cui .selettore ha flex:1 e min-width:0
-   (v. riga 730): flex:none qui impedisce a questa voce di allargarsi oltre il
+   (v. .intestazione .selettore): flex:none qui impedisce a questa voce di allargarsi oltre il
    proprio contenuto, quindi tutto lo spazio che l'etichetta in più occupa lo
    cede il selettore — che si stringe, anche con un nome di spazio lungo,
    invece di spingere l'icona fuori dallo schermo. */
@@ -2409,7 +2412,7 @@ button.pastiglia {
        visibile, non la misura.
        Lo sbordo non si chiude tutto da qui, e non è una dimenticanza: con la scatola a
        48px il contenuto da 53 esce ancora di cinque. A chiuderlo è l'etichetta che
-       passa a .solo-lettori (v. riga 2509), cioè una riga di markup, che non è cosa di
+       passa a .solo-lettori, cioè una riga di markup, che non è cosa di
        questo foglio. */
     .voce-piede {
         display: flex;
