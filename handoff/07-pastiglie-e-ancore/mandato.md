@@ -69,12 +69,24 @@ porta un fatto misurato che il tuo brief deve rispettare.
    **La regola, in una riga:** l'ancora è ciò che un `grep` trova. Il numero, se resta, è un
    indizio, non l'ancora.
 
+5. **Un `<label>` che non etichetta più niente, in `Pages/SpesaEdit.razor`.** L'unità 04 ha reso
+   condizionale il campo dell'importo: chi non può intervenire ora vede un paragrafo con l'importo
+   formattato invece di un campo da compilare. Ma il contenitore è rimasto un `<label class="campo">`,
+   e un `<label>` che non contiene nessun controllo non fa il proprio mestiere per chi ascolta la
+   pagina — annuncia un'etichetta per qualcosa che non c'è.
+   **Il rimedio è due righe:** nel ramo di sola lettura il contenitore diventa un `<div>` con la
+   stessa classe. **Non duplicare l'etichetta** nei due rami: è la ragione per cui l'unità 04 non
+   l'ha fatto da sé, e se la tua correzione la duplica hai scelto la strada che era stata scartata.
+   L'unità 04 l'ha **dichiarato invece di tacerlo**: la fonte è
+   `handoff/04-igiene-e-importi/resoconto.md`, campo `FUORI SCOPE 1`.
+
 ## PERIMETRO
 
 **Di tua proprietà esclusiva:**
 
 - `wwwroot/css/app.css`
 - `Pages/Spese.razor` — **i soli due attributi di classe** delle frecce di mese
+- `Pages/SpesaEdit.razor` — **le sole due righe** del contenitore nel ramo di sola lettura
 
 ⚠️ **Sul foglio di stile hai un contratto revocato alle spalle, e devi saperlo.** Il mandato
 dell'unità 01 diceva «sei l'unico a toccarlo in tutto il goal». Non è più vero: l'utente ha

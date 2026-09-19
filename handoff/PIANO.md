@@ -19,16 +19,25 @@ lasciato aperto **dichiarandolo**, non tutto ciò che resta da fare nel progetto
    è mai entrato in nessun `FUORI SCOPE`;
 4. la **ricognizione mai fatta** dell'area voti e recensioni, anch'essa da `APERTO`.
 
-**Ventuno clausole all'apertura, ventiquattro dal 19 settembre sera.** La colonna «voci» della
+**Ventuno clausole all'apertura. Ventisette alla sera del 19 settembre.** La colonna «voci» della
 `PARTIZIONE` dice dove cade ognuna: è la mappa che la sessione di chiusura userà per contare
 coperte e scoperte, e l'unica cosa di questo file che non è ricostruibile leggendo i resoconti.
 
-⚠️ **Le tre clausole in più sono nate durante il lavoro, e l'utente le ha fatte entrare qui.**
-Sono le tre decisioni di progetto che l'unità 01 ha aperto — la fusione delle pastiglie, le
-frecce di mese, i rimandi ancorati al selettore — e stanno nell'unità **07**. Un obiettivo che
-cresce mentre lo si esegue è la cosa che rende impossibile misurare la copertura alla chiusura:
-per questo il numero è scritto due volte, con la data, invece di essere aggiornato in silenzio.
-Chi conta a fine goal conta **ventiquattro**.
+⚠️ **L'obiettivo è cresciuto quattro volte, e ogni crescita è datata invece di essere assorbita in
+silenzio.** Il tracciato, per chi conta a fine goal:
+
+| Quando | Da | A | Cosa è entrato | Chi ha deciso |
+|---|---|---|---|---|
+| apertura | — | **21** | le 18 voci del `FUORI SCOPE` precedente, il medaglione, i profili congelati, la ricognizione mai fatta | l'obiettivo dell'utente |
+| dopo la 01 | 21 | **24** | fusione delle pastiglie, `.btn.compatto` sulle frecce, rimandi ancorati al selettore → unità **07** | **l'utente**, secondo giro di domande |
+| dopo la 02 | 24 | **25** | la corsa critica in `RecensioniElemento` → unità **03** | io |
+| dopo la 03 | 25 | **26** | `Sovrascrivi()` che non controlla il nome → unità **04** | io |
+| dopo la 04 | 26 | **27** | il `<label>` senza controllo → unità **07** | io |
+
+**Chi conta a fine goal conta ventisette**, e le quattro crescite hanno tutte la stessa forma:
+difetto reale trovato da un'unità, rimedio di poche righe, file già dentro un perimetro assegnato.
+**Dalla quinta in poi non si cresce più**: la regola che mi sono dato sta in `DECISIONI`, alla voce
+del `<label>`.
 
 **Non** ne fanno parte la fase 2 (spese ricorrenti) né la fase 2.1-bis (mandato UI/UX): sono fasi
 del piano di prodotto, settimane ciascuna, e una sessione porta un goal solo. La domanda posta
@@ -269,6 +278,35 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
      dove l'argomento è di **costo** è revocabile (ed è stato revocato, nella voce 6); dove è di
      **principio**, revocarlo è una decisione di progetto e non conformità.
 
+- **19 set 2026, dopo l'unità 04** — **Un `<label>` che non etichetta più niente: entra nella 07,
+  ed è l'ultima aggiunta che accetto in questo goal.** Deciso da me. Il ramo di sola lettura che
+  la voce 4 ha introdotto lascia un `<label class="campo">` che contiene un `<p>` invece di un
+  `<input>`: non è invalido e il testo resta leggibile, ma un `<label>` senza controllo associato
+  non fa il proprio mestiere per chi ascolta la pagina. L'unità l'ha **dichiarato invece di
+  tacerlo**, e ha spiegato perché non l'ha fatto: rendere condizionale il contenitore le avrebbe
+  fatto duplicare l'etichetta in entrambi i rami, e il suo mandato vietava di allargarsi sul campo.
+  Il rimedio è **due righe** — un `<div class="campo">` nel ramo che non ha controlli — e cade
+  bene nella 07, che è l'unica unità rimasta a toccare la presentazione.
+  **L'obiettivo passa a 27 clausole, quarta crescita.**
+
+  ⚠️ **E qui mi fermo, con una regola che mi do per iscritto perché non si veda solo a posteriori:
+  da questo punto in poi le voci nuove che le unità aprono vanno nel rapporto finale come candidate
+  per il goal successivo, non nel goal corrente.** Quattro crescite sono il limite oltre il quale
+  «chiudere i punti rimanenti» smette di avere un confine e diventa un lavoro che non finisce: la
+  verifica di copertura esiste per contare contro un numero, e un numero che si muove a ogni
+  resoconto non è un numero. Le quattro accettate hanno tutte la stessa forma — difetto reale,
+  rimedio di poche righe, file già dentro un perimetro assegnato — e la prossima che avrà quella
+  forma andrà comunque nel rapporto.
+
+- **19 set 2026** — **Le altre due osservazioni dell'unità 04 restano come sono, e le confermo.**
+  Il pulsante «Sovrascrivi» di `ItemEdit` resta spento dal solo permesso e non anche dalla validità
+  del nome: l'unità ha applicato **una** delle due protezioni dell'omologo, che è quella che chiude
+  il buco — il nome vuoto non raggiunge più il database — e l'altra avrebbe richiesto di toccare un
+  markup che il suo `NON TOCCARE` proteggeva. Con la sola guardia nel metodo, per giunta, il
+  messaggio d'errore **serve davvero**, mentre nell'omologo è difensivo. E il messaggio che
+  sopravvive alla correzione del campo è la stessa famiglia chiusa dall'unità 03 su `SpesaEdit`,
+  dove a tenerla c'è una decisione di **principio**: riaprirla qui sarebbe stato deciderla da capo.
+
 ## PARTIZIONE
 
 Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -279,10 +317,10 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **FATTO** — integrata su `main` con `c50981a`, worktree e branch rimossi |
 | **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | **FATTO** — integrata con `ab33d92`, pushata, worktree rimosso |
 | **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | **FATTO** — integrata con `e20a059`, pushata, worktree e branch remoto rimossi |
-| **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | PIANIFICATA |
+| **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | **FATTO** — integrata con `6ce6ee3`, pushata, worktree rimosso. **288 test** |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
-| **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor` | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore | 06 | PIANIFICATA |
+| **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor`, **+ due righe di `Pages/SpesaEdit.razor`** | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore, **+ il `<label>` senza controllo** | 06 | PIANIFICATA |
 
 ⚠️ **L'unità 07 revoca un contratto dell'unità 01**, e va detto invece di lasciarlo scoprire: il
 mandato della 01 diceva «`app.css`, tutto il file, e sei l'unico a toccarlo in tutto il goal».
@@ -350,7 +388,7 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **04 igiene-e-importi**, mandato scritto, committato e pushato.
+PROSSIMA AZIONE: aprire l'unità **05 accesso**, mandato scritto, committato e pushato.
 
 Le unità 01, 02 e 03 sono rientrate `FATTO`, auditate e integrate. Tutti i contratti convergono, e
 `Shared/PaginaEditor.cs` è uscito dal goal **senza essere stato aperto in scrittura da nessuno**,
