@@ -39,9 +39,16 @@
 
     <div class="nav-piede">
         <SelettoreSpazio />
+        @* L'etichetta non è visibile qui, ma resta nel documento perché è il nome accessibile di
+           questo collegamento: Shared/Icona.razor tiene il proprio <svg> aria-hidden sempre e non
+           espone alcun parametro per un aria-label, quindi senza questo testo il link sarebbe
+           un'icona senza nome. Per questo non è display: none e lo <span> non è stato cancellato:
+           toglierebbero il testo dall'albero di accessibilità esattamente come lo tolgono dalla
+           vista. È diversa dalla .voce della barra qui sopra, dove l'etichetta è visibile di
+           proposito, e dal gemello in Pages/Home.razor, dove pure lo è. *@
         <a href="profile" class="voce-piede">
             <span class="icona"><Icona Nome="persona" /></span>
-            <span class="etichetta">Profilo</span>
+            <span class="solo-lettori">Profilo</span>
         </a>
     </div>
 </nav>

@@ -302,9 +302,12 @@ else
 
         // I dettagli si gestiscono l'errore da soli, dentro CaricaDettagli: sono accessori, e un
         // loro fallimento non deve far sparire uno spazio che si è caricato benissimo.
+        // È CaricaDettagli, nel proprio finally, ad alzare 'caricato': non lo fa più questo metodo.
+        // Alzarlo qui sarebbe sbagliato se nel frattempo lo spazio è già cambiato di nuovo — il
+        // primo giro di CaricaDettagli è ancora in volo quando l'utente sceglie un altro spazio —
+        // perché rialzerebbe il flag mentre la lettura più recente sta ancora leggendo, lasciando
+        // a schermo "0 membri" e "Ancora nessuna nota" sotto il nome dello spazio nuovo.
         await CaricaDettagli("Spazio caricato");
-
-        caricato = true;
     }
 
     private async Task Riprova()
@@ -342,63 +345,75 @@ else
         // da capo.
         spazioMostrato = Spazi.Attivo?.Id;
 
-        if (Spazi.Attivo is null) return;
-
-        // L'id si cattura UNA volta sola. Rileggere Spazi.Attivo dopo un await interrogherebbe lo
-        // spazio nel frattempo diventato attivo invece di quello per cui la lettura è partita, e
-        // dopo un logout — Dimentica() azzera Attivo — sarebbe direttamente un riferimento nullo.
-        var spazio = Spazi.Attivo;
-
         try
         {
-            var quantiMembri = spazio.IsPersonal ? 0 : (await Repository.MembriAsync(spazio.Id)).Count;
-            if (mia != generazione) return;
+            if (Spazi.Attivo is null) return;
 
-            // Solo le tre più recenti: la Home è un riepilogo, l'elenco completo sta in /notes.
-            // Il limite arriva fino alla query, così non si scaricano mille note per mostrarne tre.
-            var ultime = await NoteRepository.ElencaAsync(spazio.Id, 3);
-            if (mia != generazione) return;
+            // L'id si cattura UNA volta sola. Rileggere Spazi.Attivo dopo un await interrogherebbe lo
+            // spazio nel frattempo diventato attivo invece di quello per cui la lettura è partita, e
+            // dopo un logout — Dimentica() azzera Attivo — sarebbe direttamente un riferimento nullo.
+            var spazio = Spazi.Attivo;
 
-            var ultimeCollezioni = await CollectionRepository.ElencaAsync(spazio.Id, 3);
-            if (mia != generazione) return;
+            try
+            {
+                var quantiMembri = spazio.IsPersonal ? 0 : (await Repository.MembriAsync(spazio.Id)).Count;
+                if (mia != generazione) return;
 
-            // Scritte insieme e solo alla fine: assegnarle man mano lascerebbe a schermo, per tutta
-            // la durata della seconda lettura, il conteggio nuovo accanto alle note vecchie.
-            membri = quantiMembri;
-            note = ultime;
-            collezioni = ultimeCollezioni;
+                // Solo le tre più recenti: la Home è un riepilogo, l'elenco completo sta in /notes.
+                // Il limite arriva fino alla query, così non si scaricano mille note per mostrarne tre.
+                var ultime = await NoteRepository.ElencaAsync(spazio.Id, 3);
+                if (mia != generazione) return;
+
+                var ultimeCollezioni = await CollectionRepository.ElencaAsync(spazio.Id, 3);
+                if (mia != generazione) return;
+
+                // Scritte insieme e solo alla fine: assegnarle man mano lascerebbe a schermo, per tutta
+                // la durata della seconda lettura, il conteggio nuovo accanto alle note vecchie.
+                membri = quantiMembri;
+                note = ultime;
+                collezioni = ultimeCollezioni;
+            }
+            catch (Exception ex)
+            {
+                // La diagnosi sta PRIMA della guardia di generazione, a differenza di quella delle spese
+                // qui sotto: un fallimento già sorpassato da una lettura più recente non deve andare a
+                // schermo — e infatti il return resta — ma nemmeno sparire senza lasciare traccia, o
+                // questo catch sarebbe muto in quel ramo.
+                Console.Error.WriteLine($"[Home] Dettagli dello spazio non letti: {ex.Message}");
+                if (mia != generazione) return;
+                errore = $"{premessa}, ma non è stato possibile leggerne i dettagli: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Ricarica la pagina per riprovare.";
+                dettagliMancanti = true;
+            }
+
+            // Try separato, come i membri in Notes.razor:190: le spese sono un dettaglio a sé, e
+            // metterle nello stesso catch di sopra farebbe sì che un guasto qui dichiari illeggibili
+            // note e collezioni lette benissimo. Un fallimento fa solo sparire la striscia — non è un
+            // errore da mostrare — ma va detto in console, altrimenti resta invisibile.
+            try
+            {
+                var oggi = DateTime.Today;
+                var primoDelMese = new DateTime(oggi.Year, oggi.Month, 1);
+                var ultimoDelMese = primoDelMese.AddMonths(1).AddDays(-1);
+
+                var speseDelMese = await ExpenseRepository.ElencaAsync(spazio.Id, primoDelMese, ultimoDelMese);
+                if (mia != generazione) return;
+
+                riepilogoSpese = CalcoliSpese.PerMese(speseDelMese, oggi.Year, oggi.Month);
+            }
+            catch (Exception ex)
+            {
+                if (mia != generazione) return;
+                Console.Error.WriteLine($"[Home] Spese non disponibili: {ex.Message}");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            // La diagnosi sta PRIMA della guardia di generazione, a differenza di quella delle spese
-            // qui sotto: un fallimento già sorpassato da una lettura più recente non deve andare a
-            // schermo — e infatti il return resta — ma nemmeno sparire senza lasciare traccia, o
-            // questo catch sarebbe muto in quel ramo.
-            Console.Error.WriteLine($"[Home] Dettagli dello spazio non letti: {ex.Message}");
-            if (mia != generazione) return;
-            errore = $"{premessa}, ma non è stato possibile leggerne i dettagli: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Ricarica la pagina per riprovare.";
-            dettagliMancanti = true;
-        }
-
-        // Try separato, come i membri in Notes.razor:190: le spese sono un dettaglio a sé, e
-        // metterle nello stesso catch di sopra farebbe sì che un guasto qui dichiari illeggibili
-        // note e collezioni lette benissimo. Un fallimento fa solo sparire la striscia — non è un
-        // errore da mostrare — ma va detto in console, altrimenti resta invisibile.
-        try
-        {
-            var oggi = DateTime.Today;
-            var primoDelMese = new DateTime(oggi.Year, oggi.Month, 1);
-            var ultimoDelMese = primoDelMese.AddMonths(1).AddDays(-1);
-
-            var speseDelMese = await ExpenseRepository.ElencaAsync(spazio.Id, primoDelMese, ultimoDelMese);
-            if (mia != generazione) return;
-
-            riepilogoSpese = CalcoliSpese.PerMese(speseDelMese, oggi.Year, oggi.Month);
-        }
-        catch (Exception ex)
-        {
-            if (mia != generazione) return;
-            Console.Error.WriteLine($"[Home] Spese non disponibili: {ex.Message}");
+            // Condizionato alla generazione, come Shared/RecensioniElemento.razor fa col flag
+            // 'occupato': se un altro cambio di spazio ha sorpassato questa lettura, 'caricato' non è
+            // più suo — appartiene alla lettura nuova, che lo rilascerà lei. Senza questa
+            // condizione, la lettura sorpassata rimetterebbe a schermo dati azzerati mentre la nuova è
+            // ancora in volo.
+            if (mia == generazione) caricato = true;
         }
     }
 
@@ -434,6 +449,14 @@ else
         InvokeAsync(async () =>
         {
             errore = null;
+
+            // Abbassato e ridisegnato PRIMA dell'await, come Shared/PaginaRegistro.cs fa per le
+            // pagine di registro: senza questo passaggio a schermo resta il render precedente per
+            // intero, coi dati dello spazio vecchio, per tutta la durata del giro di rete. Basta
+            // abbassare il flag perché il markup mostri già il proprio ramo di caricamento — non
+            // serve che questo render veda anche i campi azzerati, che arriveranno con l'await.
+            caricato = false;
+            StateHasChanged();
             await CaricaDettagli("Spazio cambiato");
             StateHasChanged();
         });
