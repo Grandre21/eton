@@ -63,8 +63,8 @@
             </label>
 
             <div class="azioni">
-                <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata)">
-                    @(occupato ? "Salvo…" : "Salva")
+                <button class="btn" @onclick="Salva" disabled="@(occupato || !Cambiata)">
+                    @(occupato ? "Salvo…" : "Salva recensione")
                 </button>
 
                 @if (mia is not null)
@@ -291,7 +291,13 @@
 
         await LeggiRecensori(miaGenerazione);
 
-        caricato = true;
+        // Condizionato alla generazione, come le altre tre uscite di questo file: se un altro
+        // caricamento ha sorpassato questo, 'caricato' non è più suo — appartiene al caricamento
+        // nuovo, che l'ha rimesso a false in cima e lo rilascerà lui. Senza questa condizione, una
+        // lettura sorpassata dichiarerebbe il componente caricato sopra i campi che la lettura nuova
+        // ha appena azzerato qui sotto, e a schermo comparirebbero le recensioni vuote di un
+        // elemento che si sta ancora leggendo.
+        if (miaGenerazione == generazione) caricato = true;
     }
 
     // Quante persone hanno recensito questo elemento. In un try tutto suo, come il blocco dei nomi

@@ -560,6 +560,23 @@ else
     {
         campi.Remove(campo);
         campoDaRimuovere = null;
+        // Come in ApplicaModello: 'campi' è appena cambiato, e un errore di validazione rimasto
+        // acceso nominerebbe un campo di un elenco che non esiste più. La condizione 'Cambiata' del
+        // markup non basta a coprirlo — togliendo l'ultima modifica in sospeso si torna alla
+        // collezione salvata e il riquadro si spegne, ma con un'altra modifica ancora aperta
+        // Cambiata resta vera e il riquadro continua a citare il campo appena tolto.
+        //
+        // Stessa riga, prezzo diverso, e va detto perché il rimando qui sopra non lo faccia sembrare
+        // gratuito: in ApplicaModello 'nome' e 'campi' — le sole due fonti di questa lista, v.
+        // Salva — sono sostituiti entrambi in blocco, quindi nessun errore può restare vero. Qui si
+        // toglie un campo solo, e un secondo campo ancora senza etichetta perde il proprio messaggio
+        // insieme a quello del campo sparito. Si paga lo stesso: gli errori di SchemaCampi.Valida
+        // sono stringhe interpolate senza legame strutturale col campo — e uno non ne nomina nessuno
+        // — quindi filtrarli sarebbe un confronto di sottostringhe; il pulsante Salva resta acceso,
+        // perché Cambiata è ancora vera, e un clic ridà il verdetto completo; e fra un'affermazione
+        // falsa e una mancante questo progetto sceglie la seconda, come fa 'recensori = null' prima
+        // di rileggere in Shared/RecensioniElemento.razor.
+        erroriValidazione = [];
         Rinumera();
     }
 

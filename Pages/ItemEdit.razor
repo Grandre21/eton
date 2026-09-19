@@ -66,6 +66,20 @@ else
     <input class="titolo-grande" type="text" placeholder="Nome dell'elemento" maxlength="200"
            @bind="nome" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
+    @* Calcolata dal valore corrente e non scritta in 'errore' da Salva: un messaggio salvato come
+       stato resterebbe a schermo dopo che l'utente ha corretto il campo, finché non ripreme Salva.
+       Qui la riga si spegne da sé al primo carattere digitato, senza intercettare il @bind — è la
+       forma dei due .errore-campo di Pages/SpesaEdit.razor, sull'importo e sulla data.
+       'Cambiata &&' non è prudenza: su .../items/new il modulo nasce vuoto per costruzione, e
+       accoglierlo con una riga rossa darebbe la colpa di un errore a chi non ha ancora fatto
+       niente. Nel ramo Nuovo le due condizioni si escludono a vicenda — Cambiata È
+       !IsNullOrWhiteSpace(nome) — quindi lì la riga non compare mai, e resta esattamente il caso
+       che la merita: il nome di un elemento esistente svuotato a mano. *@
+    @if (Cambiata && !NomeValido)
+    {
+        <p class="errore-campo">Il nome dell'elemento non può essere vuoto.</p>
+    }
+
     <label class="campo">
         <span class="etichetta-piccola">Immagine (indirizzo)</span>
         <input type="url" maxlength="2000" @bind="immagine" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
@@ -109,7 +123,8 @@ else
 
     @* Perché il pulsante è spento, e solo quando non è già scritto altrove: 'occupato' lo dice il
        pulsante stesso, che intanto legge «Salvo…»; '!PuoIntervenire' lo dice la riga .spiega in
-       cima alla pagina; il conflitto lo dice SchedaConflitto. Resta scoperto solo !Cambiata, che
+       cima alla pagina; '!NomeValido' lo dice la riga .errore-campo sotto il campo del nome; il
+       conflitto lo dice SchedaConflitto. Resta scoperto solo !Cambiata, che
        oggi non lascia niente da leggere e si scopre per tentativi.
        'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero — su .../items/new il
        modulo nasce vuoto per costruzione, e accoglierlo con una riga rossa darebbe la colpa di un
@@ -129,7 +144,7 @@ else
            perché lo stato è davvero diverso da quello di 'elemento'. Ripremerlo risalverebbe con la
            versione vecchia — stesso conflitto, altro giro a vuoto — e scavalcherebbe in silenzio la
            scelta fra Ricarica e Sovrascrivi, che è l'unico modo di uscirne. *@
-        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !PuoIntervenire)">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || !NomeValido || conflitto is not null || !PuoIntervenire)">
             @(occupato ? "Salvo…" : "Salva")
         </button>
         <a class="btn" href="@(occupato ? null : $"collections/{Id}")">Chiudi</a>
@@ -187,6 +202,12 @@ else
     // chiedere "sei tu l'autore?" di un oggetto non creato risponderebbe no, bloccando la creazione.
     private bool PuoIntervenire => Nuovo
         || (elemento is not null && Permessi.PuoIntervenire(mioId, elemento.AddedBy, elemento.SpaceId, Spazi.Elenco));
+
+    // Il vincolo che il database rifiuterebbe comunque — check (length(btrim(name)) between 1 and
+    // 200) — portato davanti al salvataggio, come ImportoValido in Pages/SpesaEdit.razor: farlo
+    // scoprire al database significherebbe un errore Postgres grezzo al posto di un pulsante spento
+    // e di una riga che dice cosa correggere.
+    private bool NomeValido => !string.IsNullOrWhiteSpace(nome);
 
     // Come il pulsante Salva di NoteEdit e CollectionEdit: resta spento finché non c'è niente da
     // salvare. Per un elemento nuovo basta il nome, come negli altri due editor.
@@ -340,15 +361,12 @@ else
         occupato = true; errore = avviso = null; conflitto = null;
         try
         {
-            // Come in CollectionEdit.Salva: su un elemento esistente, svuotare il nome lo rende
-            // diverso da quello salvato, quindi il pulsante Salva si accende. Senza questo
-            // controllo il vincolo check (length(btrim(name)) between 1 and 200) respingerebbe la
-            // scrittura e l'utente leggerebbe un messaggio di Postgres invece di una frase.
-            if (string.IsNullOrWhiteSpace(nome))
-            {
-                errore = "Il nome dell'elemento non può essere vuoto.";
-                return;
-            }
+            // Return muto e non un messaggio in 'errore', come i due di Salva() in
+            // Pages/SpesaEdit.razor: con il pulsante spento da !NomeValido questo punto non si
+            // raggiunge per interazione, e la riga .errore-campo sotto il campo dice già cosa
+            // correggere. Un messaggio scritto qui sarebbe la seconda voce sullo stesso difetto, e
+            // per giunta l'unica delle due a sopravvivere alla correzione del campo.
+            if (!NomeValido) return;
 
             if (Nuovo)
             {
