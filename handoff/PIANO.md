@@ -362,7 +362,7 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17, **+ `Sovrascrivi()` che non controlla il nome** | 03 | **FATTO** — integrata con `6ce6ee3`, pushata, worktree rimosso. **288 test** |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 18 · **9 istruita e non determinata** | 04 | **FATTO** — integrata con `8804763`, pushata. **290 test** |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, **due** servizi nuovi (`AllineatoreProfilo`, `IdentitaGoogle`), `Program.cs`, un call-site in `Services/SupabaseService.cs`, due suite di test | il difetto da `APERTO` | 05 | **FATTO** — integrata con `b3afb1d`, pushata. **310 test** |
-| **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor`, **+ due righe di `Pages/SpesaEdit.razor`** | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore, **+ il `<label>` senza controllo** | 06 | PIANIFICATA |
+| **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor`, `Pages/SpesaEdit.razor` | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore, **+ il `<label>` senza controllo** | 06 | **FATTO** — integrata con `bb77cf7`, pushata. 310 test |
 
 ⚠️ **L'unità 07 revoca un contratto dell'unità 01**, e va detto invece di lasciarlo scoprire: il
 mandato della 01 diceva «`app.css`, tutto il file, e sei l'unico a toccarlo in tutto il goal».
@@ -430,8 +430,28 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **07 pastiglie-e-ancore**, l'ultima del goal, mandato scritto,
-committato e pushato. Poi il **collaudo nel browser**, che è lavoro del capo e non di un'unità.
+PROSSIMA AZIONE: il **collaudo nel browser**, che è lavoro del capo e non di un'unità. Tutte e
+**sette** le unità sono `FATTO`, integrate su `main` e pushate fino a `bb77cf7`.
+
+Il collaudo ha **quattro passi, in quest'ordine**, e l'ordine non è negoziabile:
+
+1. **Server avviato dal capo**, con `handoff/server.md` riscritto: porta, PID di **entrambi** i
+   processi, e il commit su cui gira. Prima `rm -rf obj bin` e ricompila, o il DevServer annuncia
+   asset di build vecchie.
+2. **`live-testing`**, con il brief composto **ricopiando** le misure attese dai sette resoconti —
+   non inventandole. L'unità 07 ha lasciato una tabella di sei schermate, e fra queste un
+   **controllo negativo** che nessun mandato aveva chiesto: su `/spaces` le pastiglie sono `<span>`
+   e **devono restare piccole**. Se crescono, la fusione è colata fuori — ed è l'unica schermata
+   dove si vedrebbe in modo inequivocabile.
+3. **`ui-critic`, solo se `live-testing` torna `ESITO: verde`.** Su una schermata con difetti
+   funzionali non si lancia, per la stessa ragione per cui non si collauda una versione che si sta
+   per correggere.
+4. **La ricognizione mai fatta dell'area voti e recensioni** — la quarta clausola dell'obiettivo.
+   Va **dopo** le altre tre: guarda le stesse schermate che questo goal ha appena cambiato.
+
+Poi la **sessione di chiusura**, che è l'unica a fare la verifica di copertura sulle 27 clausole:
+il §6 vieta di lanciare `coverage` dentro un'unità, e il capo che ha disegnato la partizione è il
+candidato peggiore a trovarne i buchi.
 
 **Le sei unità pianificate sono tutte `FATTO`**, integrate su `main` e pushate, da 287 a **310
 test**, sempre 0 avvisi. Nessuna è tornata `PARZIALE`, nessuna `BLOCKED`.
