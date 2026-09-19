@@ -128,6 +128,25 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   renderebbe finta la regola. **L'unità 01 lo istruisce solo se serve alla voce 6**; altrimenti va
   nel rapporto finale come candidato per il goal successivo.
 
+- **20 set 2026, 00:50 — La voce 2 si spezza in `2a` e `2b`, e la partizione si corregge prima che
+  costi un `BLOCKED`.** Trovato scrivendo il mandato dell'unità 02: la voce «nove controlli senza
+  nome accessibile» tocca **due file che appartengono a due unità diverse** — il cursore del voto
+  sta in `Shared/VotoInput.razor` (unità 02), i cinque menù a tendina e i tre campi delle opzioni
+  stanno in `Pages/CollectionEdit.razor`, che è dell'unità **04** perché lì collide con il selettore
+  di icone della voce 4 e con i tre rimandi scaduti della 20.
+  **Spezzarla è legittimo perché la voce non è un meccanismo ma un insieme**: nove controlli che
+  hanno in comune il difetto, non il codice. `2a` (il cursore) va alla 02, `2b` (i menù e i campi)
+  alla 04. Se fosse stato un meccanismo unico avrei dovuto spostare un file e ripartizionare.
+  ⚠️ **Il conteggio delle clausole non cambia**: restano trentotto, e la 2 vale una sola clausola
+  coperta solo quando **entrambe** le metà sono chiuse. Uno spezzamento che facesse contare due
+  clausole al posto di una sarebbe una crescita mascherata da chiarimento.
+
+- **20 set 2026, 00:50 — Il testo d'aiuto della voce 8 ha un gemello in un file di un'altra
+  unità.** L'aiuto che promette una scelta fra ricaricare e sovrascrivere sta nella testata
+  dell'editor di elemento (unità 02), ma un testo gemello sta nell'editor di collezione, che è
+  dell'unità 04. La 02 corregge il proprio e **dichiara** se il gemello ha lo stesso difetto; la 04
+  lo eredita dal suo resoconto. Nessuna delle due esce dal perimetro.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -136,9 +155,9 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
 | **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **IN CORSO** — aperta il 20 set alle 00:15, con la diagnosi nel browser già in mano |
-| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2**, **7**, **8**, **10**, **26** | 01 | PIANIFICATA |
+| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01 | PIANIFICATA |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
-| **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
+| **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
 | **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
 
 **Non assegnate a un'unità, perché non producono codice** — le fa il capo a ciclo chiuso, con il
