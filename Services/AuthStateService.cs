@@ -43,22 +43,7 @@ public class AuthStateService
     public async Task<string?> GetDisplayNameAsync()
     {
         var client = await _supabase.GetClientAsync();
-        var user = client.Auth.CurrentSession?.User;
-        if (user is null) return null;
-
-        if (user.UserMetadata is not null)
-        {
-            foreach (var chiave in new[] { "full_name", "name" })
-            {
-                if (user.UserMetadata.TryGetValue(chiave, out var valore)
-                    && valore is string s && !string.IsNullOrWhiteSpace(s))
-                {
-                    return s;
-                }
-            }
-        }
-
-        return user.Email;
+        return IdentitaGoogle.NomeDa(client.Auth.CurrentSession?.User);
     }
 
     /// <summary>

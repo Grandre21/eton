@@ -23,6 +23,7 @@ public class SupabaseService
     private readonly NavigationManager _navigation;
     private readonly BrowserSessionHandler _sessionHandler;
     private readonly PkceStore _pkce;
+    private readonly AllineatoreProfilo _profilo;
     private readonly string _urlAuth;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
@@ -31,9 +32,10 @@ public class SupabaseService
     /// <summary>Messaggio dell'ultimo rifiuto del provider, letto da <c>Benvenuto.razor</c>.</summary>
     public string? ErroreAccesso { get; private set; }
 
-    public SupabaseService(IConfiguration configuration, IJSRuntime js, NavigationManager navigation)
+    public SupabaseService(IConfiguration configuration, IJSRuntime js, NavigationManager navigation, AllineatoreProfilo profilo)
     {
         _navigation = navigation;
+        _profilo = profilo;
 
         var url = configuration["Supabase:Url"];
         var anonKey = configuration["Supabase:AnonKey"];
@@ -94,6 +96,9 @@ public class SupabaseService
             return _facade;
         }
 
+        var primoAvvio = false;
+        var dopoAccesso = false;
+
         await _initLock.WaitAsync();
         try
         {
@@ -129,6 +134,9 @@ public class SupabaseService
                     await RinnovaSessioneAsync();
                 }
 
+                primoAvvio = true;
+                dopoAccesso = esito.Codice is not null;
+
                 _initialized = true;
 
                 // 3) Ripulisce l'URL dai parametri OAuth, dopo aver marcato _initialized.
@@ -140,6 +148,12 @@ public class SupabaseService
         {
             _initLock.Release();
         }
+
+        // Fuori dal lock apposta: la scrittura non tocca lo stato di sessione che la sezione
+        // critica serializza, e gli altri chiamanti di GetClientAsync() in coda al primo avvio non
+        // devono aspettare una chiamata di rete che non li riguarda.
+        if (primoAvvio)
+            await _profilo.AllineaAsync(_facade, dopoAccesso);
 
         return _facade;
     }

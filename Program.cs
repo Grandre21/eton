@@ -20,5 +20,6 @@ builder.Services.AddSingleton<CollectionItemRepository>();
 builder.Services.AddSingleton<ReviewRepository>();
 builder.Services.AddSingleton<ExpenseRepository>();
 builder.Services.AddSingleton(sp => new RottaRichiesta((IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>()));
+builder.Services.AddSingleton(sp => new AllineatoreProfilo((IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>()));
 
 await builder.Build().RunAsync();
