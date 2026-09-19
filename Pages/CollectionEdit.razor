@@ -1,7 +1,6 @@
 @page "/collections/new"
 @page "/collections/{Id:guid}/edit"
 @using Eton.Models
-@using Eton.Services
 @inherits PaginaEditor
 @inject CollectionRepository Repository
 @inject SpaceStateService Spazi
@@ -99,7 +98,7 @@ else
         <input class="icona-input" type="text" placeholder="📋" maxlength="16" aria-label="Icona"
                @bind="icona" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
-        @foreach (var emoji in TavolozzaIcone)
+        @foreach (var emoji in SchemaCampi.TavolozzaIcone)
         {
             <button type="button" class="pastiglia @(emoji == icona ? "accesa" : "")" style="font-size: var(--t-lg)"
                     aria-pressed="@(emoji == icona)" @onclick="() => icona = emoji"
@@ -298,22 +297,6 @@ else
     // leggerlo dentro il @foreach del markup ricostruirebbe tutto a ogni ridisegno. Va catturato
     // qui, una sola volta.
     private IReadOnlyList<ModelloCollezione> modelli = [];
-
-    // Le prime tre sono le stesse emoji dei tre modelli predefiniti (Services/SchemaCampi.cs):
-    // tavolozza e modelli devono dire la stessa cosa, e chi parte da "Birre" deve ritrovare 🍺
-    // acceso qui sotto invece di una pastiglia in più che gli somiglia. Sono ricopiate a mano e
-    // non lette da SchemaCampi.Modelli perché il resto dell'elenco non viene da lì e perché
-    // Modelli alloca a ogni accesso (v. il commento lì): se un giorno cambia l'emoji di un
-    // modello va cambiata anche qui, ed è l'unico legame che questo commento tiene in piedi.
-    //
-    // Ventiquattro e non di più: oltre, la fila diventa un catalogo da scorrere invece di una
-    // scelta da guardare, e il campo di testo accanto resta comunque la via per qualunque altra.
-    private static readonly string[] TavolozzaIcone =
-    [
-        "🧪", "🍺", "🎬", "📚", "🎵", "🎮", "🍷", "☕",
-        "🍕", "🌿", "🧴", "👟", "⌚", "📷", "🎧", "🚗",
-        "🎨", "🃏", "🏆", "✈️", "🐾", "🔧", "💿", "📋",
-    ];
 
     // L'id di chi guarda, come mioId in SpesaEdit.razor: stesso pattern, GetUserIdAsync() più
     // Guid.TryParse. Popolato in OnParametersSetAsync e non in OnInitializedAsync, a differenza di

@@ -252,4 +252,33 @@ public static class SchemaCampi
             new CampoDefinizione { Key = "visto_il", Label = "Visto il", Type = "date", Order = 4 },
         ]),
     ];
+
+    /// <summary>Le emoji proposte come icona di una collezione, nell'ordine in cui compaiono nella
+    /// fila di pastiglie dell'editor.
+    /// <para>
+    /// Le prime tre sono, nello stesso ordine, le icone dei tre <see cref="Modelli"/>: chi parte
+    /// dal modello «Birre» deve ritrovare accesa la pastiglia 🍺 già presente, invece di trovarne
+    /// una in più che le somiglia. Sono ricopiate e non derivate da <see cref="Modelli"/> perché
+    /// le altre ventuno non vengono da lì, e concatenare una proiezione dei modelli a un elenco
+    /// scritto a mano costerebbe un'allocazione a ogni accesso senza togliere la copia. Il legame
+    /// non è quindi tenuto in piedi da questo commento: lo asserisce un test in
+    /// <c>SchemaCampiTests</c>, che confronta le due liste fra loro.
+    /// </para>
+    /// <para>
+    /// Ventiquattro e non di più: oltre, la fila diventa un catalogo da scorrere invece di una
+    /// scelta da guardare, e il campo di testo accanto resta comunque la via per qualunque altra.
+    /// </para>
+    /// </summary>
+    // Campo static readonly come TipiAmmessi qui sopra e come CategorieSpesa.Elenco, non proprietà
+    // espressione come Modelli: quella rialloca a ogni accesso di proposito, perché i
+    // CampoDefinizione sono mutabili e un chiamante potrebbe corromperli per tutti (v. il commento
+    // lì). Qui gli elementi sono stringhe, immutabili, e non c'è niente da proteggere: una sola
+    // inizializzazione basta, ed è ciò che rende sicuro leggere questo elenco direttamente dentro
+    // il @foreach del markup, senza catturarlo in un campo come si deve fare con Modelli.
+    public static readonly IReadOnlyList<string> TavolozzaIcone =
+    [
+        "🧪", "🍺", "🎬", "📚", "🎵", "🎮", "🍷", "☕",
+        "🍕", "🌿", "🧴", "👟", "⌚", "📷", "🎧", "🚗",
+        "🎨", "🃏", "🏆", "✈️", "🐾", "🔧", "💿", "📋",
+    ];
 }

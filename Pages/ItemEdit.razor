@@ -1,7 +1,6 @@
 @page "/collections/{Id:guid}/items/new"
 @page "/collections/{Id:guid}/items/{ItemId:guid}"
 @using Eton.Models
-@using Eton.Services
 @inherits PaginaEditor
 @inject CollectionRepository CollectionRepository
 @inject CollectionItemRepository Repository
@@ -463,6 +462,20 @@ else
         occupato = true; errore = null;
         try
         {
+            // Come in Sovrascrivi() di Pages/SpesaEdit.razor, e per la ragione scritta lì: le due
+            // azioni scrivono entrambe nel database e vanno fermate dalla stessa soglia di
+            // validità. Qui il messaggio serve, mentre in Salva() basta il return muto: là il
+            // pulsante è già spento da !NomeValido, qui SovrascriviAbilitato guarda solo il
+            // permesso (Shared/SchedaConflitto.razor, e il suo call-site nel markup), e il campo del
+            // nome resta modificabile a scheda di conflitto aperta. Senza questo messaggio il
+            // pulsante sembrerebbe inerte, e senza il controllo il nome vuoto arriverebbe al
+            // vincolo del database, che risponde con l'errore generico del catch qui sotto.
+            if (!NomeValido)
+            {
+                errore = "Il nome dell'elemento non può essere vuoto.";
+                return;
+            }
+
             // Si risalva con la versione DEL SERVER, non con quella che si aveva in mano: è
             // esattamente ciò che "sovrascrivi" vuol dire — prendere atto che l'altro ha scritto
             // e scriverci sopra lo stesso. Se nel frattempo arriva un terzo salvataggio questo

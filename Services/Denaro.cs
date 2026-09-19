@@ -105,8 +105,21 @@ public static class Denaro
 
     /// <summary>Da <c>1284.50m</c> a «1.284,50»: sempre due decimali, punto come separatore delle
     /// migliaia, virgola come separatore decimale.
-    /// Serve solo per la visualizzazione; in un campo modificabile si usa <see
-    /// cref="TestoDigitabile"/>, perché <see cref="Prova"/> rifiuta il punto delle migliaia.</summary>
+    /// <para>
+    /// È la resa da usare ovunque l'importo si legga soltanto: un totale, una riga d'elenco, un
+    /// campo che chi guarda non può modificare. Per riempire un campo in cui si digita si usa
+    /// <see cref="TestoDigitabile"/>, e la scelta non è di gusto.
+    /// </para>
+    /// <para>
+    /// Sbagliarla ha un costo preciso, già pagato una volta: <see cref="Verifica"/> rifiuta come
+    /// <see cref="EsitoImporto.NonNumerico"/> qualunque stringa con più di un separatore, perché
+    /// non interpreta le migliaia in ingresso. Un importo dal migliaio in su riscritto qui dentro
+    /// e rimesso in un campo torna quindi invalido: l'utente vede un errore su un valore
+    /// che non ha toccato, il pulsante «Salva» resta spento, e la pagina diventa non salvabile
+    /// finché non riscrive l'importo a mano. Sotto i mille euro non succede, ed è ciò che rende
+    /// l'errore difficile da vedere provando.
+    /// </para>
+    /// </summary>
     public static string Testo(decimal importo)
     {
         // Formattando con InvariantCulture si ottiene "1,284.50" (virgola alle migliaia, punto
@@ -121,8 +134,20 @@ public static class Denaro
     }
 
     /// <summary>Da <c>1284.50m</c> a «1284,50»: sempre due decimali, virgola come separatore
-    /// decimale, nessun separatore delle migliaia. Riempie un campo modificabile: ciò che ne esce
-    /// è rileggibile da <see cref="Prova"/>, l'uscita di <see cref="Testo"/> sopra il migliaio no.</summary>
+    /// decimale, nessun separatore delle migliaia.
+    /// <para>
+    /// È la resa da usare per riempire un campo modificabile, e per ogni confronto con ciò che
+    /// quel campo contiene: ciò che ne esce è rileggibile da <see cref="Prova"/> a qualunque
+    /// cifra, mentre l'uscita di <see cref="Testo"/> sopra il migliaio no. Questo metodo esiste
+    /// perché <see cref="Verifica"/> non accetta il separatore delle migliaia in ingresso e non
+    /// deve accettarlo: allargarla sposterebbe la classe di difetto invece di toglierla, perché
+    /// un importo corretto mentre si digita verrebbe rifiutato.
+    /// </para>
+    /// <para>
+    /// Chi legge soltanto l'importo, senza poterlo modificare, usa <see cref="Testo"/>: lì il
+    /// separatore delle migliaia si legge meglio e nessuno dovrà rileggere quella stringa.
+    /// </para>
+    /// </summary>
     public static string TestoDigitabile(decimal importo)
         // Si usa "F2" (fixed-point) e non "N2", che inserisce i gruppi delle migliaia — per questo
         // Testo non va bene in un campo modificabile. InvariantCulture più sostituzione esplicita,
