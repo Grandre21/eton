@@ -430,8 +430,27 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: il **collaudo nel browser**, che è lavoro del capo e non di un'unità. Tutte e
-**sette** le unità sono `FATTO`, integrate su `main` e pushate fino a `bb77cf7`.
+PROSSIMA AZIONE: aprire la **sessione di chiusura**. Il mandato sta in `handoff/CHIUSURA.md`.
+È l'unica a fare la verifica di copertura sulle **27 clausole**: il §6 vieta di lanciare `coverage`
+dentro un'unità, e il capo che ha disegnato la partizione è il candidato peggiore a trovarne i
+buchi.
+
+**Il collaudo è chiuso**, tutti e quattro i passi eseguiti, e il server è **fermo** con la porta
+libera (v. `handoff/server.md`). Gli esiti stanno in `handoff/collaudo/`:
+
+| Passo | Esito |
+|---|---|
+| **Giro A — le misure** | **verde, 7/7**, zero difetti. Il **controllo negativo** è passato: le pastiglie `<span>` di `/spaces` sono ferme a 26,65px |
+| **Giro B — i comportamenti** | **verde, 6/7 eseguiti**. La settima non eseguibile senza un secondo account, **dichiarata e non simulata** |
+| **`ui-critic`** | **5 rilievi**, tutti col valore letto dal DOM. Pavimento passato su tutte e dieci le rotte. Documento: `docs/superpowers/specs/2026-09-19-rilievi-ui-critic.md` |
+| **Ricognizione voti e recensioni** | **5 attriti**, il primo grave e sistemico. Documento: `handoff/collaudo/ricognizione-voti-recensioni.md` |
+
+⚠️ **Nessuno dei dieci rilievi del terzo e quarto passo è stato corretto, ed è una scelta.** Vale
+la regola che mi sono dato dopo la quarta crescita dell'obiettivo: **dalla quinta in poi le voci
+nuove vanno nel rapporto**, non nel goal corrente. Violarla alla prima occasione l'avrebbe resa
+finta — e quei rilievi hanno una destinazione naturale, la fase **2.1-bis** collocata oggi.
+
+**Tre sole cose vanno segnalate all'utente come lavoro suo**, e sono in `APERTO`.
 
 Il collaudo ha **quattro passi, in quest'ordine**, e l'ordine non è negoziabile:
 

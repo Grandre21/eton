@@ -1,7 +1,13 @@
 # Server di sviluppo — collaudo del goal «punti rimanenti», 19 settembre 2026
 
-> **VIVO.** Avviato dal **capo** alle 19 settembre, dopo l'integrazione di tutte e sette le unità.
-> I PID qui sotto sono **attuali**: vanno fermati entrambi a ciclo chiuso.
+> **FERMATO il 19 settembre 2026**, a collaudo completo. Entrambi i PID uccisi, **porta 5000
+> tornata libera** e **nessun processo `dotnet` residuo** — verificato con `Get-NetTCPConnection`
+> e `Win32_Process`, non dedotto. I numeri qui sotto sono **storia**: chi riprende riavvia il
+> server e **riscrive la tabella**, perché i PID cambiano.
+>
+> Il collaudo è **completo**: due giri funzionali verdi, `ui-critic` con cinque rilievi tutti
+> `TIPO: progetto`, e la ricognizione dell'area voti e recensioni — la quarta clausola
+> dell'obiettivo — eseguita. Gli esiti stanno in `handoff/collaudo/`.
 
 - URL: **http://localhost:5000**
 - Ambiente: Development
