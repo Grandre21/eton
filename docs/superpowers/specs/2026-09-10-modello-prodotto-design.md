@@ -271,6 +271,22 @@ di Eton può essere quando è fatto sul serio. È anche l'unico lavoro del piano
 progettato e pianificato: tutte le fasi successive devono ancora passare dal proprio
 `brainstorming → spec → piano`.
 
+### Fase 2.1-bis — Il mandato UI/UX · *settimane · collocata il 19 settembre 2026*
+
+Si apre **dopo la 2.1 e prima della 2.2**, per la decisione 4 del §6, dove stanno le tre ragioni
+per esteso. Non ha ancora né spec né piano: passa dal proprio `brainstorming → spec → piano` come
+ogni altra fase che non sia la 2.1.
+
+| | |
+|---|---|
+| 2.1-bis.1 | La direzione SLY tradotta in decisioni: token, tipografia, luce additiva su nero pieno — non neon |
+| 2.1-bis.2 | Il sistema applicato alle schermate che esistono, `wwwroot/css/app.css` incluso |
+| 2.1-bis.3 | La **2.2** si disegna dentro il sistema nuovo, non prima di esso e non restilizzata dopo |
+
+**Il vincolo che regge anche se la sequenza cambia:** prima della fase 3. La fase 3 costruisce il
+catalogo dei template e moltiplica le schermate; un mandato estetico che arriva dopo lavora su un
+numero di schermate molto maggiore.
+
 ### Fase 3 — I tool gratuiti: template condivisibili · *giorni-settimane · nessun server*
 
 **Questo è il marketplace v1.** I tool gratuiti *sono* i template pubblici.
@@ -387,6 +403,13 @@ correzione proposta dall'agente è sbagliata**: nasconderebbe l'etichetta con `d
 togliendo al link il suo unico nome accessibile. Il file spiega qual è il fix giusto, che il
 progetto già possiede.
 
+**Collocati il 19 settembre 2026.** Tutti e cinque entrano nel goal aperto quel giorno —
+*«vorrei chiudere tutti i punti rimanenti in questa sessione»* — insieme alle altre tredici voci
+del `FUORI SCOPE` della chiusura precedente. Il vincolo «i due globali prima della fase 3» è
+quindi soddisfatto con un margine ampio, e la fase 2.1 non li trova più davanti a sé: cadono
+prima, e `Pages/Spese.razor` e `Pages/Home.razor` — che il task 4 della 2.1 modifica — non si
+contendono più con loro.
+
 ## 5. La linea gratis / a pagamento
 
 Proposta, da confermare alla fase 6.4 sui numeri veri raccolti nella fase 5:
@@ -448,19 +471,41 @@ li fissa invecchia peggio di uno che dice dove guardare. Gli assi su cui confron
    abilita il sostegno mensile, lo si fa sapendo che avvicina la fase 1 alla fase 7, non prima
    di averne parlato con un commercialista.
 
-**4 — La fase dedicata all'interfaccia: manca da questo piano, e va collocata.** L'utente ha
-approvato il **13 agosto 2026** un mandato pieno sulla UI/UX, con la direzione SLY (luce additiva
-su nero pieno, non neon) e il lavoro fatto con un browser vero. **Questo documento non lo
-contiene**, perché nasce dagli appunti del 9 settembre, che parlavano di modello di prodotto.
+### Chiusa il 19 settembre 2026
+
+**4 — La fase dedicata all'interfaccia cade fra la 2.1 e la 2.2.** L'utente ha approvato il
+**13 agosto 2026** un mandato pieno sulla UI/UX, con la direzione SLY (luce additiva su nero
+pieno, non neon) e il lavoro fatto con un browser vero. **Questo documento non lo conteneva**,
+perché nasce dagli appunti del 9 settembre, che parlavano di modello di prodotto.
 
 Non è la stessa cosa dei cinque rilievi di `2026-09-10-rilievi-ui-critic.md`: quelli sono debito
 con un numero, si chiudono in ore e hanno solo un vincolo di collocazione. Il mandato UI/UX è un
 **progetto di settimane** con una direzione estetica da tradurre in decisioni. Le due cose non si
 sostituiscono a vicenda, e infilare la seconda dentro la prima farebbe sparire la più grande.
 
-Va deciso **dove cade nella sequenza**, e chi decide è l'utente. Il rischio se non si decide: la
-fase 3 costruisce il catalogo dei template, la fase 5 i tool con dati esterni, e il mandato UI/UX
-arriva su un numero di schermate molto maggiore di adesso.
+**La collocazione, decisa il 19 settembre 2026.** L'utente ha delegato la scelta — *«lascio la
+scelta a te»* — dopo aver letto la posizione di `tech-advisor`. La fase UI/UX si apre **dopo la
+2.1 (spese ricorrenti) e prima della 2.2 (vista tabellare)**, diventando la **fase 2.1-bis** della
+sequenza. Tre ragioni, in ordine di forza:
+
+1. **La 2.1 ha spec e piano già approvati** (`2026-09-03-spese-ricorrenti-design.md` e il piano da
+   sei task), costruiti sui pattern di oggi e su `PaginaRegistro`/`PaginaEditor`. Aprire la fase
+   UI/UX prima significherebbe invalidare un piano approvato o farlo ripianificare, e la
+   migrazione della 2.1 — l'unico pezzo irreversibile del piano, applicato a mano in produzione —
+   resterebbe ferma ad aspettare una decisione estetica con cui non c'entra.
+2. **La 2.2 è la prima schermata il cui design è ancora aperto.** Il §4 la chiama «il cuore della
+   direzione *puntuale, non da app scema*» e la dà per *da progettare*: è l'unica del piano che si
+   può disegnare **una volta sola**, sotto il sistema nuovo, invece di disegnarla e poi
+   restilizzarla.
+3. **La fase 3 moltiplica le schermate** — lo dice questo stesso documento al §4 — quindi il
+   tetto invalicabile resta «prima della fase 3». «Dopo tutta la fase 2» è una collocazione
+   difendibile, e costa la restilizzazione della tabellare; «dopo la fase 3» no.
+
+`tech-advisor` dà confidenza **media** su questa sequenza, e il motivo va scritto invece che
+taciuto: è una posizione su un progetto che **non ha ancora né spec né piano**, quindi la sua
+dimensione reale non è nota a nessuno. Quando la fase UI/UX passerà dal proprio
+`brainstorming → spec → piano`, questa collocazione va riconfermata sui numeri che ne usciranno,
+non data per acquisita.
 
 ---
 

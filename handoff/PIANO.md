@@ -1,782 +1,294 @@
-# Piano — correggere in sequenza i quindici rilievi della ricognizione
+# Piano — chiudere i punti rimasti aperti dal ciclo dei sedici rilievi
 
-Riscritto il **3 settembre 2026** all'apertura del lavoro. Sostituisce il piano del
-26-27 agosto, i cui due lavori sono chiusi e sul remoto (`3cb5924`, `dc4ca55`); ciò che di
-quel piano resta vincolante è conservato in fondo a questo file.
+Scritto il **19 settembre 2026** all'apertura del goal. Sostituisce il piano del 3 settembre, il
+cui ciclo è chiuso e archiviato in `storico/handoff/PIANO.md` con il suo rapporto
+`storico/handoff/CHIUSURA.md`.
 Autosufficiente: chi riprende non ha bisogno della conversazione da cui nasce.
 
 ## OBIETTIVO
 
-> «io vorrei correggere tutto in sequenza nel prossimo lavoro.»
-> — utente, 3 settembre 2026
+> «vorrei chiudere tutti i punti rimanenti in questa sessione»
+> — utente, 19 settembre 2026
 
-«Tutto» = i sedici rilievi di `handoff/01-ricognizione-ui/rilievi.md` (0-15) più le tre
-pendenze minori elencate in fondo a quel file. Nessuna esclusione dichiarata.
+**La glossa, e perché non è scontata.** «I punti rimanenti» sono ciò che il ciclo precedente ha
+lasciato aperto **dichiarandolo**, non tutto ciò che resta da fare nel progetto. In concreto:
+
+1. le **18 voci** del `FUORI SCOPE — aggregato` di `storico/handoff/CHIUSURA.md`;
+2. la clausola **scoperta** di quel rapporto: la pendenza del **medaglione 📋**;
+3. il difetto dei **profili congelati**, che stava nel campo `APERTO` del piano precedente e non
+   è mai entrato in nessun `FUORI SCOPE`;
+4. la **ricognizione mai fatta** dell'area voti e recensioni, anch'essa da `APERTO`.
+
+**Ventuno clausole.** La colonna «voci» della `PARTIZIONE` dice dove cade ognuna: è la mappa che
+la sessione di chiusura userà per contare coperte e scoperte, e l'unica cosa di questo file che
+non è ricostruibile leggendo i resoconti.
+
+**Non** ne fanno parte la fase 2 (spese ricorrenti) né la fase 2.1-bis (mandato UI/UX): sono fasi
+del piano di prodotto, settimane ciascuna, e una sessione porta un goal solo. La domanda posta
+all'utente il 19 settembre offriva anche quelle due come obiettivo: ha scelto questo.
 
 ## STATO DI PARTENZA
 
-`main` pulito, **0 avanti / 0 indietro** rispetto a `origin/main`, fino a `dc4ca55`.
-Porta 5000 libera, nessun server di sviluppo vivo. I PID annotati in
-`handoff/01-ricognizione-ui/server.md` appartengono a una sessione chiusa il 27 agosto:
-sono storia, non processi da fermare.
+`main` pulito, **0 avanti / 0 indietro** rispetto a `origin/main`, fino a `6b7e8b4`, ultimo
+commit del **10 settembre**. Nove giorni di fermo, nessuna modifica non committata.
+Porta 5000 **libera**, nessun processo `dotnet` vivo: verificato con `Get-NetTCPConnection`, non
+dedotto dal file. I PID annotati in `handoff/server.md` appartengono al collaudo del 10 settembre
+e sono storia.
+
+**I gate, rieseguiti il 19 settembre su `6b7e8b4` prima di aprire qualunque unità**, perché uno
+stato di partenza riportato da un rapporto di nove giorni fa è un fatto citato, non osservato:
+
+    dotnet build -warnaserror --no-incremental → Avvisi: 0   Errori: 0
+    dotnet test                                → Superati: 287   Non superati: 0   Totale: 287
+
+Coincidono con quanto dichiarava il rapporto di chiusura. Chi trova un gate rosso a fine goal
+sa quindi che a romperlo è stato questo lavoro.
 
 ## DECISIONI
 
-*Append-only, datate. L'utente può appendere qui una riga in qualunque momento: ha lo
-stesso peso di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
+*Append-only, datate. L'utente può appendere qui una riga in qualunque momento: ha lo stesso peso
+di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
 
-- **3 set 2026** — Si corregge tutto, in sequenza. Deciso dall'utente.
-- **3 set 2026** — Rilievo 0, posizione di `tech-advisor` (confidenza alta): **solo la
-  migrazione SQL**. La toppa C# (`ignoreOnInsert` su `Blind`) è peggio del problema —
-  sposterebbe il difetto da «non si crea» a «si crea ignorando in silenzio l'interruttore
-  Voto al buio, che il modulo di creazione mostra attivo» — e A+B è contraddittoria.
-  `Models/Collection.cs` **non si tocca**: `ignoreOnInsert` e il grant sono complementari,
-  non ridondanti.
-- **3 set 2026, sera** — **L'utente si è allontanato** dopo aver scritto: «procedi in autonomia
-  fino a completamento, non guardo più il pc». Da qui in avanti **non si fanno domande**: le
-  scelte che sarebbero andate a lui si prendono e si dichiarano in questo campo, col motivo.
-  L'unica eccezione resta l'**SQL di produzione**, che nessun agente esegue: le migrazioni si
-  scrivono, si committano, e si consegnano nel rapporto finale.
-- **3 set 2026, sera** — **Unità 12, decisa da me in autonomia.** L'unità 07 ha trovato un
-  difetto **funzionale bloccante** e preesistente: una spesa da 1.000 € in su non è modificabile
-  da nessuno, perché `Denaro.Testo` produce `"1.284,50"` e `Denaro.Verifica` rifiuta le stringhe
-  con più di un separatore (`Services/Denaro.cs:80`). Il §5 vorrebbe che un rilievo fondato fuori
-  scope andasse all'utente: non c'è, e lasciare in produzione un difetto di questa classe sarebbe
-  peggio che decidere. **Non è risolto di nascosto**: è scritto qui, ha un mandato proprio, e
-  finisce nel rapporto di chiusura.
-  Rimedio scelto — **additivo**: nasce `Denaro.TestoDigitabile`, `Verifica` non si tocca.
-  `tech-advisor` (confidenza alta) concorda e aggiunge il punto che mancava: i call-site sono
-  **quattro**, non tre — il quarto è `Cambiata`, e saltarlo renderebbe la pagina sempre
-  «modificata». Il motivo di fondo: un campo modificabile deve contenere il valore nella
-  grammatica di **input**, non in quella di visualizzazione. Allargare `Verifica` non elimina la
-  classe di difetto, la sposta — «1.284,50» corretto in «1.2845,50» verrebbe rifiutato **mentre
-  si digita un numero valido**.
-  **Sul nome ho deciso contro `tech-advisor`**, che proponeva `TestoPerInput`: il progetto nomina
-  in italiano (`Testo`, `Prova`, `Verifica`), e la coerenza linguistica è un fatto verificabile,
-  non una preferenza.
-- **3 set 2026, sera** — **`SpaceDetail.razor` accodato all'unità 13**, sciogliendo una
-  contraddizione che ha trovato l'**unità 08**, non io: la prosa del RAZIONALE le assegnava le
-  stringhe «Il database ha rifiutato…» di quel file, la MAPPA scritta poche ore prima assegnava
-  il rilievo 3 a «05 + 13», il cui perimetro non lo comprendeva. L'unità ha obbedito al proprio
-  mandato — il più specifico — e l'ha dichiarato invece di allargarsi da sola: era la mossa
-  giusta. Il file ha **cinque** interpolazioni di `ex.Message` che l'utente legge (`:206`,
-  `:236`, `:262`, `:290`, `:316`), più altre quattro che finiscono in console e non c'entrano.
-- **4 set 2026** — **Voce 4 dell'unità 11 (rilievo 8) autorizzata, e il mio mandato sbagliava.**
-  Avevo scritto che aggiungere una classe per allontanare «Elimina» da «Chiudi» «tocca i quattro
-  editor». **Falso**: gli editor non scrivono «Elimina», lo delegano tutti a
-  `Shared/ConfermaAzione.razor` — **un file solo**, cinque call-site. L'unità l'ha verificato e
-  me l'ha detto invece di eseguire un mandato sbagliato o di allargarsi da sola.
-  Ha anche escluso il selettore che sarebbe sembrato ovvio (`.btn.rosso` dentro `.azioni`) con
-  **quattro controesempi**, tutti riverificati dal capo: `Profile.razor:35` («Esci» finirebbe da
-  solo a destra), `SpaceDetail.razor:128` («Sì, elimina» è il primo di due e trascinerebbe
-  «Annulla»), `SchedaConflitto.razor:26` (due scelte gemelle si staccherebbero),
-  `CollectionEdit.razor:187` («Sì, togli» sta in mezzo a una fila).
-  **Rimedio autorizzato**: una classe esplicita `azione-distruttiva` sui due `<button>` del
-  componente, più `.azioni .azione-distruttiva { margin-left: auto; }`. Perimetro esteso a quel
-  solo file.
-- **3 set 2026, sera** — **Unità 16: un difetto di sicurezza vero, trovato dalla 15.**
-  `Services/OAuthCallback.cs:24` legge `error_description` **dalla query, senza validarlo**;
-  `SupabaseService.cs:110` lo assegna tale e quale; `Benvenuto.razor:28` lo rende in un
-  `role="alert"` **sopra il pulsante «Entra con Google»**. Chiunque può costruire
-  `https://<dominio>/?error_description=<testo a piacere>` e mandarlo a qualcuno: il testo compare
-  dentro il riquadro d'errore del **sito legittimo**.
-  **Aperto e verificato dal capo in prima persona**, come il §5 impone per ogni rilievo di
-  sicurezza qualunque sia il verdetto: la catena è quella, i tre punti confermati sul disco.
-  **Non è XSS**, e l'etichetta del report va corretta: Razor codifica `@errore`, quindi niente
-  script né markup. È **content spoofing** — testo di un estraneo dentro il chrome del dominio di
-  fiducia, più credibile di un'email di phishing perché arriva sull'URL vero.
-  Il rimedio è una modifica di **logica** sul flusso di autenticazione, non di stringa, e per
-  questo ha un'unità sua invece di essere accodata: l'unità 15 aveva il divieto esplicito di
-  toccare quel flusso, e ha fatto bene a fermarsi.
-- **3 set 2026, sera** — **Unità 15, e il `grep` che finalmente cerca la cosa giusta.** L'unità 14
-  ha chiuso i dieci punti e ne ha trovato un **undicesimo**, `Services/SupabaseService.cs:194`,
-  che mostra il testo dell'eccezione a un utente **non ancora autenticato**. L'ha trovato
-  cambiando il modo di cercare: non più `ex.Message` — la **sorgente**, che ha un punto cieco
-  perché ogni riga di `Console.Error.WriteLine` legittima la sporca — ma i **sink**, cioè i nomi
-  delle proprietà che finiscono a schermo (`errore`, `avviso`, `ErroreAccesso`, `Messaggio`).
-  **È il `grep` che va usato d'ora in poi**, ed è nel mandato della 15.
-  **In `Services/` questa volta si scrive, e la deroga è motivata**: il divieto delle unità 05,
-  10, 13 e 14 esiste perché dentro un repository sai *quale query* è fallita e non *quale
-  schermata* la stava aspettando. `ErroreAccesso` non è un errore di repository — è una proprietà
-  di stato del servizio di autenticazione, con **una sola** schermata che la mostra. Il mandato
-  chiede all'unità di **verificare** che il consumatore sia uno solo, e di tornare `BLOCKED` se
-  ne trova un secondo.
-- **3 set 2026, sera** — **Unità 14, e il rilievo 3 creduto chiuso per la seconda volta.**
-  L'unità 13 è nata perché il rilievo 3 risultava chiuso essendolo su **una pagina su sei**. La 13
-  ha chiuso quelle sei e, censendo, ne ha trovate **dieci in quattro file ancora aperte** — fra cui
-  **tre in `Shared/PaginaRegistro.cs`, la classe base dei registri**, che si mostrano su *ogni*
-  pagina di elenco. Stesso errore, stessa causa: una mappa *file → unità* dichiara chiuso un
-  rilievo quando è chiuso nel perimetro di chi l'ha toccato.
-  **Il rimedio strutturale, adottato:** il mandato della 14 le chiede di **rifare il `grep`** e di
-  chiudere il resoconto con una sezione «IL RILIEVO 3 È CHIUSO?» che risponda con il conteggio
-  delle occorrenze rimaste. Non basta chiudere i dieci punti: serve la prova che non ce n'è un
-  undicesimo. Le prime due volte la risposta creduta era sbagliata.
-  Nella 14 confluiscono altre due cose trovate dalla 13: la promessa **falsa** di
-  `CollectionEdit:748` («La collezione è ancora al suo posto» — ma `EliminaAsync` fa tre chiamate
-  di rete e l'eccezione può scoppiare dopo la cancellazione riuscita), e cinque `file:line`
-  incrociate che il diff della 13 ha sfasato, da rendere **nominali** e non da rinumerare.
-- **3 set 2026, sera** — **`RecensioniElemento.razor:465` accodato all'unità 13**, una riga sola.
-  Il mandato dell'unità 10 dichiarava quel messaggio — «La tua recensione non c'è più.» — fra i
-  «due già buoni da non toccare». **Era un errore mio**, e l'unità l'ha trovato perché il mandato
-  le chiedeva di verificare invece di fidarsi: le tre righe sopra azzerano `mia`, `mioVoto` e
-  `mioCommento`, quindi il voto e il commento appena digitati spariscono **nello stesso istante**
-  in cui compare il messaggio, che tace la sola cosa da sapere. L'unità ha obbedito al divieto
-  perché nominava la riga — mossa giusta — e ha lasciato la frase pronta. Il divieto è tolto.
-  **La lezione per i mandati futuri**: dichiarare qualcosa «già buono» senza averlo aperto è una
-  scorciatoia del capo che costa un giro. Meglio scrivere «verifica e decidi».
-- **3 set 2026, sera** — **Le unità NON committano: committa il capo.** L'unità 08 ha committato
-  da sé, le unità 06, 07 e 12 no, e nessun mandato lo diceva. Il commit resta al capo perché è
-  l'unico che vede il quadro e scrive nel registro del progetto. Il commit già fatto dalla 08
-  (`bdd858a`) è buono e non si rifà; i mandati successivi lo dicono esplicitamente.
-- **3 set 2026, sera** — **Rilievo 14 assegnato all'unità 11**, che già possiede `app.css`. Non
-  era in nessun perimetro della tabella: la barra laterale è `Shared/Navigazione.razor` +
-  `Shared/SelettoreSpazio.razor`, e il difetto (basi disallineate, 820 contro 838) è
-  presumibilmente CSS puro. L'unità 11 prova col solo foglio di stile e ha i due file in
-  perimetro **solo se non basta**.
-- **3 set 2026** — Rilievo 0, **confermato dall'utente**: migrazione SQL **più** il test
-  statico in `Eton.Tests`. **La migrazione in produzione la esegue l'utente**: nessun agente
-  tocca il database vero.
-- **3 set 2026** — Rilievo 10, **deciso dall'utente**: tavolozza fissa di 16-24 emoji
-  accanto al campo di testo, che **resta** come via d'uscita. Le prime tre coincidono con
-  le emoji dei modelli predefiniti (🧪 🍺 🎬, `SchemaCampi.cs:231,239,247`). Niente
-  componente nuovo: un `static readonly string[]` in `@code` di `CollectionEdit.razor`,
-  un solo call-site. Scartate le SVG di `Shared/Icona.razor`: sono otto icone di
-  interfaccia, nessuna è un soggetto da collezione.
-- **3 set 2026** — Rilievo 7, **deciso dall'utente**: si **nasconde il link** «Gestisci
-  questo spazio» in Home quando lo spazio è personale. Nessuna funzione nuova. La rinomina
-  dello spazio personale il database la permetterebbe, ma è esclusa dall'interfaccia di
-  proposito e resta esclusa.
-- **3 set 2026** — Rilievo 15, **deciso dall'utente**: **non è un difetto, non si corregge.**
-  Si aggiorna il testo del rilievo in `rilievi.md` spiegando perché il caso è chiuso, così
-  nessuno lo riapre fra sei mesi credendolo in sospeso. L'obiettivo scende a **15 rilievi
-  su 16**, dichiarato qui. Motivo: con `forceLoad: true` gli esiti sono due, entrambi
-  onesti — o l'utente è davvero uscito, o `Benvenuto.razor:213` lo rimanda alla Home. Lo
-  schermo che il rilievo descrive non può prodursi.
-- **3 set 2026** — Rilievo 4, adottata la posizione di `tech-advisor` senza domanda perché
-  smonta la premessa del rilievo invece di scegliere fra alternative: «Più tardi» =
-  `banner.hidden = true` e nient'altro, memoria **solo in RAM**. Nessun `sessionStorage`,
-  nessun `localStorage`, nessun timer. `index.html:108` ripropone già il banner a ogni
-  avvio finché il worker è in attesa, e `:116` all'arrivo di una versione più nuova: la
-  differenza fra una X e un «Più tardi» è l'etichetta, non il meccanismo.
-- **3 set 2026** — **La migrazione è stata eseguita in produzione dall'utente.** Il vincolo
-  di collaudo cade: `/collections/{id}`, `/collections/{id}/edit` e
-  `/collections/{id}/items/{id}` tornano raggiungibili, e le unità 04, 05, 09 e 10 sono di
-  nuovo collaudabili nel browser. **Non ancora verificato dal vivo**: la prima cosa che
-  `live-testing` dovrà fare, al primo giro utile, è creare una collezione e vedere che il
-  42501 non compare più. Finché non è visto, resta un fatto riferito, non misurato.
-- **3 set 2026** — Rilievi 1, 2, 12: la **guardia di uscita** diventa una classe base
-  `Shared/PaginaEditor.cs : ComponentBase`, la stessa forma di `PaginaRegistro.cs`.
-  Testata (12) ed esito (2) **non** entrano nell'astrazione: sono quattro applicazioni di
-  `TestataPagina` già esistente e uno spostamento di markup. Premessa corretta da
-  `tech-advisor` contro la doc .NET 10 e il sorgente di `NavigationLock`:
-  `OnBeforeInternalNavigation` **copre anche il tasto Indietro** del browser;
-  `ConfirmExternalNavigation` serve solo per chiusura scheda, ricarica e link esterni.
-- **4 set 2026** — **Il collaudo gira contro il database di PRODUZIONE, e si accetta.** Non
-  c'è alternativa: esiste un solo `wwwroot/appsettings.json`, punta al Supabase cloud, non
-  c'è un `appsettings.Development.json` e **non esiste un account di collaudo** nel codice.
-  Il precedente è già stato accettato dall'utente il 27 agosto, quando la ricognizione lasciò
-  la spesa «PROVA AGENTE» da 12,50 €. Vincoli scritti in `handoff/17-collaudo/ambiente.md` e
-  ripetuti in ogni brief: **nome `COLLAUDO 4 SET`** su tutto ciò che si crea, il minimo
-  indispensabile, **niente cancellazioni di dati che l'agente non abbia creato lui**, e
-  l'elenco di ciò che resta in ogni esito. Lo spazio «Personale» era vuoto: verificato dal
-  capo.
-- **4 set 2026** — **Il browser si sceglie senza chiedere.** Il plugin pretende una domanda
-  all'utente quando trova due Chrome collegati, ed entrambi si dichiarano locali. L'utente non
-  è raggiungibile e **la risposta è già registrata in memoria**: solo
-  `d3148d48-d283-4d4a-a07a-95a77fa72150` vede `localhost`, e i nomi si scambiano a ogni
-  riconnessione, quindi si identifica per `deviceId`. Porre una domanda già risposta a un
-  utente assente fermerebbe il collaudo per niente.
-- **4 set 2026** — **Le tre domande dell'unità 16, decise dal capo.** (a) **L'helper
-  `FraseRifiuto` non si fa ora.** Il codice di autenticazione è la superficie dove un errore
-  costa di più, i gate sono verdi e il collaudo deve provare **questa** forma: cambiarla adesso
-  significherebbe provare una forma che sto per riscrivere. **E il test che lo giustificava è
-  mal specificato**: «ogni valore dell'enum ha una frase» è **vacuo**, perché col ramo `_` ogni
-  valore ha sempre una frase per costruzione. La sola forma che asserisce qualcosa è «ogni
-  valore dichiarato mappa a una frase **distinta dalla generica**», che coglierebbe un quinto
-  valore aggiunto senza tradurlo. Chi riaprirà quel file lo faccia con quella specifica, non
-  con l'altra. (b) **L'URL non più ripulito** nel caso `?error_description=` senza `error`:
-  **nessuna correzione**, l'unità ha ragione. La query resta nella barra perché ce l'ha messa
-  l'attaccante nel link, e la vittima l'ha già letta cliccandolo; una barra degli indirizzi non
-  porta l'autorità del chrome del sito. Ripulirla richiederebbe di riconoscere quell'URL come
-  ritorno OAuth, cioè riaprire il ramo che l'unità chiude. (c) **La prova 4 — l'annullamento
-  vero su Google — non è eseguibile da un agente**: richiede un accesso Google interattivo. Non
-  va nel collaudo, va all'utente nel rapporto finale, con la ricetta già scritta nel resoconto.
-- **4 set 2026** — **L'ottava voce dell'unità 11 non si fa**, deciso dal capo con l'utente
-  assente. Era la rinomina `.scelta-categoria` → `.scelta-pastiglie`: un nome di classe più
-  onesto, che però tocca tre `.razor` fuori dal perimetro di chi possiede il foglio di stile
-  e **non cambia un solo pixel a schermo**. Le altre quindici voci erano difetti che un
-  utente vede; questa è cosmesi di sorgente, e il costo di riaprire tre file per un nome
-  supera il beneficio. Il consiglio resta scritto nel `FUORI SCOPE` del resoconto 11 per chi
-  toccherà quelle pagine per altri motivi.
+- **19 set 2026** — **L'utente ha delegato l'autonomia**, con la formula «se hai domande me le
+  poni subito e poi lavori totalmente in autonomia quanto possibile». Le due domande sono state
+  poste e risposte prima di aprire il goal. Da qui in avanti le scelte che sarebbero andate a lui
+  si prendono e si dichiarano in questo campo, col motivo. Resta l'eccezione permanente:
+  **l'SQL di produzione lo esegue solo lui**. Le migrazioni si scrivono, si committano, e si
+  consegnano nel rapporto finale.
 
-## IL QUARTO ANELLO DEL RILIEVO 0
+- **19 set 2026** — **La fase UI/UX cade fra la 2.1 e la 2.2**, diventando la fase 2.1-bis del
+  piano di prodotto. Decisa da me su delega esplicita dell'utente («lascio la scelta a te»),
+  dopo la posizione di `tech-advisor` (confidenza **media**, e il motivo della riserva è che quel
+  progetto non ha ancora né spec né piano). Le tre ragioni stanno per esteso in
+  `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`, §6 decisione 4, che da oggi è
+  **chiusa**. In sintesi: la 2.1 ha spec e piano già approvati sui pattern di oggi e aprire prima
+  la UI/UX li invaliderebbe; la 2.2 è l'unica schermata il cui design è ancora aperto e si può
+  disegnare una volta sola; il tetto invalicabile resta «prima della fase 3», che moltiplica le
+  schermate.
 
-Trovato da `tech-advisor` il 3 settembre, non era nella ricognizione, e spiega perché il
-difetto è sopravvissuto due settimane senza che nulla diventasse rosso.
+- **19 set 2026** — **Rilievo 1, il grigio: `#8a8a8a`.** Deciso da me. `#808080` è più
+  conservativo ma dà **4,36:1** su `--superficie-alta`, sotto la soglia di 4,5:1, e reggerebbe
+  solo alla condizione «nessuna micro-etichetta poggia mai su quel fondo» — che il documento dei
+  rilievi dichiara *da verificare e non da assumere*. Una correzione che dipende da una condizione
+  non verificata si rompe in silenzio il giorno in cui qualcuno sposta un'etichetta.
+  `#8a8a8a` passa su tutti e quattro i fondi (6,08 / 5,73 / 5,43 / 4,99) senza condizioni.
 
-`supabase/verifica-rls-voto-al-buio.sql` (righe 53-55 e 63-65) inserisce le collezioni con
-`(space_id, owner_id, name)` — **senza `blind`** — e accende il flag con un UPDATE
-separato. Ha collaudato per intero un percorso che l'applicazione non usa. E
-`verifica-rls-collezioni.sql:53-61` verifica i privilegi di INSERT contro un **elenco
-scritto a mano** precedente a `blind`.
+- **19 set 2026** — **Rilievo 3, la colonna: `html { scrollbar-gutter: stable; }`**, non la
+  strada `margin: 0` + `padding-left` fisso. Deciso da me **dopo `doc-checker`**, che ha
+  verificato tre cose sulla fonte e non a memoria: la spec W3C CSS Overflow L3 §4.2 dice che con
+  `stable` la gutter è presente *«regardless of whether the box is actually overflowing»*, cioè
+  esattamente il salto da eliminare; il blog ufficiale WebKit dichiara che la proprietà **non ha
+  alcun effetto con le overlay scrollbar**, che sono il default di sistema su iOS, iPadOS e
+  macOS, quindi **non toglie un pixel sui telefoni**; il supporto è Chrome 94, Firefox 97,
+  Safari 18.2 su macOS e iOS — Baseline da dicembre 2024.
+  Il difetto quindi esiste solo su desktop con scrollbar classiche, e lì la riga lo chiude senza
+  rinunciare alla centratura, che l'altra strada avrebbe dovuto sacrificare.
+  ⚠️ `doc-checker` ha dichiarato **non verificato** il punto «overlay è il default anche su
+  Android»: corroborato solo da conoscenza comune, nessuna fonte ufficiale letta. Non cambia la
+  decisione — se su Android la scrollbar fosse classica, `stable` farebbe lì la stessa cosa utile
+  che fa su Windows — ma non va ricopiato come se fosse confermato.
 
-Conseguenza operativa, da non dimenticare: **i due script di verifica vanno corretti**
-perché inseriscano come inserisce l'app. Restano comunque un controllo manuale con Docker,
-cioè il meccanismo che questo difetto ha già superato una volta.
+- **19 set 2026** — **Rilievo 4, applicato a metà, e la metà è dichiarata.** Deciso da me.
+  *Si applica* all'editor di elemento: due pulsanti che portano entrambi la parola «Salva» e
+  fanno cose diverse sono ambigui a prescindere da qualunque regola di sistema, quindi il secondo
+  diventa «Salva recensione» e perde `primario`. *Non si applica* alla Home: lì i due primari sono
+  scorciatoie gemelle e simmetriche, non due azioni in competizione per lo stesso oggetto, e
+  «un solo primario per vista» è una regola che Eton non ha mai dichiarato. Dichiararla è lavoro
+  della fase 2.1-bis, non di un fix di debito. L'esecutore di `ui-critic` l'aveva già scritto:
+  *«va deciso, non applicato»*.
+  **Conseguenza sulla partizione**, ed è il motivo per cui questa decisione sta qui e non nel
+  mandato: senza di essa `Pages/Home.razor` sarebbe stato conteso da **cinque** gruppi invece che
+  da due.
+
+- **19 set 2026** — **Voce 16, `Denaro.Testo` non si rinomina.** Deciso da me. Il resoconto 12
+  chiedeva che «nessuna delle due sia il default»; la ricognizione ha misurato il costo: **sette**
+  consumatori fuori dai test e **quattordici** asserzioni che nominano i due metodi per nome in
+  `Eton.Tests/DenaroTests.cs`. Una rinomina è quindi un diff largo a guadagno nominale — e il
+  default *giusto* c'è già: `Testo` è la resa di visualizzazione, `TestoDigitabile` è il caso
+  speciale e il suo nome lo dice. Il dubbio si chiude **documentando**: un commento `///` su
+  entrambi i metodi che dica quale usare quando, e perché scegliere l'altro produce il difetto da
+  cui `TestoDigitabile` è nato. Costo: due commenti. Rischio: zero.
+
+- **19 set 2026** — **Profili congelati: si corregge lato client, non con una migrazione.**
+  Deciso da me. La ricognizione ha stabilito il fatto che decide: i privilegi **ci sono già** —
+  `20260811000000_initial_schema.sql:303` concede `update (display_name, avatar_url)` e la
+  policy `profiles_update` a `:232-234` la consente a chi è il proprietario della riga. Non manca
+  un permesso: manca un chiamante. Una correzione client si rilascia **subito**, senza passare
+  dall'unica cosa che in questo progetto richiede l'utente in persona, cioè l'SQL in produzione.
+  **Il limite, dichiarato invece che scoperto dopo:** chi non riapre mai l'applicazione resta col
+  nome vecchio agli occhi degli altri. Un trigger `on_auth_user_updated` coprirebbe anche loro, e
+  resta la strada giusta il giorno in cui si toccherà lo schema per altro — la fase 2.1 lo farà.
+
+- **19 set 2026** — **Voce 6: non c'è niente da revocare, c'è un precedente da rispecchiare.**
+  Deciso da me dopo aver fatto citare il **verbatim** del commento, invece di fidarmi della
+  parafrasi del rapporto di chiusura. Il rapporto (`storico/handoff/CHIUSURA.md:165`) gli
+  attribuiva la frase «il verdetto è dell'ultimo tentativo», che legge come una **decisione di
+  principio**; il testo reale (`Pages/CollectionEdit.razor:209-216`) dice un'altra cosa: azzerare
+  a ogni mutazione *«avrebbe richiesto di intercettare sette punti più tutti i `@bind`»*. È un
+  argomento di **costo**, non di merito, e non sostiene affatto che il riquadro debba restare
+  acceso dopo una rimozione.
+  Nello stesso file, settanta righe più su, `ApplicaModello` (`:481-492`) **azzera già**
+  `erroriValidazione` dentro la mutazione, con un commento che descrive la meccanica identica alla
+  voce 6 — «un errore rimasto acceso nominerebbe un campo di un elenco che non esiste più». Fra
+  quel metodo e `Rimuovi` (`:559-564`), che non azzera, **non esiste motivazione scritta da
+  nessuna parte**.
+  Quindi: `Rimuovi` si allinea ad `ApplicaModello`. **`Shared/PaginaEditor.cs` non si tocca**, e
+  non nasce nessun `AzzeraEsito()`: l'interfaccia nuova che la ricognizione proponeva come
+  possibile non serve. Sul verbatim il fix è una riga; sulla parafrasi sarebbe stata la revoca di
+  una decisione di progetto più una modifica alla classe base che tutto il ciclo precedente ha
+  tenuto nel `NON TOCCARE`.
+
+- **19 set 2026** — **Voce 10: vincolo di costo, e un esito «non si fa» è legittimo.** Deciso da
+  me. La ricognizione ha censito ogni assegnazione nei quattro editor: `errore` si azzera **solo**
+  dentro `Carica`, `Salva`, `Sovrascrivi` ed `Elimina` — mai sul cambio di un campo, in nessuno dei
+  quattro, in nessuna forma. Correggerla nel modo ovvio significa intercettare ogni `@bind`, cioè
+  **esattamente il costo che il progetto ha già valutato e rifiutato per iscritto**.
+  Il vincolo per l'unità: **nessuna intercettazione dei `@bind`**. Se il rimedio non sta in una
+  condizione di render o in un azzeramento dentro una mutazione **già esistente**, la voce si
+  chiude come decisione dichiarata — «non si fa, e questo è il motivo» — e finisce nel rapporto.
+  Una voce chiusa con un motivo è chiusa; una voce chiusa spendendo più di quanto valga, no.
+
+- **19 set 2026** — **Rilievo 2: la testata per schermo stretto non si tocca.** Deciso da me.
+  Il gemello di «Profilo» in `Pages/Home.razor:37-40` tiene l'etichetta **visibile di proposito**,
+  e il commento a `:22-25` dice perché: `Shared/Icona.razor` marca l'`<svg>` `aria-hidden="true"`
+  (`:15`) *«proprio perché conta sempre di trovarsi accanto a un'etichetta di testo visibile»*, e
+  quel componente ha **un solo parametro**, `Nome` (`:82`) — nessun `AriaLabel`, nessun
+  `CaptureUnmatchedValues`, quindi un `aria-label` passato dal call-site verrebbe **scartato in
+  compilazione**. Le due forme divergono per ragioni documentate, e le due classi non si
+  incontrano mai (`app.css:2269` le spegne entrambe dove `.voce-piede` si accende).
+  **Conseguenza sul perimetro:** all'unità 02 di `Home.razor` resta il solo blocco `@code`.
+
+- **19 set 2026** — **Voce 17: chi non può intervenire vede la resa di visualizzazione.** Deciso
+  da me. Oggi nel campo importo di chi non ha il permesso di modificare compare `1284,50`, mentre
+  lo stesso importo nell'elenco è `1.284,50 €`: la differenza esiste perché il campo, anche quando
+  è spento, continua a mostrare la **grammatica di input** — quella che serve a chi digita.
+  Ma un campo che nessuno può toccare non è un campo: è un testo, e un testo segue la grammatica
+  di visualizzazione. Quindi in sola lettura si rende con `Denaro.Testo`, separatore delle
+  migliaia e simbolo compresi, esattamente come l'elenco da cui l'utente ci è arrivato.
+  Questo **non** riapre la voce 16: `TestoDigitabile` resta il formato di chi digita, ed è nato
+  apposta perché `Verifica` rifiutava le stringhe con più di un separatore. Le due rese hanno due
+  pubblici diversi, ed è la ragione per cui esistono entrambe.
 
 ## PARTIZIONE
 
-Definitiva. La numerazione parte da **02** perché `handoff/01-ricognizione-ui/` esiste già:
-i numeri di cartella non si riusano.
+Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
+`FUORI SCOPE — aggregato` di `storico/handoff/CHIUSURA.md`.
 
-| # | Unità | Perimetro | Dipende da | Stato |
+| Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
-| 02 | Privilegio INSERT collezioni | nuova migrazione `supabase/migrations/20260903000000_grant_insert_blind.sql`; `supabase/verifica-rls-collezioni.sql`; `supabase/verifica-rls-voto-al-buio.sql`; `Eton.Tests/PrivilegiInsertTests.cs` | — | **FATTO** — commit `8a1d438`. Gate riverificato dal capo: 267/267, 0 avvisi |
-| 03 | Il contratto degli editor, **e il suo primo consumatore** | `Shared/PaginaEditor.cs` (nuovo), `Pages/NoteEdit.razor` | — | **FATTO** — commit `d101fdf` |
-| 04 | Collezione adotta il contratto, **più il gate di «Chiudi» su NoteEdit** | `Pages/CollectionEdit.razor`, `Pages/NoteEdit.razor` | 03 | **FATTO** — commit `3206150`. Gate riverificato dal capo |
-| 05 | Collezione, i suoi tre rilievi propri **più l'esito di validazione** | `Pages/CollectionEdit.razor`, `Services/CollectionRepository.cs` | 04 | **FATTO** — commit `e139ce8`. Perimetro rifiutato a metà, e aveva ragione: v. RAZIONALE |
-| 06 | Editor Elemento | `Pages/ItemEdit.razor` | 03 | **FATTO** — commit `f4f2dbd`. 0 rilievi da tre revisori, più tre verifiche proprie dell'unità |
-| 07 | Editor Spesa | `Pages/SpesaEdit.razor` | 03 | **FATTO** — commit `4327598`. Quarta e ultima gemella; ha trovato il difetto che diventa l'unità 12 |
-| 08 | Home, spazio, profilo | `Pages/Home.razor`, `Pages/SpaceDetail.razor`, `Pages/Profile.razor` | 03 | **FATTO** — commit `bdd858a`. Ha trovato la contraddizione fra prosa e tabella sul rilievo 3 |
-| 09 | Registri vuoti | `Pages/Notes.razor`, `Pages/Collections.razor` | — | **FATTO** — due righe di codice; ha trovato l'orfano `CollectionDetail.razor`. `ConfermaAzione` tolto dal perimetro: era lì per il rilievo 8, ora dell'unità 11 |
-| 10 | Recensioni | `Shared/RecensioniElemento.razor` | — | **FATTO** — commit `2650dc7`. Da 3 a 8 righe di diagnosi: nessun `catch` muto. Ha smentito il mandato su un messaggio «già buono» |
-| 11 | Foglio di stile, banner PWA **e barra laterale** | `wwwroot/css/app.css`, `wwwroot/index.html`, `Pages/NoteEdit.razor` (voce 5), **`Shared/ConfermaAzione.razor`** (voce 4, autorizzata al rilancio) | tutte | **FATTO** — 7/8 voci, commit `ef61a22` (sei voci) + `d2c9c67` (voce 4, al rilancio). L'ottava è una rinomina cosmetica di classe, chiusa per decisione del capo: v. DECISIONI |
-| 12 | **Una spesa da mille euro in su torna modificabile** | `Services/Denaro.cs`, `Pages/SpesaEdit.razor`, `Eton.Tests/DenaroTests.cs` | 07 | **FATTO** — commit `8a4a89f`. Eseguita fuori numero, subito dopo la 07. 273 test (267+6) |
-| 14 | Dieci punti in quattro file, fra cui la classe base dei registri; la promessa falsa di `CollectionEdit:748`; cinque riferimenti incrociati sfasati | `Pages/Benvenuto.razor`, `Pages/Home.razor`, `Pages/Spaces.razor`, `Pages/Spese.razor`, `Pages/CollectionEdit.razor`, `Shared/PaginaRegistro.cs` | 13 | **FATTO** — commit `b3ca1be`. Ha trovato **l'undicesimo punto** e un'azione suggerita che non produceva nulla |
-| 15 | L'undicesimo punto | `Services/SupabaseService.cs` | 14 | **FATTO** — commit `84217ec`. **Il rilievo 3 è chiuso, con prova**: zero righe sul `grep` dei sink. Ha trovato il difetto che diventa l'unità 16 |
-| 16 | **Content spoofing sul ritorno OAuth** | `Services/OAuthCallback.cs`, `Services/SupabaseService.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 15 | **FATTO** — 287 test (273+14), 0 avvisi, gate riverificati dal capo. Ha chiuso il difetto **per mutazione deliberata**, non per dichiarazione: rimettere la riga originale non fa un test rosso, fa `CS0029` |
-| 13 | **I tre editor rimasti, lo spazio e la collezione: errori tradotti, stato vuoto** | `Pages/NoteEdit.razor`, `Pages/ItemEdit.razor`, `Pages/SpesaEdit.razor`, **`Pages/SpaceDetail.razor`**, **`Pages/CollectionDetail.razor`**, `Shared/RecensioniElemento.razor:465` | 05, 08, 09, 10, 12 | **FATTO** — commit `459a2fc`. 25 frasi, +7 punti oltre i 18 del censimento. Ha scoperto che il rilievo 3 **non era chiuso**: da lei nasce la 14 |
+| **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **IN CORSO** (aperta 19 set, `7232601f`) |
+| **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | PIANIFICATA |
+| **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10 | 01 | PIANIFICATA |
+| **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17 | 03 | PIANIFICATA |
+| **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
+| **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
 
-### MAPPA RILIEVO → UNITÀ
+**I sei mandati sono già scritti**, tutti il 19 settembre, in `handoff/NN-slug/mandato.md`. Un
+capo fresco non deve riscriverli: li apre in ordine, uno per volta, e aggiorna la colonna di
+stato. Sono stati scritti insieme di proposito — dopo una sola ricognizione, con tutti i file
+contesi sul tavolo — perché è in quel momento che si vede chi eredita cosa, e ogni mandato porta
+già l'avvertenza su ciò che l'unità precedente gli avrà spostato sotto i piedi.
 
-*Aggiunta il 3 set 2026 sera. Non c'era, e la sua assenza aveva lasciato **quattro rilievi
-senza proprietario** — scoperti solo censendo prima di scrivere il mandato 09. Chi tocca la
-partizione aggiorna anche questa tabella.*
+**Non assegnate a un'unità, perché non producono codice** — le fa il capo a ciclo chiuso, con il
+server avviato da lui e i PID su disco:
 
-| Rilievo | Unità | Stato |
+| Voce | Cosa | Quando |
 |---|---|---|
-| 0 — creare una collezione è impossibile | 02 | **chiuso** `8a1d438` |
-| 1 — il lavoro non salvato si perde | 03, 04, 06, 07 | **chiuso** su tutti e quattro gli editor |
-| 2 — l'esito compare dove non guardi | 03, 04, 05, 06, 07 | **chiuso** |
-| 3 — il messaggio d'errore è JSON grezzo | 05 + **10** + **13** (sei file) + **14** (altri sei) + **15** (l'undicesimo punto) | **chiuso `84217ec`, con prova**: il `grep` dei sink torna zero righe. Creduto chiuso tre volte prima di esserlo |
-| 4 — l'avviso di aggiornamento non si rimanda | 11 | **chiuso** `ef61a22` — «Più tardi», e la memoria sta solo in memoria |
-| 5 — bersagli categorie alti 22px | 11 | **chiuso** `ef61a22` — una regola, tre pagine, 48px |
-| 6 — «Anteprima» fa saltare il layout di 358px | 11 | **chiuso** `ef61a22` — CSS più una parola tolta al markup della nota |
-| 7 — «Gestisci questo spazio» non gestisce niente | 08 | **chiuso** `bdd858a` |
-| 8 — «Elimina» a 55px da «Chiudi» | 11 (2° giro) | **chiuso** `d2c9c67` — un file, non quattro: gli editor delegano a `ConfermaAzione` |
-| 9 — pulsante spento che non dice cosa manca | 05 (`CollectionEdit`) + **13** (gli altri) + 11 (la metà visiva) | **chiuso** — la metà visiva in `ef61a22`: il blu al 50% restava la cosa più accesa dello schermo |
-| 10 — l'icona è un campo di testo libero | 05 | **chiuso** `e139ce8` |
-| 11 — «Spesa 100%» non dice di essere una categoria | 08 | **chiuso** `bdd858a` |
-| 12 — due schermate non si spiegano | 03-07 (editor) + 08 (`/spaces`, `/profile`) | **chiuso** su tutte |
-| 13 — lo stato vuoto invita all'azione lontano | 09 | **chiuso** `d05416b` — due righe di codice |
-| 14 — selettore spazio e «Profilo» accavallati | 11 | **chiuso** `ef61a22` — l'origine si è stabilita dal codice, non serviva la misura |
-| 15 — logout non riuscito | — | **ritirato**, non era un difetto |
-| *(fuori elenco)* spese ≥ 1.000 € non modificabili | 12 | **chiuso** `8a4a89f` — trovato dall'unità 07 |
-| *(fuori elenco)* content spoofing sul ritorno OAuth | 16 | **chiuso** — trovato dall'unità 15, chiuso col tipo: `Errore` non è più una `string?` |
-
-**Tre assegnazioni decise dal capo il 3 set sera**, perché nessuna era nel piano originale:
-
-- **Rilievo 8 all'unità 11, non agli editor.** `.azioni` è governato da una sola regola
-  (`wwwroot/css/app.css:729`) che vale per tutti e sei i blocchi delle quattro pagine:
-  separare l'azione distruttiva lì la separa ovunque, in un punto solo. Se servisse una classe
-  nuova sul markup, l'unità 11 torna `BLOCKED` e allora — e solo allora — il perimetro si
-  estende agli editor.
-- **Rilievo 6 all'unità 11**, con `Pages/NoteEdit.razor` in perimetro **solo se il CSS non
-  basta**: un'anteprima che fa saltare il layout di 358px è un'altezza che non è riservata,
-  non un difetto di logica.
-- **Unità 13, nuova.** I rilievi 3 e 9 sono stati chiusi dall'unità 05 sul **solo**
-  `CollectionEdit`, che era il suo perimetro. Le sei frasi che traducono l'errore di
-  PostgreSQL e la riga che spiega perché «Salva» è spento **esistono in un posto solo**, e
-  sulle altre tre pagine il JSON grezzo è ancora a schermo — l'unità 07 ne ha contate quattro
-  interpolazioni di `ex.Message` sulla sola `SpesaEdit`. Perimetro: `NoteEdit`, `ItemEdit`,
-  `SpesaEdit`; `CollectionEdit` **si legge come modello e non si tocca**.
-
-**Ordine di esecuzione**, che non coincide con la numerazione: 12 → 08 → 09 → 10 → 13 → **14** → 11 →
-`live-testing` → chiusura. La 13 sta **prima** della 11 perché può accodarle voci di CSS,
-come hanno fatto le unità 04, 05 e 06.
-
-**`CollectionEdit.razor` spezzato in due unità sequenziali, deciso il 3 set 2026.** Il piano
-segnalava già la 04 come «la più grande dell'elenco e la prima candidata a essere
-ripartizionata se torna `PARZIALE`»: ripartizionarla **prima** costa un giro in più e
-risparmia di scoprirlo dopo. Il taglio non è per dimensione ma per **tema**: la 04 fa
-l'adozione del contratto, identica per forma alle unità 06 e 07 sugli altri due editor; la
-05 fa i tre rilievi che appartengono solo a questa pagina. Due unità sullo stesso file non
-si contendono nulla perché sono sequenziali, e la seconda trova la prima già committata.
-
-Copertura dei rilievi: 02→r0 · 03→il contratto, più r1, r2, r12 e P1 su NoteEdit ·
-04→r1, r2, r12 su CollectionEdit, più r3, r9, r10 · 05 e 06→r1, r2, r12 sui rispettivi
-editor · 07→r7, r11, r12 in parte e P2 in parte · 08→r8, r13 · 09→P2 in parte ·
-10→r4, r5, r6, r14, P3.
-
-**Perché la 03 porta anche `NoteEdit.razor`, cambiato il 3 set rispetto alla prima
-stesura.** Un'astrazione con zero call-site non è verificabile: compila, i test passano, e
-che il contratto non si incastri lo scopre il primo consumatore, quando correggerlo tocca
-due unità già chiuse. Il precedente della casa lo conferma — `PaginaRegistro.cs` è nato
-**estraendo** da tre copie esistenti, non in astratto. Se il contratto è sbagliato, ora si
-scopre dentro l'unità che lo produce.
-**r15 non è assegnato a nessuna unità**: deciso di non correggerlo (vedi DECISIONI). Il suo
-testo in `rilievi.md` lo aggiorna il capo, non un'unità: è un documento, non codice.
-
-`Services/AuthStateService.cs` **esce dal perimetro dell'unità 08** rispetto alla bozza
-precedente: era lì solo per r15.
+| **12** | la prova a 360px della coppia «Sì, elimina» / «Annulla» | collaudo, con `live-testing` |
+| **13** | il banner di aggiornamento in condizioni vere | **non chiudibile in sviluppo**: si vede solo sul pubblicato |
+| **4ª clausola** | la ricognizione mai fatta dell'area voti e recensioni | collaudo, dopo che le unità sono rientrate |
 
 ## RAZIONALE
 
-**Perché un'unità 02 che nessun rilievo nomina.** I rilievi 1, 12 e (per costruzione) 2
-sono lo stesso intervento applicato a quattro file. Quattro unità indipendenti
-produrrebbero quattro guardie di uscita divergenti — esattamente il codice quadruplicato
-che `Shared/PaginaRegistro.cs` ha appena finito di smontare in questo progetto. Un'unità
-produce il contratto, tre lo consumano.
+**Il file che ha deciso la partizione non è `app.css`.** L'ipotesi di partenza era che il foglio
+di stile, che in questo progetto ha storicamente un proprietario unico, fosse il collo di
+bottiglia. La ricognizione l'ha smentita con i numeri: `app.css` è conteso da **due** gruppi e per
+**una regola sola** — `.voce-piede` a `:2247-2258`, che i rilievi 2 e 5 colpiscono sui due assi
+diversi (la sovrapposizione orizzontale di 9px e l'altezza di 36px sono la stessa scatola da
+`2.25rem`). `Pages/Home.razor` invece lo volevano **cinque** gruppi.
 
-**File contesi, e a chi vanno.**
+Due decisioni l'hanno sciolto senza spostare un file:
 
-- `wwwroot/css/app.css` è **l'unico** foglio di stile del progetto: non esistono
-  `.razor.css` per le pagine coinvolte. **Lo possiede l'unità 11** e nessun altro — *«unità 10»
-  qui era un residuo della numerazione precedente alla scissione dell'unità 04, corretto il 3
-  set sera; la tabella della PARTIZIONE è sempre stata la fonte giusta.* Le altre unità, se
-  hanno bisogno di stile nuovo, usano classi già esistenti (per esempio `.errore-campo`, già in
-  `app.css:1876`) o stile inline. **Un'unità che scopre di aver bisogno di `app.css` torna
-  `BLOCKED`, non lo modifica**: la voce si accoda a quelle in attesa per l'unità 11.
-- `Shared/TestataPagina.razor` lo **consumano** cinque unità con l'API esistente
-  (`Titolo` / `Aiuto` / `Azione`) e non lo modifica nessuno. Se una scopre di aver bisogno
-  di un'opzione nuova, è un'eccezione che torna al capo — non si risolve nell'unità.
-- Le sei stringhe «Il database ha rifiutato…» vivono in due file di proprietà diversa:
-  `SpaceDetail.razor` all'unità **08**, `RecensioniElemento.razor` all'unità **10**. Vanno
-  tradotte **allo stesso modo**: è un contratto, e il modello ora non è più una descrizione
-  ma **codice da aprire** — le sei frasi che l'unità 05 ha scritto in
-  `Pages/CollectionEdit.razor`, elencate verbatim nel suo resoconto, sezione `CONTRATTI`.
+- il **rilievo 4 non si applica alla Home** (v. `DECISIONI`), e un contendente sparisce;
+- la **voce 16 non rinomina `Denaro.Testo`**, e sparisce il secondo (`Home.razor:114`).
 
-  *(Questi due numeri erano sbagliati fino al 3 set: dicevano 07 e 09, residuo della
-  numerazione precedente alla scissione dell'unità 04. Segnalato dall'unità 05 nel suo
-  `FUORI SCOPE`, punto 4. La **tabella della PARTIZIONE** è sempre stata la fonte giusta, e
-  resta la fonte in caso di dubbio: se una prosa la contraddice, vince la tabella.)*
+Restano due: la testata per schermo stretto (unità 02) e il blocco `@code` del cambio spazio
+(unità 02). Stessa unità: nessuna contesa.
 
-**La proprietà di un file si riassegna quando l'unità che lo teneva chiude.** È il motivo
-per cui `Pages/NoteEdit.razor`, prodotto dell'unità 03, entra nel perimetro dell'unità 04
-per il gate di «Chiudi». La proprietà esclusiva serve a impedire che **due unità vive**
-scrivano lo stesso file; non è un vincolo perpetuo, e trattarla come tale produrrebbe
-un'unità in più per ogni ripensamento. Le unità sono sequenziali: la 03 è chiusa e
-committata, quindi non c'è contesa.
+**`app.css` va tutto all'unità 01, `.voce-piede` compreso.** All'unità 02 resta la sola riga di
+markup di `Navigazione.razor`. Il rilievo 2 lo prevedeva già: *«il quadrato a `var(--tocco)`
+(48px) invece di 2.25rem — che chiude anche il rilievo 5 per questo elemento»*. Un elemento, due
+rilievi, un proprietario.
 
-**L'unità 02 non bloccava le altre**, e ora è chiusa: la migrazione è stata eseguita in
-produzione il 3 settembre, quindi anche il vincolo di **collaudo** è caduto.
-`/collections/{id}/items/{id}` è di nuovo raggiungibile, e il medaglione P3 dell'unità 10
-torna visibile con almeno una collezione in elenco.
+**Le unità 03 e 04 si passano tre file, e la proprietà è nel tempo, non nello spazio.**
+`CollectionEdit`, `ItemEdit` e `SpesaEdit` li tocca prima la 03 (gli esiti di validazione) e poi
+la 04 (l'igiene e il formato degli importi). Non è una violazione del criterio: le unità sono
+sequenziali per regola, e la 04 non parte finché la 03 non è rientrata. È dichiarato qui perché
+un capo fresco che legge solo la tabella vedrebbe due perimetri che si sovrappongono e
+penserebbe a un errore.
 
-**Trappola per l'unità 04.** Ora che il 42501 è chiuso, l'errore del rilievo 3 non è più
-riproducibile da `/collections/new`: per collaudare la traduzione del messaggio serve
-innescare un'altra eccezione Postgrest.
+**Perché la 05 e la 06 sono separate benché tocchino lo stesso file.** `SupabaseService.cs` è il
+file di cucitura: la 05 lo riscrive in profondità (le quattro chiamate a `localStorage`, le due
+frasi, l'estrazione di `FraseRifiuto`), la 06 gli aggiunge **un solo call-site** nel punto in cui
+il bootstrap è concluso. Fonderle significherebbe un'unità che fa due lavori scorrelati in un
+file delicato; separarle costa una sequenza in più e nient'altro.
 
-## CONTRATTO — `Shared/PaginaEditor.cs`
-
-**Firma reale, dal file su disco dopo l'unità 03** (commit dell'unità 03). Prevale sulla
-bozza che il capo aveva scritto prima: divergeva in tre punti, marcati `⚠`. Questa versione
-va nei mandati 04, 05 e 06.
-
-```csharp
-public abstract class PaginaEditor : ComponentBase, IDisposable   // ⚠ IDisposable in più
-{
-    [Inject] private NavigationManager Navigation { get; set; }   // ⚠ private, non protected
-    [Inject] private IJSRuntime JS { get; set; }                  // ⚠ private, non protected
-
-    protected abstract bool Cambiata { get; }
-    protected void Esci(string uri, bool replace = false);
-    protected async Task GuardaUscita(LocationChangingContext ctx);
-    public virtual void Dispose();                                // ⚠ nuovo
-}
-```
-
-**Cosa cambia per chi lo consuma, e va scritto nei loro mandati.**
-
-1. **`Navigation` è `private`: le pagine derivate non la vedono.** Tutti e cinque i
-   `NavigateTo` rimasti nei tre editor sono post-`Crea()` o post-`Elimina()`, quindi
-   diventano `Esci(...)` e nessuno resta scoperto; la riga `@inject NavigationManager
-   Navigation` va tolta. Se un'unità scoprisse di aver bisogno di navigare per altro,
-   **rimette** l'`@inject` nella pagina: con la base `private` questo **non** produce
-   l'avviso CS0108, mentre con `protected` l'avrebbe prodotto rompendo il gate «0 avvisi».
-   È il motivo per cui `private` batte `protected` qui.
-2. **`JS` è `private`**, stessa via del punto 1. Nessuno dei tre editor inietta oggi
-   `IJSRuntime`.
-3. **La base implementa `IDisposable`.** Nessuno dei tre lo implementa oggi: lo ereditano e
-   basta. Se una unità aggiunge una propria pulizia, la forma è
-   `public override void Dispose() { base.Dispose(); … }` — e **`base.Dispose()` non è
-   facoltativo**: senza, la guardia contro la navigazione tardiva smette di funzionare in
-   silenzio.
-
-**Perché esistono `smontata` e `Dispose`** — trovato da `bug-hunter` nell'unità 03, non era
-nel mandato. `NavigationManager` è un **singleton dell'applicazione**: se `Crea()` resta
-sospeso su una chiamata di rete e l'utente intanto esce, il `NavigateTo` tardivo dirotta la
-pagina che sta guardando in quel momento, e fa scattare la guardia di *quella* pagina con
-una domanda fuori contesto. Il difetto **preesisteva** — il codice chiamava `NavigateTo`
-grezzo con lo stesso esito — ma ora c'è un posto solo dove correggerlo per quattro pagine.
-`Esci` esce subito se il componente è smontato: l'oggetto creato resta creato, si abbandona
-solo la navigazione.
-
-### Il gate di «Chiudi» durante un salvataggio — deciso il 3 set 2026
-
-Vale per **tutti e quattro** gli editor, `NoteEdit` compreso, che l'unità 03 ha chiuso senza
-questo pezzo. In tutti e quattro, «Chiudi» è **l'unico** controllo del gruppo `.azioni` che
-non guarda `occupato`: ogni input, «Salva», `SchedaConflitto` e `ConfermaAzione` lo leggono.
-
-**La forma, e la base non c'entra:**
-
-```razor
-<a class="btn" href="@(occupato ? null : "notes")">Chiudi</a>
-```
-
-Il gate sta nel **markup**, nella stessa riga in cui sta quello di «Salva». `PaginaEditor`
-**non deve vedere `occupato`**: costerebbe un membro astratto in più in quattro pagine per
-una finestra di un round-trip.
-
-**Divieto esplicito, ed è la via che un implementer prenderebbe da solo:** non trasformare
-«Chiudi» in un `<button>`. Servirebbe navigare dalla pagina, e l'unica navigazione che la
-base espone è `Esci`, che **disarma la guardia** — un «Chiudi» via `Esci` uscirebbe senza
-chiedere niente, cioè reintrodurrebbe il difetto che questo lavoro sta correggendo.
-
-**Perché non basta dire «tanto la scrittura arriva comunque».** Con esito `Salvata` è solo
-incertezza. Ma con `Conflitto` o `Rifiutata` la modifica **non** è stata scritta, la pagina
-è morta e nessuno lo dirà mai all'utente — che per giunta ha appena letto una domanda («se
-esci le perdi») che gli è sembrata falsa perché aveva premuto Salva. Su `Crea`, uscire
-produce una nota che l'utente crede scartata, e un duplicato al secondo tentativo.
-
-**Verificato da `doc-checker` contro il sorgente di ASP.NET Core 10.0.10** — la versione
-pinnata in `Eton.csproj:36` — e **non va riverificato**. `RenderTreeBuilder.AddAttribute(int,
-string, string?)` chiama `TrackAttributeName` invece di aggiungere il frame quando il valore
-è `null` **e** il target non è un componente: `href` non compare affatto nel markup. Due
-trappole che vengono dallo stesso sorgente e vanno nei mandati:
-
-- **`""` non viene omesso.** La condizione è `value != null`, non un controllo su stringa
-  vuota: un `?? ""` messo per prudenza produrrebbe `href=""`, cioè un link valido **verso la
-  radice dell'applicazione**. Il valore dev'essere letteralmente `null`.
-- **Per `bool` il trigger di omissione è `false`, non `null`.** Le due regole si somigliano
-  ma non sono interscambiabili.
-- Su un **componente** (non un elemento HTML) `null` e `false` non vengono **mai** omessi:
-  sono valori legittimi passati al parametro. Non generalizzare la regola a
-  `<TestataPagina>` e simili.
-
-**Il selettore CSS appartiene all'unità 11**, che possiede `app.css`: la regola a
-`app.css:704` diventa `.btn:disabled, a.btn:not([href]) { … }`. Fino ad allora il link è
-**funzionalmente inerte ma non spento visivamente**: stato intermedio accettabile perché il
-collaudo nel browser avviene alla fine. Se l'unità 10 dimentica quel selettore, resta un
-link che sembra premibile e non lo è — va nel suo mandato come voce esplicita.
-
-**Una crepa nota di `smontata`, da annotare nel commento e non da correggere ora.** I
-quattro editor **riusano l'istanza** sulla stessa rotta con parametro diverso. Andando
-Indietro da `/notes/a` a `/notes/b` mentre un Elimina è in volo, l'istanza è riusata,
-`smontata` resta falso, e l'`Esci` tardivo scarica sull'elenco l'utente appena arrivato su
-b — a guardia disarmata. Perdita reale solo se ha digitato entro il round-trip: finestra
-minuscola. Il commento a `PaginaEditor.cs:56-62` oggi promette più di quanto il codice
-mantenga, ed è quello che va corretto.
-
-**Verificato con `doc-checker` contro il sorgente ASP.NET Core al tag `v10.0.10`** (la
-versione pinnata in `Eton.csproj:36`), e **non va riverificato**: `ComponentFactory` cerca
-le proprietà `[Inject]` con `BindingFlags.Instance | Public | NonPublic` e risale la
-gerarchia livello per livello, quindi le proprietà **`private` di una classe base vengono
-trovate e popolate**. `NonPublic` non distingue `private` da `protected`.
-
-Una riga di markup per editor, dentro il ramo del modulo:
-
-```razor
-<NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
-```
-
-**Perché una classe base e non un componente `<GuardiaUscita Sporca="@Cambiata" />`.** Il
-componente **non funziona**, e non per ragioni di stile: dopo `Crea()` ogni editor chiama
-`NavigateTo` con `Cambiata` **ancora vera**, e fra quella decisione e la navigazione non
-c'è nessun render. Un `[Parameter]` porta il valore catturato all'ultimo render, quindi la
-guardia chiederebbe «hai modifiche non salvate» **subito dopo un salvataggio riuscito**.
-Una classe base legge i campi vivi nell'istante dell'handler.
-
-**Due trappole per i mandati 04, 05 e 06.** (1) I tre editor rimasti hanno già
-`@inject NavigationManager Navigation`: la riga va **tolta**, come fa `PaginaRegistro` con
-`Spazi`. Se una pagina scoprisse di dover navigare per altro, la **rimette** — con la base
-`private` questo non produce CS0108. (2) I `NavigateTo` da sostituire con `Esci(...)` sono
-quelli che seguono `Crea()` ed `Elimina()`, e sono cinque in tutto: due in
-`CollectionEdit`, due in `ItemEdit`, uno in `SpesaEdit`, che non ha `Crea`.
-
-## IL COLLAUDO — deciso il 3 set sera, prima che serva
-
-Le prove nel browser si sono accumulate a **una quarantina** e non stanno in un giro solo. Un
-`live-testing` con quaranta criteri o si ferma a metà o li tratta tutti male.
-
-**Quattro giri tematici, in sequenza e mai in parallelo.** Il browser è una risorsa condivisa:
-due agenti sullo stesso Chrome si pestano, e nessuno dei due se ne accorgerebbe.
-
-| Giro | Cosa prova | Fonte dei criteri |
-|---|---|---|
-| **A — il bloccante** | Creare una collezione funziona davvero. **Non è mai stato misurato**: l'effetto della migrazione è un fatto riportato, non osservato. Se fallisce, tutto il resto aspetta | rilievo 0 |
-| **B — il contratto degli editor** | Guardia d'uscita, testata, esito sopra i pulsanti, gate di «Chiudi», sulle quattro pagine | resoconti 03 (dieci prove), 04 (cinque), 06 (sei), 07 (sei) |
-| **C — testo e messaggi** | Errori tradotti, stati vuoti, i tre rilievi della Home/spazio/profilo, l'importo sopra il migliaio | resoconti 08, 09, 10, 12, 13 |
-| **D — le misure** | Altezze, larghezze, allineamenti, il banner: l'unico lavoro che **non si verifica leggendo il codice** | resoconto 11 |
-
-**Il giro A viene per primo e da solo**, perché è l'unico che può invalidare gli altri: se creare
-una collezione è ancora rotto, le prove su `CollectionEdit` e `ItemEdit` non hanno soggetto.
-
-**L'applicazione la avvia il capo**, annotando porta e PID **su disco** in
-`handoff/server.md` — non in chat, che una compaction cancella lasciando il processo orfano. La
-ferma il capo a ciclo chiuso, **tutti e due i processi**: su Windows la morte del padre non
-uccide il figlio, e il giro dopo si collegherebbe a una build vecchia ancora in ascolto,
-riportando un esito falso.
-
-**Prima di ogni giro il server va riavviato**: dopo un po' di build il server di sviluppo
-annuncia asset che non esistono più.
-
-**Il browser giusto ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`.** Due Chrome sono
-collegati e i nomi si scambiano a ogni riconnessione: si identifica per `deviceId`, e solo
-quello vede `localhost`.
-
-**La cache della PWA non falsa le prove in sviluppo** — il service worker di dev è un no-op
-verificato — e il banner «versione nuova» che riappare lì **non è un difetto**.
-
-## LA CODA DEL FOGLIO DI STILE — esaurita il 4 set 2026
-
-Le quattro voci che le unità 04, 05 e 06 avevano accodato qui, perché `app.css` ha un solo
-proprietario, sono chiuse: le prime tre nei commit `ef61a22` e `d2c9c67`, la quarta per
-decisione dichiarata in `DECISIONI`. Il dettaglio di ognuna sta in
-`handoff/11-foglio-di-stile/resoconto.md`, che è anche la fonte dei criteri del **giro D** del
-collaudo — l'unico lavoro del piano che non si verifica leggendo il codice.
-
-Se un'unità futura ha bisogno di `app.css` e non lo possiede, riapre questa sezione.
+**La quarta chiamata che le 18 voci non contavano.** La voce 8 ne elencava tre; la ricognizione
+ne ha trovata una **quarta**, `SupabaseService.cs:174` (`_pkce.Salva`) dentro
+`AvviaAccessoGoogleAsync`, che non ha alcun `try` — ed è il ramo che l'utente percorre **per
+primo**, premendo «Entra con Google». Entra nel mandato della 05: una voce che si scopre
+incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova
+PROSSIMA AZIONE: attendere il resoconto dell'unità **01 foglio-di-stile**, aperta il 19 settembre
+(`7232601f`). Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` — in particolare la misura del
+medaglione sul **terzo** call-site, che è il punto in cui un numero può essere giusto in due posti
+e sbagliato nel terzo — poi aprire l'unità **02 barra-e-home**, il cui mandato è già scritto in
+`handoff/02-barra-e-home/mandato.md`.
 
-**Chiuso il 10 settembre 2026.** Il rapporto della sessione di chiusura sta in testa a
-**`handoff/CHIUSURA.md`**, integrato su `main` con `182ac0d`: 15 unità su 15 `FATTO`, 19 clausole
-dell'obiettivo coperte su 20, tutti i contratti convergenti, build a 0 avvisi e 287/287 test. La
-clausola scoperta è la pendenza del medaglione 📋, che nessuna unità aveva in mandato. **Un capo che
-rilegge questo file e trova la riga qui sopra ha una mossa sola**: scrivere il messaggio di
-passaggio e terminare. Il prossimo obiettivo lo scrive l'utente, e il suo orizzonte è
-`docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`.
-
-*Quello che segue è storia: lo stato al momento della chiusura, e perché.*
-
-**Il codice è finito e il collaudo è completo.** Stato al **10 settembre 2026**:
-
-| | | |
-|---|---|---|
-| **15 unità** (per **16 rilievi**) | tutte `FATTO` | 287 test, 0 avvisi, `c08bbb3` |
-| **Giro A** — il bloccante | **PASSA** | `4f762e5` |
-| **Giro B** — contratto editor | **PASSA sul provabile**, 19/27 | `8d5f202` |
-| **Giro C** — testo e messaggi | **PARZIALE, zero difetti** | v. `C-esito.md` |
-| **Giro D** — le misure | **PASSA, 7/7, zero difetti** | 10 set, v. `D-esito.md` |
-
-**Zero difetti in tutti e quattro i giri.** I parziali di B e C sono di copertura, mai di
-esito: le otto prove non eseguite del giro B hanno ognuna il proprio motivo, e il giro D ha
-coperto per intero il proprio mandato.
-
-### RIPRENDERE DA QUI, in quest'ordine
-
-1. ~~Riavviare il server e lanciare il giro D.~~ **Fatto il 10 settembre.** Il server è stato
-   riavviato dal capo (PID annotati e poi fermati, v. `handoff/server.md`) e `live-testing` ha
-   restituito `ESITO: verde`, 7 misure su 7.
-2. **`ui-critic` sull'interfaccia resa** — lanciato il 10 settembre subito dopo il giro D, come
-   prescrive il §7 del protocollo su un `live-testing` verde con `app.css` nel diff. Non è un
-   revisore del diff: i suoi rilievi `TIPO: progetto` sono l'ingresso della fase dedicata
-   all'interfaccia.
-3. ~~La sessione di chiusura.~~ **Fatta il 10 settembre**, aperta con `claude --bg` e non con il
-   `claude -p` che il mandato del 4 settembre prescriveva: la decisione del 7 settembre, registrata
-   in `~/.claude/architettura-sessioni.md`, l'ha superato. Ha lavorato in un worktree proprio —
-   `main` era estratto nella sessione del capo — e ha lasciato al capo il fast-forward, fatto con
-   `182ac0d`. Worktree, branch locale e branch remoto rimossi dopo l'integrazione.
-4. **Poi le spese**, che non sono più «un filone parallelo»: sono la **fase 2** del piano di
-   prodotto del 10 settembre — v. `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`.
-
-### IL PIANO DI PRODOTTO HA SOSTITUITO L'ORIZZONTE DI QUESTO FILE
-
-Il 10 settembre l'utente ha aperto un cambio di modello di prodotto, decomposto in **nove fasi**
-in `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`. Questo `PIANO.md` resta la
-verità su **ciò che è stato fatto fino al 10 settembre** e sulle pendenze qui sotto; il *dopo* lo
-governa quel documento. Chi riprende legge prima quello.
-
-Tre decisioni dell'utente del 10 settembre che toccano cose scritte in questo file:
-
-- **Le spese si fanno**, con la direzione «più tabellare, gestione puntuale, non un tool da app
-  scema» — che coincide con la decomposizione già approvata il 3 settembre.
-- **L'applicazione non deve funzionare offline.** Cade il divieto di asset remoti di
-  `README.md:157`, che va riscritto nella fase che introduce la prima immagine remota.
-- **Nessun wrapper desktop** e **nessun proxy verso API arbitrarie**: esclusi con motivo.
-
-### QUATTRO COSE CHE SI SANNO SOLO ADESSO, e che valgono per chi riprende
-
-- **I dialoghi nativi bloccano il plugin**, e con essi la guardia d'uscita: cinque prove su
-  ventisette. È un limite dello strumento, **non aggirabile e non aggirato** — Playwright non si
-  usa, non si installa, non si propone. La prova costa un minuto all'utente ed è scritta come
-  punto 4 di `DA PORTARE ALL'UTENTE` in `CHIUSURA.md`.
-- **Il giro C non ha visto un solo JSON grezzo**: il rilievo 3 è chiuso *dal vivo*, non più solo
-  col `grep`. Le tre frasi d'errore provocate sono uscite verbatim come le unità le avevano
-  scritte.
-- **Le tre prove OAuth dell'unità 16 restano non eseguite**: richiedono di essere disconnessi, e
-  per un agente il logout è irreversibile — non può rientrare con Google. Vanno all'utente
-  insieme all'annullamento vero sulla schermata di Google, che è la prova che chiude il dubbio
-  residuo sulla classificazione.
-- **Esiste un solo spazio, «Personale»**, e questo ha reso non eseguibili gli stati vuoti dei
-  registri e tutto il pannello dello spazio condiviso. Se si vuole coprirli, la prima mossa del
-  prossimo collaudo è **creare un secondo spazio** — che però è un dato vero in produzione, e
-  quindi è una decisione dell'utente, non del capo.
-
-I criteri di accettazione **sono già scritti e non si riscrivono**: dieci in
-`handoff/03-contratto-editor/resoconto.md`, cinque in `handoff/04-collezione-contratto/`
-(prove 1-5), sei in `handoff/06-elemento-contratto/` — queste ultime specifiche di
-`ItemEdit`, con la **prova 6 della 04 esplicitamente non ripetibile** lì. Il resoconto 16 ne
-aggiunge tre col loro URL esatto, fra cui l'unica prova che nessuna lettura può dare: un
-annullamento **vero** sulla schermata di Google.
-
-Dopo il collaudo, la **sessione di chiusura**: il suo prompt e ciò che vale solo per questo
-lavoro stanno già scritti in **`handoff/CHIUSURA.md`** (commit `30ba417`), redatto il 4 set
-mentre l'architettura era ancora nel contesto del capo. Prima di aprirla si riempie il campo
-`ESITO DEL COLLAUDO` in fondo a quel file: finché contiene «da riempire», il collaudo non è
-stato fatto.
-
-Solo allora il filone delle spese ricorrenti, qui sotto.
-
-**Filone parallelo, spese ricorrenti.** Design in
-`docs/superpowers/specs/2026-09-03-spese-ricorrenti-design.md` (commit `c4a56ee`), piano in
-`docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` (commit `03c61e9`): sei task, il
-primo indipendente da tutto. **Parte a rilievi finiti**, non prima, e il motivo non è la
-collisione di file — `SpesaEdit.razor` (unità 07) e `Spese.razor` (task 4) sono diversi. È
-che il **task 6 crea un quinto editor**, `RicorrenteEdit.razor`, che deve adottare lo stesso
-`PaginaEditor` che l'unità 07 sta finendo di provare sulla quarta pagina. Scriverlo prima
-significherebbe adottare un contratto ancora in collaudo, e riaprirlo dopo.
+⚠️ **Sequenziale, mai in parallelo.** Nessuna unità si apre finché la precedente non è rientrata,
+anche quando i perimetri sembrano disgiunti: le unità 03 e 04 si passano tre file, e la 05 e la 06
+se ne passano uno.
 
 ## APERTO
 
-~~Da fare al capo: aggiornare il testo del rilievo 15.~~ **Fatto il 3 set 2026**: la
-sezione è ora «ISTRUITO E CHIUSO — non era un difetto», col ragionamento per esteso e la
-condizione che lo smentirebbe. Non sparisce dall'elenco: un rilievo cancellato senza motivo
-viene riaperto da qualcuno fra sei mesi.
-
-~~Da consegnare all'utente: la migrazione da eseguire in produzione.~~ **Consegnata ed
-eseguita il 3 set 2026.**
-
-**Da riportare all'utente — difetto vero, fuori dai sedici rilievi, trovato dall'unità 08.**
-`profiles.display_name` e `profiles.avatar_url` sono **congelati al primo accesso**:
-`handle_new_user` (`supabase/migrations/20260811000000_initial_schema.sql:187-193`) li scrive con
-`on conflict (id) do nothing`, e **nessun punto dell'applicazione li aggiorna mai** — l'unico
-consumo è in lettura (`Services/SpaceRepository.cs:122-123`). Chi cambia nome o foto su Google li
-vede aggiornati sulla **propria** `/profile`, che legge la sessione viva, ma **gli altri membri
-continuano a vedere quelli del primo accesso, per sempre**. L'unità l'ha scoperto verificando cosa
-poteva onestamente scrivere nell'aiuto, ed è la ragione per cui quell'aiuto **non** promette che
-una correzione fatta su Google arrivi agli altri. Non è nel perimetro di nessuna unità: il rimedio
-sta nel database o in un servizio. **Non l'ho corretto**: è fuori dall'obiettivo «correggere i
-quindici rilievi», e inventarsi un'unità per ogni difetto che spunta trasformerebbe il lavoro in
-un altro lavoro.
-
-**Da proporre all'utente, fuori dall'obiettivo attuale.** La ricognizione del 27 agosto non
-ha mai visto `/collections/{id}`, `/collections/{id}/edit` e `/collections/{id}/items/{id}`
-— cioè **tutta la parte di voti e recensioni**, la più grande del progetto — perché erano
-irraggiungibili. Ora non lo sono più. I quindici rilievi in lavorazione non le riguardano:
-nessuno le ha guardate, quindi nessuno sa se hanno attriti. Non è un buco della partizione,
-è un buco dell'**elenco** da cui la partizione nasce, e colmarlo non rientra in «correggere
-tutto». Proporre un secondo giro di ricognizione **breve** a lavoro finito — non prima: le
-unità in corso cambiano proprio le schermate che andrebbe a guardare.
+**Domande per l'utente — nessuna, al momento.** Le due che c'erano sono state poste e risposte il
+19 settembre prima di aprire il goal.
 
 **Dubbi miei, non ancora domande.**
 
-- L'unità 05 (`CollectionEdit.razor`) raccoglie sei rilievi e ora anche la tavolozza di
-  emoji: è la più grande dell'elenco, 150-250 righe stimate, e la prima candidata a essere
-  ripartizionata se torna `PARZIALE`.
-- La forma del GRANT (`grant insert (blind)` minimale) **devia dal precedente** di
-  `voto_al_buio.sql:109`, che ripete l'elenco completo. `conformity` la segnalerà: la
-  deviazione va dichiarata nel commento della migrazione, non nascosta.
-- `tech-advisor` dà confidenza **media** su un punto del contratto: su iOS Safari/PWA
-  `beforeunload` è notoriamente inaffidabile, quindi la chiusura dell'app sul telefono
-  resta best-effort. Il gesto Indietro, che è il caso frequente, è coperto dall'handler
-  interno. Non è un motivo per cambiare forma, è una cosa da non promettere.
-- Dopo che l'unità 02 chiude il 42501, l'errore del rilievo 3 **non sarà più riproducibile**
-  da `/collections/new`: chi collauda l'unità 05 dovrà innescare un'altra eccezione
-  Postgrest per verificare la traduzione del messaggio.
+- ~~Il contratto `PaginaEditor` e la voce 6: una decisione scritta va revocata.~~ **Istruito e
+  chiuso il 19 settembre**, e l'esito è che non c'era niente da revocare: v. `DECISIONI`. Non
+  sparisce da qui perché il **modo** in cui si è chiuso vale più dell'esito — il rapporto di
+  chiusura ne portava una **parafrasi** che leggeva come decisione di principio, il verbatim dice
+  un'altra cosa, e sulla parafrasi avrei aperto un'unità per modificare la classe base che tutto
+  il ciclo precedente ha tenuto nel `NON TOCCARE`. Chi in futuro trova in un rapporto una frase
+  fra virgolette che giustifica un lavoro grosso, se la faccia citare dal file.
+- **L'unità 04 è la più esposta a tornare `PARZIALE`**: quattro voci su sei file, tre dei quali
+  ereditati dalla 03. È la prima candidata a essere ripartizionata.
+- **La voce 9 (la barra gialla di Blazor) potrebbe non esistere come difetto.** Il giro C l'ha
+  vista a rete bloccata, con `window.fetch` sovrascritto per l'intera pagina: può essere un
+  effetto della simulazione. L'unità 05 la **indaga**, non la corregge per forza — e se conclude
+  che era la simulazione, quello è un esito legittimo, purché porti la riga che lo dimostra.
+- **La voce 13 non si chiude in questo goal e lo so già.** Il banner di aggiornamento in
+  condizioni vere si vede solo sul sito pubblicato. Andrà nel rapporto finale come **rinviata al
+  primo rilascio**, con scritta la prova da eseguire — non come «coperta».
 
 ## FATTI OPERATIVI CHE COSTANO CARI SE DIMENTICATI
 
-Ereditati dal piano precedente, tutti ancora validi.
+Ereditati dal piano precedente, tutti ancora validi. Il dettaglio sta in `handoff/server.md`.
 
-- **Riavvia il server prima di ogni prova nel browser**, e non far compilare nessuno mentre
-  è vivo. Il DevServer legge i manifest degli asset solo al proprio avvio: dopo qualche
-  build annuncia nomi con impronta che non esistono più, e l'app non parte. Rimedio:
-  `rm -rf obj bin`, ricompila, riavvia.
-- **Il server lo avvia e lo ferma l'orchestratore**, annotando porta e PID **su disco**. Su
-  Windows la morte del padre non uccide i figli: `dotnet run` lascia un processo DevServer
-  separato, e vanno fermati **entrambi**.
-- **Gli implementer non compilano.** `obj/` non ha lock fra processi: due build concorrenti
-  sullo stesso `.csproj` si corrompono a vicenda. Compila l'orchestratore, a fine giro.
-- **Il testo accentato non passa per gli argomenti della shell.** `printf`, `echo -e` e
-  `git commit -m` mangiano gli accenti su questo setup. Heredoc quotato, o `git commit -F`
-  su file UTF-8. I file si scrivono con `Write`, che scrive UTF-8 nativamente.
-- **Il Chrome giusto** ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`. Identifica per
-  deviceId, **mai** per nome visualizzato: i nomi si scambiano a ogni riconnessione, e
-  l'altro non raggiunge `localhost`.
-- **Il login su `localhost` non arriva all'agente da solo.** `launchBrowser: true` in
-  `Properties/launchSettings.json` fa aprire a `dotnet run` il browser predefinito di
-  sistema, che è un profilo diverso da quello dell'estensione. Apri **tu** la scheda con
-  `navigate`, poi chiedi all'utente di accedere in quella scheda.
-- **`resize_window` non scende sotto ~526px** su questo PC. Per misurare un layout stretto,
-  restringi il contenitore via JS replicando a mano le media query attive a quella
-  larghezza.
-- **La spesa di prova «PROVA AGENTE»**, 12,50 € del 20 agosto, **la cancella l'utente**.
-  Nessun agente la tocca.
-- **Lo sviluppo gira contro il database vero.** `wwwroot/appsettings.json:3` è l'unico
-  appsettings e punta a `fdqedhgvpneuybtykamf.supabase.co`; non esiste
-  `appsettings.Development.json`. Ogni prova nel browser scrive sui dati reali.
-- **Le `file:line` di `threat-hunter` sono risultate sfasate**, in modo consistente, sul
-  diff dell'unità 04: dava `<PageTitle>` a `:16` e «Chiudi» a `:68` mentre stanno a `:10` e
-  `:201`. I suoi **verdetti** erano corretti e verificabili senza le righe. Regola per le
-  unità successive: accogli i suoi verdetti se reggono per contenuto, ma **non riportare mai
-  un suo numero di riga** in un resoconto o in un commento senza averlo riaperto. Quelle di
-  `conformity` e `bug-hunter` tornano.
-- **Il budget di un'unità si prezza sui giri di protocollo, non sulle righe di diff.**
-  Misurato il 3 settembre: l'unità 02 — una riga di SQL e un test — ha esaurito **4 dollari**
-  completando due obiettivi su tre. Il costo fisso di un'unità (brief, `implementer`,
-  revisori, istruttoria, adjudica) domina quello variabile. Regola pratica ricavata:
-  **≥ 12 $ per un'unità a giro singolo**, di più se i file sono molti o i revisori sono
-  quattro. Un tetto troppo stretto non protegge: fa perdere il lavoro non ancora scritto su
-  disco, e il resoconto è la prima cosa che salta.
-
-## COSA NON VA RI-VERIFICATO
-
-- **La scena del grafo** (`3cb5924`): collaudata su sette scenari, 181 fps, zero difetti.
-  Le tre cose non tarate — dissolvenza dell'occhiello, ultimo 8% della corsa fermo, onda al
-  clic sottile — l'utente ha deciso di **non** toccarle.
-- **La misura di `thewatch.60fps.fr`**: nessuna libreria di animazione, scroll nativo non
-  addolcito, Three.js + WebGL2, 11,77 MB di cui 8,59 per il modello, zero
-  `animation-timeline`. Le sue transizioni CSS sono più semplici di quelle che Eton ha già.
-- **La testata a 360px**: +8,5px di margine sui 328 di area utile nel caso peggiore.
-- **Il disarmo della conferma di eliminazione**: verificato contro la documentazione di
-  .NET 10 e il sorgente del renderer.
-- **Il banner PWA che riappare in sviluppo dopo il clic** non è un difetto:
-  `service-worker.js` è no-op e non ha listener `message`, quindi lo SKIP_WAITING cade nel
-  vuoto; il worker pubblicato il listener ce l'ha (`service-worker.published.js:15-16`).
-  Chi collauda l'unità 10 non ci perda un'ora.
-
-## VINCOLI EREDITATI DALLA SCENA DEL GRAFO — lavoro chiuso, non riaprire
-
-Conservati dal piano precedente perché documentano **perché** la scena è fatta così, e
-restano vincolanti per chiunque ci rimetta mano. L'idea di partenza era un canvas
-`position: fixed` per tutta la vetrina, come fa il sito di riferimento. Fallisce in tre
-modi, tutti verificabili nel codice:
-
-1. **Il grafo è fatto di luce.** `grafo-spazio.js:230` disegna con
-   `globalCompositeOperation = "lighter"`: i colori si sommano al fondo invece di coprirlo.
-   Funziona su nero pieno; su fondo chiaro satura verso il bianco e l'oggetto sparisce. E
-   la vetrina ha una `<section class="spazi chiara">` a fondo chiaro **per scelta
-   documentata** (`Benvenuto.razor:92-95`).
-2. **Il grafo è l'unica cosa toccabile della vetrina**, e ha `pointermove` / `pointerdown`.
-   Un canvas fisso a piena pagina o sta sotto il contenuto con `pointer-events: none` — e
-   perde ciò che lo rende interessante — o sta sopra, e intercetta i click sul pulsante
-   «Entra con Google». Non c'è una terza configurazione.
-3. **Il costo per fotogramma.** Oggi il canvas è grande quanto la sua sezione e si spegne
-   fuori vista. A piena pagina significa full-viewport a `devicePixelRatio` 2, con una
-   `createRadialGradient` per ogni alone a ogni frame, su **CPU** — è Canvas 2D, non il
-   WebGL2 del riferimento.
-
-Vincoli tecnici che restano attivi:
-
-- **Nessuna dipendenza nuova.** `grafo-spazio.js:9-11` lo dichiara per iscritto: il sito sta
-  su GitHub Pages e deve funzionare offline come PWA. Vale per tutto il progetto, e quindi
-  anche per il selettore di icona del rilievo 10.
-- **Non aggiungere altro `animation-timeline`.** Quello che c'è, incapsulato in `@supports`
-  con stato di partenza visibile, è il pattern giusto per decorazione non critica.
-- **`overflow: hidden` su un wrapper alto romperebbe `sticky`.** La sezione della scena non
-  deve averlo.
-- L'`IntersectionObserver` che sospende il ciclo fuori vista **resta valido** e va tenuto.
+- **Riavvia il server prima di ogni prova nel browser**, e non far compilare nessuno mentre è
+  vivo. Il DevServer legge i manifest degli asset solo al proprio avvio: dopo qualche build
+  annuncia nomi con impronta che non esistono più, e l'app non parte.
+- **Il server lo avvia e lo ferma il capo**, annotando porta e PID **su disco**. Su Windows la
+  morte del padre non uccide i figli: `dotnet run` lascia un DevServer vivo, e il giro dopo si
+  collega a una build vecchia ancora in ascolto riportando un esito falso.
+- **Gli implementer non compilano.** `obj/` non ha lock fra processi: due build in parallelo si
+  corrompono a vicenda. Compila il capo, a fine giro.
+- **Il browser giusto ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`.** Due Chrome sono
+  collegati e i nomi si scambiano a ogni riconnessione: si identifica per `deviceId`, e solo
+  quello vede `localhost`.
+- **La cache della PWA non falsa le prove in sviluppo** — il service worker di dev è un no-op
+  verificato — e il banner «versione nuova» che riappare lì **non è un difetto**.
