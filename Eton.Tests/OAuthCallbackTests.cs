@@ -185,4 +185,43 @@ public class OAuthCallbackTests
     // a runtime, con un test che già esiste. A chiudere la porta per sempre è il tipo: Errore è un
     // enum, quindi assegnargli di nuovo una stringa libera è un errore di compilazione (CS0029),
     // non un'eccezione a runtime. Il test presidia le proprietà nuove, il tipo presidia quella vecchia.
+
+    // I test qui sopra e Eton.Tests/TestiTests.cs:120-126 per la mappatura gemella elencano i valori
+    // a mano con [InlineData]: verificano le frasi che ci sono, ma non si accorgerebbero mai di una
+    // che manca. Enum.GetValues verifica l'opposto — che non ne manchi nessuna — ed è l'unico caso
+    // che questo test esiste per prendere: il valore che qualcuno aggiungerà domani all'enumerazione
+    // senza dargli una frase.
+    //
+    // Le due condizioni stanno in un'unica Assert.True perché sono una proprietà sola — "ha una
+    // frase propria" — non due controlli distinti: una stringa vuota (o fatta di soli spazi) non è
+    // né null né uguale alla generica, quindi va esclusa esplicitamente perché non basterebbe
+    // negarne l'uguaglianza. Tenerle unite fa scattare un solo messaggio, e quel messaggio nomina il
+    // valore dell'enumerazione che ha fallito: è l'unica informazione che serve per correggere, dato
+    // che il caso realistico — un valore aggiunto senza un ramo nello switch — cade sul default e
+    // riceve la frase generica, non una stringa vuota.
+    [Fact]
+    public void Ogni_rifiuto_dichiarato_ha_una_frase_propria()
+    {
+        var generica = OAuthCallback.FraseRifiuto(OAuthRifiuto.Generico);
+        Assert.False(string.IsNullOrWhiteSpace(generica));
+
+        // Si escludono per NOME, e sono gli unici due che non possono soddisfare l'asserzione:
+        // Nessuno non è un rifiuto, Generico È la frase generica.
+        var strutturali = new[] { OAuthRifiuto.Nessuno, OAuthRifiuto.Generico };
+
+        foreach (var rifiuto in Enum.GetValues<OAuthRifiuto>().Except(strutturali))
+        {
+            var frase = OAuthCallback.FraseRifiuto(rifiuto);
+            Assert.True(
+                !string.IsNullOrWhiteSpace(frase) && frase != generica,
+                $"{rifiuto} non ha una frase propria: aggiungila in OAuthCallback.FraseRifiuto.");
+        }
+    }
+
+    // Nessuno produce null di proposito, non per dimenticanza: non c'è nessun rifiuto da tradurre, e
+    // questo test è ciò che impedisce a qualcuno di "completarlo" con una frase — un errore d'accesso
+    // mostrato a chi è entrato senza problemi.
+    [Fact]
+    public void Nessun_rifiuto_non_produce_nessuna_frase()
+        => Assert.Null(OAuthCallback.FraseRifiuto(OAuthRifiuto.Nessuno));
 }

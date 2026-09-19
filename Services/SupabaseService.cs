@@ -112,14 +112,7 @@ public class SupabaseService
                     // un'indiscrezione con una cecità.
                     Console.Error.WriteLine($"[Auth] Ritorno da Google rifiutato: {esito.Diagnostica}");
 
-                    ErroreAccesso = esito.Errore switch
-                    {
-                        OAuthRifiuto.Annullato => "L'accesso con Google non è stato autorizzato: sulla schermata di Google il permesso non è stato concesso. Prova di nuovo a entrare con Google e conferma quando te lo chiede.",
-                        OAuthRifiuto.Scaduto => "Non è stato possibile completare l'accesso: l'autorizzazione avviata con Google vale una sola volta e per pochi minuti, e questa non era più valida al ritorno. Prova di nuovo a entrare con Google.",
-                        // Default, non OAuthRifiuto.Generico: un valore nuovo dell'enum deve cadere
-                        // sulla frase generica, non far esplodere lo switch a runtime.
-                        _ => "L'accesso con Google non è riuscito: la richiesta è stata rifiutata, e può essere un problema temporaneo del servizio oppure una condizione del tuo account. Prova di nuovo a entrare con Google fra un momento.",
-                    };
+                    ErroreAccesso = OAuthCallback.FraseRifiuto(esito.Errore);
 
                     _pkce.Cancella();
                 }
@@ -192,7 +185,11 @@ public class SupabaseService
         var verificatore = _pkce.Leggi();
         if (string.IsNullOrEmpty(verificatore))
         {
-            ErroreAccesso = "Accesso non completato: riprova dall'inizio.";
+            // Due cause indistinguibili da qui: dopo la protezione aggiunta a PkceStore.Leggi(),
+            // quel metodo restituisce null sia quando il verificatore è già stato speso, sia quando
+            // l'archiviazione del browser è bloccata. La frase le nomina entrambe invece di
+            // indovinarne una, col lessico che Benvenuto.Accedi già usa per la seconda.
+            ErroreAccesso = "Non è stato possibile completare l'accesso: può essere un ritorno su un collegamento già usato, oppure il browser che non lascia salvare i dati di questo sito — succede con la navigazione anonima o con le impostazioni sulla riservatezza più severe. Prova di nuovo a entrare con Google, e se non basta apri Eton in una finestra normale.";
             return;
         }
 
@@ -200,7 +197,9 @@ public class SupabaseService
         {
             var session = await _auth.ExchangeCodeForSession(verificatore, codice);
             if (session?.User is null)
-                ErroreAccesso = "Accesso non completato: sessione senza utente.";
+                // Causa unica — una risposta anomala del servizio — quindi, a differenza della frase
+                // sopra, questa può essere netta senza indovinare.
+                ErroreAccesso = "Non è stato possibile completare l'accesso: Google ha autorizzato, ma la risposta del servizio di accesso era incompleta. Prova di nuovo a entrare con Google; se si ripete, è un problema del servizio e non qualcosa che puoi correggere tu.";
         }
         catch (Exception ex)
         {
@@ -296,7 +295,7 @@ public class SupabaseService
     /// Un logout che fallisce in silenzio è peggio di uno che fallisce: chi ha premuto "Esci" su un
     /// dispositivo condiviso crede di essere uscito e non lo è.
     /// <para>
-    /// Ogni passo ha il proprio <c>try</c>, e non è pedanteria: raggruppati, il fallimento del primo
+    /// Ogni passo che può lanciare ha il proprio <c>try</c>, e non è pedanteria: raggruppati, il fallimento del primo
     /// saltava i successivi — in particolare <c>LoadSession()</c>, che è l'unico che azzera davvero
     /// la sessione in memoria. <c>SignOut</c> da solo non basta, perché il suo
     /// <c>UpdateSession(null)</c> sta DOPO l'<c>await</c>: con la rete giù non ci arriva mai.
@@ -327,14 +326,10 @@ public class SupabaseService
             Console.Error.WriteLine($"[Auth] Cancellazione della sessione da localStorage fallita: {ex.Message}");
         }
 
-        try
-        {
-            _pkce.Cancella();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[Auth] Cancellazione del verificatore PKCE fallita: {ex.Message}");
-        }
+        // Senza try, e non è una svista: PkceStore.Cancella() raccoglie e registra da sé, come negli
+        // altri due call-site di questo file. Gli altri tre passi restano protetti perché i loro
+        // chiamati — SignOut, DestroySession, LoadSession — lanciano davvero.
+        _pkce.Cancella();
 
         try
         {

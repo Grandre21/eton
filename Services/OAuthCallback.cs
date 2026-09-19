@@ -73,6 +73,28 @@ public static class OAuthCallback
         return new OAuthCallbackEsito(null, OAuthRifiuto.Nessuno, null);
     }
 
+    /// <summary>Traduce <see cref="OAuthRifiuto"/> nella frase da mostrare in pagina.
+    /// Sta accanto all'enumerazione e non in <see cref="Testi"/> perché <see cref="Testi"/> raccoglie
+    /// i testi che compaiono identici in più pagine, e questo ha un solo chiamante; qui, in compenso,
+    /// chi aggiunge un valore all'enumerazione vede nello stesso file la frase che manca.
+    /// È un metodo puro e non uno <c>switch</c> dentro <see cref="SupabaseService"/>: è questo a
+    /// renderlo chiamabile da un test senza un browser, non il file in cui vive.
+    /// <para>
+    /// <see cref="OAuthRifiuto.Nessuno"/> restituisce <c>null</c> di proposito, non per dimenticanza:
+    /// non c'è nessun rifiuto da tradurre, e "completare" questo caso con una frase farebbe comparire
+    /// un errore d'accesso a chi è entrato senza problemi.
+    /// </para>
+    /// </summary>
+    public static string? FraseRifiuto(OAuthRifiuto rifiuto) => rifiuto switch
+    {
+        OAuthRifiuto.Nessuno => null,
+        OAuthRifiuto.Annullato => "L'accesso con Google non è stato autorizzato: sulla schermata di Google il permesso non è stato concesso. Prova di nuovo a entrare con Google e conferma quando te lo chiede.",
+        OAuthRifiuto.Scaduto => "Non è stato possibile completare l'accesso: l'autorizzazione avviata con Google vale una sola volta e per pochi minuti, e questa non era più valida al ritorno. Prova di nuovo a entrare con Google.",
+        // Generico non compare come caso esplicito: sta sul ramo di default, così un valore futuro
+        // dell'enumerazione cade sulla frase generica invece di far esplodere lo switch a runtime.
+        _ => "L'accesso con Google non è riuscito: la richiesta è stata rifiutata, e può essere un problema temporaneo del servizio oppure una condizione del tuo account. Prova di nuovo a entrare con Google fra un momento.",
+    };
+
     private static Dictionary<string, string> LeggiQuery(string uri)
     {
         var risultato = new Dictionary<string, string>(StringComparer.Ordinal);
