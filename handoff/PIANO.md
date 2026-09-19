@@ -147,6 +147,32 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   dell'unità 04. La 02 corregge il proprio e **dichiara** se il gemello ha lo stesso difetto; la 04
   lo eredita dal suo resoconto. Nessuna delle due esce dal perimetro.
 
+- **20 set 2026, 01:30 — La testata della Home esce dal condizionale, e il «?» comparirà anche nei
+  rami «nessuno spazio» ed «errore».** Deciso da me. L'unità 01 aveva segnalato che sposta un
+  comportamento visibile e aveva chiesto che decidesse chi ripartisce, invece di farlo di straforo.
+  **Il motivo non è estetico, è un precedente nello stesso file**: l'intestazione per schermo
+  stretto sta già fuori dal condizionale, e il suo commento avverte che spostarla dentro
+  «riaprirebbe il buco», lasciando chi non ha ancora uno spazio «chiuso fuori senza modo di
+  raggiungere Esci». L'aiuto di schermata è la stessa classe di elemento: è il canale che spiega
+  cosa sta succedendo, e nasconderlo durante il caricamento e negli errori **è** il difetto.
+
+- **20 set 2026, 01:30 — Il doppio montaggio di ogni pagina entra nel goal, e non è una crescita
+  dell'obiettivo.** La regola che mi ero dato alle 00:10 diceva che ci entrava **solo se serviva
+  alla voce 6**. L'unità 01 ha stabilito due cose: che **non è la causa** del difetto sulla Home —
+  lì la causa è la testata nel condizionale — e che **la catena della Home non spiega la
+  riproduzione del 19 settembre sui due editor**, dove la testata è già fuori dal condizionale.
+  Il doppio montaggio, che dismette e ricrea l'intero sottoalbero di pagina, è **l'unico candidato
+  rimasto** per quella metà della voce 6. Serve, quindi entra — e la condizione che mi ero dato è
+  rispettata invece di essere aggirata.
+  **Il conteggio delle clausole non cambia: restano trentotto.** Il montaggio doppio non è una
+  clausola nuova, è parte del rimedio della 6.
+
+- **20 set 2026, 01:30 — Un commento del layout è dimostrato falso, e si riscrive.** Afferma che
+  senza una certa sottoscrizione il layout resterebbe fermo al render iniziale per l'intera
+  sessione; l'unità 01 ha mostrato con quale meccanismo non sia vero. Entra nel lavoro della 01b:
+  un commento falso è peggio di un commento assente, perché chi lo legge non tocca il codice
+  credendo di romperlo.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -154,8 +180,9 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
-| **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **IN CORSO** — aperta il 20 set alle 00:15, con la diagnosi nel browser già in mano |
-| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01 | PIANIFICATA |
+| **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **PARZIALE** — integrata con un merge il 20 set. **Voce 9 chiusa**; **voce 6 diagnosticata e passata alla 01b**, perché la causa sta in un file fuori dal suo perimetro. È il `PARZIALE` previsto dal punto 3 del suo tetto |
+| **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | PIANIFICATA |
+| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | PIANIFICATA |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
 | **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
@@ -217,10 +244,15 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: attendere il resoconto dell'**unità 01**, aperta alle 00:15 del 20 settembre.
+PROSSIMA AZIONE: attendere il resoconto dell'**unità 01b home-e-montaggio**. Il mandato sta in
+`handoff/01b-home-e-montaggio/mandato.md` ed è già scritto.
 Al suo rientro: audita `CONTRATTI` e `SCOSTAMENTI`, integra su `main`, **riavvia il server** — è
-vivo e servirebbe la build vecchia — e apri l'**unità 02 voti-e-recensioni**, il cui mandato va
-ancora scritto.
+vivo e servirebbe la build vecchia — e apri l'**unità 02 voti-e-recensioni**, il cui mandato è già
+scritto in `handoff/02-voti-e-recensioni/mandato.md`.
+
+⚠️ **La 02 va aggiornata prima di aprirla** se la 01b ha toccato il modo in cui il sottoalbero di
+pagina viene ricostruito: il suo campo `STATO` nomina l'unità 01, e dopo la 01b va nominata anche
+lei.
 
 ⚠️ **Prima di aprire ogni unità: committare piano e mandato, e POI PUSHARE.** Il worktree
 dell'unità nasce da `origin/main`, non da `main` locale: committare non basta. Misurato dall'unità
