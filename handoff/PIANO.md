@@ -176,7 +176,7 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
-| **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **IN CORSO** (aperta 19 set, `7232601f`) |
+| **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **FATTO** — integrata su `main` con `c50981a`, worktree e branch rimossi |
 | **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | PIANIFICATA |
 | **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10 | 01 | PIANIFICATA |
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17 | 03 | PIANIFICATA |
@@ -241,11 +241,15 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: attendere il resoconto dell'unità **01 foglio-di-stile**, aperta il 19 settembre
-(`7232601f`). Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` — in particolare la misura del
-medaglione sul **terzo** call-site, che è il punto in cui un numero può essere giusto in due posti
-e sbagliato nel terzo — poi aprire l'unità **02 barra-e-home**, il cui mandato è già scritto in
-`handoff/02-barra-e-home/mandato.md`.
+PROSSIMA AZIONE: aprire l'unità **02 barra-e-home**, il cui mandato è già scritto e committato.
+L'unità 01 è rientrata `FATTO`, auditata e integrata: i cinque contratti convergono, e la 02
+trova `.solo-lettori` invariata e `.voce-piede` col selettore dove se lo aspetta.
+
+**Cosa ha lasciato la 01, e che la 02 deve sapere:** la sovrapposizione di «Profilo» sul selettore
+di spazio è **diminuita ma non chiusa** — il contenuto del link misura 53px, e con la scatola a
+48 sborda ancora di 2,5px per lato (erano 8,5 con la scatola a 36). Si chiude **solo** quando la
+02 porta l'etichetta a `.solo-lettori`: allora il contenuto resta la sola icona da 22px dentro 48.
+È la misura che il collaudo dovrà ritrovare a zero.
 
 ⚠️ **Sequenziale, mai in parallelo.** Nessuna unità si apre finché la precedente non è rientrata,
 anche quando i perimetri sembrano disgiunti: le unità 03 e 04 si passano tre file, e la 05 e la 06
@@ -253,8 +257,42 @@ se ne passano uno.
 
 ## APERTO
 
-**Domande per l'utente — nessuna, al momento.** Le due che c'erano sono state poste e risposte il
-19 settembre prima di aprire il goal.
+**Domande per l'utente — quattro, aperte dall'unità 01 e da porre insieme a fine goal.** Le due
+iniziali sono state poste e risposte il 19 settembre prima di aprire il goal; queste nascono dal
+lavoro e nessuna è urgente. Si pongono **insieme**, nel riporto cumulativo, non una alla volta.
+
+1. **`TIPO: progetto` — le tre regole di pastiglia andrebbero fuse in `button.pastiglia`.**
+   Fondato nel merito, e il fatto che lo regge è stato riverificato dall'unità: i
+   `<button class="pastiglia">` sono **sei**, tutti dentro uno dei tre contenitori; i quattro
+   `<span class="pastiglia">` stanno tutti in righe di elenco e nessuno verrebbe agganciato.
+   Sostituirebbe un selettore **di luogo** con uno **di condizione semantica** ed eliminerebbe due
+   regole. Non fatto perché tocca regole che il mandato proteggeva e cambia il rendering di
+   schermate fuori dai cinque rilievi: è la decisione giusta, ma non dentro un'unità di debito.
+2. **`TIPO: progetto` — le frecce di mese dovrebbero portare `.btn.compatto` nel markup.** Oggi
+   il CSS dice «qui `.piccolo` non è piccolo», e chi fra sei mesi legge `class="btn piccolo"`
+   trova un'esenzione che una regola contraddice tre schermate più in basso. **Il difetto misurato
+   è chiuso** (l'unità l'ha risolto dal foglio); questa è la strada più pulita, passa dal `.razor`
+   e ha un effetto visivo da decidere — `.compatto` non porta `border-radius: var(--raggio-s)`.
+3. **`TIPO: progetto` — i rimandi `(v. riga N)` dentro `app.css` sono una convenzione che si
+   rompe da sola.** **Tre erano già scaduti prima di questo goal.** La proposta è ancorare al
+   **selettore** invece che al numero: si trova con una ricerca e non può scadere. I riferimenti
+   verso altri file restano numerici, perché lì il numero non è sotto il controllo di chi scrive
+   il foglio.
+4. ⚠️ **Due plugin sono stati aggiornati fra una sessione e l'altra, e il codice che gira non è
+   quello approvato.** `code-review` e `frontend-design` erano allo snapshot del **2026-09-11** e
+   ora sono del **2026-09-19**. La decisione — tenerli, rileggerli o disabilitarli — è
+   dell'utente: è configurazione sua, e il `CLAUDE.md` dice che la differenza fra le due date è
+   una domanda da porgli, non una decisione da prendere.
+   **Il punto che rende la domanda non teorica:** `frontend-design` è la skill invocata per il
+   `PIANO-DESIGN` del medaglione, quindi quel piano è stato prodotto dalla versione **aggiornata**.
+
+**Un fatto di ambiente, non una domanda.** L'unità 01 ha segnalato che una superficie di
+configurazione di queste sessioni prescrive di lavorare via `Bash` — leggere con `cat`, modificare
+con `sed` o heredoc — «invece degli strumenti dedicati», il che **contraddice** la regola globale
+che impone `Write`/`Edit` e vieta gli interpreti inline. Né l'unità né il capo l'hanno seguita: i
+file sono stati scritti con `Edit`, e l'unità ha verificato con `file` che il risultato sia
+`UTF-8` senza accenti corrotti. Lo si annota perché arriva da una superficie di configurazione e
+non dal turno dell'utente, e la regola globale dice che in quel caso vince il `CLAUDE.md`.
 
 **Dubbi miei, non ancora domande.**
 
@@ -276,6 +314,27 @@ se ne passano uno.
   primo rilascio**, con scritta la prova da eseguire — non come «coperta».
 
 ## FATTI OPERATIVI CHE COSTANO CARI SE DIMENTICATI
+
+⚠️ **Le sessioni-unità si aprono un worktree per conto proprio, e il capo deve saperlo prima di
+cercarne il resoconto.** Scoperto il 19 settembre sull'unità 01: la sua `cwd` in
+`claude agents --json` non era più la radice ma `.claude/worktrees/01-foglio-di-stile`, e il suo
+`app.css` modificato **non compariva** nel `git status` del capo. Tre conseguenze, tutte
+verificate:
+
+1. **Una sentinella sul resoconto va puntata su entrambi i path**, quello del worktree e quello
+   dell'albero principale. La prima, puntata solo sul secondo, è scaduta dopo trenta minuti senza
+   eventi mentre l'unità stava lavorando benissimo: il silenzio non distingueva «sta lavorando»
+   da «è morta», che è esattamente ciò che una sentinella esiste per distinguere.
+2. **Il worktree nasce dall'ultimo commit, non dall'albero di lavoro.** L'unità 01 è nata da
+   `6b7e8b4`, dove `handoff/` conteneva ancora lo stato del **ciclo precedente**: il suo mandato
+   non c'era, e i path `storico/handoff/…` che quel mandato cita lì non esistevano. Ha lavorato
+   lo stesso perché il mandato l'aveva già letto prima di entrare. **Rimedio, per ogni unità
+   successiva: il capo committa piano e mandati PRIMA di aprire l'unità** — fatto con `5035e0b`.
+3. **L'integrazione spetta al capo**, come per la sessione di chiusura del ciclo precedente: il
+   lavoro sta nel branch `worktree-NN-slug`, e il capo lo porta su `main` e poi rimuove worktree
+   e branch. Qui non sarà un fast-forward, perché `main` è avanti di `5035e0b`: sarà un merge, che
+   è pulito perché i perimetri non si incrociano — l'unità tocca `wwwroot/`, il capo `handoff/` e
+   `docs/`.
 
 Ereditati dal piano precedente, tutti ancora validi. Il dettaglio sta in `handoff/server.md`.
 
