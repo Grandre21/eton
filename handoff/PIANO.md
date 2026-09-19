@@ -19,9 +19,16 @@ lasciato aperto **dichiarandolo**, non tutto ciò che resta da fare nel progetto
    è mai entrato in nessun `FUORI SCOPE`;
 4. la **ricognizione mai fatta** dell'area voti e recensioni, anch'essa da `APERTO`.
 
-**Ventuno clausole.** La colonna «voci» della `PARTIZIONE` dice dove cade ognuna: è la mappa che
-la sessione di chiusura userà per contare coperte e scoperte, e l'unica cosa di questo file che
-non è ricostruibile leggendo i resoconti.
+**Ventuno clausole all'apertura, ventiquattro dal 19 settembre sera.** La colonna «voci» della
+`PARTIZIONE` dice dove cade ognuna: è la mappa che la sessione di chiusura userà per contare
+coperte e scoperte, e l'unica cosa di questo file che non è ricostruibile leggendo i resoconti.
+
+⚠️ **Le tre clausole in più sono nate durante il lavoro, e l'utente le ha fatte entrare qui.**
+Sono le tre decisioni di progetto che l'unità 01 ha aperto — la fusione delle pastiglie, le
+frecce di mese, i rimandi ancorati al selettore — e stanno nell'unità **07**. Un obiettivo che
+cresce mentre lo si esegue è la cosa che rende impossibile misurare la copertura alla chiusura:
+per questo il numero è scritto due volte, con la data, invece di essere aggiornato in silenzio.
+Chi conta a fine goal conta **ventiquattro**.
 
 **Non** ne fanno parte la fase 2 (spese ricorrenti) né la fase 2.1-bis (mandato UI/UX): sono fasi
 del piano di prodotto, settimane ciascuna, e una sessione porta un goal solo. La domanda posta
@@ -169,6 +176,52 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   apposta perché `Verifica` rifiutava le stringhe con più di un separatore. Le due rese hanno due
   pubblici diversi, ed è la ragione per cui esistono entrambe.
 
+- **19 set 2026, secondo giro di domande** — **L'utente ha risposto alle quattro di `APERTO`, e
+  l'obiettivo si allarga di una unità.** Tutte e quattro le raccomandazioni di `tech-advisor` sono
+  state accettate:
+
+  1. **Le tre regole di pastiglia si fondono in `button.pastiglia`.** `tech-advisor` dissente dal
+     motivo per cui l'unità 01 l'aveva rinviata, e il dissenso è la parte utile: **la resa non
+     cambia su nessuna schermata**, è un refactor a effetto visivo zero. La cascata è verificata —
+     `.pastiglia` (0-1-0) non dichiara `min-height`, `.pastiglia.accesa` (0-2-0) dichiara solo
+     colori, quindi `button.pastiglia` (0-1-1) vince su tutte e tre le proprietà e nessuna
+     variante di stato lo scavalca. Bilancio: −8 righe di CSS, ~25 di commento da riscrivere.
+     **Ciò che cambia è la policy futura**, non il presente: una pastiglia-bottone nuova in una
+     riga di elenco prenderebbe 48px da sola — che è l'esito giusto per un bersaglio, ed è ciò che
+     l'unità 01 ha appena fatto a mano nel voto.
+  2. **Le frecce di mese portano `.btn.compatto` nel markup**, con
+     `.navigazione-mese .btn { min-width: var(--tocco); }` — una proprietà invece di due.
+     `.btn.compatto` non è teoria: ha **due call-site vivi** nello stesso ruolo di testata.
+     Il raggio passa da 8 a 12px e **non è un costo**: 12 è il raggio di ogni `.btn`, e l'8 esiste
+     solo in `.btn.piccolo`, dove serviva a una scatola da 35px.
+  3. **I rimandi si ancorano al selettore, cross-file compresi.** `tech-advisor` dissente dalla
+     cornice che avevo proposto — «numerici solo verso altri file» — e il rovesciamento regge:
+     proprio perché nessuno apre `app.css` quando cambia un `.razor`, **quei numeri scadono più in
+     fretta**, non meno. Il file ha già la forma giusta in un punto: file più token cercabile.
+     ⚠️ **Gli scaduti sono quattro, non tre.** Il quarto l'unità 01 l'aveva mancato perché cercava
+     solo `v. riga`: uno dei rimandi usa la forma «il commento a riga N». **Uno su tre è falso.**
+  4. **Entrano in questo goal**, come unità in coda prima del collaudo, così la prova visiva le
+     copre tutte in un giro solo di browser. **Conseguenza dichiarata:** l'obiettivo si allarga
+     da 21 a 24 clausole, e le tre nuove sono nate *durante* il lavoro. Lo scrivo qui perché la
+     verifica di copertura della chiusura conta le clausole dell'`OBIETTIVO`, e un obiettivo che
+     cresce senza lasciare traccia è esattamente ciò che rende quella verifica impossibile.
+
+- **19 set 2026** — **L'allarme sui due plugin era un falso positivo, e il motivo vale più della
+  smentita.** `tech-advisor` ha confrontato lo snapshot approvato dell'11 settembre — ancora in
+  cache, marcato orfano — con quello attuale: **`diff -r` esce vuoto su entrambi i plugin**,
+  `SKILL.md` 71 righe in tutte e due le copie. Il `PIANO-DESIGN` del medaglione viene da un file
+  byte-identico a quello approvato. **Nessuno dei due ha hook**: sono prosa — una skill e un
+  comando — quindi la classe di rischio è injection, non esecuzione.
+  **Perché l'allarme è scattato:** nessuno dei due `plugin.json` dichiara `version`, quindi Claude
+  Code usa lo SHA del commit; e il marketplace è un **monorepo**, dove ogni commit su un plugin
+  qualunque re-installa anche questi due sotto uno SHA nuovo e muove `lastUpdated`.
+  **La conseguenza per l'impianto, che è la parte da non perdere:** per un plugin senza `version`,
+  `installedAt ≠ lastUpdated` **è rumore, non prova**. Il controllo che il `CLAUDE.md` affida a
+  `config-critic` va integrato con un `diff -r` contro lo snapshot orfano — che però resta in
+  cache solo fino allo sweep, quindi il confronto si fa **alla prima sessione dopo
+  l'aggiornamento** o non si fa più.
+  Entrambi restano abilitati: non c'è niente da rileggere.
+
 ## PARTIZIONE
 
 Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -182,6 +235,15 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17 | 03 | PIANIFICATA |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
+| **07 pastiglie-e-ancore** | `wwwroot/css/app.css`, `Pages/Spese.razor` | le **tre clausole nuove** del 19 set: fusione delle pastiglie, `.btn.compatto` sulle frecce, i rimandi ancorati al selettore | 06 | PIANIFICATA |
+
+⚠️ **L'unità 07 revoca un contratto dell'unità 01**, e va detto invece di lasciarlo scoprire: il
+mandato della 01 diceva «`app.css`, tutto il file, e sei l'unico a toccarlo in tutto il goal».
+Non è più vero — l'utente ha aggiunto tre clausole il 19 settembre. La condizione che rendeva
+sicura quella frase **regge comunque**: la 01 è rientrata e integrata, le unità 02-06 non toccano
+il foglio, quindi la 07 lo trova fermo e ne è l'unica proprietaria dal suo turno in poi. Ciò che
+cambia non è la sicurezza, è che un lettore del mandato 01 non deve credere che quel file sia
+chiuso per sempre.
 
 **I sei mandati sono già scritti**, tutti il 19 settembre, in `handoff/NN-slug/mandato.md`. Un
 capo fresco non deve riscriverli: li apre in ordine, uno per volta, e aggiorna la colonna di
@@ -257,9 +319,13 @@ se ne passano uno.
 
 ## APERTO
 
-**Domande per l'utente — quattro, aperte dall'unità 01 e da porre insieme a fine goal.** Le due
-iniziali sono state poste e risposte il 19 settembre prima di aprire il goal; queste nascono dal
-lavoro e nessuna è urgente. Si pongono **insieme**, nel riporto cumulativo, non una alla volta.
+**Domande per l'utente — nessuna aperta.** Le quattro elencate qui sotto sono state **poste e
+risposte il 19 settembre sera**, su richiesta dell'utente («facciamo il round di domande»), e le
+risposte stanno in `DECISIONI`: fondere sì, `.btn.compatto` sì, ancorare al selettore sì compresi
+i cross-file, e tutte e tre **dentro questo goal** come unità 07.
+
+L'elenco resta qui perché contiene il **merito** di ognuna, che le righe di `DECISIONI` non
+ripetono per esteso.
 
 1. **`TIPO: progetto` — le tre regole di pastiglia andrebbero fuse in `button.pastiglia`.**
    Fondato nel merito, e il fatto che lo regge è stato riverificato dall'unità: i
@@ -278,13 +344,11 @@ lavoro e nessuna è urgente. Si pongono **insieme**, nel riporto cumulativo, non
    **selettore** invece che al numero: si trova con una ricerca e non può scadere. I riferimenti
    verso altri file restano numerici, perché lì il numero non è sotto il controllo di chi scrive
    il foglio.
-4. ⚠️ **Due plugin sono stati aggiornati fra una sessione e l'altra, e il codice che gira non è
-   quello approvato.** `code-review` e `frontend-design` erano allo snapshot del **2026-09-11** e
-   ora sono del **2026-09-19**. La decisione — tenerli, rileggerli o disabilitarli — è
-   dell'utente: è configurazione sua, e il `CLAUDE.md` dice che la differenza fra le due date è
-   una domanda da porgli, non una decisione da prendere.
-   **Il punto che rende la domanda non teorica:** `frontend-design` è la skill invocata per il
-   `PIANO-DESIGN` del medaglione, quindi quel piano è stato prodotto dalla versione **aggiornata**.
+4. ~~Due plugin aggiornati, e il codice che gira non è quello approvato.~~ ⚠️ **Premessa
+   smentita il 19 settembre**, v. `DECISIONI`: `diff -r` fra lo snapshot approvato e quello
+   attuale esce **vuoto** su entrambi, e nessuno dei due ha hook. Resta il fatto strutturale, che
+   vale oltre questo caso: per un plugin senza `version` nel manifest, `installedAt ≠ lastUpdated`
+   è **rumore**, perché il marketplace è un monorepo e ogni commit muove la data di tutti.
 
 **Un fatto di ambiente, non una domanda.** L'unità 01 ha segnalato che una superficie di
 configurazione di queste sessioni prescrive di lavorare via `Bash` — leggere con `cat`, modificare
