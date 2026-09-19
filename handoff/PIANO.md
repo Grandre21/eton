@@ -103,6 +103,31 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   fatto nuovo, non una revoca: l'unità 02 lo istruisce e propone, e se il rimedio tocca la
   decisione torna a me invece di essere preso di nascosto.
 
+- **20 set 2026, 00:10 — La diagnosi nel browser ha preceduto l'unità 01, ed è una mossa che
+  rifarei.** La voce 6 è osservabile solo nel browser: un'unità che correggesse sulla sola analisi
+  statica rischierebbe di sbagliare causa e di scoprirlo al collaudo finale, cioè dopo aver speso
+  tutto. Dodici prove hanno prodotto tre fatti che il mandato porta dentro invece di far cercare:
+  l'attesa conta ma **la soglia sta fra 0,3 e 0,5 s, non ai 200 ms dell'animazione**; il clic
+  fallito **non produce nulla, nemmeno il fuoco** — quindi la descrizione con cui la voce è nata
+  («mette solo il fuoco») è falsa e mandava a cercare nella famiglia di cause sbagliata; e
+  l'ipotesi dell'identificatore duplicato **è esclusa** con una misura. Il documento sta in
+  `handoff/01-punto-interrogativo/diagnosi-browser.md`.
+  ⚠️ **Con un buco dichiarato:** la diagnosi ha testato Home, Note, Collezioni e Spese, mentre la
+  ricognizione del 19 settembre aveva riprodotto il difetto sui **due editor**, che non sono stati
+  testati. «Succede solo sulla Home» **non è dimostrato**.
+
+- **20 set 2026, 00:10 — Sulla Home ogni query al database parte due volte, e non entra in questo
+  goal.** Spese, spazi, membri, profili, note, collezioni: ognuna compare due volte quasi in
+  contemporanea nel registro di rete, e non con la stessa intensità sulle altre rotte. **Nessuno
+  l'aveva mai censito.** È un difetto suo, a prescindere dalla voce 6: raddoppia le chiamate sulla
+  schermata più visitata.
+  **Non lo trasformo in una clausola, e il motivo è una regola che eredito.** Il capo precedente si
+  era dato per iscritto il limite delle quattro crescite, e l'ha scritto dopo aver visto che un
+  obiettivo che cresce a ogni resoconto rende impossibile la verifica di copertura. Questo goal ne
+  ha già trentotto, di clausole, e sette non sono chiudibili: allargarlo alla prima occasione
+  renderebbe finta la regola. **L'unità 01 lo istruisce solo se serve alla voce 6**; altrimenti va
+  nel rapporto finale come candidato per il goal successivo.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -110,7 +135,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
-| **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | PIANIFICATA |
+| **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **IN CORSO** — aperta il 20 set alle 00:15, con la diagnosi nel browser già in mano |
 | **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2**, **7**, **8**, **10**, **26** | 01 | PIANIFICATA |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
@@ -173,13 +198,19 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'**unità 01 punto-interrogativo**. Il mandato sta in
-`handoff/01-punto-interrogativo/mandato.md`.
+PROSSIMA AZIONE: attendere il resoconto dell'**unità 01**, aperta alle 00:15 del 20 settembre.
+Al suo rientro: audita `CONTRATTI` e `SCOSTAMENTI`, integra su `main`, **riavvia il server** — è
+vivo e servirebbe la build vecchia — e apri l'**unità 02 voti-e-recensioni**, il cui mandato va
+ancora scritto.
 
-⚠️ **Prima di aprirla: committare questo piano e il mandato, e POI PUSHARE.** Il worktree
+⚠️ **Prima di aprire ogni unità: committare piano e mandato, e POI PUSHARE.** Il worktree
 dell'unità nasce da `origin/main`, non da `main` locale: committare non basta. Misurato dall'unità
 02 del ciclo precedente, che è partita da un albero in cui il lavoro della 01 non c'era e avrebbe
 dichiarato contratti falsi.
+
+**Se la 01 torna `PARZIALE` perché la causa della voce 6 sta fuori dal suo perimetro** — il caso
+più probabile è `Pages/Home.razor`, per via del doppio caricamento — **ripartiziona prima di
+aprire la 02**, come impone la regola sulla sequenzialità.
 
 ## APERTO
 
