@@ -162,7 +162,11 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   quel componente ha **un solo parametro**, `Nome` (`:82`) — nessun `AriaLabel`, nessun
   `CaptureUnmatchedValues`, quindi un `aria-label` passato dal call-site verrebbe **scartato in
   compilazione**. Le due forme divergono per ragioni documentate, e le due classi non si
-  incontrano mai (`app.css:2269` le spegne entrambe dove `.voce-piede` si accende).
+  incontrano mai (`app.css:2436` le spegne entrambe dove `.voce-piede` si accende).
+  ⚠️ *Qui c'era scritto `:2269`, ed era già scaduto quando l'ho scritto: le 177 inserzioni
+  dell'unità 01 avevano spostato quella regola di 167 righe. L'ha misurato l'unità 02. È la prima
+  ricaduta della classe di difetto che l'unità 01 aveva segnalato — un rimando per numero che
+  nessuno risincronizza — e capita dentro il documento che decide come correggerla.*
   **Conseguenza sul perimetro:** all'unità 02 di `Home.razor` resta il solo blocco `@code`.
 
 - **19 set 2026** — **Voce 17: chi non può intervenire vede la resa di visualizzazione.** Deciso
@@ -222,6 +226,22 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   l'aggiornamento** o non si fa più.
   Entrambi restano abilitati: non c'è niente da rileggere.
 
+- **19 set 2026, dopo l'unità 02** — **Una corsa critica vera, trovata in un file che l'unità non
+  possedeva: entra nel mandato della 03.** Deciso da me. `Shared/RecensioniElemento.razor:294`
+  scrive `caricato = true;` dopo un `await` e **senza la guardia di generazione**, mentre nello
+  stesso file `occupato` ce l'ha in entrambi i rilasci e lo stesso `caricato` ce l'ha nell'altro
+  punto. Lo scenario è costruibile e **il file lo dichiara da sé**: il suo commento avverte che
+  due caricamenti possono sovrapporsi, perché navigando fra due elementi il router riusa
+  l'istanza (nessun `@key` sul call-site). Una generazione sorpassata può quindi dichiarare il
+  componente «caricato» sopra campi appena azzerati.
+  È stato riaperto **per due vie indipendenti** — dall'unità e dal `checker` — con la stessa
+  conclusione.
+  **Perché entra qui e non nel prossimo goal:** il file è **già** nel perimetro dell'unità 03, il
+  rimedio è una riga, ed è la stessa guardia che il file usa già tre volte. Non allarga nessun
+  perimetro e non apre nessuna decisione di progetto. **L'obiettivo passa a 25 clausole**, ed è la
+  seconda volta che cresce: come la prima, il numero è scritto con la data invece di essere
+  aggiornato in silenzio.
+
 ## PARTIZIONE
 
 Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -230,8 +250,8 @@ Sei unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numera
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
 | **01 foglio-di-stile** | `wwwroot/css/app.css` | 1, 3, 5, la quota CSS della 2, **P2** | — | **FATTO** — integrata su `main` con `c50981a`, worktree e branch rimossi |
-| **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | PIANIFICATA |
-| **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10 | 01 | PIANIFICATA |
+| **02 barra-e-home** | `Shared/Navigazione.razor`, `Pages/Home.razor` (**solo `@code`**) | 2 (markup), 15 | 01 | **FATTO** — integrata con `ab33d92`, pushata, worktree rimosso |
+| **03 editor-esiti** | `Pages/CollectionEdit.razor`, `Pages/ItemEdit.razor`, `Pages/NoteEdit.razor`, `Pages/SpesaEdit.razor`, `Shared/RecensioniElemento.razor` — **`Shared/PaginaEditor.cs` NON si tocca** | 4 (editor elemento), 6, 10, **+ la corsa critica trovata dalla 02** | 02 | PIANIFICATA |
 | **04 igiene-e-importi** | `Pages/CollectionDetail.razor`, `Services/SchemaCampi.cs`, `Services/Denaro.cs`, `Eton.Tests/SchemaCampiTests.cs`, + le righe residue di `CollectionEdit`/`ItemEdit`/`SpesaEdit` | 11, 14, 16, 17 | 03 | PIANIFICATA |
 | **05 accesso** | `Services/SupabaseService.cs`, `Services/OAuthCallback.cs`, `Services/PkceStore.cs`, `Services/BrowserSessionHandler.cs`, `Eton.Tests/OAuthCallbackTests.cs` | 7, 8, 9 (indagine), 18 | — | PIANIFICATA |
 | **06 profilo-allineato** | `Services/AuthStateService.cs`, nuovo `Services/ProfileRepository.cs`, un call-site in `Services/SupabaseService.cs` | il difetto da `APERTO` | 05 | PIANIFICATA |
@@ -303,15 +323,19 @@ incompleta si corregge, non si esegue alla lettera.
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'unità **02 barra-e-home**, il cui mandato è già scritto e committato.
-L'unità 01 è rientrata `FATTO`, auditata e integrata: i cinque contratti convergono, e la 02
-trova `.solo-lettori` invariata e `.voce-piede` col selettore dove se lo aspetta.
+PROSSIMA AZIONE: aprire l'unità **03 editor-esiti**, il cui mandato è scritto, committato e
+**pushato** — quest'ultima parola è la correzione che l'unità 02 ha pagato per noi.
 
-**Cosa ha lasciato la 01, e che la 02 deve sapere:** la sovrapposizione di «Profilo» sul selettore
-di spazio è **diminuita ma non chiusa** — il contenuto del link misura 53px, e con la scatola a
-48 sborda ancora di 2,5px per lato (erano 8,5 con la scatola a 36). Si chiude **solo** quando la
-02 porta l'etichetta a `.solo-lettori`: allora il contenuto resta la sola icona da 22px dentro 48.
-È la misura che il collaudo dovrà ritrovare a zero.
+Le unità 01 e 02 sono rientrate `FATTO`, auditate e integrate. I contratti convergono tutti: il
+servizio degli spazi non è stato aperto in scrittura, `Shared/Icona.razor` è invariato, e la
+02 ha trovato `.voce-piede` dove la 01 l'aveva lasciata.
+
+**La misura che il collaudo deve ritrovare a zero:** la sovrapposizione di «Profilo» sul selettore
+di spazio. La 01 l'ha portata da 8,5px a 2,5px per lato allargando la scatola; la 02 l'ha chiusa
+spostando l'etichetta a `.solo-lettori`, così il contenuto del link è la sola icona da 22px dentro
+48. Il collaudo verifica `scrollWidth === clientWidth`, `svg.left − select.right ≥ 8`, l'elemento
+alto 48 — **e che il nome accessibile del collegamento sia ancora «Profilo»**, che è la sola
+misura il cui fallimento avrebbe scambiato un difetto visibile con uno invisibile.
 
 ⚠️ **Sequenziale, mai in parallelo.** Nessuna unità si apre finché la precedente non è rientrata,
 anche quando i perimetri sembrano disgiunti: le unità 03 e 04 si passano tre file, e la 05 e la 06
@@ -358,6 +382,19 @@ file sono stati scritti con `Edit`, e l'unità ha verificato con `file` che il r
 `UTF-8` senza accenti corrotti. Lo si annota perché arriva da una superficie di configurazione e
 non dal turno dell'utente, e la regola globale dice che in quel caso vince il `CLAUDE.md`.
 
+**Una decisione rimandata al collaudo, deliberatamente.** L'unità 02 ha dovuto scegliere la forma
+dello stato di caricamento della Home al cambio di spazio, e il perimetro le dava il **solo blocco
+`@code`**: l'unica strada senza toccare il markup era riusare il flag esistente, quindi **a ogni
+cambio di spazio la Home ora si svuota del tutto** e mostra «Caricamento…».
+Due fatti la rendono meno drastica di come suona, entrambi verificati dall'unità: quella riga è
+l'idioma del progetto in **nove** punti, e **il selettore di spazio non sparisce**, perché sta fuori
+dalla catena condizionale — l'utente vede il nome nuovo nel selettore e «Caricamento…» sotto, cioè
+uno stato coerente, non una pagina morta.
+L'alternativa, più fine, mostrerebbe subito il **nome** del nuovo spazio tenendo in caricamento
+solo i dettagli: richiede rami nuovi nel markup, cioè un perimetro diverso e un giro in più.
+**Non la decido a tavolino: la guardo al collaudo.** Un cambio visibile a ogni cambio di spazio si
+giudica vedendolo, non leggendone la descrizione.
+
 **Dubbi miei, non ancora domande.**
 
 - ~~Il contratto `PaginaEditor` e la voce 6: una decisione scritta va revocata.~~ **Istruito e
@@ -378,6 +415,23 @@ non dal turno dell'utente, e la regola globale dice che in quel caso vince il `C
   primo rilascio**, con scritta la prova da eseguire — non come «coperta».
 
 ## FATTI OPERATIVI CHE COSTANO CARI SE DIMENTICATI
+
+⚠️⚠️ **IL WORKTREE NASCE DA `origin/main`, NON DA `main` LOCALE: committare non basta, bisogna
+PUSHARE.** Misurato dall'unità 02 il 19 settembre, ed è la correzione del punto qui sotto, che da
+solo non bastava. Il capo aveva committato tutti i mandati — ma `main` aveva **quattro commit non
+pushati**, fra cui `c50981a`, l'integrazione del foglio di stile dell'unità 01. Il worktree della
+02 è partito da `6b7e8b4` e **il lavoro della 01 lì dentro non c'era**.
+
+**Come se n'è accorta, e perché è fragile:** `.solo-lettori` risultava alla riga citata dal
+**mandato** e non a quella dichiarata dal **resoconto dell'unità 01** — una discrepanza fra due
+documenti appena letti. Con il solo mandato in mano non avrebbe avuto modo di accorgersene, e
+avrebbe lavorato contro un CSS vecchio **dichiarando contratti falsi**. Non è un rilevamento su cui
+si possa contare.
+
+**La regola, d'ora in poi:** il capo committa `PIANO.md` e i mandati, **poi pusha**, e solo dopo
+apre l'unità. Il push è la metà che si dimentica, perché il commit *sembra* aver messo al sicuro il
+lavoro. Il ripiego — l'unità fa da sé `git merge --ff-only main` dal worktree, previa verifica con
+`git merge-base --is-ancestor HEAD main` — funziona ma dipende dal fatto che se ne accorga.
 
 ⚠️ **Le sessioni-unità si aprono un worktree per conto proprio, e il capo deve saperlo prima di
 cercarne il resoconto.** Scoperto il 19 settembre sull'unità 01: la sua `cwd` in

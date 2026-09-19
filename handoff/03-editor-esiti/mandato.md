@@ -53,6 +53,25 @@ Tre voci, e la terza ha un esito «non si fa» che è **legittimo** se motivato.
    Quello che **non** è accettabile è spendere il costo che il progetto ha già rifiutato senza
    dirlo a nessuno.
 
+4. ⚠️ **Una corsa critica vera in `Shared/RecensioniElemento.razor`, aggiunta al tuo mandato dopo
+   che l'unità 02 l'ha trovata.** Non veniva da nessun elenco: l'ha vista un revisore della 02
+   seguendo un rimando, in un file che quell'unità **non possedeva** e che invece è tuo.
+
+   L'ultima riga del caricamento delle recensioni alza il flag «caricato» **dopo un `await` e
+   senza la guardia di generazione**, mentre nello stesso file l'altro flag ce l'ha in **entrambi**
+   i suoi rilasci, e lo stesso flag ce l'ha nell'altro punto in cui viene alzato. È una sola riga
+   che diverge da tre precedenti dello stesso file.
+
+   **Lo scenario è costruibile, e il file lo dichiara da sé** in un commento: due caricamenti
+   possono sovrapporsi, perché il componente si ricarica al cambio dei parametri senza essere
+   smontato — navigando da un elemento all'altro il router riusa l'istanza, e il call-site non ha
+   `@key`. Quindi una lettura sorpassata può dichiarare il componente «caricato» **sopra i campi
+   che la lettura nuova ha appena azzerato**.
+
+   **Il rimedio è la guardia che il file usa già tre volte**: condizionare il rilascio alla
+   generazione. Rispecchia quelle, non inventarne una forma nuova — e se leggendo concludi che il
+   difetto non è reale, **dillo con la riga che lo dimostra** invece di correggerlo per scrupolo.
+
 **Le fonti dei criteri, da leggere per prime:**
 
 - `docs/superpowers/specs/2026-09-10-rilievi-ui-critic.md`, **rilievo 4** — i valori misurati e la
@@ -117,6 +136,13 @@ Pages/SpesaEdit.razor:226           protected override bool Cambiata => spesa is
 ```
 → **questa riga la toccherà l'unità 04**, che si occupa del formato degli importi. Tu la lasci
 esattamente com'è: se la cambi, la 04 trova un file diverso da quello che il suo mandato descrive.
+
+## LA FONTE DELLA VOCE 4
+
+`handoff/02-barra-e-home/resoconto.md`, campo `FUORI SCOPE 1`. Contiene il `file:line`, le tre
+righe del file che fanno la cosa giusta, il commento in cui il file dichiara il proprio rischio,
+e il percorso di navigazione che costruisce lo scenario. **Leggilo prima di aprire il file**: è
+già istruito da due vie indipendenti, e rifare l'istruttoria da zero è lavoro sprecato.
 
 ## STATO
 
