@@ -1,13 +1,16 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** Avviato dal capo notturno il 19 settembre 2026 alle 23:57, su albero pulito.
+> **VIVO.** **Riavviato** il 20 settembre 2026 alle 01:40, dopo l'integrazione dell'unità 01 che ha
+> modificato `wwwroot/css/app.css`. Il primo avvio era delle 23:57 del 19 settembre; i suoi PID
+> (24148 e 21868) sono **storia** e sono stati fermati entrambi, con la porta verificata libera
+> prima di riavviare.
 > I PID qui sotto sono **quelli veri di adesso**: chi riavvia il server **riscrive la tabella**,
 > perché cambiano a ogni avvio.
 
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui gira: `cdb0999`** — il goal precedente chiuso e integrato, il piano nuovo scritto
+- **Commit su cui gira: `fe438ef`** — l'unità 01 integrata (voce 9 chiusa), la 01b aperta
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
@@ -16,13 +19,20 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **24148** | `dotnet run --launch-profile Eton` | padre |
-| **21868** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** (verificato con `netstat -ano`, due righe `LISTENING` su `127.0.0.1` e `[::1]`) |
+| **26652** | `dotnet run --launch-profile Eton` | padre |
+| **25108** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
 
-Il PID **14676** è un nodo MSBuild residuo della build, non appartiene al server: si lascia stare.
+**La forma che funziona**, misurata stanotte su entrambi i riavvii:
+
+    # fermare
+    foreach ($id in 25108, 26652) { Stop-Process -Id $id -Force }
+    # verificare, dal tool Bash
+    netstat -ano | grep -E ':5000\s+.*LISTENING' || echo "PORTA 5000 LIBERA"
+    # riavviare, dalla radice del progetto, in background
+    dotnet run --launch-profile Eton
 
 ⚠️ **`Get-NetTCPConnection` è stato negato dal classificatore della modalità automatica**, con la
 motivazione «Git Destructive» — un falso positivo su un comando di sola lettura. La via che
