@@ -245,9 +245,10 @@ public class SchemaCampiTests
     public void Le_prime_tre_icone_della_tavolozza_sono_quelle_dei_modelli()
     {
         // Le due liste si confrontano fra loro, e non contro tre emoji ricopiate qui: un test che
-        // ricopia i valori attesi resterebbe verde anche se tavolozza e modelli cambiassero
-        // insieme, cioè proprio nel caso in cui il legame si è rotto senza che nessuno se ne
-        // accorga. Quello che dev'essere sanzionato è il legame, non il contenuto.
+        // ricopia i valori attesi resterebbe verde se cambiassero i modelli e la tavolozza no —
+        // cioè proprio nel caso in cui il legame si è rotto senza che nessuno se ne accorga — e
+        // diventerebbe rosso se cambiassero insieme, cioè quando invece il legame regge.
+        // Quello che dev'essere sanzionato è il legame, non il contenuto.
         var icone = SchemaCampi.Modelli.Select(m => m.Icona).ToList();
 
         Assert.Equal(icone, SchemaCampi.TavolozzaIcone.Take(icone.Count));

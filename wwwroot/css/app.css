@@ -1442,9 +1442,12 @@ li:last-child > .riga { border-bottom: none; }
    spinge il link in fondo alla testata. Il link è ancorato a destra da quello, quindi
    basta compensare il lato che ancorato non è.
    Il selettore tocca esattamente i due «Tutte» della Home (Pages/Home.razor, i due <a>…Tutte</a> dentro .testa-registro):
-   sono gli unici <a> dentro una .testa-registro di tutto il progetto, le altre sei testate
-   contengono solo <span>. La testata cresce di ~3,9px, perché il margin-box del link passa
-   da 20,15 a 24 — è atteso e accettato, non un difetto da inseguire. */
+   sono gli unici <a> dentro una .testa-registro di tutto il progetto, quindi nessun'altra testata
+   lo aggancia. Delle altre sei, cinque contengono solo <span>; la sesta è Pages/Spese.razor
+   (class="navigazione-mese"), che ha due <button class="btn compatto"> già alti var(--tocco) per
+   via di .btn — questo selettore non li tocca, e lì non cresce niente. Le due della Home crescono
+   di ~3,9px, perché il margin-box del link passa da 20,15 a 24 — è atteso e accettato, non un
+   difetto da inseguire. */
 .testa-registro a {
     margin-left: auto;
     color: var(--accento);
