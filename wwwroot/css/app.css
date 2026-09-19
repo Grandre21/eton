@@ -947,13 +947,22 @@ label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap:
 
 .testata {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--s3);
     /* Lo stesso margine che oggi separa un <h1> nudo (Note, Collezioni) da ciò
        che segue: è il margin-bottom di default della regola h1 qui sopra
        (var(--s2)), e va ripetuto qui perché il prossimo blocco lo azzera —
        v. .testata h1 subito sotto, stesso problema di .intestazione h1. */
     margin-bottom: var(--s2);
+
+    /* Altezza di UNA riga del titolo: le stesse due grandezze che usa la regola
+       h1 (v. il selettore h1 in questo foglio) — corpo per interlinea. Serve a
+       .aiuto-apri e a .testata-azione qui sotto per ancorarsi alla prima riga
+       invece che al centro del blocco, e vive qui perché da qui si eredita.
+       Se un giorno cambia l'interlinea di h1, questo 1.08 va cambiato insieme:
+       è l'unico valore di questo foglio duplicato da un'altra regola, ed è
+       duplicato perché una custom property non si eredita fra fratelli. */
+    --riga-titolo: calc(var(--t-2xl) * 1.08);
 }
 
 .testata h1 { margin: 0; min-width: 0; }
@@ -976,6 +985,39 @@ label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap:
    overflow qui dà un falso "tutto a posto": si guarda. */
 @media (max-width: 26rem) {
     .testata h1 { font-size: var(--t-xl); }
+
+    /* Il titolo rimpicciolisce, quindi la riga si accorcia e l'ancora di
+       .aiuto-apri e .testata-azione va ricalcolata: senza questa riga
+       resterebbero tarate sul corpo grande e scenderebbero sotto la prima riga. */
+    .testata { --riga-titolo: calc(var(--t-xl) * 1.08); }
+}
+
+/* Il "?" (.aiuto-apri) e l'azione (.testata-azione) si ancorano alla PRIMA riga
+   del titolo e non al centro del blocco: entrambi si riferiscono alla schermata,
+   non al testo del titolo, quindi non devono scendere quando il titolo va a capo
+   dodici volte. Selettore unito e non due copie, per la ragione che il foglio dà
+   già a .etichetta-piccola, .etichetta-campo: devono restare tarate sullo stesso
+   valore, e tenerle separate le farebbe divergere col tempo.
+
+   I due margini si compensano, ed è il punto. Quello in cima è negativo e alza
+   l'elemento finché il suo centro coincide col centro della prima riga; quello in
+   fondo rimette esattamente lo stesso spazio, così l'altezza della testata resta
+   quella di prima e nessuna schermata a titolo corto si sposta di un pixel. Senza
+   il secondo, ogni testata del progetto si accorcerebbe per correggere un difetto
+   che si vede solo sui titoli lunghissimi.
+
+   La formula vale per entrambi perché entrambi sono alti --tocco: .aiuto-apri per
+   la propria regola qui sotto, .testata-azione perché contiene sempre un
+   .btn.compatto, che da .btn eredita min-height: var(--tocco). Un contenuto più
+   basso di --tocco dentro uno dei due romperebbe l'allineamento di quello, e
+   andrebbe corretto lì e non qui.
+
+   Di .aiuto-apri sporge sopra la testata solo l'area di tocco trasparente: il
+   cerchio visibile, 1.75rem dentro i 48px, resta dentro. */
+.aiuto-apri, .testata-azione {
+    align-self: start;
+    margin-block: calc((var(--riga-titolo) - var(--tocco)) / 2)
+                  calc((var(--tocco) - var(--riga-titolo)) / 2);
 }
 
 .testata-azione { margin-left: auto; }
