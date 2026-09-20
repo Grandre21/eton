@@ -117,3 +117,41 @@ più codepage, quindi emoji e accenti corrotti in silenzio** — che è un danno
 accade. Un commento con quel dato è l'unica cosa che potrebbe farle muovere.
 
 È un gesto tuo, su un account tuo, e non lo faccio io.
+
+---
+
+## 4 — Aggiunto il 20 settembre 2026, a goal chiuso: i branch delle unità non si cancellano da soli
+
+**Il fatto, misurato mentre chiudevo.** A merge fatto e worktree rimossi, `ls-remote` mostrava
+ancora **quattro** branch remoti — `worktree-unita-01-punto-interrogativo`, `-02-`, `-04-`, `-05-` —
+tutti già integrati in `main`. Li ho cancellati, dopo aver verificato con
+`git branch -r --no-merged main` che nessuno portasse lavoro non integrato.
+
+⚠️ **Ed è la seconda volta in due cicli.** La clausola **36** di questo goal *era* «i quattro branch
+remoti rimasti dal ciclo precedente», e l'ho chiusa all'apertura cancellandoli a mano. Poi le unità
+di stanotte ne hanno generati altri quattro identici, e senza questa nota il ciclo successivo
+riaprirebbe la stessa clausola per la terza volta.
+
+**Perché non l'ho scritta io dove serve.** La regola appartiene a `~/.claude/architettura-sessioni.md`,
+sezione «La sessione di chiusura» o accanto al punto in cui si apre una sessione-unità: è una
+**superficie di configurazione**, e il `CLAUDE.md` dice che lì scrive l'utente, non io.
+
+**Il testo, se lo vuoi**, da mettere dove si descrive la chiusura del ciclo:
+
+> **I branch delle unità si cancellano a ciclo chiuso, non si lasciano.** Dopo l'ultimo merge,
+> `git ls-remote --heads origin` deve mostrare **solo** `main`. La verifica che rende la
+> cancellazione sicura è una sola, e va fatta prima:
+>
+>     git fetch origin --quiet
+>     git branch -r --no-merged main
+>
+> Se quel comando non nomina nessuno, ogni commit vive in `main` e la cancellazione non perde
+> niente. Altrimenti si integra prima, e non si cancella nulla.
+>
+> ⚠️ Il worktree e il branch **locale** se ne vanno insieme con `claude rm <id>`; il **remoto** no,
+> e resta. È la ragione per cui questa riga esiste: la pulizia sembra fatta quando è fatta a metà.
+
+**Perché vale la pena.** Un branch remoto orfano non rompe niente — ed è il motivo per cui
+sopravvive a due cicli. Il costo è che la lista dei branch smette di dire cosa è vivo, e a quel
+punto nessuno la guarda più: la stessa forma per cui un'ancora `file:riga` scaduta è peggio di
+un'ancora assente.
