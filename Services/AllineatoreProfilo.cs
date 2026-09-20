@@ -89,6 +89,22 @@ public class AllineatoreProfilo
         }
     }
 
+    /// <summary>Da chiamare al logout: l'impronta di un profilo non deve restare associata al
+    /// dispositivo dopo che chi l'ha scritta se n'è andato.</summary>
+    public void Dimentica()
+    {
+        try
+        {
+            _js.InvokeVoid("localStorage.removeItem", ChiaveArchivio);
+        }
+        catch (Exception ex)
+        {
+            // Ripiego onesto: se la rimozione fallisce, al prossimo accesso l'impronta non
+            // combacia e si riscrive comunque, quindi non c'è correttezza in gioco.
+            Console.Error.WriteLine($"[Profilo] Rimozione dell'impronta fallita: {ex.Message}");
+        }
+    }
+
     private string? Leggi()
     {
         try
