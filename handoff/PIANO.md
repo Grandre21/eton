@@ -173,6 +173,38 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   un commento falso è peggio di un commento assente, perché chi lo legge non tocca il codice
   credendo di romperlo.
 
+- **20 set 2026 — Due premesse della ricognizione del 19 settembre sono cadute, e il modo in cui
+  sono cadute vale più delle due voci.** Registrate dall'unità 02.
+
+  1. **La voce 10 non è un difetto**, e il fatto che lo dimostra stava **dentro la ricognizione
+     stessa**: il menù ha già l'ordinamento per voto, spento dalla sola condizione del voto al buio,
+     e la ricognizione dichiara al proprio secondo capoverso di aver lavorato su una collezione «con
+     voto al buio attivo». La schermata di prova non aveva le condizioni. ⚠️ **Il flag non è nemmeno
+     troppo restrittivo**: su una collezione cieca le righe altrui non arrivano finché non hai
+     votato, quindi ordinare per voto metterebbe in fondo proprio gli elementi con tre voti alti che
+     non puoi ancora vedere. Vale la dottrina già applicata venti righe sopra nello stesso file:
+     *un comando che risponde senza fare quello che promette è peggio di un comando assente.*
+  2. **Il testo d'aiuto della voce 8 non mentiva.** La ricognizione diceva che «il comportamento non
+     corrisponde a ciò che l'aiuto promette»: l'aiuto parlava dell'**elemento**, non della
+     recensione, e sull'elemento la scelta fra ricaricare e sovrascrivere **esiste davvero**. Il
+     difetto era **un'assenza** — quella schermata salva anche la recensione, con un'altra regola,
+     e l'aiuto non la nominava.
+     ⚠️ **E la distinzione ha cambiato il rimedio, che è il punto.** Quella frase vive in **quattro
+     file**, declinata sull'entità di ciascuna pagina, ed è vera in tutti e quattro: correggerla
+     dove sembrava falsa l'avrebbe fatta divergere dalle altre tre. L'unità ha **aggiunto** un
+     paragrafo, che non ha gemelli e non ne può far divergere nessuno.
+     **Conseguenza per l'unità 04**: se qualcuno le passasse questa voce come «l'aiuto mente anche
+     nell'editor di collezione», quella premessa è falsa, e lì non c'è niente da correggere.
+
+- **20 set 2026 — Un rilievo dell'unità 02 era una regressione che l'unità stessa aveva appena
+  introdotto, e il `checker` l'ha stabilito.** Non un debito pregresso: prima di quel diff il ramo
+  riallineava sempre il modulo, quindi il difetto **nasce nel momento in cui il messaggio comincia a
+  chiedere un'azione**. È il caso per cui la revisione esiste, ed è stato corretto dentro l'unità.
+  **Il fix non è quello che il revisore proponeva**: invece di confrontare a mano i due campi, legge
+  la stessa espressione che governa il pulsante — così il testo e il pulsante non possono divergere
+  per costruzione, mentre con un confronto separato potrebbero, al primo che ritocca una delle due
+  parti.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -182,7 +214,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 |---|---|---|---|---|
 | **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **PARZIALE** — integrata con un merge il 20 set. **Voce 9 chiusa**; **voce 6 diagnosticata e passata alla 01b**, perché la causa sta in un file fuori dal suo perimetro. È il `PARZIALE` previsto dal punto 3 del suo tetto |
 | **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | **FATTO** — integrata il 20 set. ⚠️ **L'unità è morta durante il lavoro**, uccisa dal riavvio della sessione padre, dopo aver finito l'implementazione e prima della revisione: il codice è suo, la revisione e il resoconto sono del capo, e sta scritto in testa al resoconto |
-| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | PIANIFICATA |
+| **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | **FATTO** — integrata il 20 set. Quattro voci con codice, la **10 chiusa dichiarando che non è un difetto**. La **26 si è chiusa dentro entrambe le decisioni del 19 settembre**: nessuna revoca da adjudicare |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
 | **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
@@ -244,15 +276,20 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'**unità 02 voti-e-recensioni**. Il mandato è già scritto in
-`handoff/02-voti-e-recensioni/mandato.md`, e il suo campo `STATO` **va aggiornato prima di aprirla**
-per nominare anche la 01b, che ha cambiato il ciclo di vita del montaggio delle pagine — un'unità
-che lavora su componenti montati da una pagina deve sapere che ora vengono montati **una volta
-sola** invece di due.
+PROSSIMA AZIONE: aprire l'**unità 03 accesso-e-profilo**. Il mandato è già scritto in
+`handoff/03-accesso-e-profilo/mandato.md`, ed è l'unica unità del goal che **non tocca una riga di
+CSS** — quindi il suo mandato non teme nulla di ciò che le altre stanno facendo al foglio.
 
-⚠️ **Prima di aprirla: committare e POI PUSHARE**, perché il worktree nasce da `origin/main`.
+Poi restano la **04 controlli-e-campi** e la **05 scala-e-metro**, i cui mandati **non sono ancora
+scritti**, deliberatamente: la 04 è il grumo irriducibile del foglio di stile e la 05 rivendica
+righe che le altre possiedono, quindi scriverli prima di sapere com'è diventato il foglio
+produrrebbe mandati già scaduti.
 
-⚠️ **E riavviare il server**, che gira su una build senza il lavoro della 01b.
+⚠️ **Prima di aprire ogni unità: committare e POI PUSHARE**, perché il worktree nasce da
+`origin/main`.
+
+⚠️ **E riavviare il server dopo ogni integrazione**, perché il DevServer legge i manifest solo al
+proprio avvio.
 
 ⚠️ **Prima di aprire ogni unità: committare piano e mandato, e POI PUSHARE.** Il worktree
 dell'unità nasce da `origin/main`, non da `main` locale: committare non basta. Misurato dall'unità
@@ -276,6 +313,17 @@ caratteristiche del «tanto vale farlo adesso», che è il modo in cui un obiett
 clausole dichiarate ne guadagna una trentanovesima senza che nessuno se ne accorga.
 
 Il rimedio è già istruito nel `FUORI SCOPE` del resoconto della 01b: **basta un sì.**
+
+**Una seconda, dall'unità 02, della stessa famiglia.** Il pulsante della recensione si chiama
+«Salva recensione», ma **due** avvisi dicono «premi *Salva* di nuovo»: quello nuovo scritto da
+questa unità e uno preesistente a venti righe di distanza. Un'azione che cambia nome fra il pulsante
+e il testo che la nomina è un difetto — ma allinearli richiede di toccare **anche** il messaggio
+preesistente, che nessuna voce ha segnalato.
+
+**Ho accettato l'argomento dell'unità e non ho fatto correggere**: cambiare solo il nuovo lo
+farebbe divergere dal suo vicino, che è la stessa classe di difetto che quella stessa unità ha
+appena evitato sul testo d'aiuto declinato in quattro file. Due stringhe, nessun rischio, ma è
+scope nuovo — e il goal ha già una trentanovesima candidata in attesa.
 
 **Le altre quattro domande** sono state poste e risposte il 19 settembre notte, e stanno in
 `DECISIONI`.
