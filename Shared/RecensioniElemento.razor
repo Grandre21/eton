@@ -46,7 +46,14 @@
             }
             else
             {
-                <span class="voto-grande">@CalcoliVoti.Testo(Riepilogo.Media)</span>
+                @* .voto-assente al posto di .voto-grande quando la media non c'è: lì
+                   CalcoliVoti.Testo rende un trattino lungo, e il corpo display — 52px,
+                   crenatura a -.09em, alone verde — lo trasforma in una barra che sembra un
+                   elemento rotto. Stesso gradino del "?" di .voto-coperto qui sopra, e per la
+                   ragione scritta accanto a quella regola: l'assenza non merita il corpo più
+                   grande dell'applicazione. Il testo accanto ("nessun voto, 1 commento") dice
+                   già di che assenza si tratta, quindi qui non va aggiunta nessuna parola. *@
+                <span class="@(Riepilogo.Media is null ? "voto-assente" : "voto-grande")">@CalcoliVoti.Testo(Riepilogo.Media)</span>
                 <span class="testo-tenue">/ @VotoMassimo — @TestoConteggio()</span>
             }
         </p>
@@ -446,12 +453,44 @@
                     break;
 
                 case EsitoSalvataggio.Conflitto:
-                    // A differenza di Note e Collezioni, qui un conflitto non può nascere da un altro
-                    // utente: la policy reviews_update permette di modificare solo la propria riga.
-                    // Un conflitto significa quindi che l'hai salvata TU da un altro dispositivo — non
-                    // c'è una scelta da fare fra "ricarica" e "sovrascrivi", si ricarica e basta.
-                    Aggiorna(esito.Aggiornata!);
-                    avviso = "La tua recensione era stata modificata altrove: ho caricato la versione più recente.";
+                    // Registra e non Aggiorna: si prende la versione del server — senza, ogni
+                    // salvataggio successivo ripeterebbe lo stesso conflitto all'infinito, perché
+                    // 'mia' resterebbe alla versione vecchia — ma NON si tocca il modulo. Quello
+                    // che l'utente ha appena digitato resta dov'è, come nel catch di Crea qui
+                    // sotto ("Avevi già recensito…") e per la stessa ragione: un salvataggio non
+                    // riuscito non è un motivo per buttare via il lavoro di chi lo ha scritto.
+                    //
+                    // Nessuna scheda con la scelta fra Ricarica e Sovrascrivi, a differenza di
+                    // note, collezioni, elementi e spese: la policy reviews_update permette di
+                    // modificare solo la propria riga, quindi qui l'altro contendente non esiste e
+                    // una scheda che chiede "la sua versione o la tua?" nominerebbe un "lui" che
+                    // non c'è. Ripremere Salva È la sovrascrittura, e il testo lo dice.
+                    //
+                    // Il messaggio non afferma DOVE sia stata salvata l'altra versione: le cause
+                    // sono due e da qui non si distinguono — un'altra scheda o un altro
+                    // dispositivo tuo, oppure un salvataggio di poco fa di questa stessa pagina la
+                    // cui risposta non è stata registrata. Dirne una sola come se fosse un fatto è
+                    // la classe di errore che questo file evita già in "Sparita" qui sotto, e in
+                    // uno spazio con un solo membro "altrove" suonava come un secondo utente che
+                    // non esiste.
+                    Registra(esito.Aggiornata!);
+
+                    // Cambiata e non un confronto scritto a mano fra i campi del modulo e la riga
+                    // appena arrivata: è la stessa espressione che spegne il pulsante (v. il
+                    // <button> di "Salva recensione" nel markup), quindi il testo e il pulsante non
+                    // possono divergere — con un confronto a parte potrebbero, al primo che
+                    // ritocca una delle due parti. Letta DOPO Registra, perché è lì che 'mia'
+                    // diventa la riga del server: un istante prima risponderebbe a un'altra
+                    // domanda.
+                    //
+                    // Il secondo ramo non è teorico: due schede aperte sulla stessa recensione, la
+                    // stessa modifica fatta in entrambe, e la seconda riceve un conflitto il cui
+                    // contenuto è identico a quello che ha in mano. Lì non c'è niente da
+                    // sostituire, e chiedere di premere Salva — che in quel caso è spento —
+                    // manderebbe l'utente a cercare un pulsante che non può premere.
+                    avviso = Cambiata
+                        ? "Questa recensione risultava già salvata in una versione più recente di quella che avevi in mano: può averla salvata tu da un'altra scheda o da un altro dispositivo, oppure può essere un salvataggio di poco fa che qui non era stato registrato. Quello che hai appena scritto non è stato toccato: premi Salva di nuovo per sostituirla."
+                        : "Questa recensione era già salvata identica a quella che hai in mano: può averla salvata tu da un'altra scheda o da un altro dispositivo, oppure può essere un salvataggio di poco fa che qui non era stato registrato. Non c'è altro da fare.";
                     break;
 
                 case EsitoSalvataggio.Rifiutata:
@@ -536,13 +575,24 @@
     // Sostituisce la riga se c'è già, la aggiunge se non c'è: dopo una modifica la recensione è
     // nell'elenco caricato, dopo una creazione no, e senza il ramo dell'aggiunta la propria
     // recensione appena creata non comparirebbe nella media né nel conteggio finché non si ricarica.
-    private void Aggiorna(Review aggiornata)
+    //
+    // Separato da Aggiorna perché il conflitto (v. EsitoSalvataggio.Conflitto in Modifica) ha
+    // bisogno della metà di sopra e non di quella di sotto: gli serve la versione nuova per poter
+    // risalvare, ma NON deve toccare il modulo, dove c'è quello che l'utente ha appena digitato.
+    private void Registra(Review aggiornata)
     {
         recensioni = recensioni.Any(r => r.Id == aggiornata.Id)
             ? recensioni.Select(r => r.Id == aggiornata.Id ? aggiornata : r).ToList()
             : [.. recensioni, aggiornata];
 
         mia = aggiornata;
+    }
+
+    // Registra la riga E riporta il modulo su quello che il server ha in mano: è ciò che serve dopo
+    // un salvataggio riuscito, dove le due cose coincidono per definizione.
+    private void Aggiorna(Review aggiornata)
+    {
+        Registra(aggiornata);
         mioVoto = aggiornata.Rating;
         mioCommento = aggiornata.Comment ?? "";
     }

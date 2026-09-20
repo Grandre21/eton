@@ -1200,8 +1200,17 @@ label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap:
    display il punto interrogativo di un carattere a passo fisso ha il puntino
    molto staccato dal gancio e a 52px sembra un glifo rotto. Ma soprattutto una
    schermata coperta deve invitare a votare, non celebrare il dato che manca:
-   l'assenza non merita il corpo più grande dell'applicazione. */
-.voto-coperto {
+   l'assenza non merita il corpo più grande dell'applicazione.
+
+   .voto-assente condivide il selettore e non è una svista: il "?" dice «non lo so, è
+   coperto», il trattino di .voto-assente dice «lo so, non ha voti» — due frasi diverse, ma
+   lo stesso ruolo a schermo, cioè il posto del voto occupato da ciò che il voto non è. Le
+   stesse ragioni valgono parola per parola per entrambi, e tenerle separate le avrebbe fatte
+   divergere col tempo, come .etichetta-piccola e .etichetta-campo più sopra. Restano due
+   NOMI perché il markup deve poter dire quale dei due casi sta rendendo
+   (Shared/RecensioniElemento.razor, class="voto-grande"): chi legge il DOM distingue una
+   media coperta da una media che non esiste. */
+.voto-coperto, .voto-assente {
     font-family: var(--mono);
     font-size: var(--t-2xl);
     font-weight: 600;
