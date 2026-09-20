@@ -185,6 +185,17 @@
     --t-2xl: 2.25rem;   /* 36px */
     --t-3xl: 3.25rem;   /* 52px — la cifra grande, il solo corpo davvero display */
 
+    /* Sorgente unica del corpo e dell'interlinea del titolo di pagina: le legge
+       la regola h1 più sotto (v. il selettore h1 in questo foglio) e il calcolo
+       di --riga-titolo dentro .testata, che ne deriva l'altezza di una riga
+       invece di ricopiare i due valori. --corpo-titolo è il primo token di
+       questo foglio che cambia col viewport: viene ridichiarato su :root dentro
+       @media (min-width: 40rem) e su .testata dentro @media (max-width: 26rem).
+       Chi legge solo :root e non trova questo avvertimento crede che il valore
+       sia fisso in ogni fascia di larghezza. */
+    --corpo-titolo: var(--t-2xl);
+    --interlinea-titolo: 1.08;
+
     /* Una curva sola per tutto ciò che si muove. 'ease' parte lenta e finisce lenta, e su
        durate brevi si legge come esitazione; questa parte subito e frena alla fine, che è
        come si ferma una cosa che ha una massa. Era già la curva delle righe che entrano
@@ -329,11 +340,11 @@ h1, h2, h3 {
    così che si riconosce senza leggerlo. La crenatura negativa cresce col corpo:
    a 36px il -.03em di prima lasciava ancora le lettere staccate. */
 h1 {
-    font-size: var(--t-2xl);
+    font-size: var(--corpo-titolo);
     font-weight: 800;
     letter-spacing: -.035em;
     margin: 0 0 var(--s2);
-    line-height: 1.08;
+    line-height: var(--interlinea-titolo);
 }
 
 h2 { font-size: var(--t-lg); font-weight: 650; margin: 0 0 var(--s3); }
@@ -353,6 +364,19 @@ a { color: var(--accento); }
    ripetuta — promosso a classe autonoma, .interruttore lo eredita da qui e non
    lo dichiara più per conto suo. */
 .spiega { color: var(--testo-tenue); font-size: var(--t-sm); }
+
+/* Il margine sta sull'elemento, non sulla classe: è una proprietà del paragrafo,
+   non del ruolo che porta il testo — la classe dice come si legge il testo,
+   l'elemento dice se è un blocco a sé o un frammento dentro una riga. In
+   Pages/CollectionEdit.razor la stessa classe veste anche uno span, dentro
+   l'interruttore «Voto al buio», dove .interruttore .testi è un flex container:
+   uno span inline che diventa flex item viene blockificato, e i margini
+   verticali che da inline ignorerebbe gli si applicano eccome. È la stessa
+   classe di difetto che .riepilogo-voto .testo-tenue risolve con un'eccezione
+   che azzera il margine per lo stesso motivo su .testo-tenue: qui si sceglie
+   invece la forma che non ne richiede nessuna, perché un'eccezione va
+   mantenuta e vale per un contesto solo. */
+p.spiega { margin: 0 0 var(--s3); }
 
 /* Un collegamento dentro un testo di servizio non è un invito: è una porta per chi
    la sta già cercando. Blu e sottolineato pieno peserebbe più della frase che lo
@@ -396,6 +420,20 @@ a { color: var(--accento); }
     font-size: .95em;
     letter-spacing: -.01em;
 }
+
+/* Su un campo, .95em di .dato vince sul font-size della regola base dei campi
+   (v. il selettore :where(input[type=text], …) più sotto) perché quella vive
+   dentro :where() e vale zero: qualunque classe la batte, e .dato è a
+   specificità 0-1-0. Il corpo che ne risulta scende sotto i 16px — proprio ciò
+   che quella regola dichiara di voler evitare col suo font-size: var(--t-base)
+   — e su iOS la pagina si ingrandisce al fuoco. Qui si rimedia solo per i
+   campi: :where() tiene questa regola alla stessa specificità 0-1-0 di
+   .importo-spesa, dichiarata più avanti nel foglio, che a parità di peso vince
+   per ordine e mantiene i tre campi dell'importo al loro corpo grande.
+   Scritta input.dato salirebbe a 0-1-1 e ribalterebbe quella vittoria,
+   rovinando l'importo per rimediare alla data. A tornare sulla scala è il
+   solo corpo: la famiglia mono che .dato porta resta sua, è il suo mestiere. */
+:where(input, select, textarea).dato { font-size: var(--t-base); }
 
 /* ------------------------------------------------------------- guscio --- */
 
@@ -976,14 +1014,21 @@ label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap:
        v. .testata h1 subito sotto, stesso problema di .intestazione h1. */
     margin-bottom: var(--s2);
 
-    /* Altezza di UNA riga del titolo: le stesse due grandezze che usa la regola
-       h1 (v. il selettore h1 in questo foglio) — corpo per interlinea. Serve a
-       .aiuto-apri e a .testata-azione qui sotto per ancorarsi alla prima riga
-       invece che al centro del blocco, e vive qui perché da qui si eredita.
-       Se un giorno cambia l'interlinea di h1, questo 1.08 va cambiato insieme:
-       è l'unico valore di questo foglio duplicato da un'altra regola, ed è
-       duplicato perché una custom property non si eredita fra fratelli. */
-    --riga-titolo: calc(var(--t-2xl) * 1.08);
+    /* Altezza di UNA riga del titolo: corpo per interlinea, presi entrambi da
+       --corpo-titolo e --interlinea-titolo (v. :root). Serve a .aiuto-apri e a
+       .testata-azione qui sotto per ancorarsi alla prima riga invece che al
+       centro del blocco, e vive qui e non su :root perché una custom property
+       non si eredita fra fratelli: .aiuto-apri e .testata-azione non sono
+       discendenti di h1, e solo dentro .testata possono leggere questo valore.
+       Prima di questa forma i due valori erano ricopiati a mano qui invece che
+       letti dal token, ed erano divergenti dal giorno in cui è nato il ramo
+       @media (min-width: 40rem) qui sotto nel file, che porta il titolo a
+       --t-3xl senza toccare questo calcolo: il «?» restava tarato sulla riga
+       vecchia, 8,64px più in alto del centro vero. Derivare dai token invece di
+       ricopiarli chiude il difetto perché il calcolo segue il titolo da solo in
+       ogni fascia di larghezza, comprese quelle in cui --corpo-titolo viene
+       ridichiarato. */
+    --riga-titolo: calc(var(--corpo-titolo) * var(--interlinea-titolo));
 }
 
 .testata h1 { margin: 0; min-width: 0; }
@@ -1005,12 +1050,11 @@ label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap:
    proprio box in overflow:visible non risale all'antenato. Una misura di
    overflow qui dà un falso "tutto a posto": si guarda. */
 @media (max-width: 26rem) {
-    .testata h1 { font-size: var(--t-xl); }
-
-    /* Il titolo rimpicciolisce, quindi la riga si accorcia e l'ancora di
-       .aiuto-apri e .testata-azione va ricalcolata: senza questa riga
-       resterebbero tarate sul corpo grande e scenderebbero sotto la prima riga. */
-    .testata { --riga-titolo: calc(var(--t-xl) * 1.08); }
+    /* Si ridichiara il token, non il font-size: --riga-titolo dentro .testata
+       lo legge già (v. il selettore .testata più sopra), quindi l'ancora di
+       .aiuto-apri e .testata-azione segue da sola il corpo più piccolo invece
+       di restare tarata su quello grande e scendere sotto la prima riga. */
+    .testata { --corpo-titolo: var(--t-xl); }
 }
 
 /* Il "?" (.aiuto-apri) e l'azione (.testata-azione) si ancorano alla PRIMA riga
@@ -2266,12 +2310,14 @@ button.pastiglia {
    l'icona porta anche un'etichetta visibile (v. Pages/Home.razor), quindi non è
    più un bottone rotondo con un'icona sola al centro. width/height fissi a 44px
    non hanno più senso — l'etichetta li farebbe uscire dal cerchio — e diventano
-   min-width/min-height: il bersaglio resta grande ALMENO 44px sui due assi, che
-   è la misura sotto la quale un dito sbaglia il colpo, ed è la voce che sta
-   nella testata di un telefono; ma la scatola può allargarsi quanto serve per
-   ospitare "Profilo" senza stringerlo. --raggio-pieno resta, ma con un padding
-   orizzontale al posto di una larghezza fissa diventa una pastiglia a stadio
-   invece che un cerchio — la stessa forma di .pastiglia.
+   min-width/min-height: il bersaglio resta grande ALMENO --tocco sui due assi,
+   il pavimento del progetto, ed è la voce che sta nella testata di un telefono;
+   ma la scatola può allargarsi quanto serve per ospitare "Profilo" senza
+   stringerlo. Questa voce non ha nessuna ragione per avere un pavimento suo:
+   il token è lo stesso che usa ogni altro bersaglio di tocco del foglio.
+   --raggio-pieno resta, ma con un padding orizzontale al posto di una
+   larghezza fissa diventa una pastiglia a stadio invece che un cerchio — la
+   stessa forma di .pastiglia.
 
    Sparisce su schermo largo insieme a .solo-stretto, nella media query in fondo
    al file. */
@@ -2280,8 +2326,8 @@ button.pastiglia {
     align-items: center;
     gap: var(--s2);
     flex: none;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: var(--tocco);
+    min-height: var(--tocco);
     padding: 0 var(--s3);
     border-radius: var(--raggio-pieno);
     color: var(--testo-tenue);
@@ -2315,7 +2361,14 @@ button.pastiglia {
 /* --- tavoletta: il contenuto respira, la barra resta in basso --- */
 @media (min-width: 40rem) {
     .app-layout { padding: var(--s6) var(--s5); padding-bottom: calc(var(--s8) + var(--s5)); }
-    h1 { font-size: var(--t-3xl); }
+
+    /* Si ridichiara il token e non il font-size di h1, perché così l'ancora del
+       «?» segue: --riga-titolo dentro .testata e .aiuto-apri (v. i rispettivi
+       selettori) leggono --corpo-titolo, quindi salgono a --t-3xl insieme al
+       titolo. Prima di questa forma il salto di corpo a schermo largo lasciava
+       indietro l'ancora di 8,64px su ogni schermata larga: la riga vera saliva
+       a 56,16px e il calcolo restava tarato su 38,88. */
+    :root { --corpo-titolo: var(--t-3xl); }
 
     /* Qui le quattro colonne ci stanno: nome, barra (elastica), quota, totale.
        display:contents leva il <li> dal flusso — i suoi quattro figli finiscono
@@ -2438,7 +2491,9 @@ button.pastiglia {
         flex-direction: row;
         justify-content: flex-start;
         gap: var(--s3);
-        min-height: 44px;
+        /* Il pavimento non si ridichiara qui: lo dà già la regola base di
+           .nav-app .voce, e questo blocco cambia la disposizione, non il
+           linguaggio. */
         padding: 0 var(--s3);
         border-radius: var(--raggio-s);
         font-size: var(--t-md);
