@@ -344,6 +344,22 @@ Su `/expenses`, dove il modulo di una spesa nuova è sempre aperto:
 ⚠️ **L'altezza invariata è la verifica che conta più del corpo.** Se leggi un numero diverso da 48, il
 conto che ho fatto è sbagliato e va riaperto: `16 × 1,25 + 24 + 2 = 46` deve restare sotto `--tocco`.
 
+⚠️ **RETTIFICA della sessione di chiusura, 20 settembre 2026 — il collaudo ha letto un numero diverso
+da 48, e l'avvertenza qui sopra va presa in parola: il conto era sbagliato.** Il campo è alto **48px
+solo sotto i 640px**; **sopra i 640px è 71px**, misurato nel browser. Il conto `16 × 1,25 + 26 = 46`
+è giusto **in isolamento e irrilevante nel contesto**: sopra quella soglia il campo sta in un grid a
+due colonne affiancato a quello dell'importo, alto ~71 per il proprio corpo da 36px, e lo *stretch*
+implicito della riga gli impone quell'altezza **indipendentemente dal proprio corpo** — `min-height`
+non governa niente, perché non è il minimo a decidere ma la riga. **Ciò che questa voce doveva
+ottenere è stato ottenuto**: il corpo è 16px, misurato, la protezione iOS è attiva, e 71px è ben sopra
+il pavimento di tocco. **Il codice non è stato corretto e non va corretto.**
+
+**Perché la misura era scrivibile e non verificabile**, che è la lezione e non il caso: il mandato di
+questa unità vietava di avviare il server, ed è il server l'unico posto dove quel grid esiste. Una
+misura attesa **calcolata** invece che **osservata** è un'ipotesi travestita da criterio. Fonti:
+`handoff/collaudo/esito-live-testing.md` (difetto 1) e `handoff/collaudo/esito-ui-critic.md`
+(rilievo 1, che ne porta la causa completa e due fix proposti, destinazione fase 2.1-bis).
+
 E i tre campi che **non** devono essere toccati, sulla stessa schermata e su `/expenses/{id}`:
 
     getComputedStyle(document.querySelector('input.importo-spesa')).fontSize   → "36px"

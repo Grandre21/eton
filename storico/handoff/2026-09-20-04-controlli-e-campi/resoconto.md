@@ -376,11 +376,25 @@ della regola sull'interlinea:
   — glielo dà `.dato` con il suo `.95em` — e passano da **49,6 a 48px**. Anche loro erano sopra il
   minimo, quindi anche loro rientrano: è l'esito voluto, ma è un quarto valore che il commento del
   foglio non scrive, e al collaudo va guardato con gli altri;
+  ⚠️ **RETTIFICA della sessione di chiusura, 20 settembre 2026 — questa misura è stata smentita dal
+  collaudo, e valeva solo per metà.** Il campo è alto **48px solo sotto i 640px**, dove i campi vanno
+  in colonna. **Sopra i 640px è alto 71px**, misurato nel browser: lì il contenitore è un grid a due
+  colonne e il campo della data è affiancato a quello dell'importo, alto ~71 per il proprio corpo da
+  36px. Lo *stretch* implicito della riga porta la data alla stessa altezza **indipendentemente dal
+  proprio corpo**, e `.campo input { flex: 1 }` — scritta per la variante in riga — la fa crescere.
+  Il calcolo era **giusto in isolamento e irrilevante nel contesto**: dentro un grid l'altezza la
+  decide la riga, non il contenuto. **Il codice non è stato corretto e non va corretto**: la
+  protezione che questa voce introduceva funziona, il corpo è 16px misurato, e 71px è ben sopra il
+  pavimento di tocco. Fonti: `handoff/collaudo/esito-live-testing.md` (difetto 1) e
+  `handoff/collaudo/esito-ui-critic.md` (rilievo 1, che ne porta la causa completa e due fix);
 - la **`textarea`** della nota **non cambia**: si riprende l'interlinea del body, e `.corpo-nota`
   dichiara comunque la propria (1.6). Se cambiasse, sarebbe un difetto.
 
       // /expenses — il campo della data
-      document.querySelector('input.data-spesa').getBoundingClientRect().height   → 48  (era 49,6)
+      // ⚠️ RETTIFICATO dalla sessione di chiusura: 48 vale SOLO sotto i 640px.
+      //    Sopra, il grid lo stira a 71 sull'altezza del campo dell'importo. V. la rettifica sopra.
+      document.querySelector('input.data-spesa').getBoundingClientRect().height   → 48 sotto 640px
+                                                                                 → 71 sopra 640px
 
 **7 — il primo campo della scheda elemento.** Su un elemento di una collezione con almeno due campi:
 
