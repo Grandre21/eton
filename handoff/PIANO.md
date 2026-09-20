@@ -205,6 +205,40 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   per costruzione, mentre con un confronto separato potrebbero, al primo che ritocca una delle due
   parti.
 
+- **20 set 2026 — La voce 16 è verificata e la mia decisione regge, ma ora è falsificabile.**
+  Avevo deciso di non toccarla sulla base di un fatto della ricognizione, e avevo chiesto all'unità
+  03 di **verificare quel fatto** dicendole che se si fosse rivelato falso la mia decisione cadeva.
+  L'ha confermato con le due righe: il servizio gemello è registrato con la **stessa identica
+  forma**, carattere per carattere salvo il nome del tipo, ed è della stessa famiglia — entrambi
+  wrapper su web storage che ricevono il runtime JS sincrono.
+  **La premessa del rapporto di chiusura era vera solo per due dei tre «fratelli».** Le due
+  convenzioni coesistono davvero, quindi uniformare è una decisione di progetto e non un fix.
+
+- **20 set 2026 — La voce 15 aveva una premessa incompleta, e il fatto nuovo ribalta il principio
+  invece di applicarlo.** Il rapporto diceva che due metodi erano «scoperti». Non lo erano: erano
+  **muti**. La libreria di autenticazione li invoca **solo** da un gestore che cattura tutto e non
+  rilancia mai, e il progetto non registra alcun handler di diagnostica — verificato da
+  `doc-checker` sul sorgente della **versione installata**, e riverificato indipendentemente dal
+  `bug-hunter`.
+  ⚠️ **Perché questo capovolge il principio del ciclo scorso.** «Si protegge dove esiste un ripiego
+  onesto» presuppone che *non* proteggere significhi **non partire**: l'eccezione risale e ferma
+  qualcosa. Qui non ferma niente — l'applicazione prosegue comunque, convinta di aver salvato, **e
+  in più nessuno lo sa**.
+  **Esito:** il salvataggio è protetto, ma il `catch` **non è una protezione** — è l'unica traccia
+  possibile di un fallimento che oggi sparisce, e il commento lo dichiara per non mentire sul
+  proprio scopo. La cancellazione **resta nuda**, con quattro ragioni verificate, fra cui che
+  proteggerla falsificherebbe un commento esistente e che in un solo logout stamperebbe la stessa
+  riga **quattro volte**. Resta una **dichiarazione** al posto della protezione, perché senza di
+  essa la regressione sarebbe a un passo e sembrerebbe una pulizia.
+
+- **20 set 2026 — Due difetti nel lavoro dei revisori, dichiarati dall'unità invece che taciuti.**
+  Un revisore ha consultato la documentazione di una **versione sbagliata** del pacchetto (4.2.7
+  invece della 6.3.0 installata), e una sua prova era **aritmeticamente impossibile** — «68
+  occorrenze in 30 file» in una cartella che ne contiene 28. A notarlo è stato il `checker`, non il
+  revisore e non l'unità. Nessuno dei due rilievi dipendeva da quelle letture, quindi non sono
+  stati declassati — ma il credito da dare a un rapporto di revisione non è uniforme, e questo è il
+  tipo di fatto che lo misura.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -215,7 +249,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 | **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **PARZIALE** — integrata con un merge il 20 set. **Voce 9 chiusa**; **voce 6 diagnosticata e passata alla 01b**, perché la causa sta in un file fuori dal suo perimetro. È il `PARZIALE` previsto dal punto 3 del suo tetto |
 | **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | **FATTO** — integrata il 20 set. ⚠️ **L'unità è morta durante il lavoro**, uccisa dal riavvio della sessione padre, dopo aver finito l'implementazione e prima della revisione: il codice è suo, la revisione e il resoconto sono del capo, e sta scritto in testa al resoconto |
 | **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | **FATTO** — integrata il 20 set. Quattro voci con codice, la **10 chiusa dichiarando che non è un difetto**. La **26 si è chiusa dentro entrambe le decisioni del 19 settembre**: nessuna revoca da adjudicare |
-| **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
+| **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | **FATTO** — integrata il 20 set. **Nessuna riga di CSS toccata**, come il perimetro garantiva. La **16 verificata e lasciata stare**; la **15 chiusa con un'asimmetria dichiarata** invece che uniformata |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
 | **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
 
@@ -276,14 +310,18 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'**unità 03 accesso-e-profilo**. Il mandato è già scritto in
-`handoff/03-accesso-e-profilo/mandato.md`, ed è l'unica unità del goal che **non tocca una riga di
-CSS** — quindi il suo mandato non teme nulla di ciò che le altre stanno facendo al foglio.
+PROSSIMA AZIONE: aprire l'**unità 04 controlli-e-campi**. Il mandato è già scritto in
+`handoff/04-controlli-e-campi/mandato.md`, ed è l'unico del goal che **ordina** le voci invece di
+elencarle, perché il suo perimetro non è un insieme di file ma **un insieme di regole dentro un
+file**. Dichiara in testa che `PARZIALE` è un esito previsto.
 
-Poi restano la **04 controlli-e-campi** e la **05 scala-e-metro**, i cui mandati **non sono ancora
-scritti**, deliberatamente: la 04 è il grumo irriducibile del foglio di stile e la 05 rivendica
-righe che le altre possiedono, quindi scriverli prima di sapere com'è diventato il foglio
-produrrebbe mandati già scaduti.
+Poi resta la **05 scala-e-metro**, il cui mandato **non è ancora scritto**: rivendica righe che la
+04 sta per toccare, e scriverlo prima produrrebbe un mandato già scaduto. Le sue tre voci non sono
+difetti ma **decisioni di sistema di design**, e potrebbe chiudersi senza scrivere una riga.
+
+**Poi il collaudo**, che fa il capo, con il server avviato da lui: le prove stanno nelle sezioni
+`LA MISURA ATTESA PER IL COLLAUDO` dei resoconti, e si **ricopiano** invece di inventarle. Più le
+quattro voci della tabella «non assegnate a un'unità».
 
 ⚠️ **Prima di aprire ogni unità: committare e POI PUSHARE**, perché il worktree nasce da
 `origin/main`.
@@ -327,6 +365,19 @@ scope nuovo — e il goal ha già una trentanovesima candidata in attesa.
 
 **Le altre quattro domande** sono state poste e risposte il 19 settembre notte, e stanno in
 `DECISIONI`.
+
+**Un candidato per il goal successivo, istruito dall'unità 03 e non risolto.** Ogni scheda del
+browser ha la **propria** istanza dei servizi, e il bootstrap di una seconda scheda può concludere
+la propria scrittura **dopo** il logout della prima, rimettendo in memoria locale una chiave appena
+cancellata. Vale per l'impronta del profilo, e vale **identico** per lo spazio attivo — una chiave
+che questo goal non tocca. La protezione esistente è un campo **di istanza**, quindi copre la corsa
+dentro la scheda e non quella fra schede, e nel progetto non esiste alcun meccanismo di
+sincronizzazione fra schede: il `checker` ne ha cercati due senza trovarli.
+
+**Non è stato risolto, e il motivo è buono:** il rimedio ovvio chiuderebbe **metà** del problema
+lasciando l'altra aperta, dando alla pulizia al logout un'apparenza di simmetria che non avrebbe.
+È una decisione di progetto su due servizi. **Il fatto è però scritto nel codice**, così chi legge
+non ricava più dal commento una garanzia che il codice non dà.
 
 **Dubbi miei, non ancora domande.**
 
