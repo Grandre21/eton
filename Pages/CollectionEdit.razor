@@ -515,34 +515,18 @@ else
         _ => tipo
     };
 
-    // Il nome che chi ascolta la pagina sente quando l'etichetta è ancora vuota. Tre livelli:
-    // l'etichetta digitata, poi la chiave, e in ultimo la posizione nell'elenco.
-    //
-    // L'ordine "etichetta, e se manca la chiave" è quello che SchemaCampi.Valida usa per nominare
-    // un campo nei messaggi di errore, e vale la pena rispecchiarlo: un campo si chiama allo stesso
-    // modo nei due punti in cui l'applicazione lo nomina. La condizione però è IsNullOrWhiteSpace e
-    // non l'IsNullOrEmpty di quella riga: un'etichetta di soli spazi lì è un'etichetta come un'altra,
-    // qui sarebbe un nome che non si sente. È anche la forma prevalente nel progetto.
-    //
-    // I due '?? ""' non sono ridondanti benché il modello dichiari 'string' non annullabile:
-    // Newtonsoft sovrascrive gli inizializzatori '= ""' quando il jsonb contiene "label": null o
-    // "key": null, il vincolo SQL collections_fields_shape non guarda dentro i singoli campi, e
-    // questo render precede la validazione, che avviene solo al Salva. È la stessa ragione per cui
-    // SchemaCampi.Valida li applica, e sta scritta lì.
-    //
-    // La posizione è l'ultimo livello e serve solo a quello stato: con etichetta e chiave entrambe
-    // vuote ogni menù si chiamerebbe allo stesso modo, che è esattamente il difetto — controlli con
-    // un nome indistinguibile — al posto del quale questa riga esiste.
+    // Etichetta, poi chiave, poi posizione: è l'ordine con cui SchemaCampi.Valida nomina un campo
+    // nei messaggi d'errore, e vale la pena rispecchiarlo — un campo si chiama allo stesso modo nei
+    // due punti in cui l'applicazione lo nomina. La condizione però è IsNullOrWhiteSpace e non
+    // l'IsNullOrEmpty di quella riga: un'etichetta di soli spazi lì è un'etichetta come un'altra,
+    // qui sarebbe un nome che non si sente.
+    // La posizione copre il caso in cui anche la chiave è vuota: succede col jsonb malformato, che
+    // il vincolo SQL non intercetta e che questo render incontra prima che Valida giri. Senza, in
+    // quello stato i menù si chiamerebbero tutti allo stesso modo.
     private string NomeCampo(CampoDefinizione campo)
-    {
-        var etichetta = campo.Label ?? "";
-        if (!string.IsNullOrWhiteSpace(etichetta)) return etichetta;
-
-        var chiave = campo.Key ?? "";
-        if (!string.IsNullOrWhiteSpace(chiave)) return chiave;
-
-        return $"numero {campi.IndexOf(campo) + 1}";
-    }
+        => !string.IsNullOrWhiteSpace(campo.Label) ? campo.Label
+         : !string.IsNullOrWhiteSpace(campo.Key)   ? campo.Key
+         : $"numero {campi.IndexOf(campo) + 1}";
 
     private static void AlCambioTipo(CampoDefinizione campo)
     {
