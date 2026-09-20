@@ -403,7 +403,35 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: **il collaudo, che è BLOCKED e aspetta un gesto dell'utente.**
+PROSSIMA AZIONE: aprire la **sessione di chiusura**. Il mandato sta in `handoff/CHIUSURA.md`.
+È l'unica a fare la verifica di copertura sulle **38 clausole**: il §6 vieta di lanciare `coverage`
+dentro un'unità, e il capo che ha disegnato la partizione è il candidato peggiore a trovarne i
+buchi.
+
+**Il collaudo è chiuso**, tutti e quattro i passi eseguiti:
+
+| Passo | Esito |
+|---|---|
+| **Server** | avviato **dall'utente** dopo che il sistema ne aveva ucciso uno per memoria bassa |
+| **`live-testing`** | **10 scenari su 10**, `ESITO: difetti` — due difetti, **nessuno funzionale**, e **cinque prove dichiarate non eseguibili** |
+| **`ui-critic`** | **5 rilievi**, e **tutti e cinque quelli del 19 settembre confermati chiusi** con le misure |
+| **Voce 33** | si chiude **dichiarando**: la proprietà riserva la colonna sempre, i due casi non possono più divergere per costruzione |
+
+Gli esiti stanno in `handoff/collaudo/esito-live-testing.md` e `esito-ui-critic.md`.
+
+⚠️ **Nessuno dei sette rilievi del collaudo è stato corretto, ed è una scelta.** Vale la regola che
+questo goal ha tenuto per tutta la notte: le voci nuove trovate al collaudo vanno nel rapporto, non
+nel goal corrente. **Due sono minuscoli e oggettivi** — il «?» in Arial, che è una riga, e il campo
+della data, che ha ora causa completa e due fix scritti — e sono stati **portati all'utente invece
+che seppelliti nel mucchio**: la decisione è stata di non aprirli, perché allargare l'obiettivo
+all'ultimo passo avrebbe reso finta una regola applicata cinque volte.
+
+---
+
+*Sotto, la cronaca del blocco che ha fermato il collaudo per un'ora, conservata perché è la sola
+volta in cui questo goal si è fermato ad aspettare l'utente.*
+
+**Il collaudo è stato `BLOCKED` e ha aspettato un gesto dell'utente.**
 
 ⚠️⚠️ **Il server è stato ucciso dal sistema per memoria bassa**, e la notifica dice esplicitamente
 di **non riavviarlo d'iniziativa** perché la memoria potrebbe essere ancora scarsa. Il collaudo
