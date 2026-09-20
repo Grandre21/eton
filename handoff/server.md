@@ -1,11 +1,13 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** **Quarto avvio**, dopo l'integrazione dell'unità 02. I PID qui sotto sono **quelli veri
+> **VIVO.** **Quinto avvio**, dopo l'integrazione dell'unità 03. I PID qui sotto sono **quelli veri
 > di adesso**: chi riavvia il server **riscrive la tabella**, perché cambiano a ogni avvio.
 >
-> Gli avvii precedenti, e sono **storia**: 23:57 del 19 settembre (PID 24148 e 21868, fermati a
-> mano); 01:40 del 20 settembre (PID 26652 e 25108, **morti col riavvio della sessione padre**);
-> il terzo (PID 3496 e 7732, fermati a mano dopo l'integrazione della 02).
+> Gli avvii precedenti sono **storia**, e sono cinque perché **ogni integrazione su `main` obbliga a
+> riavviare**: il DevServer legge i manifest degli asset solo al proprio avvio, e dopo una build
+> successiva annuncia nomi con impronta che non esistono più. Uno solo dei quattro non l'ho fermato
+> io — il secondo, **morto col riavvio della sessione padre**, perché il processo era un task in
+> background della sessione.
 >
 > ⚠️ **La seconda morte non l'ho decisa io, e insegna qualcosa**: il processo del server era un
 > task in background della sessione, e quando la sessione è stata riavviata è caduto con lei. Non è
@@ -16,7 +18,7 @@
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui gira: `43b232a`** — unità 01, 01b e 02 integrate; la 03 aperta
+- **Commit su cui gira: `adfb913`** — unità 01, 01b, 02 e 03 integrate; la 04 aperta
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
@@ -25,8 +27,8 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **3176** | `dotnet run --launch-profile Eton` | padre |
-| **11428** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
+| **12648** | `dotnet run --launch-profile Eton` | padre |
+| **2676** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
@@ -35,7 +37,7 @@ che la 5000 sia tornata libera.
 correnti e vanno sostituiti con quelli della tabella qui sopra:
 
     # fermare, dal tool PowerShell: prima il figlio, poi il padre
-    foreach ($id in 11428, 3176) { Stop-Process -Id $id -Force }
+    foreach ($id in 2676, 12648) { Stop-Process -Id $id -Force }
     # verificare, dal tool Bash
     netstat -ano | grep -E ':5000\s+.*LISTENING' || echo "PORTA 5000 LIBERA"
     # riavviare, dalla radice del progetto, in background
