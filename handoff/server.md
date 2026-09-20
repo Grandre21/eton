@@ -1,11 +1,16 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** **Riavviato** il 20 settembre 2026 alle 01:40, dopo l'integrazione dell'unità 01 che ha
-> modificato `wwwroot/css/app.css`. Il primo avvio era delle 23:57 del 19 settembre; i suoi PID
-> (24148 e 21868) sono **storia** e sono stati fermati entrambi, con la porta verificata libera
-> prima di riavviare.
-> I PID qui sotto sono **quelli veri di adesso**: chi riavvia il server **riscrive la tabella**,
-> perché cambiano a ogni avvio.
+> **VIVO.** **Terzo avvio**, dopo l'integrazione dell'unità 01b. I PID qui sotto sono **quelli veri
+> di adesso**: chi riavvia il server **riscrive la tabella**, perché cambiano a ogni avvio.
+>
+> Gli avvii precedenti, e sono **storia**: 23:57 del 19 settembre (PID 24148 e 21868, fermati a
+> mano); 01:40 del 20 settembre (PID 26652 e 25108, **morti col riavvio della sessione padre**).
+>
+> ⚠️ **La seconda morte non l'ho decisa io, e insegna qualcosa**: il processo del server era un
+> task in background della sessione, e quando la sessione è stata riavviata è caduto con lei. Non è
+> il caso che `handoff/server.md` descrive più sotto — «su Windows la morte del padre non uccide i
+> figli» — perché lì si parla di un *agente effimero* che lascia il server orfano e vivo. Qui è
+> caduto tutto, padre e figlio. **Chi riprende non deve fidarsi della tabella: verifica la porta.**
 
 - URL: **http://localhost:5000**
 - Ambiente: Development
@@ -19,8 +24,8 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **26652** | `dotnet run --launch-profile Eton` | padre |
-| **25108** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
+| **3496** | `dotnet run --launch-profile Eton` | padre |
+| **7732** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
