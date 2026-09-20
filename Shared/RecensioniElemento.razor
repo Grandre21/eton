@@ -474,7 +474,23 @@
                     // uno spazio con un solo membro "altrove" suonava come un secondo utente che
                     // non esiste.
                     Registra(esito.Aggiornata!);
-                    avviso = "Questa recensione risultava già salvata in una versione più recente di quella che avevi in mano: può averla salvata tu da un'altra scheda o da un altro dispositivo, oppure può essere un salvataggio di poco fa che qui non era stato registrato. Quello che hai appena scritto non è stato toccato: premi Salva di nuovo per sostituirla.";
+
+                    // Cambiata e non un confronto scritto a mano fra i campi del modulo e la riga
+                    // appena arrivata: è la stessa espressione che spegne il pulsante (v. il
+                    // <button> di "Salva recensione" nel markup), quindi il testo e il pulsante non
+                    // possono divergere — con un confronto a parte potrebbero, al primo che
+                    // ritocca una delle due parti. Letta DOPO Registra, perché è lì che 'mia'
+                    // diventa la riga del server: un istante prima risponderebbe a un'altra
+                    // domanda.
+                    //
+                    // Il secondo ramo non è teorico: due schede aperte sulla stessa recensione, la
+                    // stessa modifica fatta in entrambe, e la seconda riceve un conflitto il cui
+                    // contenuto è identico a quello che ha in mano. Lì non c'è niente da
+                    // sostituire, e chiedere di premere Salva — che in quel caso è spento —
+                    // manderebbe l'utente a cercare un pulsante che non può premere.
+                    avviso = Cambiata
+                        ? "Questa recensione risultava già salvata in una versione più recente di quella che avevi in mano: può averla salvata tu da un'altra scheda o da un altro dispositivo, oppure può essere un salvataggio di poco fa che qui non era stato registrato. Quello che hai appena scritto non è stato toccato: premi Salva di nuovo per sostituirla."
+                        : "Questa recensione era già salvata identica a quella che hai in mano: può averla salvata tu da un'altra scheda o da un altro dispositivo, oppure può essere un salvataggio di poco fa che qui non era stato registrato. Non c'è altro da fare.";
                     break;
 
                 case EsitoSalvataggio.Rifiutata:
