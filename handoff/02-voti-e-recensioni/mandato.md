@@ -114,15 +114,25 @@ Nessuna firma nuova da esporre ad altre unità. Due vincoli di forma, però, ed 
 
 ## STATO
 
-L'unità **01** è rientrata prima di te e ha lavorato su `Shared/TestataPagina.razor`,
-`Layout/MainLayout.razor` e il blocco della testata in `app.css`, per il pulsante «?» che non
-apriva il pannello al primo clic e per il suo allineamento con i titoli lunghi. **Leggi il suo
-resoconto in `handoff/01-punto-interrogativo/resoconto.md`**, e in particolare la sua sezione
-`CAUSA`: se ha toccato il modo in cui il sottoalbero di pagina viene ricostruito, può aver spostato
-qualcosa sotto i piedi anche a te.
+Prima di te sono rientrate **due** unità, ed entrambe ti riguardano.
 
-Il suo `FUORI SCOPE` può contenere una voce sul **doppio caricamento dei dati nella Home**, che non
-è nel tuo perimetro e non devi toccare.
+**L'unità 01** ha lavorato **solo** su `wwwroot/css/app.css`, nel blocco della testata: ha chiuso
+l'allineamento del pulsante «?» con la prima riga di un titolo lungo, e ha **diagnosticato senza
+correggerlo** il difetto del primo clic, la cui causa stava fuori dal suo perimetro. Il resoconto è
+in `handoff/01-punto-interrogativo/resoconto.md`, e la sua sezione `CAUSA` vale la lettura anche per
+te: contiene un esempio di come un esperimento fatto per escludere un'ipotesi conteneva la prova di
+un'altra senza che nessuno la vedesse.
+
+**L'unità 01b** ha corretto quella causa, e ⚠️ **ha cambiato qualcosa che ti riguarda direttamente**:
+prima del suo lavoro **ogni pagina veniva montata due volte** per navigazione, e quindi ogni
+`OnInitializedAsync` girava due volte. Ora si monta **una volta sola**. Se nel tuo perimetro esiste
+una guardia contro le doppie letture o i doppi caricamenti, **non toglierla senza pensarci**: potrebbe
+essere diventata inutile, oppure essere l'unica protezione rimasta per un altro percorso. Il suo
+resoconto è in `handoff/01b-home-e-montaggio/resoconto.md`, e la sua sezione `MODI DI FALLIRE`
+elenca ciò che quel cambiamento può rompere.
+
+**Un rilievo resta aperto e non è tuo**: il titolo della scheda del browser sulla Home. È fuori dal
+tuo perimetro e sta nel campo `APERTO` del piano.
 
 ## GATE
 

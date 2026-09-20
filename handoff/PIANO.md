@@ -181,7 +181,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 | Unità | Perimetro | Voci | Dipende da | Stato |
 |---|---|---|---|---|
 | **01 punto-interrogativo** | `Shared/TestataPagina.razor`, `Layout/MainLayout.razor`, e in `wwwroot/css/app.css` **solo** il blocco della testata e dell'aiuto più la regola di animazione di pagina | **6**, **9**, + la datazione della regressione | — | **PARZIALE** — integrata con un merge il 20 set. **Voce 9 chiusa**; **voce 6 diagnosticata e passata alla 01b**, perché la causa sta in un file fuori dal suo perimetro. È il `PARZIALE` previsto dal punto 3 del suo tetto |
-| **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | PIANIFICATA |
+| **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | **FATTO** — integrata il 20 set. ⚠️ **L'unità è morta durante il lavoro**, uccisa dal riavvio della sessione padre, dopo aver finito l'implementazione e prima della revisione: il codice è suo, la revisione e il resoconto sono del capo, e sta scritto in testa al resoconto |
 | **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | PIANIFICATA |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | PIANIFICATA |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
@@ -244,15 +244,15 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: attendere il resoconto dell'**unità 01b home-e-montaggio**. Il mandato sta in
-`handoff/01b-home-e-montaggio/mandato.md` ed è già scritto.
-Al suo rientro: audita `CONTRATTI` e `SCOSTAMENTI`, integra su `main`, **riavvia il server** — è
-vivo e servirebbe la build vecchia — e apri l'**unità 02 voti-e-recensioni**, il cui mandato è già
-scritto in `handoff/02-voti-e-recensioni/mandato.md`.
+PROSSIMA AZIONE: aprire l'**unità 02 voti-e-recensioni**. Il mandato è già scritto in
+`handoff/02-voti-e-recensioni/mandato.md`, e il suo campo `STATO` **va aggiornato prima di aprirla**
+per nominare anche la 01b, che ha cambiato il ciclo di vita del montaggio delle pagine — un'unità
+che lavora su componenti montati da una pagina deve sapere che ora vengono montati **una volta
+sola** invece di due.
 
-⚠️ **La 02 va aggiornata prima di aprirla** se la 01b ha toccato il modo in cui il sottoalbero di
-pagina viene ricostruito: il suo campo `STATO` nomina l'unità 01, e dopo la 01b va nominata anche
-lei.
+⚠️ **Prima di aprirla: committare e POI PUSHARE**, perché il worktree nasce da `origin/main`.
+
+⚠️ **E riavviare il server**, che gira su una build senza il lavoro della 01b.
 
 ⚠️ **Prima di aprire ogni unità: committare piano e mandato, e POI PUSHARE.** Il worktree
 dell'unità nasce da `origin/main`, non da `main` locale: committare non basta. Misurato dall'unità
@@ -265,8 +265,20 @@ aprire la 02**, come impone la regola sulla sequenzialità.
 
 ## APERTO
 
-**Domande per l'utente — nessuna aperta.** Le quattro sono state poste e risposte il 19 settembre
-notte, e stanno in `DECISIONI`.
+**Una domanda per l'utente, aperta dall'unità 01b.** Il titolo della scheda del browser sulla Home
+resta il letterale «Eton», mentre nelle **altre dieci** pagine che montano la testata è
+«titolo — Eton». È l'unica eccezione dell'applicazione, verificata aprendo tutti e undici i file.
+
+**Perché è una domanda e non un fix già fatto:** la riga **non è toccata dal diff** dell'unità, e il
+§5 su un rilievo fondato ma fuori scope non lascia margine. Il fix è **una riga sola**, dentro un
+file che l'unità possedeva, e riusa un simbolo che quel diff ha appena introdotto — cioè ha tutte le
+caratteristiche del «tanto vale farlo adesso», che è il modo in cui un obiettivo con trentotto
+clausole dichiarate ne guadagna una trentanovesima senza che nessuno se ne accorga.
+
+Il rimedio è già istruito nel `FUORI SCOPE` del resoconto della 01b: **basta un sì.**
+
+**Le altre quattro domande** sono state poste e risposte il 19 settembre notte, e stanno in
+`DECISIONI`.
 
 **Dubbi miei, non ancora domande.**
 
