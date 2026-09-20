@@ -40,6 +40,28 @@
     </a>
 </header>
 
+@* Anche questa testata sta FUORI dalla catena @if qui sotto, come nelle altre dieci pagine
+   dell'applicazione — fra loro Pages/SpaceDetail.razor, che ha la stessa catena a quattro rami
+   della Home (caricamento, errore, spazio assente, contenuto) e tiene la testata fuori allo
+   stesso modo: finché stava dentro il ramo finale, .aiuto-apri non esisteva nel DOM per tutta
+   la durata del caricamento, nel ramo dell'errore vero e in quello in cui non c'è ancora nessuno
+   spazio attivo — cioè in ogni stato tranne quello in cui era già andato tutto bene, proprio
+   quando l'aiuto di schermata serve di più. Nasconderlo in quella finestra era il difetto.
+
+   È lo stesso ragionamento già fatto qui sopra per <header class="intestazione solo-stretto">: il
+   suo commento avverte che spostarla dentro l'else "riaprirebbe il buco", perché un elemento
+   raggiungibile solo a caricamento riuscito non è raggiungibile quando serve davvero.
+
+   Il titolo passa per TitoloSchermata e non più per Spazi.Attivo.Name: fuori dal ramo che lo
+   garantiva non nullo, Spazi.Attivo può ancora essere null, e TitoloSchermata è il ripiego che
+   evita il NullReferenceException. *@
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>Ogni cosa in Eton sta dentro uno spazio: note, collezioni e spese appartengono a quello attivo, e cambiandolo cambia tutto quello che vedi.</p>
+        <p>Lo spazio personale lo vedi solo tu. Gli altri si condividono con un codice invito, e chi entra vede tutto quello che contengono.</p>
+    </Aiuto>
+</TestataPagina>
+
 @if (!caricato)
 {
     <p class="avvio">Caricamento…</p>
@@ -65,12 +87,6 @@ else
         <div class="errore" role="alert">@errore</div>
     }
 
-    <TestataPagina Titolo="@Spazi.Attivo.Name">
-        <Aiuto>
-            <p>Ogni cosa in Eton sta dentro uno spazio: note, collezioni e spese appartengono a quello attivo, e cambiandolo cambia tutto quello che vedi.</p>
-            <p>Lo spazio personale lo vedi solo tu. Gli altri si condividono con un codice invito, e chi entra vede tutto quello che contengono.</p>
-        </Aiuto>
-    </TestataPagina>
     <p class="sottotitolo">
         @if (Spazi.Attivo.IsPersonal)
         {
@@ -228,8 +244,8 @@ else
        Il predicato è lo stesso del sottotitolo qui sopra, e non ne serve un secondo: dentro questo
        ramo Spazi.Attivo è non nullo per costruzione — i tre rami sopra hanno già intercettato il
        caricamento in corso, l'errore e l'assenza di spazio — quindi il link non può comparire per
-       un istante prima che gli spazi siano caricati, né far saltare la pagina. È lo stesso motivo
-       per cui @Spazi.Attivo.Name nella testata non ha bisogno di protezione. *@
+       un istante prima che gli spazi siano caricati, né far saltare la pagina. La testata, che ora
+       sta fuori da questo ramo, si protegge invece da sé con TitoloSchermata. *@
     @if (!Spazi.Attivo.IsPersonal)
     {
         <p class="testo-tenue">
@@ -263,6 +279,11 @@ else
     // partirebbero due letture identiche, e la più lenta finirebbe scartata dal contatore di
     // generazione dopo aver comunque occupato la rete.
     private bool caricamentoIniziale;
+
+    // Serve perché <TestataPagina> sta fuori dalla catena @if qui sopra: il titolo deve esistere
+    // anche quando Spazi.Attivo è ancora null. Stessa forma di TitoloSchermata in
+    // Pages/SpaceDetail.razor.
+    private string TitoloSchermata => Spazi.Attivo?.Name ?? "Spazio";
 
     protected override async Task OnInitializedAsync()
     {
