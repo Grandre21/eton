@@ -375,13 +375,24 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: **il collaudo**. Tutte e sei le unità sono rientrate e integrate; il piano sta in
-`handoff/collaudo/piano.md`, scritto prima di servire.
+PROSSIMA AZIONE: **il collaudo, che è BLOCKED e aspetta un gesto dell'utente.**
+
+⚠️⚠️ **Il server è stato ucciso dal sistema per memoria bassa**, e la notifica dice esplicitamente
+di **non riavviarlo d'iniziativa** perché la memoria potrebbe essere ancora scarsa. Il collaudo
+richiede il browser, quindi richiede il server: **non è eseguibile finché l'utente non autorizza il
+riavvio.** Porta 5000 libera, nessun processo orfano — verificato.
+
+**Tutto il resto del collaudo è pronto e non aspetta niente**: il piano sta in
+`handoff/collaudo/piano.md` e il brief di `live-testing` in `handoff/collaudo/brief-live-testing.md`,
+scritti prima di servire. Al riavvio del server, il primo passo è lanciare quel brief.
+
+Tutte e sei le unità sono rientrate e integrate, gate verdi.
 
 I quattro passi, nell'ordine, che non è negoziabile:
 
-1. **Riavviare il server** dopo l'integrazione della 05 — il DevServer legge i manifest solo al
-   proprio avvio e servirebbe la build precedente — e riscrivere `handoff/server.md`.
+1. **Riavviare il server** — *bloccato, v. sopra* — e riscrivere `handoff/server.md`. Serve
+   comunque un riavvio a prescindere dalla memoria, perché `main` è avanzata con l'unità 05 e il
+   DevServer legge i manifest solo al proprio avvio.
 2. **`live-testing`**, con il brief composto **ricopiando** le misure dalle sei sezioni
    `LA MISURA ATTESA PER IL COLLAUDO`. ⚠️ **Più le quattro voci che nessuna unità produce**, che
    hanno una sezione propria nel piano proprio perché nessuno le ricopierebbe.

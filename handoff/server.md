@@ -1,7 +1,15 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** **Sesto avvio**, dopo l'integrazione dell'unità 04. I PID qui sotto sono **quelli veri
-> di adesso**: chi riavvia il server **riscrive la tabella**, perché cambiano a ogni avvio.
+> ⚠️⚠️ **FERMO, E NON L'HO FERMATO IO.** Il sesto avvio è stato **ucciso dal sistema perché la
+> memoria era bassa**, mentre la sessione era in attesa. Porta 5000 **libera**, nessun processo
+> `dotnet` residuo — verificato con `netstat` e `tasklist`, non dedotto: **non c'è nessun orfano da
+> cercare.**
+>
+> **Non va riavviato d'iniziativa di un agente**, e non è una preferenza: la notifica del sistema lo
+> dice esplicitamente, perché la memoria potrebbe essere ancora scarsa. **Il riavvio è un gesto
+> dell'utente**, o una sua autorizzazione.
+>
+> I PID della tabella qui sotto (24144 e 8784) sono **storia**: sono quelli del processo ucciso.
 >
 > Gli avvii precedenti sono **storia**, e sono cinque perché **ogni integrazione su `main` obbliga a
 > riavviare**: il DevServer legge i manifest degli asset solo al proprio avvio, e dopo una build
@@ -18,8 +26,9 @@
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui gira: `e3ed45d`** — unità 01, 01b, 02, 03 e 04 integrate; la **05 aperta, ed è
-  l'ultima**. Il collaudo comincia al suo rientro, e questo è il server su cui si farà
+- **Commit su cui girava: `e3ed45d`.** ⚠️ **Sarebbe comunque stato da riavviare**: `main` è
+  avanzata a `0730246` con l'integrazione dell'unità 05, che ha modificato `wwwroot/css/app.css`.
+  Il prossimo avvio serve quel commit, e **è il server su cui si farà il collaudo**
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
