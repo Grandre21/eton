@@ -1,7 +1,7 @@
 @using System.Globalization
 
 <div class="campo voto-input">
-    <span class="etichetta-piccola">Voto</span>
+    <label class="etichetta-piccola" for="@idCursore">Voto</label>
 
     @* min, max, step e value sono attributi HTML: la specifica li vuole SEMPRE col punto come
        separatore decimale, indipendentemente dalla lingua dell'interfaccia — usare la virgola li
@@ -9,7 +9,7 @@
        il testo mostrato in @voto-cifre, che produce CalcoliVoti.Testo. Con InvariantGlobalization
        attivo CultureInfo.InvariantCulture è l'unica cultura disponibile: new CultureInfo(...)
        lancerebbe a runtime. *@
-    <input type="range" min="0.5" max="@Massimo.ToString(CultureInfo.InvariantCulture)" step="0.5"
+    <input type="range" id="@idCursore" min="0.5" max="@Massimo.ToString(CultureInfo.InvariantCulture)" step="0.5"
            value="@ValoreCursore.ToString("0.#", CultureInfo.InvariantCulture)"
            @oninput="Cambia" disabled="@Disabilitato" />
 
@@ -34,6 +34,14 @@
     // Il cursore non ha una posizione per "nessun voto": quando Voto è null lo si mostra al minimo
     // della corsa, e il pulsante "Nessun voto" (sopra) rende esplicito che non è un voto vero.
     private decimal ValoreCursore => Voto ?? 0.5m;
+
+    // Un id serve solo a legare l'etichetta al cursore (la <label for> nel markup qui sopra): il
+    // pattern del progetto — <label class="campo"> che AVVOLGE il controllo — qui non si può usare,
+    // perché nello stesso .campo c'è anche il pulsante "Nessun voto", e un <button> dentro una
+    // <label> diventa un bersaglio che ne attiva due. Generato per istanza e non scritto a mano:
+    // due VotoInput nella stessa pagina avrebbero lo stesso id, e l'etichetta si legherebbe al
+    // primo dei due per entrambi.
+    private readonly string idCursore = $"voto-{Guid.NewGuid():N}";
 
     // Come CampoInput.Cambia: restituisce esplicitamente il Task di InvokeAsync, perché uno
     // scarterebbe ogni eccezione sollevata da chi ascolta VotoChanged.

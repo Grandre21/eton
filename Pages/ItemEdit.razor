@@ -13,6 +13,7 @@
     <Aiuto>
         <p>Nei campi della collezione un valore che non si riesce a interpretare — per esempio un numero con delle lettere dentro — non viene salvato: il salvataggio riesce lo stesso, e quel campo torna vuoto.</p>
         <p>Se qualcun altro salva questo elemento mentre lo stai modificando, il salvataggio si ferma e ti fa scegliere fra ricaricare la sua versione e sovrascrivere con la tua.</p>
+        <p>La recensione qui sotto si salva a parte, e segue un'altra regola: è solo tua, quindi non c'è nessun altro con cui scontrarsi. Se risulta già salvata da un'altra scheda o da un altro dispositivo, te lo dice senza toccare quello che hai scritto: premi «Salva recensione» di nuovo per sostituirla.</p>
         <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
     </Aiuto>
 </TestataPagina>
@@ -470,9 +471,19 @@ else
             // nome resta modificabile a scheda di conflitto aperta. Senza questo messaggio il
             // pulsante sembrerebbe inerte, e senza il controllo il nome vuoto arriverebbe al
             // vincolo del database, che risponde con l'errore generico del catch qui sotto.
+            //
+            // Frase DIVERSA da quella della riga sotto il campo del nome ("Il nome dell'elemento
+            // non può essere vuoto.", v. il blocco .errore-campo nel markup), e non è una
+            // variazione di gusto: a scheda di conflitto aperta il campo resta modificabile,
+            // quindi le due condizioni sono vere insieme e la stessa identica frase finiva due
+            // volte a schermo, una sotto il campo e una nel riquadro rosso. Stessa forma della
+            // guardia gemella in Pages/SpesaEdit.razor ("Controlla importo, descrizione e data
+            // prima di sovrascrivere."), e per la stessa ragione: là le righe .errore-campo sono
+            // già a schermo, quindi questo messaggio non ripete la diagnosi — dice perché
+            // l'azione non è partita, che è l'unica cosa che la riga sotto il campo non dice.
             if (!NomeValido)
             {
-                errore = "Il nome dell'elemento non può essere vuoto.";
+                errore = "Controlla il nome prima di sovrascrivere.";
                 return;
             }
 
