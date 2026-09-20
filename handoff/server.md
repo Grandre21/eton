@@ -1,15 +1,13 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> ⚠️⚠️ **FERMO, E NON L'HO FERMATO IO.** Il sesto avvio è stato **ucciso dal sistema perché la
-> memoria era bassa**, mentre la sessione era in attesa. Porta 5000 **libera**, nessun processo
-> `dotnet` residuo — verificato con `netstat` e `tasklist`, non dedotto: **non c'è nessun orfano da
-> cercare.**
+> **VIVO. Settimo avvio, e l'ha fatto l'utente.** È il server su cui gira il collaudo.
 >
-> **Non va riavviato d'iniziativa di un agente**, e non è una preferenza: la notifica del sistema lo
-> dice esplicitamente, perché la memoria potrebbe essere ancora scarsa. **Il riavvio è un gesto
-> dell'utente**, o una sua autorizzazione.
->
-> I PID della tabella qui sotto (24144 e 8784) sono **storia**: sono quelli del processo ucciso.
+> ⚠️ **Il sesto avvio era stato ucciso dal sistema perché la memoria era bassa**, mentre la sessione
+> era in attesa — non l'avevo fermato io e non era un guasto del comando. La notifica diceva
+> esplicitamente di **non riavviarlo d'iniziativa**, perché la memoria poteva essere ancora scarsa:
+> il collaudo si è parcheggiato `BLOCKED` e il riavvio è stato un gesto dell'utente.
+> Non aveva lasciato orfani: porta libera e nessun processo `dotnet`, verificato con `netstat` e
+> `tasklist` prima di chiedere.
 >
 > Gli avvii precedenti sono **storia**, e sono cinque perché **ogni integrazione su `main` obbliga a
 > riavviare**: il DevServer legge i manifest degli asset solo al proprio avvio, e dopo una build
@@ -26,9 +24,7 @@
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui girava: `e3ed45d`.** ⚠️ **Sarebbe comunque stato da riavviare**: `main` è
-  avanzata a `0730246` con l'integrazione dell'unità 05, che ha modificato `wwwroot/css/app.css`.
-  Il prossimo avvio serve quel commit, e **è il server su cui si farà il collaudo**
+- **Commit su cui gira: `1a534fe`** — **tutte e sei le unità integrate**, gate verdi
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
@@ -37,8 +33,8 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **24144** | `dotnet run --launch-profile Eton` | padre |
-| **8784** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
+| **27180** | `dotnet run --launch-profile Eton` | padre |
+| **19824** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
@@ -47,7 +43,7 @@ che la 5000 sia tornata libera.
 vanno sostituiti con quelli della tabella qui sopra:
 
     # fermare, dal tool PowerShell: prima il figlio, poi il padre
-    foreach ($id in 8784, 24144) { Stop-Process -Id $id -Force }
+    foreach ($id in 19824, 27180) { Stop-Process -Id $id -Force }
     # verificare, dal tool Bash
     netstat -ano | grep -E ':5000\s+.*LISTENING' || echo "PORTA 5000 LIBERA"
     # riavviare, dalla radice del progetto, in background
