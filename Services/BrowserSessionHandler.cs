@@ -40,19 +40,21 @@ public class BrowserSessionHandler : IGotrueSessionPersistence<Session>
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Salvataggio della sessione fallito, non sopravvivrà alla ricarica: {ex.Message}");
+            Console.Error.WriteLine($"[Auth] Salvataggio della sessione fallito: alla ricarica vale ancora la precedente, se c'era: {ex.Message}");
         }
     }
 
     /// <summary>
     /// Nudo di proposito, e l'asimmetria con <see cref="SaveSession"/> non è una svista da
     /// uniformare. Per la cancellazione il fallimento ha già una conseguenza visibile:
-    /// <c>SupabaseService.SignOutAsync</c> rilegge la sessione subito dopo, e se il
+    /// <see cref="SupabaseService.SignOutAsync"/> rilegge la sessione subito dopo, e se il
     /// <c>removeItem</c> non ha funzionato la ritrova, non azzera la sessione in memoria e
-    /// dichiara il logout non riuscito. I suoi due chiamanti diretti hanno inoltre già il proprio
-    /// <c>catch</c> che registra: un terzo qui renderebbe morti quelli e, in un solo logout,
-    /// stamperebbe la stessa riga quattro volte, perché il listener di Gotrue invoca questo metodo
-    /// tre volte per ogni uscita.
+    /// dichiara il logout non riuscito. I suoi due chiamanti diretti lo avvolgono inoltre già in un
+    /// <c>try</c>: quello di <see cref="SupabaseService.SignOutAsync"/> registra, quello annidato in
+    /// <see cref="LoadSession"/> ingoia di proposito — lì la riga utile l'ha già scritta il
+    /// <c>catch</c> esterno, e il valore da cancellare era comunque illeggibile. Un terzo <c>try</c>
+    /// qui li renderebbe morti entrambi e, in un solo logout, stamperebbe la stessa riga quattro
+    /// volte, perché il listener di Gotrue invoca questo metodo tre volte per ogni uscita.
     /// </summary>
     public void DestroySession()
         => _js.InvokeVoid("localStorage.removeItem", StorageKey);
