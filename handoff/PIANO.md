@@ -304,6 +304,34 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   giorno prima di guardarlo significherebbe dichiarare chiusa una decisione che sta per essere
   presa». **Va guardata al collaudo**, ed è nel piano.
 
+- **20 set 2026, collaudo — Il primo difetto trovato nel browser non è del codice ma di una misura
+  attesa, ed è la prima volta in due cicli.** Due resoconti dichiaravano il campo della data
+  invariato a 48px; nel browser è **71**, perché sta in un grid affiancato a un campo alto 71 e lì
+  l'altezza la decide la riga, non il contenuto. **La protezione che quella voce introduceva
+  funziona**: il corpo è 16px, misurato.
+  ⚠️ **Perché è successo, e vale più del caso.** Le due unità hanno scritto una misura attesa **che
+  non potevano verificare**: il loro mandato vietava di avviare il server, ed è il server l'unico
+  posto dove il grid esiste. Il calcolo era giusto in isolamento e irrilevante nel contesto. **Una
+  misura attesa calcolata invece che osservata è un'ipotesi travestita da criterio**, e va nel
+  rapporto finale come rilievo sull'impianto: le misure attese sono state il guadagno più grande di
+  questo collaudo, e questo ne è il limite.
+
+- **20 set 2026 — L'utente ha deciso di lanciare `ui-critic` benché l'esito non sia verde.**
+  Il §7 lo condiziona a `ESITO: verde`, e qui è `difetti`. **Non l'ho deciso io**, e non per
+  formalismo: la regola è scritta sull'esito e non sulla natura dei difetti, quindi interpretarla
+  larga sarebbe stata un'auto-esenzione — la stessa classe che questo impianto ha tolto a
+  `threat-hunter` il 19 settembre, dove a dichiarare «qui non serve» era la parte sotto revisione.
+  Il motivo dichiarato della regola — «non si collauda una versione che si sta per correggere» —
+  **non si applica**: nessuno dei due difetti si corregge in questo goal, quindi il codice provato è
+  quello finale.
+
+- **20 set 2026 — Il difetto dei pulsanti di conferma va nel rapporto, non in un'unità.** Deciso
+  dall'utente. La clausola 27 chiedeva di **provare** e la prova è stata fatta: l'esito è che a
+  schermo stretto i due pulsanti non stanno sulla stessa riga e **il distruttivo sta sopra quello di
+  sicurezza**. Il difetto trovato è nuovo, e vale la regola sulle crescite — lo stesso precedente
+  per cui il ciclo scorso ha lasciato dieci rilievi del collaudo senza correggerli.
+  **La clausola 27 è quindi coperta**, e il difetto è una voce del `FUORI SCOPE`.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
