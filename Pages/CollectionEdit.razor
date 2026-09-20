@@ -77,22 +77,22 @@ else
 
        La classe si chiama 'scelta-categoria' perché è nata per le spese, ma la regola che porta è
        generica — azzera il bordo del fieldset, manda la legenda a capo da sola, fa andare a capo
-       le pastiglie invece di farle scorrere fuori (app.css:1885-1896) — ed è esattamente ciò che
-       serve qui. Riscriverla inline pur di non riusare un nome scomodo avrebbe duplicato una
-       regola che esiste già; il nome può cambiarlo solo chi possiede app.css.
+       le pastiglie invece di farle scorrere fuori (app.css, .scelta-categoria) — ed è esattamente
+       ciò che serve qui. Riscriverla inline pur di non riusare un nome scomodo avrebbe duplicato
+       una regola che esiste già; il nome può cambiarlo solo chi possiede app.css.
 
        Il campo di testo sta DENTRO il fieldset e non più sopra, in un <label> suo: la legenda dice
        già «Icona», e ripeterlo a mezzo centimetro di distanza sarebbe rumore. Ci guadagna anche il
-       disegno, perché .icona-input dichiara 'flex: none' e larghezza fissa (app.css:1370) — due
-       proprietà che dentro un <label> non facevano niente e qui tengono il campo stretto accanto
-       alle pastiglie, che è il posto in cui era stato chiesto di metterlo. L'aria-label serve
-       perché il <label> non c'è più: la legenda nomina il gruppo, non il campo.
+       disegno, perché .icona-input dichiara 'flex: none' e larghezza fissa (app.css, .icona-input)
+       — due proprietà che dentro un <label> non facevano niente e qui tengono il campo stretto
+       accanto alle pastiglie, che è il posto in cui era stato chiesto di metterlo. L'aria-label
+       serve perché il <label> non c'è più: la legenda nomina il gruppo, non il campo.
 
        L'unica aggiunta alla pastiglia è il corpo del carattere: .pastiglia nasce a --t-xs per
        un'etichetta di testo, e a undici pixel un'emoji non si riconosce né si prende col dito. È
-       lo stesso --t-lg che .icona-input usa per l'emoji del campo accanto (app.css:1375), così le
-       due non risultano di due misure diverse. Inline, perché la classe che lo eviterebbe andrebbe
-       scritta in app.css. *@
+       lo stesso --t-lg che .icona-input usa per l'emoji del campo accanto (app.css, .icona-input),
+       così le due non risultano di due misure diverse. Inline, perché la classe che lo eviterebbe
+       andrebbe scritta in app.css. *@
     <fieldset class="scelta-categoria">
         <legend class="etichetta-campo">Icona</legend>
 
@@ -154,7 +154,9 @@ else
                     <input type="text" maxlength="60" placeholder="Etichetta"
                            @bind="campo.Label" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
 
-                    <select @bind="campo.Type" @bind:after="() => AlCambioTipo(campo)" disabled="@(occupato || !PuoIntervenire)">
+                    <select @bind="campo.Type" @bind:after="() => AlCambioTipo(campo)"
+                            aria-label="@($"Tipo del campo {NomeCampo(campo)}")"
+                            disabled="@(occupato || !PuoIntervenire)">
                         @foreach (var tipo in SchemaCampi.TipiAmmessi)
                         {
                             <option value="@tipo">@EtichettaTipo(tipo)</option>
@@ -169,7 +171,9 @@ else
                             {
                                 var indice = i;
                                 <div class="campo">
-                                    <input type="text" maxlength="60" @bind="opzioni[indice]" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+                                    <input type="text" maxlength="60"
+                                           aria-label="@($"Opzione {indice + 1} del campo {NomeCampo(campo)}")"
+                                           @bind="opzioni[indice]" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
                                     <button class="btn rosso piccolo" @onclick="() => TogliOpzione(campo, indice)" disabled="@(occupato || !PuoIntervenire)">Togli</button>
                                 </div>
                             }
@@ -510,6 +514,16 @@ else
         "url" => "Collegamento",
         _ => tipo
     };
+
+    // Il nome che chi ascolta la pagina sente quando l'etichetta è ancora vuota: prima l'etichetta
+    // digitata, poi la chiave. È la stessa scelta che fa SchemaCampi.Valida per nominare un campo
+    // nei messaggi di errore ("var etichetta = string.IsNullOrEmpty(label) ? chiave : label"), e
+    // vale la pena rispecchiarla: un campo appena aggiunto si chiama allo stesso modo nei due punti
+    // in cui l'applicazione lo nomina. La chiave c'è sempre ed è unica — AggiungiCampo la genera
+    // con SchemaCampi.ChiaveDa("", giaUsate) anche per un campo senza etichetta — quindi i cinque
+    // menù non finiscono per chiamarsi tutti allo stesso modo.
+    private static string NomeCampo(CampoDefinizione campo) =>
+        string.IsNullOrWhiteSpace(campo.Label) ? campo.Key : campo.Label;
 
     private static void AlCambioTipo(CampoDefinizione campo)
     {
