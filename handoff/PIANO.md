@@ -403,10 +403,32 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire la **sessione di chiusura**. Il mandato sta in `handoff/CHIUSURA.md`.
-È l'unica a fare la verifica di copertura sulle **38 clausole**: il §6 vieta di lanciare `coverage`
-dentro un'unità, e il capo che ha disegnato la partizione è il candidato peggiore a trovarne i
-buchi.
+PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova.
+
+**Il goal è chiuso perché esistono due file, non uno.** Il rapporto della sessione di chiusura sta
+in testa a `handoff/CHIUSURA.md`, sopra il proprio mandato, e questa riga porta il valore riservato
+che il §6 del `CLAUDE.md` pretende. Integrato su `main` con `dc8489d`, worktree e branch rimossi.
+
+```
+CHIUSURA: 6 unità — FATTO 5 · PARZIALE 1 · BLOCKED 0
+COPERTURA: 38 clausole — coperte 31 · scoperte 0 · rinviate 7
+```
+
+⚠️ **La previsione d'apertura di questo piano è caduta, ed è il ritrovamento principale della
+chiusura.** Le clausole **3** e **5** erano dichiarate qui sopra non chiudibili perché «decisioni di
+sistema di design»: erano chiuse **con codice** dall'unità 05, perché sotto due delle tre voci di
+scala c'erano difetti funzionali veri. E l'elenco delle «sette» ne nominava **otto**. Il sette
+finale è esatto, ma la sua composizione è un'altra: **1, 28, 29, 30, 34, 35, 37**.
+
+**Cosa resta vivo in `handoff/`, e perché:**
+
+| File | Perché non è archiviato |
+|---|---|
+| `CHIUSURA.md` | il rapporto non si archivia finché l'utente non l'ha letto |
+| `configurazione-da-applicare.md` | **lavoro dell'utente**: i due testi della clausola 37 toccano `~/.claude/` |
+| `collaudo/` | i quattro documenti del collaudo, che il prossimo ciclo rilegge |
+| `01-testata-e-aiuto/` | **`PARZIALE`**: la chiusura ha deciso di non archiviarla e ha dichiarato perché — il merito direbbe di sì, ma la delega veniva da un capo, non dall'utente, e un livello inferiore può essere più restrittivo, mai più permissivo. **Un `git mv` la ribalta** |
+| `PIANO.md`, `server.md` | questo file, e il server che il capo ha fermato a ciclo chiuso |
 
 **Il collaudo è chiuso**, tutti e quattro i passi eseguiti:
 

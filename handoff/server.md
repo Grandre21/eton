@@ -1,6 +1,22 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO. Settimo avvio, e l'ha fatto l'utente.** È il server su cui gira il collaudo.
+> # ⛔ FERMO — il ciclo è chiuso
+>
+> **Fermato dal capo il 20 settembre 2026, a goal chiuso**, come il §7 impone: prima il figlio
+> (**19824**), poi il padre (**27180**), ed entrambi hanno risposto `fermato`. **Porta 5000
+> verificata libera** con `netstat -ano | grep -E ':5000\s+.*LISTENING'`.
+>
+> ⚠️ **Resta vivo un processo `dotnet`, e non è questo server**: è un nodo MSBuild persistente
+> (`MSBuild.dll /nodemode:1 /nodeReuse:true`), che non ascolta su nessuna porta applicativa e che
+> MSBuild tiene in vita di proposito per riusarlo alla build successiva. **Chi riprende non lo
+> scambi per un orfano**: il rischio che il §7 nomina è un *server* vecchio ancora in ascolto, e la
+> prova che non è questo il caso è la porta libera, non l'assenza di processi `dotnet`.
+>
+> **I PID qui sotto sono storia.** Chi riavvia il server li sostituisce con i propri.
+>
+> ---
+>
+> **La storia dell'ultimo avvio. Settimo, e l'ha fatto l'utente.** È il server su cui gira il collaudo.
 >
 > ⚠️ **Il sesto avvio era stato ucciso dal sistema perché la memoria era bassa**, mentre la sessione
 > era in attesa — non l'avevo fermato io e non era un guasto del comando. La notifica diceva
