@@ -1,6 +1,6 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** **Quinto avvio**, dopo l'integrazione dell'unità 03. I PID qui sotto sono **quelli veri
+> **VIVO.** **Sesto avvio**, dopo l'integrazione dell'unità 04. I PID qui sotto sono **quelli veri
 > di adesso**: chi riavvia il server **riscrive la tabella**, perché cambiano a ogni avvio.
 >
 > Gli avvii precedenti sono **storia**, e sono cinque perché **ogni integrazione su `main` obbliga a
@@ -18,7 +18,8 @@
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui gira: `adfb913`** — unità 01, 01b, 02 e 03 integrate; la 04 aperta
+- **Commit su cui gira: `e3ed45d`** — unità 01, 01b, 02, 03 e 04 integrate; la **05 aperta, ed è
+  l'ultima**. Il collaudo comincia al suo rientro, e questo è il server su cui si farà
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
@@ -27,17 +28,17 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **12648** | `dotnet run --launch-profile Eton` | padre |
-| **2676** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
+| **24144** | `dotnet run --launch-profile Eton` | padre |
+| **8784** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
 
-**La forma che funziona**, misurata stanotte su tutti e tre i riavvii — i numeri sono quelli
-correnti e vanno sostituiti con quelli della tabella qui sopra:
+**La forma che funziona**, misurata stanotte su **cinque** riavvii — i numeri sono quelli correnti e
+vanno sostituiti con quelli della tabella qui sopra:
 
     # fermare, dal tool PowerShell: prima il figlio, poi il padre
-    foreach ($id in 2676, 12648) { Stop-Process -Id $id -Force }
+    foreach ($id in 8784, 24144) { Stop-Process -Id $id -Force }
     # verificare, dal tool Bash
     netstat -ano | grep -E ':5000\s+.*LISTENING' || echo "PORTA 5000 LIBERA"
     # riavviare, dalla radice del progetto, in background
