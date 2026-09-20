@@ -761,13 +761,13 @@ a { color: var(--accento); }
 /* Non è .btn.piccolo alzato: quello resta 2.2rem (~35px, sotto i 48px di
    --tocco) di proposito, perché vive dentro righe di elenco dove un pulsante
    alto quanto il dito cambierebbe l'altezza di ogni riga della lista.
-   .btn.compatto serve altrove — in una TESTATA: di schermata (Pages/Collections.razor e
-   Pages/Notes.razor, class="btn primario compatto") oppure di scheda (le frecce di
-   .navigazione-mese, più sotto). Lì si preme col pollice come ovunque, quindi tiene
-   l'altezza piena e stringe solo la
-   larghezza: meno padding orizzontale di .btn, corpo piccolo come .piccolo, e
-   niente a capo, perché "Nuova collezione" spezzato su due righe dentro una
-   riga larga quanto il titolo sarebbe illeggibile. */
+   .btn.compatto serve altrove — in una TESTATA: di schermata (Pages/Collections.razor
+   e Pages/Notes.razor, class="btn primario compatto") oppure di scheda (le frecce
+   di .navigazione-mese, più sotto). Lì si preme col pollice come ovunque, quindi
+   tiene l'altezza piena e stringe solo la larghezza: meno padding orizzontale di
+   .btn, corpo piccolo come .piccolo, e niente a capo, perché "Nuova collezione"
+   spezzato su due righe dentro una riga larga quanto il titolo sarebbe
+   illeggibile. */
 .btn.compatto {
     padding: 0 var(--s3);
     font-size: var(--t-sm);
@@ -1722,15 +1722,16 @@ li:last-child > .riga { border-bottom: none; }
 }
 
 /* Le tre misure — altezza, respiro orizzontale, corpo — non stanno più qui: le porta
-   button.pastiglia, perché sono di ciò che si preme e non del posto in cui si preme.
-   Restano le quattro che questa regola ha OLTRE a quelle: flex:none, perché la barra è
-   un flex container e la pastiglia non deve allargarsi accanto al selettore, e
-   cursor/touch-action/transition, che qui valgono per qualunque elemento e non solo per
-   i <button>. */
+   button.pastiglia, perché sono di ciò che si preme e non del posto in cui si preme. E con
+   loro se ne sono andate cursor e touch-action, che quella regola dichiara identiche:
+   l'unica pastiglia di questa barra è un <button> (Pages/CollectionDetail.razor,
+   @onclick="() => soloDaProvare = !soloDaProvare"), quindi ridirle qui non cambiava niente.
+   Restano le due che button.pastiglia non porta: flex:none, perché la barra è un flex
+   container e la pastiglia non deve allargarsi accanto al selettore, e la transition. Uno
+   <span class="pastiglia"> che nascesse qui perderebbe cursor e touch-action, ed è giusto:
+   uno <span> non si preme. */
 .barra-elenco .pastiglia {
     flex: none;
-    cursor: pointer;
-    touch-action: manipulation;
     transition: background var(--transizione), border-color var(--transizione), color var(--transizione);
 }
 
@@ -2176,9 +2177,9 @@ li:last-child > .riga { border-bottom: none; }
 
    Queste tre stavano scritte identiche in tre regole di LUOGO — .barra-elenco .pastiglia,
    .voto-input .pastiglia, .scelta-categoria .pastiglia. Raggrupparne i selettori sarebbe
-   stata la strada sbagliata, e resta sbagliata: avrebbe steso su tutte e tre anche le
-   quattro proprietà che solo .barra-elenco .pastiglia porta. Qui il selettore non somma
-   luoghi, cambia di natura.
+   stata la strada sbagliata, e resta sbagliata: avrebbe steso su tutte e tre anche le due
+   proprietà che solo .barra-elenco .pastiglia porta. Qui il selettore non somma luoghi,
+   cambia di natura.
 
    L'inline vince comunque, e deve: le pastiglie-emoji di Pages/CollectionEdit.razor
    (style="font-size: var(--t-lg)") stanno grandi quanto la .icona-input accanto, perché
