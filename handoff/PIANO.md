@@ -276,6 +276,34 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   già conforme.** La convenzione adottata il 19 settembre non è «niente numeri»: è «un frammento che
   un grep trova», e la differenza si vede solo eseguendo il grep.
 
+- **20 set 2026 — L'allineamento chiuso dall'unità 01 era rotto sopra i 640px, e l'ha trovato
+  l'unità 05 otto ore dopo.** Dentro una media query il titolo saliva a 52px mentre l'ancora del
+  pulsante d'aiuto restava tarata sul corpo più piccolo: **il «?» stava 8,64px più in alto del
+  centro della prima riga**. Non era una regressione della 01 — la media query è scritta da molto
+  prima — ma la sua correzione era **vera solo sotto una certa larghezza**, e nessuno l'aveva
+  misurata sopra.
+  ⚠️ **Conseguenza per il collaudo, e va ricopiata nel brief**: l'allineamento del «?» va provato a
+  **due larghezze**, non a una. La misura dell'unità 01 da sola sarebbe passata lasciando vivo il
+  difetto.
+
+- **20 set 2026 — La quarta premessa del rapporto di chiusura è caduta**, e stavolta su una voce
+  che il collaudo dava per la più grave delle cinque di `ui-critic`. Il rilievo diceva «le superfici
+  esistono come token ma non come scala», con una ventina di dichiarazioni di fondo che non li
+  usano. Misurato dall'unità 05: su **49** dichiarazioni, **44 usano un token**, e cinque delle
+  restanti sono `transparent` — che non è un colore. **Sotto il rilievo infondato ce n'è però uno
+  vero e più grosso**, istruito in `handoff/05-scala-e-metro/istruttoria-superfici.md`.
+  **Il bilancio del goal su questo punto:** quattro premesse cadute su quattro verificate. Nessuna
+  è stata scoperta rileggendo il rapporto: sono emerse perché ogni mandato chiedeva di **verificare
+  il fatto** prima di correggere, dichiarando che se il fatto fosse caduto la decisione sarebbe
+  caduta con lui.
+
+- **20 set 2026 — L'unità 05 non ha chiuso la voce 25, e il motivo è migliore di una chiusura.**
+  L'unità 04 raccomandava di dichiararla intenzionale con una frase di commento. La 05 non l'ha
+  scritta perché resta **un caso che nessuno ha guardato** — l'elenco delle collezioni a registro
+  vuoto, l'unica schermata in cui le due forme si vedono insieme — e «scrivere *intenzionale* il
+  giorno prima di guardarlo significherebbe dichiarare chiusa una decisione che sta per essere
+  presa». **Va guardata al collaudo**, ed è nel piano.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -288,7 +316,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 | **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | **FATTO** — integrata il 20 set. Quattro voci con codice, la **10 chiusa dichiarando che non è un difetto**. La **26 si è chiusa dentro entrambe le decisioni del 19 settembre**: nessuna revoca da adjudicare |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | **FATTO** — integrata il 20 set. **Nessuna riga di CSS toccata**, come il perimetro garantiva. La **16 verificata e lasciata stare**; la **15 chiusa con un'asimmetria dichiarata** invece che uniformata |
 | **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | **FATTO** — integrata il 20 set. **Otto voci su otto**, sei con codice e due istruite. `PARZIALE` era previsto e non è servito. ⚠️ **Un adempimento del §4 mancato e dichiarato**: v. `DECISIONI` |
-| **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
+| **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5**, **23a**, **23b**, **25** — istruttoria e decisione | 04 | **FATTO** — integrata il 20 set. **Quattro chiuse, due consegnate.** Il mandato ammetteva «nessuna riga di codice»: ne ha scritte, perché **sotto due delle tre voci di scala c'erano difetti funzionali veri** |
 
 **Non assegnate a un'unità, perché non producono codice** — le fa il capo a ciclo chiuso, con il
 server avviato da lui e i PID su disco:
@@ -347,17 +375,18 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'**unità 05 scala-e-metro**, l'ultima. Il mandato è già scritto in
-`handoff/05-scala-e-metro/mandato.md`. È la sola unità le cui voci **non sono difetti** ma decisioni
-di sistema di design, e **il suo esito può legittimamente essere nessuna riga di codice** — ma tre
-cose si chiudono per prime, tutte già istruite dall'unità 04.
+PROSSIMA AZIONE: **il collaudo**. Tutte e sei le unità sono rientrate e integrate; il piano sta in
+`handoff/collaudo/piano.md`, scritto prima di servire.
 
-**Poi il collaudo**, che fa il capo con il server avviato da lui. ⚠️ **Le prove non si inventano:
-si ricopiano** dalle sezioni `LA MISURA ATTESA PER IL COLLAUDO` dei sei resoconti, che sono
-dettagliate e contengono già gli snippet da eseguire nel browser. Più le quattro voci della tabella
-«non assegnate a un'unità», e i due effetti collaterali che l'unità 04 ha **dichiarato invece di
-nascondere**: due campi che si abbassano per la nuova regola sull'interlinea, di cui il resoconto dà
-i numeri prima e dopo. Se alla prova uno dei due stona, è una decisione di chi guarda la schermata.
+I quattro passi, nell'ordine, che non è negoziabile:
+
+1. **Riavviare il server** dopo l'integrazione della 05 — il DevServer legge i manifest solo al
+   proprio avvio e servirebbe la build precedente — e riscrivere `handoff/server.md`.
+2. **`live-testing`**, con il brief composto **ricopiando** le misure dalle sei sezioni
+   `LA MISURA ATTESA PER IL COLLAUDO`. ⚠️ **Più le quattro voci che nessuna unità produce**, che
+   hanno una sezione propria nel piano proprio perché nessuno le ricopierebbe.
+3. **`ui-critic`, solo se `live-testing` torna `ESITO: verde`.**
+4. La voce **33**, che si chiude **dichiarando** e non provando.
 
 **Poi la sessione di chiusura**, che è l'unica a fare la verifica di copertura sulle **38 clausole**:
 il §6 vieta di lanciare `coverage` dentro un'unità, e il capo che ha disegnato la partizione è il
