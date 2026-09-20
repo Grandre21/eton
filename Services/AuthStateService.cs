@@ -12,12 +12,14 @@ public class AuthStateService
     private readonly SupabaseService _supabase;
     private readonly NavigationManager _navigation;
     private readonly SpaceStateService _spazi;
+    private readonly AllineatoreProfilo _profilo;
 
-    public AuthStateService(SupabaseService supabase, NavigationManager navigation, SpaceStateService spazi)
+    public AuthStateService(SupabaseService supabase, NavigationManager navigation, SpaceStateService spazi, AllineatoreProfilo profilo)
     {
         _supabase = supabase;
         _navigation = navigation;
         _spazi = spazi;
+        _profilo = profilo;
     }
 
     public async Task<bool> IsLoggedInAsync()
@@ -62,11 +64,15 @@ public class AuthStateService
     /// <c>SignOutAsync()</c> non propaga eccezioni (ogni passo ha il proprio try e restituisce un
     /// bool), quindi metterlo prima non rischia di far saltare la pulizia.
     /// </para>
+    /// Qui accanto si dimentica anche l'impronta del profilo (<see cref="AllineatoreProfilo.Dimentica"/>):
+    /// per lei l'ordine non è critico, perché viene scritta solo dal bootstrap di
+    /// <see cref="SupabaseService.GetClientAsync"/>, mai da una navigazione a sessione ancora viva.
     /// </summary>
     public async Task LogoutAsync()
     {
         var uscito = await _supabase.SignOutAsync();
         _spazi.Dimentica();
+        _profilo.Dimentica();
         _navigation.NavigateTo("benvenuto", forceLoad: !uscito, replace: true);
     }
 }
