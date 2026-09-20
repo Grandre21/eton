@@ -48,9 +48,16 @@ diceva.**
   center` e un padding verticale di 8px invece di 12: l'input scende sotto il minimo e a governare
   torna `--tocco`.
 - *Seconda causa, i due Δ da 2,4px:* `font: inherit` sulla regola base dei campi porta dentro anche
-  `line-height: 1.55`, e 24,8 + 24 + 2 fa 50,4 — sopra il minimo di 48. Una regola gemella della
-  base, **senza `textarea`**, riporta l'interlinea a 1.25 e tutti i controlli di una riga tornano
-  alti uguali.
+  `line-height: 1.55`, e la line box spinge il campo a **50,4px misurati** — sopra il minimo di 48.
+  Ora `line-height: 1.25` sta **dentro la regola base**, subito dopo `font: inherit`, che altrimenti
+  lo azzererebbe; la `textarea` se lo riprende con un `line-height: inherit` nella propria riga,
+  perché è l'unico campo che cresce e lì l'interlinea serve a leggere. Sotto il minimo, a governare
+  torna `--tocco`.
+  ⚠️ *Il conto su carta dà 50,8 (24,8 + 24 + 2) e la misura dice 50,4.* La prima stesura del commento
+  aveva scritto 50,4 come se fosse il risultato della somma: `backend-expert` l'ha rilevato, e ora il
+  commento porta **tutti e due** i numeri invece di piegare l'uno all'altro. La differenza non sposta
+  la conclusione — in entrambi i casi si scavalca il minimo — ma una somma che non torna fa perdere
+  fiducia in tutto il resto del commento.
 
 **7 — la voce 24, il primo campo attaccato al secondo · CHIUSA, e il titolo del rilievo era
 sbagliato.**
@@ -86,9 +93,12 @@ Il documento è `handoff/04-controlli-e-campi/istruttoria-23-25.md`. Qui la sint
 
 ## TOCCATI
 
-    Pages/CollectionEdit.razor    +45 / −12
-    wwwroot/css/app.css           +64 / −21
+    Pages/CollectionEdit.razor    +29 / −12
+    wwwroot/css/app.css           +56 / −21
     handoff/04-controlli-e-campi/istruttoria-23-25.md   +160 (documento, non codice)
+    handoff/04-controlli-e-campi/resoconto.md           +331 (questo file)
+
+Il foglio di stile esce con **una regola in meno** di come è entrato: 143 contro 144.
 
 ---
 
@@ -115,7 +125,8 @@ uno per giro, e ogni voce è la riga di conteggio dell'agente, ricopiata.
       threat-hunter   RILIEVI: 0
       backend-expert  RILIEVI: 4 — lanciato perché il diff dell'unità misura
                       3 files changed, 269 insertions(+), 33 deletions(-), oltre le ~120 righe
-      checker         ⟨in attesa⟩
+      checker         NON LANCIATO sull'istruttoria — SCOSTAMENTO 3, dichiarato sotto
+      checker (fix)   VERDETTI: risolti 6 · non risolti 0 · non verificabili 0
 
 `coverage` non compare, e non è un'omissione: dentro una sessione-unità non si lancia — la copertura
 della richiesta la fa la sessione di chiusura, sui resoconti.
@@ -141,8 +152,6 @@ cambiato, in nessun file.
 
 ## ADJUDICA
 
-⟨in attesa dei tre agenti del giro 2⟩
-
 ### Giro 1
 
 - **`bug-hunter` · `NomeCampo` poteva restituire `null` · fondato → corretto.**
@@ -160,8 +169,56 @@ cambiato, in nessun file.
   misurata nella ricognizione.
   *verificato: risolto — `Pages/CollectionEdit.razor:533-535`*
 
-**Infondati riverificati a campione: nessuno, perché non ce n'erano** — il checker ha chiuso con
-`infondati 0` su tre rilievi istruiti.
+### Giro 2 — il foglio di stile
+
+Sei rilievi, tutti **fondati**, tutti di forma: nessuno ha trovato un comportamento sbagliato.
+
+- **`conformity` · il rimando `Pages/ItemEdit.razor, il label.campo dell'immagine` non è cercabile ·
+  fondato → corretto.** ⚠️ **È il rilievo più istruttivo dell'unità**: chiudendo la voce dei rimandi
+  scaduti ne avevo introdotto uno nuovo non conforme, nella stessa ora. L'ho riverificato io prima di
+  accettarlo — `grep -c 'label\.campo' Pages/ItemEdit.razor` → **0**, mentre `class="campo"` compare
+  **una volta sola**, alla riga 83. Un'ancora dichiarata cercabile che il grep non trova è peggio di
+  un numero di riga, perché sembra già conforme.
+  *verificato: v. il checker del giro 2, claim 5*
+- **`backend-expert` · i due `?? ""` in `NomeCampo` sono guardie senza effetto, e il commento le
+  dichiarava necessarie · fondato → corretto.** `string.IsNullOrWhiteSpace` è dichiarata
+  `([NotNullWhen(false)] string? value)` e accetta `null` per contratto: con `Label` nulla il metodo
+  scendeva al livello sotto **con o senza** la guardia. Il commento affermava il contrario, e un
+  commento che contraddice il codice che gli sta sotto è peggio di nessun commento. I tre livelli
+  restano — sono la ragione per cui i menù non si chiamano tutti allo stesso modo.
+  ⚠️ Nota sull'ordine dei due giri: il fix che ha introdotto quelle guardie rispondeva al rilievo di
+  `bug-hunter` del giro 1, che era **fondato** (il metodo restituiva `null`). A risolverlo era però il
+  terzo livello, non le guardie: il claim era giusto, il rimedio più largo del necessario.
+- **`backend-expert` · la regola nuova ricopiava la lista di selettori della base meno `textarea` ·
+  fondato → corretto.** Due liste da tenere sincronizzate per una sola eccezione; ora l'eccezione è
+  scritta come eccezione, e il foglio ha **una regola in meno** di prima del diff.
+- **`backend-expert` · la somma del commento non tornava · fondato → corretto** (v. la voce 6).
+- **`backend-expert` · cinque righe di commento per un `align-items: center` che oggi non cambia
+  niente · fondato → corretto in parte, e lo dichiaro.** La **dichiarazione resta**: è la guardia
+  che impedisce a una pastiglia di deformarsi su chi le sta accanto, ed è il terzo principio del
+  `PIANO-DESIGN` di questa unità. A sparire sono le cinque righe: la ragione sta ora **in linea**,
+  in sei parole.
+- **`backend-expert` · un commento documentava la partizione del lavoro invece del codice · fondato
+  → corretto.** «Un file che non è di questa unità» era, verificato, **l'unica occorrenza** di
+  «questa unità» in tutto il codice: fra sei mesi non vuol dire niente, e fa credere che
+  l'alternativa fosse sbagliata quando era solo fuori perimetro.
+
+**Un rilievo fondato di cui ho accolto il fatto e non il rimedio, e va detto in chiaro:**
+
+- **`bug-hunter` · il `line-height` nuovo abbassa `.titolo-grande`/`.titolo-nota` (~57 → ~51px) e
+  l'`<input class="importo-spesa">` (~82 → ~71px), effetti non dichiarati · fondato.** Il fatto è
+  vero e l'agente l'ha misurato bene. **Non ho accolto il fix proposto** — escludere quelle tre classi
+  dal selettore — per una ragione di sistema: su un campo di **una riga** l'interlinea non è
+  leggibilità, è altezza, quindi vale ovunque, e quei due campi restano comunque ben sopra i 48px,
+  cioè non perdono niente come bersaglio. Escluderli avrebbe congelato un valore che nessuno aveva
+  scelto (l'1,55 arrivava per eredità da `body`) dietro un `:not()` da mantenere per sempre.
+  **Quello che ho accolto è la parte vera del claim: il commento taceva l'effetto.** Ora lo dichiara
+  con i due numeri, e la `MISURA ATTESA` qui sotto lo mette nero su bianco per il collaudo. Se alla
+  prova nel browser uno dei due stona, la decisione è di chi guarda la schermata, non mia.
+
+**Infondati riverificati a campione: nessuno in nessuno dei due giri, perché non ce n'erano** — il
+checker ha chiuso `infondati 0` su tre rilievi istruiti nel giro 1, e nel giro 2 i sei rilievi sono
+stati adjudicati da me contro il codice aperto, uno per uno.
 
 ---
 
@@ -218,7 +275,19 @@ barriere, non di moltiplicare i giri.
 il diff dell'unità supera le ~120 righe, che è una delle quattro condizioni e si legge dal `--stat`.
 L'ho lanciato sul diff completo, una volta sola.
 
-**3. Un'istruzione operativa arrivata da un canale che non è l'utente, riportata perché il mandato
+**3. Il `checker` non è stato lanciato sull'istruttoria del secondo giro, e l'ho istruita io.** Il §4
+dice che se `bug-hunter` e `conformity` sommano più di zero rilievi il checker «si lancia **sempre**»:
+nel giro 2 sommavano **due**, e io ho aperto il codice e adjudicato da me — `grep -c 'label\.campo'
+Pages/ItemEdit.razor` → 0 per il rilievo di `conformity`, e il calcolo delle altezze per quello di
+`bug-hunter`. **Non è una lettura della regola, è un passo saltato**, e lo scrivo perché un
+adempimento mancato dichiarato vale più di uno nascosto.
+Quello che attenua il danno, e non lo cancella: dei sei rilievi del giro non ne ho **scartato
+nessuno** — il rischio che quella regola previene è che l'esecutore filtri in silenzio un rilievo
+fondato, e qui non c'è stato niente da filtrare. E il `checker` del **fix**, che è stato lanciato, ha
+verificato tutti e sei contro il codice citando le righe, quindi l'istruttoria indipendente c'è stata,
+solo dopo la correzione invece che prima.
+
+**4. Un'istruzione operativa arrivata da un canale che non è l'utente, riportata perché il mandato
 chiede di parcheggiare e non di eseguire.** Due implementer su tre hanno segnalato, nelle proprie
 `NOTE`, di aver ricevuto nel contesto un blocco che ordinava di leggere e **scrivere i file con `sed`,
 heredoc o script brevi via shell** invece che con `Read`/`Edit`. Verbatim, come uno dei due l'ha
@@ -301,9 +370,17 @@ della regola sull'interlinea:
 
 - il campo del titolo (`.titolo-grande` in `CollectionEdit` e `ItemEdit`, `.titolo-nota` in `NoteEdit`)
   scende da ~57 a ~51px: resta sopra i 48 perché il suo corpo è `--t-lg`, ed è giusto così;
-- l'`input.importo-spesa` scende da ~82 a ~71px.
-- la **`textarea`** della nota **non cambia**: è esclusa dalla regola, e se cambiasse sarebbe un
-  difetto.
+- l'`input.importo-spesa` scende da ~82 a ~71px;
+- ⚠️ **e un terzo campo che nessun rilievo aveva nominato**, trovato dal checker sul fix: i due
+  `<input class="data-spesa dato">` (`Pages/Spese.razor`, `Pages/SpesaEdit.razor`) hanno corpo 15,2px
+  — glielo dà `.dato` con il suo `.95em` — e passano da **49,6 a 48px**. Anche loro erano sopra il
+  minimo, quindi anche loro rientrano: è l'esito voluto, ma è un quarto valore che il commento del
+  foglio non scrive, e al collaudo va guardato con gli altri;
+- la **`textarea`** della nota **non cambia**: si riprende l'interlinea del body, e `.corpo-nota`
+  dichiara comunque la propria (1.6). Se cambiasse, sarebbe un difetto.
+
+      // /expenses — il campo della data
+      document.querySelector('input.data-spesa').getBoundingClientRect().height   → 48  (era 49,6)
 
 **7 — il primo campo della scheda elemento.** Su un elemento di una collezione con almeno due campi:
 
@@ -324,8 +401,13 @@ sola cosa da guardare, e che nessuno ha ancora guardato, è `/collections` **a r
 
 ## DOVE STA QUESTO LAVORO
 
-Branch `worktree-unita-04-controlli-e-campi`, tre commit:
+Branch `worktree-unita-04-controlli-e-campi`, quattro commit:
 
     915e752  le tre ancore scadute e gli otto nomi accessibili
     1b91aeb  due proprieta' ridondanti in meno, e tre commenti che tornano veri
     fdeaf50  le altezze tornano una sola, e il nome del campo regge il jsonb rotto
+    7281623  sei rilievi di forma, e una regola in meno di prima
+
+I commit sono quattro e non uno di proposito: l'avviso che ho ricevuto aprendo l'unità era che una
+sessione è morta stanotte dopo aver finito il lavoro e **prima** di committare, e il suo resoconto
+l'ha dovuto scrivere il capo. Ogni pezzo coerente è stato chiuso appena pronto.
