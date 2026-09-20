@@ -25,20 +25,33 @@ con cui giudicare **tre questioni di sistema** che il foglio lascia irrisolte.
 
 **La decisione di colore non è quale nero**, che è già scelto e giustificato (nero pieno perché su
 OLED un #0d0d0d è un grigio che si vede). È **quanti gradini servano**, e la risposta di questo piano
-è **quattro, non tre — ma con ruoli separati e nominati.**
+è **quattro, non tre — ma perché non sono una scala di elevazione, sono quattro ruoli.**
 
-Il foglio ne dichiara tre in prosa e ne usa quattro nei fatti. La via d'uscita non è togliere il
-quarto: è che `--sfondo-alt` ha un ruolo suo, reale, che i tre nomi non coprono. I suoi quattro usi
-(`.alla-cieca`, `.schede-testo`, `.modulo-spesa`, la barra di navigazione larga) hanno una cosa in
-comune che nessuna `.scheda` ha: **contengono controlli**. Un contenitore che ospita cose premibili
-deve stare **sotto** di loro, non sopra — altrimenti il controllo e il suo contenitore competono per
-lo stesso piano. `.scheda` contiene testo e sta a #121212; `.modulo-spesa` contiene campi e sta a
-#0a0a0a, con i campi stessi a #000.
+La prosa del foglio dice «gerarchia di superficie, tre livelli», cioè descrive una scala in cui il
+fondo sale con l'importanza. Il censimento dei 49 fondi reali dice che non è così, e il caso che lo
+rompe è il più comune di tutti: **`.btn` sta a `--superficie-alta`, il fondo più chiaro dei quattro**,
+e un pulsante secondario non è «ciò che deve staccarsi davvero, ed è raro» — è dappertutto.
 
-**Il principio che ne esce, e che il foglio non ha mai scritto:** il fondo scende quando il contenuto
-sale. Non «tre livelli», ma **due famiglie**: i piani che si *leggono* (#121212, #1b1b1b) e i piani
-che *contengono* (#000, #0a0a0a). È una regola che si verifica su una schermata guardandola, ed è
-questo che la rende utile: «tre livelli» non si verifica, perché non dice cosa vada su quale.
+I ruoli veri, letti dai fatti:
+
+| Fondo | Ruolo | Dove |
+|---|---|---|
+| **#000** `--sfondo` | ciò in cui si **entra**, e i contorni | la pagina, i campi di testo, `.pastiglia`, `code`, `pre` |
+| **#0a0a0a** `--sfondo-alt` | ciò che **contiene controlli** | `.modulo-spesa`, `.schede-testo`, `.alla-cieca`, la colonna larga |
+| **#121212** `--superficie` | ciò che si **legge** | `.scheda`, `.registro`, `.markdown`, `.riga-campo` |
+| **#1b1b1b** `--superficie-alta` | ciò che si **preme**, e gli **stati** | `.btn`, `.riga:hover`, `:disabled`, `.aiuto-pannello`, il banner PWA |
+
+**Il principio che ne esce, e che il foglio non ha mai scritto: un campo è un buco, un pulsante è un
+rilievo.** Ci si scrive *dentro* un campo, e il suo fondo è il più scuro dei quattro; ci si preme
+*sopra* un pulsante, e il suo fondo è il più chiaro. Il contenitore dei campi si mette in mezzo, appena
+sopra il buco. È una regola fisica, e per questo si verifica guardando una schermata invece di
+contare i token — che è ciò che «tre livelli» non permette di fare, perché non dice cosa vada su quale.
+
+**Due eccezioni che questo principio non spiega, e che vanno dichiarate invece che appianate:**
+`.titolo-nota`, `.titolo-grande` e `.corpo-nota` sono campi di testo a **#121212** invece che a #000
+come tutti gli altri campi; e `.pastiglia` sta a #000 mentre `.btn` sta a #1b1b1b, cioè due cose
+premibili sui due fondi opposti. Possono essere due scelte o due derive: il foglio non lo dice, e
+**questo — non il numero dei token — è il lavoro della fase 2.1-bis.**
 
 ---
 
@@ -110,8 +123,8 @@ valore: è che **il foglio non dice mai a quale puntatore si stia rivolgendo**.
    vendiamo i tuoi dati» è verde perché è un fatto.
 2. **Il carattere porta la stessa informazione della cornice.** Inter si legge, Plex Mono si
    consulta. Il mono su una frase intera è sempre un errore.
-3. **Il fondo scende quando il contenuto sale.** Ciò che contiene controlli sta sotto di loro; ciò che
-   si legge sta sopra. Quando ogni cosa è un riquadro, nessuna lo è.
+3. **Un campo è un buco, un pulsante è un rilievo.** Il fondo non misura l'importanza, misura il
+   gesto: ci si scrive dentro, ci si preme sopra. Quando ogni cosa è un riquadro, nessuna lo è.
 4. **Ogni numero del foglio dichiara il proprio dominio.** Un 44 senza «perché qui il puntatore è un
    mouse» accanto è un numero che il prossimo lettore correggerà per sbaglio, o peggio, lascerà per
    paura.
@@ -140,10 +153,21 @@ Il terzo — il punto mediano — **è un default**, e non ha nessuna giustifica
 porto come rilievo di questa unità perché sta nel markup e non nel mio perimetro, ma è la cosa più
 templated che Eton abbia, ed è anche la più economica da cambiare.
 
-**Cosa ho cambiato rispetto alla prima passata.** La prima stesura di questo piano raccomandava di
-**ridurre le superfici da quattro a tre**, per far combaciare il foglio con la propria prosa. L'ho
-scartata: era la risposta ovvia alla domanda posta («la prosa ne dichiara tre, i fatti ne usano
-quattro»), e arrivava a una scala più povera senza aver guardato *cosa* distingue il quarto. Guardando
-i quattro usi di `--sfondo-alt` la distinzione c'era ed era netta — contengono controlli — e allora il
-difetto non era il quarto livello, era la prosa che ne dichiarava tre. **La regola migliore è quella
-che descrive i fatti invece di chiedere ai fatti di semplificarsi.**
+**Cosa ho cambiato, e sono due revisioni non una.**
+
+*Prima revisione.* La stesura iniziale raccomandava di **ridurre le superfici da quattro a tre**, per
+far combaciare il foglio con la propria prosa. Scartata: era la risposta ovvia alla domanda posta («la
+prosa ne dichiara tre, i fatti ne usano quattro»), e arrivava a una scala più povera senza aver
+guardato *cosa* distingue il quarto.
+
+*Seconda revisione, e correggeva la prima.* Il principio che avevo messo al suo posto — «il fondo
+scende quando il contenuto sale» — è durato finché non ho guardato il selettore a riga 718: **`.btn`
+sta al fondo più chiaro dei quattro**, e un pulsante è esattamente un controllo, cioè la cosa che
+secondo quel principio doveva stare in alto sul fondo basso. La regola era elegante e falsa, e a
+smentirla è bastato il selettore più comune del foglio. Quella che c'è adesso — *un campo è un buco,
+un pulsante è un rilievo* — regge su tutti e quattro i fondi e lascia fuori due eccezioni, che sono
+dichiarate sopra invece di essere appianate.
+
+**La lezione, che vale oltre questo piano:** una regola di design si scrive dopo aver censito i casi,
+non prima. Le due formulazioni scartate erano entrambe più ordinate di quella finale — ed è il motivo
+per cui erano sbagliate: **descrivevano la scala che avrei voluto trovare, non quella che c'è.**
