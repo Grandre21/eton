@@ -64,9 +64,14 @@ public class AuthStateService
     /// <c>SignOutAsync()</c> non propaga eccezioni (ogni passo ha il proprio try e restituisce un
     /// bool), quindi metterlo prima non rischia di far saltare la pulizia.
     /// </para>
-    /// Qui accanto si dimentica anche l'impronta del profilo (<see cref="AllineatoreProfilo.Dimentica"/>):
-    /// per lei l'ordine non è critico, perché viene scritta solo dal bootstrap di
-    /// <see cref="SupabaseService.GetClientAsync"/>, mai da una navigazione a sessione ancora viva.
+    /// Qui accanto si dimentica anche l'impronta del profilo (<see cref="AllineatoreProfilo.Dimentica"/>).
+    /// Dentro questa scheda la corsa descritta sopra non si dà: l'impronta la scrive solo il bootstrap
+    /// di <see cref="SupabaseService.GetClientAsync"/>, che avviene una volta sola e che
+    /// <c>AuthRedirect</c> attende per intero prima di mostrare il pulsante «Esci».
+    /// Un'altra scheda però sì, e il commento non lo tace: il suo bootstrap può concludere la propria
+    /// scrittura dopo questo logout e rimettere l'impronta in <c>localStorage</c>. Vale identico per lo
+    /// spazio, il cui contatore di generazione è un campo di istanza e non attraversa le schede: è una
+    /// proprietà del modello a più schede, che l'ordine di queste righe non può chiudere.
     /// </summary>
     public async Task LogoutAsync()
     {
