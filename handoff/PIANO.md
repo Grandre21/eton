@@ -239,6 +239,43 @@ di una detta in chat. Rileggere questo campo prima di ogni PROSSIMA AZIONE.*
   stati declassati — ma il credito da dare a un rapporto di revisione non è uniforme, e questo è il
   tipo di fatto che lo misura.
 
+- **20 set 2026 — Una regola del foglio disattiva una protezione dichiarata da un'altra regola dello
+  stesso foglio, e nessuna revisione di diff poteva trovarlo.** Scoperto dall'unità 04. La classe dei
+  dati vale 0-1-0; la regola base dei campi è dentro un `:where()`, quindi vale **zero**. Due campi
+  di testo finiscono così a **15,2 px**, sotto i 16 che quella regola dichiara di voler tenere — e il
+  commento accanto dice perché: *sotto i 16px iOS ingrandisce la pagina al fuoco.*
+  ⚠️ **Il difetto non è in nessuna delle due regole prese da sola**: entrambe sono corrette e ben
+  commentate. Esiste solo nella loro interazione, e solo a runtime. `:where()` azzera la specificità
+  per costruzione — è il suo scopo — ma qui racchiudeva una **protezione di accessibilità con la sua
+  ragione scritta accanto**, rendendola sovrascrivibile da qualunque classe, inclusa una che non
+  sapeva di sovrascriverla.
+  **Chiudibile con una riga e indipendente dalla scala**: è la voce `23a` del mandato della 05, ed è
+  la prima cosa che le ho chiesto di fare.
+
+- **20 set 2026 — Un adempimento del §4 è saltato nell'unità 04, ed è la seconda volta stanotte che
+  un anello cade nello stesso punto strutturale.** Il `checker` non è stato lanciato sull'istruttoria
+  del secondo giro di revisione, dove `bug-hunter` e `conformity` sommavano due rilievi e il §4 dice
+  «si lancia **sempre**». **L'unità l'ha dichiarato invece di nasconderlo.**
+  **Ho accettato senza rilanciarlo**, e i quattro fatti che lo reggono: i sei rilievi del giro erano
+  **tutti di forma** — il `bug-hunter` stesso dichiara che nessuno ha trovato un comportamento
+  sbagliato; **nessuno è stato scartato**, quindi il rischio che quella regola previene (filtrare in
+  silenzio un rilievo fondato) non si è dato; il **`checker` del fix è stato lanciato** e ha
+  verificato tutti e sei contro il codice citando le righe; e l'unità ha riverificato di persona i
+  due più delicati con i comandi citati. Un `checker` a posteriori avrebbe istruito rilievi già
+  corretti e già verificati: **adempimento, non prova**.
+  ⚠️ **Il pattern però va scritto, perché è il secondo caso in due cicli.** Il ciclo precedente aveva
+  misurato che `coverage` si perdeva perché cadeva **dopo** il momento in cui si scrive il tracciato.
+  Qui è lo stesso meccanismo in miniatura: il primo giro di revisione aveva già chiuso il proprio
+  blocco, e quando il secondo giro ha prodotto rilievi, il tracciato era stato compilato una volta.
+  **Un passo che cade fra due momenti in cui si scrive il tracciato tende a saltare**, e nessuna
+  delle due volte è stata pigrizia. Va nel rapporto finale come rilievo sull'impianto.
+
+- **20 set 2026 — Chiudendo la voce dei rimandi scaduti, l'unità 04 ne ha introdotto uno nuovo non
+  conforme nella stessa ora**, e il revisore l'ha preso. È il rilievo più istruttivo del goal:
+  **un'ancora dichiarata cercabile che il grep non trova è peggio di un numero di riga, perché sembra
+  già conforme.** La convenzione adottata il 19 settembre non è «niente numeri»: è «un frammento che
+  un grep trova», e la differenza si vede solo eseguendo il grep.
+
 ## PARTIZIONE
 
 Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la numerazione del
@@ -250,7 +287,7 @@ Cinque unità, **in sequenza, mai in parallelo**. La colonna «voci» usa la num
 | **01b home-e-montaggio** | `Pages/Home.razor`, `Layout/MainLayout.razor`. **Nessuna riga di CSS** | **6** (la correzione), + il montaggio doppio di ogni pagina | 01 | **FATTO** — integrata il 20 set. ⚠️ **L'unità è morta durante il lavoro**, uccisa dal riavvio della sessione padre, dopo aver finito l'implementazione e prima della revisione: il codice è suo, la revisione e il resoconto sono del capo, e sta scritto in testa al resoconto |
 | **02 voti-e-recensioni** | `Shared/VotoInput.razor`, `Shared/RecensioniElemento.razor`, `Services/CalcoliVoti.cs`, `Pages/ItemEdit.razor`, `Pages/CollectionDetail.razor`, e in `app.css` **solo** le regole del voto | **2a**, **7**, **8**, **10**, **26** | 01b | **FATTO** — integrata il 20 set. Quattro voci con codice, la **10 chiusa dichiarando che non è un difetto**. La **26 si è chiusa dentro entrambe le decisioni del 19 settembre**: nessuna revoca da adjudicare |
 | **03 accesso-e-profilo** | `Services/BrowserSessionHandler.cs`, `Services/AllineatoreProfilo.cs`, `Services/SupabaseService.cs`, `Services/AuthStateService.cs`, `Services/PkceStore.cs`, `Services/SpaceStateService.cs`, `Program.cs`, `Pages/Profile.razor`. **Nessuna riga di CSS** | **15**, **17**, **18**, + **16** dichiarata | 02 | **FATTO** — integrata il 20 set. **Nessuna riga di CSS toccata**, come il perimetro garantiva. La **16 verificata e lasciata stare**; la **15 chiusa con un'asimmetria dichiarata** invece che uniformata |
-| **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | PIANIFICATA |
+| **04 controlli-e-campi** | in `app.css` le regole di pastiglia, bottone compatto, blocco campo, `.dato`, selettore di icone · `Pages/CollectionEdit.razor`, `Pages/Spaces.razor`, `Shared/CampoInput.razor`, `Pages/SpesaEdit.razor`, `Pages/Collections.razor`, `Pages/Notes.razor`, `Pages/Home.razor`, `Pages/Spese.razor` | **2b**, **4**, **19**, **21**, **22**, **23**, **24**, **25**, + il residuo della **20** | 03 | **FATTO** — integrata il 20 set. **Otto voci su otto**, sei con codice e due istruite. `PARZIALE` era previsto e non è servito. ⚠️ **Un adempimento del §4 mancato e dichiarato**: v. `DECISIONI` |
 | **05 scala-e-metro** | `wwwroot/css/app.css`, tutto ciò che resta · `Shared/Navigazione.razor` | **1**, **3**, **5** — **istruttoria e decisione, non necessariamente codice** | 04 | PIANIFICATA |
 
 **Non assegnate a un'unità, perché non producono codice** — le fa il capo a ciclo chiuso, con il
@@ -310,18 +347,21 @@ numerate e quindi senza far crescere l'obiettivo:
 
 ## PROSSIMA AZIONE
 
-PROSSIMA AZIONE: aprire l'**unità 04 controlli-e-campi**. Il mandato è già scritto in
-`handoff/04-controlli-e-campi/mandato.md`, ed è l'unico del goal che **ordina** le voci invece di
-elencarle, perché il suo perimetro non è un insieme di file ma **un insieme di regole dentro un
-file**. Dichiara in testa che `PARZIALE` è un esito previsto.
+PROSSIMA AZIONE: aprire l'**unità 05 scala-e-metro**, l'ultima. Il mandato è già scritto in
+`handoff/05-scala-e-metro/mandato.md`. È la sola unità le cui voci **non sono difetti** ma decisioni
+di sistema di design, e **il suo esito può legittimamente essere nessuna riga di codice** — ma tre
+cose si chiudono per prime, tutte già istruite dall'unità 04.
 
-Poi resta la **05 scala-e-metro**, il cui mandato **non è ancora scritto**: rivendica righe che la
-04 sta per toccare, e scriverlo prima produrrebbe un mandato già scaduto. Le sue tre voci non sono
-difetti ma **decisioni di sistema di design**, e potrebbe chiudersi senza scrivere una riga.
+**Poi il collaudo**, che fa il capo con il server avviato da lui. ⚠️ **Le prove non si inventano:
+si ricopiano** dalle sezioni `LA MISURA ATTESA PER IL COLLAUDO` dei sei resoconti, che sono
+dettagliate e contengono già gli snippet da eseguire nel browser. Più le quattro voci della tabella
+«non assegnate a un'unità», e i due effetti collaterali che l'unità 04 ha **dichiarato invece di
+nascondere**: due campi che si abbassano per la nuova regola sull'interlinea, di cui il resoconto dà
+i numeri prima e dopo. Se alla prova uno dei due stona, è una decisione di chi guarda la schermata.
 
-**Poi il collaudo**, che fa il capo, con il server avviato da lui: le prove stanno nelle sezioni
-`LA MISURA ATTESA PER IL COLLAUDO` dei resoconti, e si **ricopiano** invece di inventarle. Più le
-quattro voci della tabella «non assegnate a un'unità».
+**Poi la sessione di chiusura**, che è l'unica a fare la verifica di copertura sulle **38 clausole**:
+il §6 vieta di lanciare `coverage` dentro un'unità, e il capo che ha disegnato la partizione è il
+candidato peggiore a trovarne i buchi.
 
 ⚠️ **Prima di aprire ogni unità: committare e POI PUSHARE**, perché il worktree nasce da
 `origin/main`.
