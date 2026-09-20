@@ -515,15 +515,34 @@ else
         _ => tipo
     };
 
-    // Il nome che chi ascolta la pagina sente quando l'etichetta è ancora vuota: prima l'etichetta
-    // digitata, poi la chiave. È la stessa scelta che fa SchemaCampi.Valida per nominare un campo
-    // nei messaggi di errore ("var etichetta = string.IsNullOrEmpty(label) ? chiave : label"), e
-    // vale la pena rispecchiarla: un campo appena aggiunto si chiama allo stesso modo nei due punti
-    // in cui l'applicazione lo nomina. La chiave c'è sempre ed è unica — AggiungiCampo la genera
-    // con SchemaCampi.ChiaveDa("", giaUsate) anche per un campo senza etichetta — quindi i cinque
-    // menù non finiscono per chiamarsi tutti allo stesso modo.
-    private static string NomeCampo(CampoDefinizione campo) =>
-        string.IsNullOrWhiteSpace(campo.Label) ? campo.Key : campo.Label;
+    // Il nome che chi ascolta la pagina sente quando l'etichetta è ancora vuota. Tre livelli:
+    // l'etichetta digitata, poi la chiave, e in ultimo la posizione nell'elenco.
+    //
+    // L'ordine "etichetta, e se manca la chiave" è quello che SchemaCampi.Valida usa per nominare
+    // un campo nei messaggi di errore, e vale la pena rispecchiarlo: un campo si chiama allo stesso
+    // modo nei due punti in cui l'applicazione lo nomina. La condizione però è IsNullOrWhiteSpace e
+    // non l'IsNullOrEmpty di quella riga: un'etichetta di soli spazi lì è un'etichetta come un'altra,
+    // qui sarebbe un nome che non si sente. È anche la forma prevalente nel progetto.
+    //
+    // I due '?? ""' non sono ridondanti benché il modello dichiari 'string' non annullabile:
+    // Newtonsoft sovrascrive gli inizializzatori '= ""' quando il jsonb contiene "label": null o
+    // "key": null, il vincolo SQL collections_fields_shape non guarda dentro i singoli campi, e
+    // questo render precede la validazione, che avviene solo al Salva. È la stessa ragione per cui
+    // SchemaCampi.Valida li applica, e sta scritta lì.
+    //
+    // La posizione è l'ultimo livello e serve solo a quello stato: con etichetta e chiave entrambe
+    // vuote ogni menù si chiamerebbe allo stesso modo, che è esattamente il difetto — controlli con
+    // un nome indistinguibile — al posto del quale questa riga esiste.
+    private string NomeCampo(CampoDefinizione campo)
+    {
+        var etichetta = campo.Label ?? "";
+        if (!string.IsNullOrWhiteSpace(etichetta)) return etichetta;
+
+        var chiave = campo.Key ?? "";
+        if (!string.IsNullOrWhiteSpace(chiave)) return chiave;
+
+        return $"numero {campi.IndexOf(campo) + 1}";
+    }
 
     private static void AlCambioTipo(CampoDefinizione campo)
     {

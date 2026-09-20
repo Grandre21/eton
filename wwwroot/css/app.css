@@ -868,6 +868,21 @@ a.btn:not([href]) {
     transition: border-color var(--transizione), box-shadow var(--transizione);
 }
 
+/* La stessa lista senza textarea, e non è una svista. 'font: inherit' qui sopra porta dentro
+   anche il line-height 1.55 del body: 24,8px di linea più 24 di padding più 2 di bordo fanno
+   50,4px, che scavalcano il minimo di --tocco — ed è il motivo per cui un campo di testo stava
+   2,4px più alto del pulsante che gli sta accanto (misurato su /spaces e sulla scheda di un
+   elemento). Con una line box più bassa del minimo è --tocco a governare, e tutti i controlli
+   di una riga tornano alti uguali; il testo lo centra il browser, che per i campi lo fa da sé.
+   La textarea resta fuori: è l'unico campo che cresce, e lì l'interlinea è ciò che lo rende
+   leggibile su più righe.
+   :where() per tenere la specificità a zero, come la regola qui sopra e per la stessa ragione:
+   ogni classe che dichiara un proprio line-height deve poterlo fare senza rincorrere questo
+   selettore. */
+:where(input[type=text], input[type=number], input[type=date], input[type=url], select) {
+    line-height: 1.25;
+}
+
 input:focus, textarea:focus, select:focus {
     outline: none;              /* sostituito dall'anello qui sotto, non tolto */
     border-color: var(--accento);
@@ -898,7 +913,17 @@ textarea { resize: vertical; }
    regge. */
 label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
-.campo-dinamico { margin-bottom: var(--s3); }
+/* margin-block e non margin-bottom: il margine serve anche SOPRA, perché il campo che precede
+   i campi di una collezione (Pages/ItemEdit.razor, il label.campo dell'immagine) non ha questa
+   classe e il primo dinamico gli stava attaccato a 0px mentre tutti gli altri erano a 12.
+   Fra due dinamici i 12 sopra e i 12 sotto collassano e restano 12, perché il contenitore è in
+   flusso normale — .app-layout e .pagina-entra non sono né flex né grid — e lo stesso vale per
+   l'anteprima dell'immagine e per la riga d'errore che possono stare in mezzo, che portano già
+   un margin-bottom di --s3. Dare invece la classe al campo dell'immagine avrebbe richiesto di
+   toccare un file che non è di questa unità; spostare il margine su .campo avrebbe colpito
+   sette contesti che non lo vogliono, a partire da .campi-spesa, che i suoi campi li spazia
+   con gap. */
+.campo-dinamico { margin-block: var(--s3); }
 
 .selettore select { width: 100%; }
 
@@ -1603,11 +1628,16 @@ li:last-child > .riga { border-bottom: none; }
 
 /* -------------------------------------------------- editor di collezione --- */
 
+/* Il padding è --s2 su tutti i lati e non --s3 in verticale: con il corpo a --t-lg, che questo
+   campo ha per far riconoscere un'emoji, 12px sopra e sotto portavano l'altezza a 56,6 —
+   sopra il minimo di --tocco, quindi fuori misura rispetto alle pastiglie della stessa fila. A
+   8px la line box sta sotto il minimo ed è --tocco a governare: 48px, gli stessi di ciò che
+   gli sta accanto. L'orizzontale non cambia, era già --s2. */
 .icona-input {
     width: 3.5rem;
     flex: none;
     text-align: center;
-    padding: var(--s3) var(--s2);
+    padding: var(--s2);
     font-size: var(--t-lg);
 }
 
@@ -2129,11 +2159,17 @@ li:last-child > .riga { border-bottom: none; }
 
 /* Il campo su cui cade l'attenzione per primo: stesso corpo del titolo di una
    nota (.titolo-nota), ma mono e in linea con .dato invece che in prosa — è un
-   importo, non una frase. */
+   importo, non una frase.
+   E margin: 0, perché la stessa classe sta su un <p> quando l'importo si legge invece di
+   digitarlo (Pages/SpesaEdit.razor, class="campo campo-lettura"): il margine di default di un
+   paragrafo vale 1em, cioè 36px sopra e 36 sotto a questo corpo, e dentro un flex container non
+   collassa con niente. Sull'<input> dell'altro ramo è un no-op, che è il motivo per cui sta qui
+   e non in una regola a parte. */
 .importo-spesa {
     font-size: var(--t-2xl);
     font-weight: 600;
     letter-spacing: -.02em;
+    margin: 0;
 }
 
 /* Un appunto accanto al campo, non un riquadro: .errore è pensato per un errore
@@ -2148,13 +2184,19 @@ li:last-child > .riga { border-bottom: none; }
 
 /* Il <fieldset> porta un bordo e un padding suoi che nessun'altra pagina usa:
    si azzerano. Le pastiglie vanno a capo invece di scorrere fuori dallo
-   schermo — sono una scelta singola, non un elenco da scrollare. */
+   schermo — sono una scelta singola, non un elenco da scrollare.
+   align-items: center perché il default di un flex container è stretch, e nella fila che
+   contiene anche .icona-input le pastiglie si stiravano insieme a lui: a 56,6px invece di 48
+   la capsula non è più una capsula, e la stessa componente compariva in due forme a tre
+   centimetri di distanza. Con le altezze pareggiate qui sotto non cambia niente di ciò che si
+   vede; resta perché la forma di una pastiglia non deve dipendere da chi le sta accanto. */
 .scelta-categoria {
     border: none;
     margin: 0 0 var(--s4);
     padding: 0;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--s2);
 }
 
