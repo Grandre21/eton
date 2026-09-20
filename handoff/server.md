@@ -1,10 +1,11 @@
 # Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
-> **VIVO.** **Terzo avvio**, dopo l'integrazione dell'unità 01b. I PID qui sotto sono **quelli veri
+> **VIVO.** **Quarto avvio**, dopo l'integrazione dell'unità 02. I PID qui sotto sono **quelli veri
 > di adesso**: chi riavvia il server **riscrive la tabella**, perché cambiano a ogni avvio.
 >
 > Gli avvii precedenti, e sono **storia**: 23:57 del 19 settembre (PID 24148 e 21868, fermati a
-> mano); 01:40 del 20 settembre (PID 26652 e 25108, **morti col riavvio della sessione padre**).
+> mano); 01:40 del 20 settembre (PID 26652 e 25108, **morti col riavvio della sessione padre**);
+> il terzo (PID 3496 e 7732, fermati a mano dopo l'integrazione della 02).
 >
 > ⚠️ **La seconda morte non l'ho decisa io, e insegna qualcosa**: il processo del server era un
 > task in background della sessione, e quando la sessione è stata riavviata è caduto con lei. Non è
@@ -15,7 +16,7 @@
 - URL: **http://localhost:5000**
 - Ambiente: Development
 - Comando: `dotnet run --launch-profile Eton`
-- **Commit su cui gira: `fe438ef`** — l'unità 01 integrata (voce 9 chiusa), la 01b aperta
+- **Commit su cui gira: `43b232a`** — unità 01, 01b e 02 integrate; la 03 aperta
 - Build a monte, su albero pulito (`rm -rf obj bin` prima):
   `dotnet build Eton.sln -warnaserror --no-incremental` → **0 avvisi, 0 errori**;
   `dotnet test Eton.sln` → **310/310** (misurato prima della pulizia, sullo stesso albero)
@@ -24,16 +25,17 @@
 
 | PID | Processo | Ruolo |
 |---|---|---|
-| **3496** | `dotnet run --launch-profile Eton` | padre |
-| **7732** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
+| **3176** | `dotnet run --launch-profile Eton` | padre |
+| **11428** | `microsoft.aspnetcore.components.webassembly.devserver` | figlio, **è lui che ascolta sulla 5000** |
 
 Fermare solo il padre lascia la porta occupata dal figlio. Si fermano tutti e due, e si verifica
 che la 5000 sia tornata libera.
 
-**La forma che funziona**, misurata stanotte su entrambi i riavvii:
+**La forma che funziona**, misurata stanotte su tutti e tre i riavvii — i numeri sono quelli
+correnti e vanno sostituiti con quelli della tabella qui sopra:
 
-    # fermare
-    foreach ($id in 25108, 26652) { Stop-Process -Id $id -Force }
+    # fermare, dal tool PowerShell: prima il figlio, poi il padre
+    foreach ($id in 11428, 3176) { Stop-Process -Id $id -Force }
     # verificare, dal tool Bash
     netstat -ano | grep -E ':5000\s+.*LISTENING' || echo "PORTA 5000 LIBERA"
     # riavviare, dalla radice del progetto, in background
