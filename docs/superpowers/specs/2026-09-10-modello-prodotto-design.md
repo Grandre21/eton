@@ -273,6 +273,9 @@ progettato e pianificato: tutte le fasi successive devono ancora passare dal pro
 
 ### Fase 2.1-bis — Il mandato UI/UX · *settimane · collocata il 19 settembre 2026*
 
+⚠️ **Dal 22 settembre 2026 si apre dopo la 2.2**, non prima: v. decisione 4-bis del §6. Il testo
+qui sotto descrive la collocazione originale.
+
 Si apre **dopo la 2.1 e prima della 2.2**, per la decisione 4 del §6, dove stanno le tre ragioni
 per esteso. Non ha ancora né spec né piano: passa dal proprio `brainstorming → spec → piano` come
 ogni altra fase che non sia la 2.1.
@@ -506,6 +509,21 @@ taciuto: è una posizione su un progetto che **non ha ancora né spec né piano*
 dimensione reale non è nota a nessuno. Quando la fase UI/UX passerà dal proprio
 `brainstorming → spec → piano`, questa collocazione va riconfermata sui numeri che ne usciranno,
 non data per acquisita.
+
+### Rivista il 22 settembre 2026
+
+**4-bis — La fase 2.1-bis si sposta DOPO la 2.2**, e resta prima della fase 3. L'utente ha chiesto
+di fare la 2.1 e la 2.2 «o almeno fare totalmente la loro progettazione»; `tech-advisor`, riesaminando
+la propria posizione del 19 settembre, l'ha rovesciata, e l'utente ha scelto l'opzione raccomandata.
+Il motivo: la ragione 2 qui sopra presume che il sistema visivo detti la forma della tabella, ed è più
+vero il contrario — la tabellare è la schermata più densa dell'app, e un sistema disegnato senza
+averla davanti si rifà quando arriva. Restilizzarla dopo costa ore; la 2.1-bis.2 restilizza già tutte
+le pagine esistenti. La 2.2 si costruisce con resa minima sui token di oggi, **dichiarata
+provvisoria**. Le ragioni 1 e 3 restano vere e non sono toccate.
+
+**Il segnale che questa revisione era sbagliata**: se la spec della 2.1-bis cambia il modello di
+interazione delle righe, e non solo i token, la tabellare fatta prima si riscrive invece di
+restilizzarsi. Il dettaglio sta in `handoff/PIANO.md` del goal del 22 settembre, sezione `DECISIONI`.
 
 ---
 
