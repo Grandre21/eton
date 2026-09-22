@@ -305,6 +305,30 @@ numero di schermate molto maggiore.
 **Il primo template del catalogo è già scritto:** le spese della fase 2, che diventano l'esempio
 di riferimento di cosa un tool può essere.
 
+### Fase 3-bis — Il companion AI in sola lettura · *aggiunta il 22 settembre 2026 · bloccata da una condizione esterna*
+
+Chiesta dall'utente il 22 settembre, verbatim: *«implementerei anche la possibilità di connettere una
+propria ai a eton in generale che possa leggere i propri dati soltanto, cosi da avere il tuo companion
+sempre pronto»*. È l'«API pubblica dichiarata» del §7, la cui condizione era *che qualcuno la chieda*.
+
+**Non è la fase 8**: quella porta dati **dentro** Eton da fornitori esterni; questa li porta **fuori**,
+verso l'AI dell'utente. Direzione e rischio opposti.
+
+**Perché dopo la fase 3**: i template rendono i dati jsonb auto-descritti, cioè leggibili da un modello
+senza conoscere Eton.
+
+**La forma che regge**: server OAuth 2.1 di Supabase, con la sola lettura imposta **nel database** (ogni
+policy di scrittura rifiuta i token emessi a un client esterno), più un server MCP senza logica di
+autorizzazione propria. Scartati: il token di sessione dell'app (poteri pieni, §2.3) e una chiave
+dedicata fatta in casa (un secondo sistema di autenticazione).
+
+**Due condizioni prima di aprirla**: (1) il server OAuth di Supabase fuori dalla beta — il 20 settembre
+2026 la issue `supabase/auth#2820` mostrava che i connettori MCP reali non completano il collegamento;
+(2) una regola per gli spazi condivisi, dove l'AI di un membro leggerebbe i dati degli altri: limite
+allo spazio personale, oppure una dichiarazione di trasferimento come quella della fase 5.
+
+Il dettaglio sta nel §9 di `2026-09-22-spese-tabella-design.md`.
+
 ### Fase 4 — I tool che calcolano: campi formula · *settimane · nessun server*
 
 | | |

@@ -34,6 +34,37 @@ confine naturale fra un capo e il successivo.
      La spec 2.2 va **prima** del task 5 della 2.1, che altrimenti dovrebbe decidere alla cieca la
      sotto-navigazione «Registro · Tabella · Ricorrenti».
 
+- **2026-09-22 utente (chat)** — cosa vuole dalla tabella, scelte tutte e quattro le voci proposte:
+  trovare e ordinare (periodo libero, filtri, ordinamento per colonna), modificare nella riga, azioni
+  su più righe, totali della selezione ed esportazione CSV. E in più, verbatim: *«vorrei anche avere
+  una gestione piu tabellare in stile excel con delle funzioncine, magari solo lato desktop, mentre
+  lato mobile segno solo le mie spese quando le faccio tieni sempre a mente l'obbiettivo del
+  progetto»*.
+
+- **2026-09-22 utente (chat)** — le «funzioncine»: scelte tutte e quattro — riepilogo sotto le
+  colonne, raggruppamento con subtotali, incrocio categorie × mesi (è la 2.3), formule scritte
+  dall'utente (è la fase 4). E un'idea nuova, verbatim: *«implementerei anche la possibilità di
+  connettere una propria ai a eton in generale che possa leggere i propri dati soltanto, cosi da avere
+  il tuo companion sempre pronto»*. **Non ancora collocata**: la scomposizione passa da `tech-advisor`.
+
+- **2026-09-22 utente (chat)** — divisione: **«Sì, dividi così (consigliata)»**. Nella 2.2 anche il
+  riepilogo sotto le colonne e il raggruppamento a una dimensione con subtotali; l'incrocio
+  categorie × mesi resta alla **2.3**; le formule alla **fase 4** (la 2.2 prevede colonne calcolate
+  come gancio); il **companion AI è una fase nuova dopo la fase 3**, con due condizioni: server OAuth
+  2.1 di Supabase fuori beta (oggi la issue supabase/auth#2820 blocca i connettori MCP reali) e una
+  regola sugli spazi condivisi (l'AI di un membro leggerebbe le spese degli altri).
+
+- **2026-09-22 utente (chat)** — tastiera: **«Anche le frecce, come Excel»**, **contro** la
+  raccomandazione di `tech-advisor` (Tab/Invio/Esc soltanto, frecce rinviate). Quindi nella 2.2:
+  navigazione fra celle con le frecce, che richiede interop JS per il fuoco e una gestione per cella.
+  Sotto i 640px la tabella non si rende: avviso con link al registro (proposta non contestata).
+
+- **2026-09-22 utente (chat)** — approvate in chat le quattro sezioni del progetto 2.2 (struttura;
+  cosa si vede; modifica; test e rischi), compresa l'esclusione della «riga nuova». Poi, verbatim:
+  *«aggiungi anche i tasti per i tutorial guidati e gli helpbutton nella fase 4»*; chiarito col popup:
+  **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
+  passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
+
 - **2026-09-22 — Il confine fra modello e resa nella 2.2** (posizione di `tech-advisor`, adottata):
   ciò che un test xUnit o un lettore di schermo può osservare è modello/comportamento e va nella spec
   adesso; ciò che cambia solo una variabile o una regola in `app.css` è resa e va alla 2.1-bis. **Tre
@@ -71,7 +102,7 @@ confine naturale fra un capo e il successivo.
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
-| **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; esce in `docs/superpowers/specs/` | — | **IN CORSO** |
+| **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **IN CORSO** — spec scritta, **attende l'approvazione in chat** |
 | **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | PIANIFICATA |
 | **01…06 — 2.1** | i sei task del piano corretto, un'unità per task o per gruppo | sessioni-unità | R, e il GATE fra 2 e 4 | PIANIFICATA |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
@@ -89,7 +120,11 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **S**: `brainstorming` della vista tabellare con l'utente, in chat.
+Unità **S**: l'utente approva in chat la spec della 2.2. Subito dopo, **`doc-checker`** sul filtro per
+elenco di id (`Operator.In`) di `Supabase.Postgrest` 4.4.0 e sulla risposta con le righe toccate (spec
+§5.4, detto a memoria), e sulla ricarica della cache dello schema dopo un DDL (v. `APERTO`). Poi
+l'unità **R**: il piano della 2.1 corretto nei sette punti, con la sotto-navigazione che la spec §2.4
+assegna al task 5.
 
 ## APERTO
 
