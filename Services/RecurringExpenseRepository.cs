@@ -4,6 +4,12 @@ using Supabase.Postgrest.Responses;
 
 namespace Eton.Services;
 
+/// <summary>I dati di una regola ricorrente per <see cref="RecurringExpenseRepository.CreaAsync"/> e
+/// <see cref="RecurringExpenseRepository.SalvaAsync"/>: due interi adiacenti come
+/// <c>ogniMesi</c> e <c>giorno</c> scambiati compilano lo stesso se sono argomenti posizionali,
+/// con i nomi no.</summary>
+public sealed record DatiRegola(decimal Importo, string Descrizione, string Categoria, int OgniMesi, int Giorno, DateTime Inizio);
+
 /// <summary>
 /// Accesso alle regole di spesa ricorrente. Come <see cref="ExpenseRepository"/>: ogni metodo
 /// riparte da <see cref="SupabaseService.GetClientAsync"/> e non tiene mai il client in un campo.
@@ -40,7 +46,7 @@ public class RecurringExpenseRepository
 
     /// <summary>Crea una regola. L'id lo genera QUESTO metodo, con Guid.NewGuid(), come in
     /// <see cref="ExpenseRepository.CreaAsync"/> — stesso motivo: v. lì.</summary>
-    public async Task<RecurringExpense> CreaAsync(Guid spazioId, Guid pagante, decimal importo, string descrizione, string categoria, int ogniMesi, int giorno, DateTime inizio)
+    public async Task<RecurringExpense> CreaAsync(Guid spazioId, Guid pagante, DatiRegola dati)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<RecurringExpense>().Insert(new RecurringExpense
@@ -48,12 +54,12 @@ public class RecurringExpenseRepository
             Id                   = Guid.NewGuid(),
             SpaceId              = spazioId,
             PaidBy               = pagante,
-            Amount               = importo,
-            Description          = descrizione.Trim(),
-            Category             = categoria.Trim(),
-            EveryMonths          = ogniMesi,
-            DayOfMonth           = giorno,
-            StartsOn             = ExpenseRepository.PerIlDatabase(inizio),
+            Amount               = dati.Importo,
+            Description          = dati.Descrizione.Trim(),
+            Category             = dati.Categoria.Trim(),
+            EveryMonths          = dati.OgniMesi,
+            DayOfMonth           = dati.Giorno,
+            StartsOn             = ExpenseRepository.PerIlDatabase(dati.Inizio),
             EndsOn               = null,
             MaterializedThrough  = null
         });
@@ -69,17 +75,17 @@ public class RecurringExpenseRepository
     /// sono tre e vanno distinti, altrimenti si dice all'utente di riprovare quando riprovare
     /// non serve.
     /// </summary>
-    public async Task<RisultatoSalvataggio<RecurringExpense>> SalvaAsync(Guid regolaId, int versioneLetta, decimal importo, string descrizione, string categoria, int ogniMesi, int giorno, DateTime inizio)
+    public async Task<RisultatoSalvataggio<RecurringExpense>> SalvaAsync(Guid regolaId, int versioneLetta, DatiRegola dati)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<RecurringExpense>()
             .Where(r => r.Id == regolaId && r.Version == versioneLetta)
-            .Set(r => r.Amount, importo)
-            .Set(r => r.Description, descrizione.Trim())
-            .Set(r => r.Category, categoria.Trim())
-            .Set(r => r.EveryMonths, ogniMesi)
-            .Set(r => r.DayOfMonth, giorno)
-            .Set(r => r.StartsOn, ExpenseRepository.PerIlDatabase(inizio))
+            .Set(r => r.Amount, dati.Importo)
+            .Set(r => r.Description, dati.Descrizione.Trim())
+            .Set(r => r.Category, dati.Categoria.Trim())
+            .Set(r => r.EveryMonths, dati.OgniMesi)
+            .Set(r => r.DayOfMonth, dati.Giorno)
+            .Set(r => r.StartsOn, ExpenseRepository.PerIlDatabase(dati.Inizio))
             .Update();
 
         return await Esito(risposta, regolaId, versioneLetta);

@@ -21,6 +21,11 @@ public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<
 /// </summary>
 public static class CalcoliRicorrenti
 {
+    // Un anno non bisestile: chi sceglie il 29 febbraio lo legge come "l'ultimo giorno", che è ciò
+    // che accade tre anni su quattro (v. Dovuti: Math.Min(giorno, DaysInMonth)).
+    private const int AnnoNonBisestile = 2001;
+
+
     /// <summary>Le occorrenze dovute in <c>[da.Date, a.Date]</c>, in ordine cronologico crescente,
     /// escludendo quelle già coperte dal watermark <paramref name="materializzatoFinoA"/>.
     /// A differenza di <see cref="CalcoliSpese.NomeMese"/>, qui un valore fuori intervallo lancia,
@@ -84,6 +89,44 @@ public static class CalcoliRicorrenti
         var dovuti = Dovuti(inizio, fine, ogniMesi, giorno, materializzatoFinoA: null, da, a);
         return dovuti.Count > 0 ? dovuti[0].Data : null;
     }
+
+    /// <summary>La cadenza di una regola in una frase italiana, per l'elenco e i form: "ogni mese, il 5",
+    /// "ogni 2 mesi, l'ultimo giorno", "ogni anno, l'8 marzo". Stessa validazione di
+    /// <see cref="Dovuti"/> e stesso motivo: v. lì.</summary>
+    public static string Cadenza(int ogniMesi, int giorno, DateTime inizio)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(ogniMesi, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(ogniMesi, 12);
+        ArgumentOutOfRangeException.ThrowIfLessThan(giorno, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(giorno, 31);
+
+        if (ogniMesi == 12)
+        {
+            var mese = inizio.Month;
+            var nomeMese = CalcoliSpese.NomeMese(mese);
+
+            var ultimoDelMese = DateTime.DaysInMonth(AnnoNonBisestile, mese);
+            if (giorno == 31 || giorno > ultimoDelMese)
+                return $"ogni anno, l'ultimo giorno di {nomeMese}";
+
+            return $"ogni anno, {GiornoInParole(giorno)} {nomeMese}";
+        }
+
+        var frequenza = ogniMesi == 1 ? "ogni mese" : $"ogni {ogniMesi} mesi";
+        return $"{frequenza}, {GiornoInParole(giorno)}";
+    }
+
+    /// <summary>Il giorno come lo direbbe una persona: l'elisione per gli unici due numeri che la
+    /// vogliono (8, 11), l'ordinale per il primo, "l'ultimo giorno" per il 31. Due call-site in
+    /// <see cref="Cadenza"/>: mensile/ogni-N-mesi e annuale.</summary>
+    private static string GiornoInParole(int giorno) => giorno switch
+    {
+        1  => "il 1°",
+        8  => "l'8",
+        11 => "l'11",
+        31 => "l'ultimo giorno",
+        _  => $"il {giorno}"
+    };
 
     /// <summary>L'occorrenza di una regola in un periodo, così come esiste — prevista o scritta. Una sola
     /// sede, perché una riga prevista e la stessa riga materializzata non devono poter divergere; il
