@@ -65,6 +65,20 @@ confine naturale fra un capo e il successivo.
   **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
   passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
 
+- **2026-09-22 — L'unità 02 ha trovato che il contratto di scrittura del piano non funzionava.** Un
+  `Upsert<Expense>` in `Supabase.Postgrest` 4.4.0 scarta anche le colonne `ignoreOnUpdate`, quindi
+  avrebbe omesso `space_id`, `paid_by`, `recurring_id` e `recurring_period` → 23502 in produzione al
+  primo «apri Spese» di chi ha una regola, e `PrivilegiInsertTests` non l'avrebbe visto (controlla le
+  colonne in più, non quelle mancanti). Rimedio: un tipo di sola scrittura `OccorrenzaRicorrente`
+  senza flag `ignore*`, con un test che lo fissa. **Accettato dal capo, da ratificare**, come
+  `ElencaAsync` reso `private` (il divieto del §5 ora lo impone il compilatore).
+- **2026-09-22 — Deciso dal capo, da ratificare: il record `DatiRegola` entra nell'unità 03.**
+  `CreaAsync`/`SalvaAsync` delle regole prendono otto argomenti posizionali, e `ogniMesi`/`giorno`
+  scambiati compilano. L'unità 03 scrive il primo chiamante, quindi è l'ultimo momento in cui cambiare
+  la firma costa poco. Si annulla con un revert locale.
+- **2026-09-22 — Seconda violazione dichiarata**: un `implementer` dell'unità 02 ha compilato una volta,
+  contro il divieto; nessun altro processo era attivo, la build ufficiale è stata rifatta. Stessa
+  classe dello script Python dell'unità 01: il divieto nei brief non basta da solo.
 - **2026-09-22 utente (chat)** — migrazione `20260922000000_ricorrenti.sql` applicata in produzione:
   «ok fatto». Vale anche come **ratifica** delle sei aggiunte allo schema qui sotto, che gli erano state
   elencate prima di applicarla con l'avvertenza che applicarla valeva come approvazione.
@@ -121,9 +135,9 @@ confine naturale fra un capo e il successivo.
 | **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **FATTO** — approvata in chat il 22 set («ok procediamo a fare la fase 1»); verifica: `git -C /g/Sviluppo/Eton branch -r --contains 73e44b4` -> `origin/main` |
 | **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | **FATTO** — più un **ottavo** punto: `SpeseDelPeriodo` restituisce anche `InArrivo` (le future, fuori dai totali), perché la 2.2 le mostra; verifica: `grep -c 'corretto 22 set' /g/Sviluppo/Eton/docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` -> `15` |
 | **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
-| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); manca l'esito della query di controllo sulle colonne `recurring%` (attese 2 righe). **Va confermato prima di integrare la 02 su `main`**, non prima di aprirla |
-| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **IN CORSO** |
-| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | PIANIFICATA |
+| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); **la query di controllo l'ha eseguita l'utente e ha incollato l'esito in chat: `recurring_id`, `recurring_period` — 2 righe su 2 attese.** Resta `PARZIALE` solo per la forma: la regola dei `FATTO` vuole un comando lanciato in sessione, e nessun agente interroga il database. **L'integrazione della 02 su `main` è sbloccata** |
+| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **FATTO** — integrata su `main`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   328` |
+| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **IN CORSO** — senza prova nel browser: il collaudo lo fa il capo dopo l'integrazione |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
 | **2.2** | implementazione | sessioni-unità | P | PIANIFICATA |
 
@@ -139,11 +153,12 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **02** aperta in background. Al rientro: auditare `CONTRATTI` (le firme di `SpeseDelPeriodo`
-e di `RecurringExpenseRepository`, che l'unità 03 e la 2.2 consumano) e il grep che prova il divieto
-di `ElencaAsync`; integrare, compilare e testare su `main`; poi scrivere il mandato dell'unità **03**.
-⚠️ Dopo l'integrazione della 02 **l'app pubblicata cambia comportamento** (materializza e somma le
-previste): è il primo push di questo goal con effetto visibile agli utenti.
+Unità **03** aperta in background, **sorvegliata con un Monitor** (la 02 è rimasta finita e non vista
+per un'ora: una sessione `--bg` non notifica il capo). Al rientro: audit, integrazione, poi il
+**collaudo della 2.1 nel browser** lo fa il capo (server avviato da lui, PID in `handoff/server.md`).
+⚠️ L'app di sviluppo punta a Supabase di **produzione**: il collaudo crea una regola che parte il mese
+prossimo (nessuna occorrenza generata, quindi eliminabile) e la elimina a fine prova.
+Dopo il collaudo: la 2.1 è chiusa, e si passa al **piano della 2.2** (unità P).
 Se un utente segnala «colonna sconosciuta»: `NOTIFY pgrst, 'reload schema';` dall'SQL editor.
 
 **Perché tre unità e non sei**: i task 1 e 2 sono piccoli e stanno entrambi prima del gate; il 3 da solo
