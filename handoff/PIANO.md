@@ -65,7 +65,10 @@ confine naturale fra un capo e il successivo.
   **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
   passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
 
-- **2026-09-22 — Sei aggiunte allo schema della 2.1, fatte dall'unità 01, da ratificare** (le vede
+- **2026-09-22 utente (chat)** — migrazione `20260922000000_ricorrenti.sql` applicata in produzione:
+  «ok fatto». Vale anche come **ratifica** delle sei aggiunte allo schema qui sotto, che gli erano state
+  elencate prima di applicarla con l'avvertenza che applicarla valeva come approvazione.
+- **2026-09-22 — Sei aggiunte allo schema della 2.1, fatte dall'unità 01, ratificate** (le vede
   l'utente quando applica la migrazione): `recurring_period` è **il primo del mese** del periodo, con
   un check che lo impone; check che `recurring_id` e `recurring_period` siano entrambi nulli o entrambi
   pieni; check di formato su `materialized_through`; check d'intervallo sulle date (2000-2999, contro
@@ -118,8 +121,8 @@ confine naturale fra un capo e il successivo.
 | **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **FATTO** — approvata in chat il 22 set («ok procediamo a fare la fase 1»); verifica: `git -C /g/Sviluppo/Eton branch -r --contains 73e44b4` -> `origin/main` |
 | **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | **FATTO** — più un **ottavo** punto: `SpeseDelPeriodo` restituisce anche `InArrivo` (le future, fuori dai totali), perché la 2.2 le mostra; verifica: `grep -c 'corretto 22 set' /g/Sviluppo/Eton/docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` -> `15` |
 | **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
-| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **IN CORSO** — passi dati in chat uno alla volta |
-| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | PIANIFICATA |
+| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); manca l'esito della query di controllo sulle colonne `recurring%` (attese 2 righe). **Va confermato prima di integrare la 02 su `main`**, non prima di aprirla |
+| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **IN CORSO** |
 | **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | PIANIFICATA |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
 | **2.2** | implementazione | sessioni-unità | P | PIANIFICATA |
@@ -136,11 +139,12 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-**GATE**: guidare l'utente in chat, un passo alla volta, ad applicare
-`supabase/migrations/20260922000000_ricorrenti.sql` dall'SQL editor di Supabase in produzione, e a
-verificarlo. Ripiego se un inserimento dà «colonna sconosciuta»: `NOTIFY pgrst, 'reload schema';`.
-Alla sua conferma «applicata»: trascriverla in `DECISIONI` con la data, scrivere il mandato dell'unità
-**02** (task 3 e 4), committare **e pushare**, aprirla.
+Unità **02** aperta in background. Al rientro: auditare `CONTRATTI` (le firme di `SpeseDelPeriodo`
+e di `RecurringExpenseRepository`, che l'unità 03 e la 2.2 consumano) e il grep che prova il divieto
+di `ElencaAsync`; integrare, compilare e testare su `main`; poi scrivere il mandato dell'unità **03**.
+⚠️ Dopo l'integrazione della 02 **l'app pubblicata cambia comportamento** (materializza e somma le
+previste): è il primo push di questo goal con effetto visibile agli utenti.
+Se un utente segnala «colonna sconosciuta»: `NOTIFY pgrst, 'reload schema';` dall'SQL editor.
 
 **Perché tre unità e non sei**: i task 1 e 2 sono piccoli e stanno entrambi prima del gate; il 3 da solo
 non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagine della stessa area. Il
