@@ -123,7 +123,8 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **01** aperta in background. Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` (in particolare
+Unità **01** aperta in background il 22 set, sessione `747f72e4` (`claude agents` per lo stato). Il
+suo lavoro sta nel suo worktree, non nell'albero principale. Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` (in particolare
 **quale data rappresenta un periodo** in `recurring_period`), integrare su `main`, e portare
 all'utente in chat il testo della migrazione con i passi per applicarla, uno alla volta. `doc-checker`
 sta verificando `Operator.In`, le righe restituite da un UPDATE di massa e la ricarica della cache
@@ -144,6 +145,20 @@ task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
 - **Dubbio mio**: la migrazione della 2.1 è il primo SQL di produzione di questo goal, e per la memoria
   del progetto l'SQL di produzione si ferma sempre all'utente. Il gate lo rispetta per costruzione; resta
   da scrivere nel mandato del task 2 che l'unità **non** lo applica.
+- **Verificato da `doc-checker` il 22 set** (spec 2.2 §5.4): `Operator.In` in `Supabase.Postgrest`
+  4.4.0 filtra UPDATE e DELETE su un elenco di id in una sola istruzione (`PATCH …?id=in.(…)`); il
+  criterio documentato è `List<object>` (i Guid si passano con `.Cast<object>().ToList()`, il
+  `ToString()` lo fa la libreria). Mai usato finora nel codice di Eton. **Le righe restituite**: UPDATE sì
+  (`ModeledResponse<T>`), **DELETE filtrato no** (restituisce `Task`) — la spec 2.2 §5.4 è corretta di
+  conseguenza (DELETE + rilettura degli stessi id). Decisione tecnica mia, **da ratificare**: non cambia
+  niente di visibile all'utente.
+- **Verificato da `doc-checker` il 22 set — la cache dello schema**: Supabase installa un event trigger
+  (`pgrst_ddl_watch`) che ricarica la cache su `CREATE TABLE`, `ALTER TABLE`, `CREATE TRIGGER`,
+  `CREATE FUNCTION` e simili, quindi la migrazione della 2.1 la ricarica da sola. `GRANT` e
+  `CREATE POLICY` non la fanno scattare, ma non serve: la cache non contiene privilegi, che PostgreSQL
+  controlla a ogni richiesta. Se dopo la migrazione un inserimento dà ancora «colonna sconosciuta»
+  (PGRST204), il rimedio documentato da Supabase è `NOTIFY pgrst, 'reload schema';` dall'SQL editor.
+  **Va nei passi per l'utente al gate, come ripiego.** Il punto qui sotto è quindi chiuso.
 - `tech-advisor` ha dato **a memoria** (non verificato) che su Supabase hosted la cache dello schema si
   ricarica da sola dopo un DDL, e che altrimenti serve `notify pgrst, 'reload schema';`. Da far
   verificare a `doc-checker` prima del gate.

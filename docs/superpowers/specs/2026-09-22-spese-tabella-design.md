@@ -212,9 +212,18 @@ modulo di oggi (`Testi.MessaggioImporto` e gli altri).
 - **Non atomiche rispetto alle modifiche altrui, e dichiarato**: nessun filtro `version`, quindi vince
   l'ultima scrittura. È accettabile perché la categoria sceglie da un elenco chiuso. **Se un giorno si
   vorranno cambiare gli importi in massa, questa scelta va rivista.**
-- ⚠️ **Da verificare prima del piano** con `doc-checker`: la forma del filtro su un elenco di id
-  (`Operator.In`) in `Supabase.Postgrest` 4.4.0, e che la risposta riporti le righe effettivamente
-  toccate. È detta a memoria.
+- **Verificato da `doc-checker` il 22 settembre** sul sorgente di `Supabase.Postgrest` 4.4.0, al
+  commit dichiarato nel pacchetto:
+  - il filtro su un elenco di id è `Filter("id", Operator.In, lista)`. Il criterio documentato è una
+    `List<object>`, quindi i Guid si passano con `.Cast<object>().ToList()`. Produce `id=in.(…)`;
+  - **«Cambia categoria»**: `Set(...).Update()` restituisce `ModeledResponse<T>`, con
+    `Prefer: return=representation` di default. **Si conta dalle righe restituite**;
+  - ⚠️ **«Elimina» no**: `Filter(...).Delete()` restituisce un `Task` semplice, senza righe. L'unico
+    `Delete` che le restituisce filtra sulla chiave primaria di **un** modello. Quindi l'eliminazione
+    di massa è **un DELETE filtrato, seguito da una rilettura degli stessi id**: le righe ancora
+    presenti sono quelle che la RLS ha escluso. È la forma che `EliminaAsync` usa già per la riga
+    singola. Una riga cancellata da un altro membro nel frattempo conta fra le eliminate, ed è
+    corretto: non esiste più.
 
 ### 5.5 La riga nuova, rinviata
 
@@ -276,7 +285,8 @@ assente.
 - **Se la tabella legge senza passare dal percorso unico**, i totali divergono in silenzio (§2.3).
 - **Se il fuoco non sopravvive ai ridisegni**, la navigazione a frecce diventa inservibile dopo il primo
   salvataggio, ed è la funzione che l'utente ha voluto contro il parere tecnico.
-- **Se `Operator.In` non si comporta come atteso**, le azioni di massa vanno ripensate prima del piano.
+- **Se qualcuno conta le righe eliminate dalla risposta del DELETE**, il conteggio sarà sempre zero: la
+  libreria non le restituisce (§5.4). Il conteggio viene dalla rilettura.
 - **Se la 2.1-bis cambia il modello d'interazione delle righe**, e non solo i token, la tabella si
   riscrive invece di restilizzarsi: è il segnale che la decisione 4-bis era sbagliata.
 - **Se la fase 3 richiede più di un adattatore** per far leggere a `Griglia<T>` gli elementi di una
