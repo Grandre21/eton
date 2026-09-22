@@ -27,6 +27,16 @@ public class Expense : BaseModel
     [Column("space_id", ignoreOnUpdate: true)] public Guid SpaceId { get; set; }
     [Column("paid_by",  ignoreOnUpdate: true)] public Guid PaidBy  { get; set; }
 
+    // Nulle su una spesa segnata a mano; valorizzate insieme quando la spesa nasce dalla
+    // materializzazione di una regola ricorrente (v. RecurringExpenseRepository). RecurringPeriod è
+    // il primo giorno del mese del periodo ("2026-09" -> 2026-09-01, mai la data dell'occorrenza:
+    // il check del database la vuole così, altrimenti 23514). Concesse solo in INSERT, come
+    // space_id e paid_by: una volta scritte non cambiano più.
+    // Expense non si scrive mai con Upsert: in Postgrest 4.4.0 l'upsert omette anche le colonne
+    // ignoreOnUpdate (v. OccorrenzaRicorrente in ExpenseRepository.cs).
+    [Column("recurring_id",     ignoreOnUpdate: true)] public Guid?     RecurringId     { get; set; }
+    [Column("recurring_period", ignoreOnUpdate: true)] public DateTime? RecurringPeriod { get; set; }
+
     [Column("amount")]      public decimal Amount      { get; set; }
     [Column("description")] public string  Description { get; set; } = "";
     [Column("category")]    public string  Category    { get; set; } = "";

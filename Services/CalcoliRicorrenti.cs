@@ -1,10 +1,19 @@
 using System.Globalization;
+using Eton.Models;
 
 namespace Eton.Services;
 
 /// <summary>Un'occorrenza dovuta di una regola ricorrente. <see cref="Periodo"/> è <c>yyyy-MM</c> ed
 /// è la chiave di idempotenza: la stessa occorrenza non si materializza due volte.</summary>
 public sealed record PeriodoDovuto(string Periodo, DateTime Data);
+
+/// <summary>Il risultato della fusione fra le spese vere e le occorrenze delle regole ricorrenti
+/// per un intervallo. <c>Righe</c> = vere + previste scadute, sono ciò che entra nei totali;
+/// <c>Previste</c> = gli Id sintetici delle previste dentro <c>Righe</c>, le pagine le marcano e
+/// non ci mettono un collegamento; <c>InArrivo</c> = occorrenze con data futura rispetto a oggi,
+/// fuori da <c>Righe</c> e da ogni totale, per la vista tabellare.</summary>
+public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<Guid> Previste,
+    IReadOnlyList<Expense> InArrivo);
 
 /// <summary>
 /// Calcoli puri sulle regole ricorrenti: quali occorrenze sono dovute in una finestra di date e
@@ -74,5 +83,58 @@ public static class CalcoliRicorrenti
 
         var dovuti = Dovuti(inizio, fine, ogniMesi, giorno, materializzatoFinoA: null, da, a);
         return dovuti.Count > 0 ? dovuti[0].Data : null;
+    }
+
+    /// <summary>L'occorrenza di una regola in un periodo, così come esiste — prevista o scritta. Una sola
+    /// sede, perché una riga prevista e la stessa riga materializzata non devono poter divergere; il
+    /// periodo è il primo giorno del mese (check expenses_recurring_period_primo_del_mese).</summary>
+    public static Expense Occorrenza(RecurringExpense r, PeriodoDovuto d) => new()
+    {
+        Id              = Guid.NewGuid(),
+        SpaceId         = r.SpaceId,
+        PaidBy          = r.PaidBy,
+        Amount          = r.Amount,
+        Description     = r.Description,
+        Category        = r.Category,
+        SpentOn         = d.Data,
+        RecurringId     = r.Id,
+        RecurringPeriod = new DateTime(d.Data.Year, d.Data.Month, 1)
+    };
+
+    /// <summary>Fonde le spese vere con le occorrenze dovute delle regole ricorrenti nell'intervallo
+    /// <c>[da, a]</c>: il criterio è il §5 del design delle ricorrenti — il totale è ciò che
+    /// esisterebbe se ogni pagante avesse aperto l'app, e le occorrenze future non entrano.
+    /// Rispetta il watermark di ciascuna regola: un buco lasciato dall'utente (v.
+    /// <see cref="Dovuti"/>) resta un buco anche nella previsione.</summary>
+    public static SpeseDelPeriodo Fondi(IReadOnlyList<Expense> vere, IReadOnlyList<RecurringExpense> regole,
+        DateTime da, DateTime a, DateTime oggi)
+    {
+        var presenti = vere
+            .Where(e => e.RecurringId is not null && e.RecurringPeriod is not null)
+            .Select(e => (RecurringId: e.RecurringId!.Value, Periodo: Periodo(e.RecurringPeriod!.Value)))
+            .ToHashSet();
+
+        var previsteRighe = new List<Expense>();
+        var inArrivo = new List<Expense>();
+
+        foreach (var r in regole)
+        {
+            var dovuti = Dovuti(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, r.MaterializedThrough, da, a);
+            foreach (var d in dovuti)
+            {
+                if (presenti.Contains((r.Id, d.Periodo))) continue;
+
+                var occorrenza = Occorrenza(r, d);
+
+                if (d.Data <= oggi.Date) previsteRighe.Add(occorrenza);
+                else inArrivo.Add(occorrenza);
+            }
+        }
+
+        var righe = vere.Concat(previsteRighe).OrderByDescending(e => e.SpentOn).ToList();
+        var inArrivoOrdinato = inArrivo.OrderByDescending(e => e.SpentOn).ToList();
+        var previste = previsteRighe.Select(e => e.Id).ToHashSet();
+
+        return new SpeseDelPeriodo(righe, previste, inArrivoOrdinato);
     }
 }

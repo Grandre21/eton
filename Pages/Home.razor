@@ -416,7 +416,8 @@ else
                 var primoDelMese = new DateTime(oggi.Year, oggi.Month, 1);
                 var ultimoDelMese = primoDelMese.AddMonths(1).AddDays(-1);
 
-                var speseDelMese = await ExpenseRepository.ElencaAsync(spazio.Id, primoDelMese, ultimoDelMese);
+                // Percorso unico di lettura (v. ExpenseRepository.ElencaConPrevisteAsync), le previste scadute contano nel totale.
+                var speseDelMese = (await ExpenseRepository.ElencaConPrevisteAsync(spazio.Id, primoDelMese, ultimoDelMese)).Righe;
                 if (mia != generazione) return;
 
                 riepilogoSpese = CalcoliSpese.PerMese(speseDelMese, oggi.Year, oggi.Month);
