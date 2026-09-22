@@ -65,6 +65,19 @@ confine naturale fra un capo e il successivo.
   **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
   passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
 
+- **2026-09-22 — Sei aggiunte allo schema della 2.1, fatte dall'unità 01, da ratificare** (le vede
+  l'utente quando applica la migrazione): `recurring_period` è **il primo del mese** del periodo, con
+  un check che lo impone; check che `recurring_id` e `recurring_period` siano entrambi nulli o entrambi
+  pieni; check di formato su `materialized_through`; check d'intervallo sulle date (2000-2999, contro
+  l'overflow nel client di un altro membro); **la policy `expenses_insert` ricreata più stretta** — una
+  spesa si aggancia solo a una regola dello stesso spazio e dello stesso pagante (verificato dal capo:
+  la vecchia era `is_space_member(space_id) and paid_by = auth.uid()`, la nuova è la stessa più una
+  condizione, e nessun'altra migrazione la ridefinisce); `materialized_through` concessa anche in
+  INSERT. Tutte restrittive o neutre.
+- **2026-09-22 — Una violazione dichiarata dall'unità 01**: un `implementer` ha scritto ed eseguito uno
+  script Python temporaneo nel worktree, non richiesto, poi rimosso. L'unità gliel'ha vietato nel giro
+  successivo. Da riportare all'utente; nessun effetto sul codice consegnato.
+
 - **2026-09-22 — Il confine fra modello e resa nella 2.2** (posizione di `tech-advisor`, adottata):
   ciò che un test xUnit o un lettore di schermo può osservare è modello/comportamento e va nella spec
   adesso; ciò che cambia solo una variabile o una regola in `app.css` è resa e va alla 2.1-bis. **Tre
@@ -104,8 +117,8 @@ confine naturale fra un capo e il successivo.
 |---|---|---|---|---|
 | **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **FATTO** — approvata in chat il 22 set («ok procediamo a fare la fase 1»); verifica: `git -C /g/Sviluppo/Eton branch -r --contains 73e44b4` -> `origin/main` |
 | **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | **FATTO** — più un **ottavo** punto: `SpeseDelPeriodo` restituisce anche `InArrivo` (le future, fuori dai totali), perché la 2.2 le mostra; verifica: `grep -c 'corretto 22 set' /g/Sviluppo/Eton/docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` -> `15` |
-| **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **IN CORSO** |
-| **GATE migrazione** | l'utente applica la migrazione in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | PIANIFICATA |
+| **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
+| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **IN CORSO** — passi dati in chat uno alla volta |
 | **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | PIANIFICATA |
 | **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | PIANIFICATA |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
@@ -123,12 +136,11 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **01** aperta in background il 22 set, sessione `747f72e4` (`claude agents` per lo stato). Il
-suo lavoro sta nel suo worktree, non nell'albero principale. Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` (in particolare
-**quale data rappresenta un periodo** in `recurring_period`), integrare su `main`, e portare
-all'utente in chat il testo della migrazione con i passi per applicarla, uno alla volta. `doc-checker`
-sta verificando `Operator.In`, le righe restituite da un UPDATE di massa e la ricarica della cache
-dello schema: il terzo punto va nei passi per l'utente.
+**GATE**: guidare l'utente in chat, un passo alla volta, ad applicare
+`supabase/migrations/20260922000000_ricorrenti.sql` dall'SQL editor di Supabase in produzione, e a
+verificarlo. Ripiego se un inserimento dà «colonna sconosciuta»: `NOTIFY pgrst, 'reload schema';`.
+Alla sua conferma «applicata»: trascriverla in `DECISIONI` con la data, scrivere il mandato dell'unità
+**02** (task 3 e 4), committare **e pushare**, aprirla.
 
 **Perché tre unità e non sei**: i task 1 e 2 sono piccoli e stanno entrambi prima del gate; il 3 da solo
 non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagine della stessa area. Il
