@@ -102,9 +102,12 @@ confine naturale fra un capo e il successivo.
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
-| **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **IN CORSO** — spec scritta, **attende l'approvazione in chat** |
-| **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | PIANIFICATA |
-| **01…06 — 2.1** | i sei task del piano corretto, un'unità per task o per gruppo | sessioni-unità | R, e il GATE fra 2 e 4 | PIANIFICATA |
+| **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **FATTO** — approvata in chat il 22 set («ok procediamo a fare la fase 1»); verifica: `git -C /g/Sviluppo/Eton branch -r --contains 73e44b4` -> `origin/main` |
+| **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | **FATTO** — più un **ottavo** punto: `SpeseDelPeriodo` restituisce anche `InArrivo` (le future, fuori dai totali), perché la 2.2 le mostra; verifica: `grep -c 'corretto 22 set' /g/Sviluppo/Eton/docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` -> `15` |
+| **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **IN CORSO** |
+| **GATE migrazione** | l'utente applica la migrazione in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | PIANIFICATA |
+| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | PIANIFICATA |
+| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | PIANIFICATA |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
 | **2.2** | implementazione | sessioni-unità | P | PIANIFICATA |
 
@@ -120,11 +123,15 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **S**: l'utente approva in chat la spec della 2.2. Subito dopo, **`doc-checker`** sul filtro per
-elenco di id (`Operator.In`) di `Supabase.Postgrest` 4.4.0 e sulla risposta con le righe toccate (spec
-§5.4, detto a memoria), e sulla ricarica della cache dello schema dopo un DDL (v. `APERTO`). Poi
-l'unità **R**: il piano della 2.1 corretto nei sette punti, con la sotto-navigazione che la spec §2.4
-assegna al task 5.
+Unità **01** aperta in background. Al suo rientro: auditare `CONTRATTI` e `SCOSTAMENTI` (in particolare
+**quale data rappresenta un periodo** in `recurring_period`), integrare su `main`, e portare
+all'utente in chat il testo della migrazione con i passi per applicarla, uno alla volta. `doc-checker`
+sta verificando `Operator.In`, le righe restituite da un UPDATE di massa e la ricarica della cache
+dello schema: il terzo punto va nei passi per l'utente.
+
+**Perché tre unità e non sei**: i task 1 e 2 sono piccoli e stanno entrambi prima del gate; il 3 da solo
+non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagine della stessa area. Il
+task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
 
 ## APERTO
 

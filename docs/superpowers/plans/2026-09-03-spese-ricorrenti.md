@@ -19,14 +19,47 @@ watermark sulla regola a impedire di riempire i buchi che l'utente ha creato di 
 **Specifica:** `docs/superpowers/specs/2026-09-03-spese-ricorrenti-design.md` — si legge
 **insieme** a questo piano, non al posto suo.
 
+## ⚠️ Correzioni del 22 settembre 2026
+
+Il piano è rimasto fermo dal 3 al 22 settembre, mentre il codice avanzava di 105 commit.
+`tech-advisor` l'ha riverificato sul codice del 22 settembre: **regge nell'impianto**, ma otto punti
+erano scaduti o mancanti. Sono corretti **nel testo qui sotto**, ciascuno marcato
+`[corretto 22 set]`, e riassunti qui perché chi scrive un mandato li ritrovi in un posto solo.
+
+1. **Offline**: la premessa «deve funzionare offline come PWA» è caduta il 10 settembre
+   (`2026-09-10-modello-prodotto-design.md`, decisione 2). Tolta dai vincoli globali.
+2. **Test**: oggi sono **310**, non 267. Il gate del task 1 passa da 310 a **319**.
+3. **Contratto degli editor**: la sezione `CONTRATTO` di `handoff/PIANO.md` a cui il task 6 rimandava
+   non esiste più. Il contratto vive in `Shared/PaginaEditor.cs`.
+4. **Rimandi slittati**: `Pages/Spese.razor` è di 513 righe, non 502. I numeri di riga della
+   specifica sono approssimati: si cerca il frammento, non la riga.
+5. **Buco — `Models/Expense.cs`**: il task 4 scrive `recurring_id` e `recurring_period` su
+   `expenses`, quindi `Expense` acquista le due colonne, con `ignoreOnUpdate: true`. È ciò che fa
+   scattare `PrivilegiInsertTests`. Aggiunto al perimetro del task 4.
+6. **Buco — `OnConflict`**: `Upsert` con `IgnoreDuplicates` da solo non basta. Senza
+   `OnConflict = "recurring_id,recurring_period"` PostgREST risolve il conflitto sulla chiave
+   primaria. Siccome l'`id` lo genera il client, la corsa fra due schede produrrebbe un **23505**
+   invece di un duplicato ignorato. Verificato sull'xmldoc di `Supabase.Postgrest` 4.4.0
+   (`QueryOptions.OnConflict`).
+7. **Nome della migrazione**: si data al giorno in cui si scrive, non al 4 settembre.
+8. **Le ricorrenti future nel percorso unico**: la specifica della tabella
+   (`2026-09-22-spese-tabella-design.md` §4) le mostra come «in arrivo» quando il periodo arriva nel
+   futuro. Quindi `SpeseDelPeriodo` le restituisce subito, **a parte e fuori dai totali**, invece di
+   scartarle. Altrimenti la 2.2 dovrebbe modificare un contratto già usato da due pagine.
+
+**Sequenza di pubblicazione** (`main` pubblica in produzione a ogni push): la migrazione è additiva e
+retrocompatibile col client già pubblicato. L'ordine è: task 1 e 2 su `main`; l'utente applica la
+migrazione e lo **conferma in chat**; poi i task 3-6. **Il task 4 non va su `main` prima della
+conferma**: senza lo schema, ogni «Segna» fallirebbe in produzione.
+
 ## Vincoli globali
 
 Valgono per **ogni** task, e non si ripetono dentro ciascuno.
 
-- **Nessuna dipendenza nuova.** Il sito sta su GitHub Pages e deve funzionare offline come
-  PWA.
+- **Nessuna dipendenza nuova.** Il sito sta su GitHub Pages. `[corretto 22 set]`: il vincolo
+  offline è caduto il 10 settembre.
 - **Gate di ogni task:** `dotnet build -warnaserror` → 0 errori, 0 avvisi; `dotnet test` →
-  tutti verdi. Erano **267** prima di questo lavoro.
+  tutti verdi. `[corretto 22 set]` Erano **310** prima di questo lavoro.
 - **Gli `implementer` non compilano mai**: `obj/` non ha lock fra processi. Compila
   l'orchestratore dell'unità, una volta, a fine giro.
 - **Si testa la logica pura, non il repository né le pagine.** È la tradizione del progetto,
@@ -47,11 +80,12 @@ Valgono per **ogni** task, e non si ripetono dentro ciascuno.
 |---|---|---|
 | `Services/CalcoliRicorrenti.cs` | **creare** — calcolo puro: quali periodi sono dovuti, con che data e importo | 1 |
 | `Eton.Tests/CalcoliRicorrentiTests.cs` | **creare** — i test del calcolo | 1 |
-| `supabase/migrations/20260904000000_ricorrenti.sql` | **creare** — tabella, due colonne su `expenses`, vincolo, RLS, grant, trigger | 2 |
+| `supabase/migrations/<data del giorno>000000_ricorrenti.sql` | **creare** — tabella, due colonne su `expenses`, vincolo, RLS, grant, trigger. `[corretto 22 set]` datata al giorno in cui si scrive; deve restare lessicalmente l'ultima | 2 |
 | `supabase/verifica-rls-ricorrenti.sql` | **creare** — collaudo RLS che inserisce **come inserisce il client** | 2 |
 | `Models/RecurringExpense.cs` | **creare** — il modello, fotocopia di `Expense.cs` | 3 |
 | `Services/RecurringExpenseRepository.cs` | **creare** — CRUD sulle regole, concorrenza ottimistica come `ExpenseRepository` | 3 |
 | `Services/ExpenseRepository.cs` | **modificare** — materializzazione e **percorso di lettura unico** | 4 |
+| `Models/Expense.cs` | **modificare** — `[corretto 22 set]` le due colonne `recurring_id` e `recurring_period`, `ignoreOnUpdate: true` | 4 |
 | `Pages/Spese.razor`, `Pages/Home.razor` | **modificare** — passano al percorso unico | 4 |
 | `Pages/Ricorrenti.razor` | **creare** — elenco delle regole | 5 |
 | `Pages/RicorrenteEdit.razor` | **creare** — editor di una regola | 6 |
@@ -222,7 +256,7 @@ Atteso: 9 superati.
 - [ ] **Step 5: il gate completo**
 
 Comando: `dotnet build -warnaserror` poi `dotnet test`
-Atteso: 0 avvisi; **276** superati (267 + 9).
+Atteso: 0 avvisi; **319** superati (310 + 9). `[corretto 22 set]`
 
 - [ ] **Step 6: commit**
 
@@ -297,6 +331,9 @@ questo punto al task 3**.
 Il resoconto deve contenere, sotto `DA CONSEGNARE ALL'UTENTE`, il **testo integrale della
 migrazione**. La applica lui in produzione: nessun agente si connette al database.
 
+`[corretto 22 set]` **La consegna è subito, non a fine goal**: il capo porta il testo all'utente appena
+il task 2 rientra, e il task 4 non va su `main` finché l'utente non scrive in chat che l'ha applicata.
+
 ---
 
 ## Task 3 — Il modello e il repository delle regole
@@ -359,23 +396,37 @@ un'azione diversa nell'interfaccia e non deve poter cambiare altro per sbaglio.
 
 **File:**
 - Modificare: `Services/ExpenseRepository.cs`
+- Modificare: `Models/Expense.cs` `[corretto 22 set]`
 - Modificare: `Pages/Spese.razor`, `Pages/Home.razor`
+
+⚠️ **`[corretto 22 set]` Questo task non va su `main` prima che l'utente abbia confermato in chat di
+aver applicato la migrazione del task 2**: senza lo schema, ogni «Segna» fallisce in produzione
+(colonna sconosciuta), e senza `recurring_expenses` la lettura delle spese si rompe su Spese e Home.
 
 **Interfacce:**
 - *Consuma*: `CalcoliRicorrenti.Dovuti` (task 1), `RecurringExpenseRepository` (task 3).
 - *Produce*:
   ```csharp
-  public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<Guid> Previste);
+  public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<Guid> Previste,
+      IReadOnlyList<Expense> InArrivo);
   public async Task<SpeseDelPeriodo> ElencaConPrevisteAsync(Guid spazioId, DateTime da, DateTime a);
   ```
   `Previste` contiene gli `Id` sintetici delle righe non ancora scritte: le pagine le marcano
   e non ci mettono un collegamento.
+  `[corretto 22 set]` `InArrivo` sono le occorrenze con data `> oggi` dentro l'intervallo: **fuori da
+  `Righe` e quindi fuori da ogni totale**, restituite a parte perché la vista tabellare della 2.2 le
+  mostra marcate. Registro e Home le ignorano.
 
 - [ ] **Step 1: la materializzazione**
 
 All'apertura, per ogni regola **di cui l'utente è il pagante**: calcolare i periodi dovuti con
 data `<= oggi`, scriverli con `Upsert` e `DuplicateResolution.IgnoreDuplicates`, poi avanzare
 il watermark.
+
+`[corretto 22 set]` **E con `OnConflict = "recurring_id,recurring_period"`** nelle `QueryOptions`.
+Senza, PostgREST risolve il conflitto sulla chiave primaria: con l'`id` generato dal client ogni
+tentativo ha un id nuovo, e la corsa fra due schede che il vincolo `unique` dovrebbe assorbire
+produce invece un errore **23505**.
 
 **`IgnoreDuplicates` e mai `MergeDuplicates`**: il secondo è un UPDATE e sovrascriverebbe con
 l'importo della regola una spesa che il pagante aveva già corretto a mano. È il difetto
@@ -389,7 +440,8 @@ silenzioso e distruttivo del §9 della specifica.
 - una previsione il cui `(recurring_id, periodo)` esiste già fra le righe vere **non** si
   aggiunge — la riga vera vince sempre;
 - le previste con data `<= oggi` entrano nell'elenco e nei totali;
-- le previste con data `> oggi` **non** entrano: sono «in arrivo» e le mostrerà il task 5.
+- le previste con data `> oggi` **non** entrano in `Righe` né nei totali: sono «in arrivo», e
+  `[corretto 22 set]` vanno in `InArrivo`.
 
 - [ ] **Step 3: i due chiamanti passano al percorso unico**
 
@@ -401,7 +453,7 @@ passare a `ElencaConPrevisteAsync`.
 > nessun test se ne accorge. Vale per la vista tabellare e per l'analisi, che arriveranno
 > dopo.
 
-Attenzione a `Pages/Spese.razor`: 502 righe con una macchina a stati documentata come
+Attenzione a `Pages/Spese.razor`: 513 righe `[corretto 22 set]` con una macchina a stati documentata come
 delicata ai suoi commenti interni, dove le guardie vanno alzate **come ultima istruzione
 sincrona prima del primo `await`**. Questo task **non** deve aggiungere un chiamante nuovo di
 `Carica()`: sostituisce la chiamata dentro quello che c'è già.
@@ -443,9 +495,13 @@ da sé.
 - [ ] **Step 2: la sotto-navigazione**
 
 Con questa pagina le spese diventano tre schermate e la barra di navigazione ha cinque posti
-già occupati. Serve una riga di collegamenti in testa («Registro · Ricorrenti»).
-**Chiedere all'utente la forma** prima di inventarla: la specifica §6.4 la dichiara sua
-preferenza.
+già occupati. Serve una riga di collegamenti in testa.
+
+`[corretto 22 set]` **Non si chiede più all'utente: è decisa.** La specifica della tabella
+(`2026-09-22-spese-tabella-design.md` §2.4) la fissa in **«Registro · Tabella · Ricorrenti»**, e la
+voce «Tabella» **non si mostra** finché la pagina `/expenses/table` non esiste. È un componente
+condiviso fra le pagine delle spese, non un blocco ricopiato in ciascuna. La resa visiva è
+provvisoria, come per tutta la 2.2: la rifà la 2.1-bis.
 
 - [ ] **Step 3: gate e commit**
 
@@ -465,8 +521,9 @@ preferenza.
 
 `@inherits PaginaEditor`, `Cambiata` come `protected override`, `<NavigationLock>` **dentro il
 ramo del modulo**, i `NavigateTo` post-creazione ed eliminazione sostituiti da `Esci(...)`,
-`@inject NavigationManager` **non** dichiarato. La firma reale è in `handoff/PIANO.md`,
-sezione `CONTRATTO`.
+`@inject NavigationManager` **non** dichiarato. `[corretto 22 set]` La firma reale è in
+`Shared/PaginaEditor.cs` (`Cambiata`, `Esci`): la sezione `CONTRATTO` di `handoff/PIANO.md` a cui
+questo punto rimandava non esiste più.
 
 Il gate di «Chiudi»: `href="@(occupato ? null : "…")"` con `null` **letterale** — mai `?? ""`,
 che produrrebbe un link valido verso la radice dell'applicazione.
