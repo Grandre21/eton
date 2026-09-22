@@ -65,6 +65,9 @@ confine naturale fra un capo e il successivo.
   **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
   passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
 
+- **2026-09-22 utente (chat)** — sulle tre decisioni tecniche del capo (tipo di sola scrittura
+  `OccorrenzaRicorrente`, `ElencaAsync` privato, record `DatiRegola`): «dalle per buone». Tutte e tre
+  **ratificate 2026-09-22**. Poi: «chiudiamo la sessione per oggi».
 - **2026-09-22 — L'unità 02 ha trovato che il contratto di scrittura del piano non funzionava.** Un
   `Upsert<Expense>` in `Supabase.Postgrest` 4.4.0 scarta anche le colonne `ignoreOnUpdate`, quindi
   avrebbe omesso `space_id`, `paid_by`, `recurring_id` e `recurring_period` → 23502 in produzione al
@@ -153,8 +156,16 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-Unità **03** aperta in background, **sorvegliata con un Monitor** (la 02 è rimasta finita e non vista
-per un'ora: una sessione `--bg` non notifica il capo). Al rientro: audit, integrazione, poi il
+**Ripresa del 23 settembre in poi (sessione nuova).** L'utente ha chiuso la sessione del 22 mentre
+l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
+non tocca la produzione). **Primo gesto del capo nuovo**: `claude agents --json` e `git worktree list`
+per trovarla — il worktree **non** porta necessariamente il nome dell'unità (la 02 si chiamava
+`unita-02-regole-e-lettura`). Se ha finito, il resoconto sta **dentro il worktree**, in
+`handoff/03-pagine-ricorrenti/resoconto.md`; poi `claude stop` e `claude rm` sulla sessione dopo
+l'integrazione. Se è `waiting`, leggere cosa aspetta con `claude logs 321bb5c3`.
+⚠️ Una sessione `--bg` non notifica il capo quando finisce: la 02 è rimasta ferma e non vista per
+un'ora. Dopo aver aperto un'unità, **armare subito un'attesa in background** su `claude agents --json`.
+Al rientro della 03: audit, integrazione, poi il
 **collaudo della 2.1 nel browser** lo fa il capo (server avviato da lui, PID in `handoff/server.md`).
 ⚠️ L'app di sviluppo punta a Supabase di **produzione**: il collaudo crea una regola che parte il mese
 prossimo (nessuna occorrenza generata, quindi eliminabile) e la elimina a fine prova.
