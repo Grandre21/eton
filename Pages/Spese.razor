@@ -11,6 +11,7 @@
     <Aiuto>
         <p>Il riepilogo conta solo il mese che stai guardando: cambiando mese cambiano il totale e le categorie.</p>
         <p>Ogni spesa resta legata a chi l'ha pagata, e questo non cambia più dopo averla segnata.</p>
+        <p>Una spesa ricorrente conta nel mese in cui è dovuta anche prima che chi la paga apra Eton: fino ad allora compare come «prevista» e non si apre.</p>
     </Aiuto>
 </TestataPagina>
 
@@ -179,17 +180,26 @@ else
             <ul class="registro elenco-spese">
                 @foreach (var s in speseDelMese)
                 {
+                    var prevista = previste.Contains(s.Id);
                     <li>
                         @* riga-nuova solo sulla spesa appena creata da Segna(), non su tutto ciò che è
                            "recente": il lampo verde dichiara un fatto CONSTATATO in questa sessione,
                            non una qualità della riga. Verde e non blu, come in app.css: blu è dove si
                            preme, verde è dove si constata — e questa riga non si è premuta, è arrivata
                            da sola dopo Segna(). *@
-                        <a class="riga riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="expenses/@s.Id">
+                        @* Una prevista non esiste ancora nel database, quindi non c'è niente da aprire:
+                           diventa una spesa vera quando chi la paga apre Eton. href="null" letterale,
+                           mai "?? """, che punterebbe alla radice: Blazor omette l'attributo intero e
+                           l'<a> senza href non è più un collegamento. *@
+                        <a class="riga riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="@(prevista ? null : $"expenses/{s.Id}")">
                             <span class="descrizione">@s.Description</span>
                             <span class="meta">
                                 <span class="pastiglia">@s.Category</span>
                                 <span class="dato">@Testi.DataSola(s.SpentOn)</span>
+                                @if (prevista)
+                                {
+                                    <span class="pastiglia">prevista</span>
+                                }
                                 @if (Pagante(s) is string pagante)
                                 {
                                     <text> · @pagante</text>
@@ -209,6 +219,8 @@ else
     private int mese = DateTime.Now.Month;
     private RiepilogoMese riepilogo = new(0, [], 0, null);
     private IReadOnlyList<Expense> speseDelMese = [];
+    // Gli Id delle righe previste: ricorrenti scadute non ancora scritte, contate nel totale, senza collegamento.
+    private IReadOnlySet<Guid> previste = new HashSet<Guid>();
     private IReadOnlyList<Membro> membri = [];
     private bool occupato;
 
@@ -379,6 +391,7 @@ else
     {
         riepilogo = new RiepilogoMese(0, [], 0, null);
         speseDelMese = [];
+        previste = new HashSet<Guid>();
         membri = [];
 
         // Il mese precedente di gennaio è dicembre dell'anno prima: stessa regola di
@@ -393,10 +406,14 @@ else
         {
             // Una sola lettura copre due mesi: CalcoliSpese.PerMese ha bisogno anche del mese
             // precedente per calcolare il confronto, e chiederlo qui invece che con una seconda
-            // query risparmia un viaggio di rete (v. ExpenseRepository.ElencaAsync).
-            var spese = await Repository.ElencaAsync(attivo.Id, da, a);
+            // query risparmia un viaggio di rete (v. ExpenseRepository.ElencaConPrevisteAsync).
+            // Le previste scadute entrano nel totale, le in arrivo (periodo.InArrivo) qui non
+            // servono perché il registro non va oltre il mese corrente.
+            var periodo = await Repository.ElencaConPrevisteAsync(attivo.Id, da, a);
+            var spese = periodo.Righe;
             riepilogo = CalcoliSpese.PerMese(spese, anno, mese);
             speseDelMese = spese.Where(s => s.SpentOn.Year == anno && s.SpentOn.Month == mese).ToList();
+            previste = periodo.Previste;
         }
         catch (Exception ex)
         {

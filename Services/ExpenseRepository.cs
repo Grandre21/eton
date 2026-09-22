@@ -1,6 +1,8 @@
 using System.Globalization;
 using Eton.Models;
 using Supabase.Postgrest;
+using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
 
 namespace Eton.Services;
 
@@ -16,8 +18,13 @@ namespace Eton.Services;
 public class ExpenseRepository
 {
     private readonly SupabaseService _supabase;
+    private readonly RecurringExpenseRepository _ricorrenti;
 
-    public ExpenseRepository(SupabaseService supabase) => _supabase = supabase;
+    public ExpenseRepository(SupabaseService supabase, RecurringExpenseRepository ricorrenti)
+    {
+        _supabase = supabase;
+        _ricorrenti = ricorrenti;
+    }
 
     /// <summary>Le spese di uno spazio con spent_on nell'intervallo [<paramref name="da"/>,
     /// <paramref name="a"/>], estremi inclusi, dalla più recente. L'ordine combacia con l'indice
@@ -47,8 +54,13 @@ public class ExpenseRepository
     /// rompe, è che qui la correttezza si legge sulla riga invece di dipendere da un comportamento
     /// verificato altrove.
     /// </para>
+    /// <para>
+    /// Privato di proposito: è il divieto del design delle ricorrenti §5. L'unico percorso di
+    /// lettura è <see cref="ElencaConPrevisteAsync"/>; un chiamante diretto farebbe divergere i
+    /// totali di due membri senza che nessun test se ne accorga.
+    /// </para>
     /// </summary>
-    public async Task<IReadOnlyList<Expense>> ElencaAsync(Guid spazioId, DateTime da, DateTime a)
+    private async Task<IReadOnlyList<Expense>> ElencaAsync(Guid spazioId, DateTime da, DateTime a)
     {
         var client = await _supabase.GetClientAsync();
 
@@ -60,6 +72,81 @@ public class ExpenseRepository
             .Get();
 
         return risposta.Models;
+    }
+
+    /// <summary>L'unico percorso di lettura delle spese (divieto §5 del design delle ricorrenti).
+    /// All'apertura materializza le occorrenze scadute delle regole di cui l'utente corrente è il
+    /// pagante — la policy di insert non ammette le altre, v. <see cref="MaterializzaAsync"/> —
+    /// poi fonde le righe vere con le previste di chiunque. Se la lettura delle regole fallisce,
+    /// fallisce tutto, di proposito: senza regole il totale sarebbe sbagliato senza dirlo.</summary>
+    public async Task<SpeseDelPeriodo> ElencaConPrevisteAsync(Guid spazioId, DateTime da, DateTime a)
+    {
+        var oggi = DateTime.Today;
+        var regole = await _ricorrenti.ElencaAsync(spazioId);
+        await MaterializzaAsync(regole, oggi);
+        var vere = await ElencaAsync(spazioId, da, a);
+        return CalcoliRicorrenti.Fondi(vere, regole, da, a, oggi);
+    }
+
+    /// <summary>Scrive le occorrenze scadute delle regole di cui l'utente corrente è il pagante:
+    /// la policy di insert su expenses accetta un recurring_id solo se la regola è dello stesso
+    /// spazio e dello stesso pagante. Una regola per volta, ciascuna nel proprio try/catch: una
+    /// regola che fallisce non ferma le altre, e la previsione di <see cref="CalcoliRicorrenti.Fondi"/>
+    /// copre comunque il totale.</summary>
+    private async Task MaterializzaAsync(IReadOnlyList<RecurringExpense> regole, DateTime oggi)
+    {
+        var client = await _supabase.GetClientAsync();
+        // Come AllineatoreProfilo: l'identità si legge dal client già in mano; nessun repository dipende da AuthStateService.
+        if (!Guid.TryParse(client.Auth.CurrentSession?.User?.Id, out var io)) return;
+
+        foreach (var r in regole.Where(r => r.PaidBy == io))
+        {
+            try
+            {
+                var dovuti = CalcoliRicorrenti.Dovuti(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, r.MaterializedThrough, r.StartsOn, oggi);
+                if (dovuti.Count == 0) continue;
+
+                // Colonna per colonna da CalcoliRicorrenti.Occorrenza, senza regole di dominio: PaidBy
+                // viene dalla regola, che il Where sopra ha già filtrato a r.PaidBy == io.
+                var occorrenze = dovuti.Select(d =>
+                {
+                    var e = CalcoliRicorrenti.Occorrenza(r, d);
+                    return new OccorrenzaRicorrente
+                    {
+                        Id              = e.Id,
+                        SpaceId         = e.SpaceId,
+                        PaidBy          = e.PaidBy,
+                        Amount          = e.Amount,
+                        Description     = e.Description,
+                        Category        = e.Category,
+                        SpentOn         = PerIlDatabase(e.SpentOn),
+                        RecurringId     = e.RecurringId!.Value,
+                        RecurringPeriod = PerIlDatabase(e.RecurringPeriod!.Value)
+                    };
+                }).ToList();
+
+                // OnConflict perché senza PostgREST risolverebbe il conflitto sulla chiave primaria,
+                // e con l'id generato dal client la corsa fra due schede darebbe 23505 invece di un
+                // doppione ignorato. IgnoreDuplicates e mai MergeDuplicates, che sovrascriverebbe con
+                // l'importo della regola una spesa già corretta a mano.
+                await client.From<OccorrenzaRicorrente>().Upsert(occorrenze, new QueryOptions
+                {
+                    OnConflict = "recurring_id,recurring_period",
+                    DuplicateResolution = QueryOptions.DuplicateResolutionType.IgnoreDuplicates,
+                    Returning = QueryOptions.ReturnType.Minimal
+                });
+
+                // Prima l'upsert, poi il watermark: se il watermark fallisce, al giro dopo gli
+                // inserimenti si ripetono e il vincolo unique li ignora.
+                await _ricorrenti.AvanzaWatermarkAsync(r.Id, dovuti[^1].Periodo);
+                // La fusione che segue vede la regola come la vede ora il database.
+                r.MaterializedThrough = dovuti[^1].Periodo;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Ricorrenti] Occorrenze non scritte per una regola: {ex.Message}");
+            }
+        }
     }
 
     public async Task<Expense?> LeggiAsync(Guid speseId)
@@ -211,4 +298,25 @@ public class ExpenseRepository
         var dopo = await client.From<Expense>().Where(e => e.Id == speseId).Get();
         return dopo.Models.Count == 0;
     }
+}
+
+/// <summary>Modello di sola scrittura per la materializzazione delle occorrenze ricorrenti: esiste
+/// perché in Postgrest 4.4.0 <c>Upsert</c> serializza con <c>IsInsert</c> e <c>IsUpsert</c> insieme,
+/// e <c>PostgrestContractResolver.CreateProperty</c> ignora anche le colonne <c>IgnoreOnUpdate</c> —
+/// un <c>Upsert&lt;Expense&gt;</c> ometterebbe space_id, paid_by, recurring_id e recurring_period
+/// (23502). Le colonne sono quelle del grant INSERT di expenses, e <c>PrivilegiInsertTests</c> lo
+/// verifica; nessun flag ignore, e <c>FusioneRicorrentiTests</c> lo fissa. Non si legge mai con
+/// questo tipo.</summary>
+[Table("expenses")]
+internal sealed class OccorrenzaRicorrente : BaseModel
+{
+    [PrimaryKey("id", true)] public Guid Id { get; set; }
+    [Column("space_id")] public Guid SpaceId { get; set; }
+    [Column("paid_by")] public Guid PaidBy { get; set; }
+    [Column("amount")] public decimal Amount { get; set; }
+    [Column("description")] public string Description { get; set; } = "";
+    [Column("category")] public string Category { get; set; } = "";
+    [Column("spent_on")] public DateTime SpentOn { get; set; }
+    [Column("recurring_id")] public Guid RecurringId { get; set; }
+    [Column("recurring_period")] public DateTime RecurringPeriod { get; set; }
 }
