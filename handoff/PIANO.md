@@ -73,12 +73,19 @@ confine naturale fra un capo e il successivo.
   avrebbe omesso `space_id`, `paid_by`, `recurring_id` e `recurring_period` → 23502 in produzione al
   primo «apri Spese» di chi ha una regola, e `PrivilegiInsertTests` non l'avrebbe visto (controlla le
   colonne in più, non quelle mancanti). Rimedio: un tipo di sola scrittura `OccorrenzaRicorrente`
-  senza flag `ignore*`, con un test che lo fissa. **Accettato dal capo, da ratificare**, come
+  senza flag `ignore*`, con un test che lo fissa. **Accettato dal capo — ratificata 2026-09-22**
+  (riga «dalle per buone» qui sopra; trascritta il 2026-10-01), come
   `ElencaAsync` reso `private` (il divieto del §5 ora lo impone il compilatore).
-- **2026-09-22 — Deciso dal capo, da ratificare: il record `DatiRegola` entra nell'unità 03.**
+- **2026-09-22 — Deciso dal capo — ratificata 2026-09-22 (riga «dalle per buone» qui sopra;
+  trascritta il 2026-10-01): il record `DatiRegola` entra nell'unità 03.**
   `CreaAsync`/`SalvaAsync` delle regole prendono otto argomenti posizionali, e `ogniMesi`/`giorno`
   scambiati compilano. L'unità 03 scrive il primo chiamante, quindi è l'ultimo momento in cui cambiare
   la firma costa poco. Si annulla con un revert locale.
+- **2026-09-22 — Decisione tecnica del capo, da ratificare** (spostata da APERTO il 2026-10-01, dove
+  il popup di apertura non l'avrebbe mai mostrata): con `Supabase.Postgrest` 4.4.0 il DELETE filtrato
+  con `Operator.In` non restituisce le righe (`Task`), quindi la spec 2.2 §5.4 fa DELETE + rilettura
+  degli stessi id. Verifica di `doc-checker` e dettaglio in APERTO, «Verificato da `doc-checker` il 22
+  set». Non cambia niente di visibile all'utente.
 - **2026-09-22 — Seconda violazione dichiarata**: un `implementer` dell'unità 02 ha compilato una volta,
   contro il divieto; nessun altro processo era attivo, la build ufficiale è stata rifatta. Stessa
   classe dello script Python dell'unità 01: il divieto nei brief non basta da solo.
@@ -192,8 +199,8 @@ task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
   criterio documentato è `List<object>` (i Guid si passano con `.Cast<object>().ToList()`, il
   `ToString()` lo fa la libreria). Mai usato finora nel codice di Eton. **Le righe restituite**: UPDATE sì
   (`ModeledResponse<T>`), **DELETE filtrato no** (restituisce `Task`) — la spec 2.2 §5.4 è corretta di
-  conseguenza (DELETE + rilettura degli stessi id). Decisione tecnica mia, **da ratificare**: non cambia
-  niente di visibile all'utente.
+  conseguenza (DELETE + rilettura degli stessi id). La decisione da ratificare sta in DECISIONI
+  (spostata il 2026-10-01).
 - **Verificato da `doc-checker` il 22 set — la cache dello schema**: Supabase installa un event trigger
   (`pgrst_ddl_watch`) che ricarica la cache su `CREATE TABLE`, `ALTER TABLE`, `CREATE TRIGGER`,
   `CREATE FUNCTION` e simili, quindi la migrazione della 2.1 la ricarica da sola. `GRANT` e
