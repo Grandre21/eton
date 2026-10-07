@@ -170,9 +170,11 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 **7 ottobre — stato attuale.** L'unità 03 è rientrata `FATTO` ed è fusa in `main` **solo in locale**
 (`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
-all'utente (APERTO). Restano: (4) rimozione del worktree `.claude/worktrees/unita-03-pagine-ricorrenti`
-(branch già fuso; la sessione `321bb5c3` non compare più in `claude agents`) — **cancellazione: si chiede
-all'utente**; (5) unità P — piano della 2.2, in una sessione-unità.
+all'utente (APERTO). (4) worktree e branch dell'unità 03 rimossi (utente, chat 7 ott: «Sì, toglilo»). **In corso**: (5)
+unità P — piano della 2.2, sessione `--bg` **`f767e899`**, worktree `unita-P-piano-tabella`, attesa
+armata su `claude agents --json`. Al rientro: leggere `handoff/P-piano-tabella/resoconto.md` **dentro il
+worktree**, integrare il piano su `main`, porre all'utente le `DOMANDE PER L'UTENTE` (con
+`tech-advisor`), poi partizionare l'implementazione della 2.2.
 
 **Ripresa del 23 settembre in poi (sessione nuova) — superata dal paragrafo qui sopra.** L'utente ha chiuso la sessione del 22 mentre
 l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
