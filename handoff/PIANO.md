@@ -98,6 +98,11 @@ confine naturale fra un capo e il successivo.
   «nuovo» fino alla prima apertura; «ultimi 3 mesi» comprende il mese in corso; voce «Tabella» nascosta
   sotto i `40rem` (regola in `Shared/NavigazioneSpese.razor.css`, aggiunta al piano, task 5 step 8);
   azione di massa su righe di altri membri provata solo dai test puri.
+- **2026-10-07 — Decisione dell'unità 2.2-A, da ratificare**: in una cella della griglia un valore
+  `Numero` si mostra con al più due decimali, come nelle collezioni (`ValoriElemento.Testo`), mentre nel
+  campo in modifica e nel CSV resta il valore pieno, perché lì la stringa si rilegge e arrotondarla
+  riscriverebbe il dato. La tabella delle spese non ha colonne `Numero`: oggi non si vede, conta dalla
+  fase 3. Si annulla con un revert locale.
 - **2026-09-22 — Seconda violazione dichiarata**: un `implementer` dell'unità 02 ha compilato una volta,
   contro il divieto; nessun altro processo era attivo, la build ufficiale è stata rifatta. Stessa
   classe dello script Python dell'unità 01: il divieto nei brief non basta da solo.
@@ -161,8 +166,8 @@ confine naturale fra un capo e il successivo.
 | **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **FATTO** — integrata su `main`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   328` |
 | **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **FATTO** — fusa e pubblicata su `main` il 7 ott, con le sei decisioni ratificate e D6 corretta (avviso data passata anche in modifica a watermark nullo; watermark letto da `conflitto ?? regola`; Elimina bloccato in conflitto come Termina — rilievo `bug-hunter` fondato, `checker`: risolto); **collaudato il 7 ott**: `live-testing` verde 8/8 (regola di prova creata, modificata, terminata ed eliminata), `ui-critic` 4 rilievi → 2 corretti (editor a una colonna con aiuti ed errori attaccati al campo; rimisurato: 0 rilievi), 2 `TIPO: progetto` rinviati alla 2.1-bis (APERTO); verifica: `mcp__synapse__test` -> `0 failed, 335 passed` |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | sessione-unità, mandato in `handoff/P-piano-tabella/` | S, 2.1 | **FATTO** — `docs/superpowers/plans/2026-10-07-spese-tabella.md`, sei task in quattro unità, nessuna migrazione; 4 decisioni da ratificare e 4 domande (resoconto); verifica: `git -C /g/Sviluppo/Eton diff --stat HEAD~1 HEAD` -> `2 files changed, 1620 insertions(+)` |
-| **2.2-A** | task 1 e 2 del piano: tipi puri della griglia e della tabella spese (`ColonnaGriglia<T>`, `CalcoliGriglia`, `RigaSpesa`, `TabellaSpese`, `EsitoMassa`…) e i loro test | sessione-unità, mandato in `handoff/04-tabella-calcoli/` | P + risposte (date il 7 ott) | **IN CORSO** dal 7 ott |
-| **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità | A | PIANIFICATA |
+| **2.2-A** | task 1 e 2 del piano: tipi puri della griglia e della tabella spese (`ColonnaGriglia<T>`, `CalcoliGriglia`, `RigaSpesa`, `TabellaSpese`, `EsitoMassa`…) e i loro test | sessione-unità, mandato in `handoff/04-tabella-calcoli/` | P + risposte (date il 7 ott) | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto; una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 380 passed` |
+| **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità, mandato in `handoff/05-tabella-griglia/` | A | **IN CORSO** dal 7 ott |
 | **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità | B | PIANIFICATA |
 | **2.2-D** | task 6: tutorial generico e «?» della tabella | sessione-unità | C | PIANIFICATA |
 
@@ -181,11 +186,12 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 **7 ottobre — stato attuale.** L'unità 03 è rientrata `FATTO` ed è fusa in `main` **solo in locale**
 (`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
 all'utente (APERTO). (4) worktree e branch dell'unità 03 rimossi (utente, chat 7 ott: «Sì, toglilo»). (5) unità P
-integrata, sessione rimossa; domande del piano risposte e ratificate. **In corso**: unità **2.2-A**
-(mandato `handoff/04-tabella-calcoli/`), sessione `--bg` **`c2a4a1fa`**, attesa armata su `claude agents --json`. Al rientro: resoconto
-**dentro il worktree**, audit di `CONTRATTI` (sono le firme che B, C e D consumeranno: i mandati
-successivi ricopiano quelle **reali** dal resoconto, non quelle del piano), integrazione, poi mandato di
-2.2-B. Sequenza: A → B → C → D, mai in parallelo.
+integrata, sessione rimossa; domande del piano risposte e ratificate. Unità **2.2-A** integrata e pubblicata. **In corso**: unità **2.2-B**
+(mandato `handoff/05-tabella-griglia/`), sessione `--bg` (id nella riga qui sotto), attesa armata su
+`claude agents --json`. Al rientro: resoconto **dentro il worktree**, audit di `CONTRATTI` (le firme
+reali che C consumerà), integrazione, poi mandato di 2.2-C — che fa anche la prova nel browser con
+`live-testing` + `ui-critic`, e la **guardia d'uscita** resta all'utente. Sequenza: A → B → C → D, mai
+in parallelo. Alla prossima domanda all'utente: la decisione «da ratificare» della 2.2-A (DECISIONI).
 
 **Ripresa del 23 settembre in poi (sessione nuova) — superata dal paragrafo qui sopra.** L'utente ha chiuso la sessione del 22 mentre
 l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
