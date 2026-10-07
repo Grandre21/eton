@@ -187,7 +187,7 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 (`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
 all'utente (APERTO). (4) worktree e branch dell'unità 03 rimossi (utente, chat 7 ott: «Sì, toglilo»). (5) unità P
 integrata, sessione rimossa; domande del piano risposte e ratificate. Unità **2.2-A** integrata e pubblicata. **In corso**: unità **2.2-B**
-(mandato `handoff/05-tabella-griglia/`), sessione `--bg` (id nella riga qui sotto), attesa armata su
+(mandato `handoff/05-tabella-griglia/`), sessione `--bg` **`15e08351`**, attesa armata su
 `claude agents --json`. Al rientro: resoconto **dentro il worktree**, audit di `CONTRATTI` (le firme
 reali che C consumerà), integrazione, poi mandato di 2.2-C — che fa anche la prova nel browser con
 `live-testing` + `ui-critic`, e la **guardia d'uscita** resta all'utente. Sequenza: A → B → C → D, mai
