@@ -81,11 +81,16 @@ confine naturale fra un capo e il successivo.
   `CreaAsync`/`SalvaAsync` delle regole prendono otto argomenti posizionali, e `ogniMesi`/`giorno`
   scambiati compilano. L'unità 03 scrive il primo chiamante, quindi è l'ultimo momento in cui cambiare
   la firma costa poco. Si annulla con un revert locale.
-- **2026-09-22 — Decisione tecnica del capo, da ratificare** (spostata da APERTO il 2026-10-01, dove
+- **2026-09-22 — Decisione tecnica del capo — ratificata 2026-10-07** (popup «Ratifica, con D6
+  corretta», più sotto; spostata da APERTO il 2026-10-01, dove
   il popup di apertura non l'avrebbe mai mostrata): con `Supabase.Postgrest` 4.4.0 il DELETE filtrato
   con `Operator.In` non restituisce le righe (`Task`), quindi la spec 2.2 §5.4 fa DELETE + rilettura
   degli stessi id. Verifica di `doc-checker` e dettaglio in APERTO, «Verificato da `doc-checker` il 22
   set». Non cambia niente di visibile all'utente.
+- **2026-10-07 utente (chat)** — nel popup con le sette decisioni (D0 qui sopra + le sei di `SCOSTAMENTI`
+  del resoconto 03) e la posizione di `tech-advisor`: **«Ratifica, con D6 corretta (consigliata)»**.
+  Tutte **ratificate 2026-10-07**. D6 si corregge: l'avviso «una data passata segnerà le spese dei mesi
+  trascorsi» compare anche in modifica quando la regola non ha mai materializzato (watermark nullo).
 - **2026-09-22 — Seconda violazione dichiarata**: un `implementer` dell'unità 02 ha compilato una volta,
   contro il divieto; nessun altro processo era attivo, la build ufficiale è stata rifatta. Stessa
   classe dello script Python dell'unità 01: il divieto nei brief non basta da solo.
@@ -147,7 +152,7 @@ confine naturale fra un capo e il successivo.
 | **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
 | **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); **la query di controllo l'ha eseguita l'utente e ha incollato l'esito in chat: `recurring_id`, `recurring_period` — 2 righe su 2 attese.** Resta `PARZIALE` solo per la forma: la regola dei `FATTO` vuole un comando lanciato in sessione, e nessun agente interroga il database. **L'integrazione della 02 su `main` è sbloccata** |
 | **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **FATTO** — integrata su `main`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   328` |
-| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **IN CORSO** — senza prova nel browser: il collaudo lo fa il capo dopo l'integrazione |
+| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **FATTO** — fusa e pubblicata su `main` il 7 ott, con le sei decisioni ratificate e D6 corretta (avviso data passata anche in modifica a watermark nullo; watermark letto da `conflitto ?? regola`; Elimina bloccato in conflitto come Termina — rilievo `bug-hunter` fondato, `checker`: risolto); collaudo nel browser ancora da fare; verifica: `mcp__synapse__test` -> `0 failed, 335 passed` |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
 | **2.2** | implementazione | sessioni-unità | P | PIANIFICATA |
 
@@ -163,7 +168,11 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-**Ripresa del 23 settembre in poi (sessione nuova).** L'utente ha chiuso la sessione del 22 mentre
+**7 ottobre — stato attuale.** L'unità 03 è rientrata `FATTO` ed è fusa in `main` **solo in locale**
+(`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. Restano: (3) collaudo della 2.1 nel browser, fatto dal capo; (4) `claude rm` della sessione 03 e
+rimozione del worktree; (5) unità P — piano della 2.2.
+
+**Ripresa del 23 settembre in poi (sessione nuova) — superata dal paragrafo qui sopra.** L'utente ha chiuso la sessione del 22 mentre
 l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
 non tocca la produzione). **Primo gesto del capo nuovo**: `claude agents --json` e `git worktree list`
 per trovarla — il worktree **non** porta necessariamente il nome dell'unità (la 02 si chiamava

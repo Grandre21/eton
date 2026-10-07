@@ -131,7 +131,9 @@ else
         {
             <p class="errore-campo">Non è una data valida: dev'essere fra il 2000 e un anno da oggi.</p>
         }
-        @if (Nuova)
+        @* Anche in modifica finché la regola non ha segnato niente: MaterializzaAsync parte da StartsOn
+           se il watermark è nullo, quindi spostare «Dal» nel passato riempie i mesi trascorsi. *@
+        @if (Nuova || (PuoIntervenire && (conflitto ?? regola)?.MaterializedThrough is null))
         {
             <p class="spiega">Se la data è già passata, le spese dei mesi trascorsi si segnano da sole: controlla che sia quella giusta.</p>
         }
@@ -209,11 +211,12 @@ else
                riuscito -> Elimina offerto ma rifiutato con 23503, e ci pensa il catch di Elimina; (b)
                l'utente ha cancellato a mano tutte le occorrenze -> Elimina non offerto, anche se
                riuscirebbe. *@
-            @if (regola.MaterializedThrough is null)
+            @* Durante un conflitto 'regola' è la versione letta all'apertura e 'conflitto' quella fresca dal server: il watermark si legge dalla più recente. *@
+            @if ((conflitto ?? regola)?.MaterializedThrough is null)
             {
                 <p class="testo-tenue">Non ha ancora segnato nessuna spesa, quindi si può anche eliminare.</p>
                 <div class="azioni">
-                    <ConfermaAzione Chiave="@Id" Occupato="@occupato" OnConferma="Elimina" />
+                    <ConfermaAzione Chiave="@Id" Occupato="@(occupato || conflitto is not null)" OnConferma="Elimina" />
                 </div>
             }
             else
