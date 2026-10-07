@@ -1,0 +1,144 @@
+/* Resa minima e PROVVISORIA: la rifà la 2.1-bis. Solo i token di :root, nessun valore nuovo tranne
+   la densità. La cella attiva è l'unica cosa accesa della tabella: niente alone, nessun'altra luce.
+   Le regole su .dato, .errore-campo e .solo-lettori sono globali e qui non si ridefiniscono. */
+
+.griglia {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--sfondo);
+    font-family: var(--prosa);
+    font-size: var(--t-md);
+}
+
+.griglia th,
+.griglia td {
+    padding: var(--s2) var(--s3);
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Linee solo orizzontali: la tabella si legge per colonna, la griglia verticale la spezzerebbe. */
+.griglia tbody tr {
+    border-bottom: 1px solid var(--bordo);
+    transition: background-color var(--transizione);
+}
+
+.griglia thead th {
+    position: sticky;
+    top: 0;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--bordo-forte);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+    font-weight: 600;
+}
+
+.griglia .griglia-numero {
+    text-align: right;
+}
+
+.griglia .griglia-casella {
+    padding-inline: var(--s2);
+    text-align: center;
+}
+
+.griglia thead button,
+.griglia .griglia-gruppo button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-align: inherit;
+}
+
+.griglia-gruppo th {
+    background: var(--superficie);
+    color: var(--testo);
+    font-weight: 600;
+}
+
+.griglia-gruppo-conteggio,
+.griglia-gruppo-somma {
+    margin-inline-start: var(--s3);
+    color: var(--testo-tenue);
+    font-weight: 400;
+}
+
+.griglia td.griglia-attiva,
+.griglia td:focus-visible {
+    outline: 2px solid var(--accento);
+    outline-offset: -2px;
+}
+
+.griglia tr.griglia-selezionata {
+    background: var(--accento-tenue);
+}
+
+.griglia tr.griglia-sola-lettura {
+    color: var(--testo-tenue);
+}
+
+.griglia tr.griglia-in-volo {
+    opacity: .6;
+}
+
+.griglia-stato {
+    margin-inline-start: var(--s2);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+.griglia-avviso td,
+p.griglia-avviso {
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+/* Il campo in modifica riempie la cella; l'anello globale dei campi, con l'alone, qui sarebbe una
+   seconda luce accanto alla cella attiva. */
+.griglia td input:not([type="checkbox"]),
+.griglia td select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.griglia td input:focus,
+.griglia td select:focus {
+    box-shadow: none;
+}
+
+.griglia tfoot td,
+.griglia tfoot th {
+    background: var(--superficie);
+    font-weight: 400;
+}
+
+.griglia tfoot tr:first-child td {
+    border-top: 1px solid var(--bordo-forte);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+.griglia-nota {
+    margin-inline-start: var(--s2);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+/* Densità (spec §3): il valore esatto è della 2.1-bis. */
+@media (pointer: fine) {
+    .griglia tbody td,
+    .griglia thead th {
+        height: 38px;
+    }
+}
+
+@media (pointer: coarse) {
+    .griglia tbody td,
+    .griglia thead th {
+        height: var(--tocco);
+        min-height: var(--tocco);
+    }
+}

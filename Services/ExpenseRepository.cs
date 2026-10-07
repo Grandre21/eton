@@ -298,6 +298,83 @@ public class ExpenseRepository
         var dopo = await client.From<Expense>().Where(e => e.Id == speseId).Get();
         return dopo.Models.Count == 0;
     }
+
+    // Ogni id pesa ≈ 45 caratteri nella riga di richiesta dopo la codifica: 100 id ≈ 4,5 KB, ben
+    // sotto i tetti tipici (quello del gateway di Supabase non è documentato nel repo). Un insieme
+    // vuoto produce zero blocchi e quindi zero richieste: niente `in.()` vuoto, che filtrerebbe male.
+    private const int IdPerRichiesta = 100;
+
+    /// <summary>
+    /// Cambia la categoria a più spese con un UPDATE per blocco di <see cref="IdPerRichiesta"/> id.
+    /// Non è atomica nemmeno fra i blocchi: se una richiesta fallisce a metà l'eccezione risale e i
+    /// blocchi già passati restano applicati (accettato: senza blocchi una selezione grande non
+    /// funzionerebbe affatto; l'eccezione la gestisce la pagina). Vince l'ultima scrittura, senza
+    /// filtro su version: si accetta perché la categoria sceglie da un elenco chiuso. Se un giorno si
+    /// vorranno cambiare gli importi in massa, questa scelta va rivista (spec §5.4).
+    /// La rilettura delle non toccate separa "non erano tue" (ancora presenti: la RLS ha escluso
+    /// l'UPDATE) da "non c'erano più" (correzione 8 del piano).
+    /// </summary>
+    public async Task<EsitoMassa> CambiaCategoriaAsync(IReadOnlyCollection<Guid> ids, string categoria)
+    {
+        var richieste = ids.ToHashSet();
+        var client = await _supabase.GetClientAsync();
+
+        var toccate = new HashSet<Guid>();
+        foreach (var blocco in richieste.Chunk(IdPerRichiesta))
+        {
+            var risposta = await client.From<Expense>()
+                .Filter("id", Constants.Operator.In, blocco.Cast<object>().ToList())
+                .Set(e => e.Category, categoria.Trim())
+                .Update();
+            toccate.UnionWith(risposta.Models.Select(e => e.Id));
+        }
+
+        var nonToccate = richieste.Where(id => !toccate.Contains(id)).ToList();
+        var ancoraPresenti = await LeggiIdAsync(client, nonToccate);
+
+        return EsitoMassa.DaModifica(richieste, toccate, ancoraPresenti);
+    }
+
+    /// <summary>
+    /// Elimina più spese. Per il perché della lettura prima, con SELECT e DELETE che hanno
+    /// condizioni RLS che si intersecano, v. <see cref="EliminaAsync"/>. Decisione del 7 ottobre:
+    /// mai contare dalla risposta del DELETE (è un Task senza righe) e mai "richiesti meno presenti
+    /// dopo", che direbbe "tutte eliminate" su righe che la RLS ha solo reso invisibili. Una riga
+    /// già assente prima si conta fra le Sparite.
+    /// Le richieste vanno a blocchi di <see cref="IdPerRichiesta"/> id, quindi l'azione non è atomica
+    /// nemmeno fra i blocchi: se una richiesta fallisce a metà l'eccezione risale e i blocchi già
+    /// passati restano applicati (accettato; l'eccezione la gestisce la pagina).
+    /// </summary>
+    public async Task<EsitoMassa> EliminaTutteAsync(IReadOnlyCollection<Guid> ids)
+    {
+        var richieste = ids.ToHashSet();
+        var client = await _supabase.GetClientAsync();
+
+        var prima = await LeggiIdAsync(client, richieste);
+        foreach (var blocco in prima.Chunk(IdPerRichiesta))
+        {
+            await client.From<Expense>()
+                .Filter("id", Constants.Operator.In, blocco.Cast<object>().ToList())
+                .Delete();
+        }
+
+        var dopo = await LeggiIdAsync(client, prima);
+        return EsitoMassa.DaEliminazione(richieste, prima, dopo);
+    }
+
+    // Tre call-site (due letture e una rilettura): per questo è un helper. Richieste in sequenza, a blocchi.
+    private static async Task<IReadOnlySet<Guid>> LeggiIdAsync(SupabaseClient client, IReadOnlyCollection<Guid> ids)
+    {
+        var trovati = new HashSet<Guid>();
+        foreach (var blocco in ids.Chunk(IdPerRichiesta))
+        {
+            var risposta = await client.From<Expense>()
+                .Filter("id", Constants.Operator.In, blocco.Cast<object>().ToList())
+                .Get();
+            trovati.UnionWith(risposta.Models.Select(e => e.Id));
+        }
+        return trovati;
+    }
 }
 
 /// <summary>Modello di sola scrittura per la materializzazione delle occorrenze ricorrenti: esiste

@@ -1,0 +1,570 @@
+@typeparam T
+@using System.Globalization
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@* Una tabella di righe con ordinamento, gruppi, selezione, totali e modifica in cella. Non sa
+   niente di spese: le colonne, i gruppi e il salvataggio le decide la pagina che la usa.
+
+   La tastiera alla Excel — frecce fra le celle, Invio per modificare, Tab per passare alla
+   successiva — è una decisione dell'utente presa contro il parere tecnico (spec §5.2). La logica
+   dei tasti sta in Services/TastieraGriglia.cs, il JavaScript (wwwroot/js/griglia.js) serve solo a
+   fermare il comportamento del browser e a spostare il fuoco.
+
+   La resa (Griglia.razor.css) è provvisoria: la rifà la 2.1-bis. *@
+<table @ref="tabella" class="griglia">
+    <caption class="solo-lettori">@Didascalia</caption>
+    <thead>
+        <tr>
+            @if (colonnaSelezione)
+            {
+                <th scope="col" class="griglia-casella">
+                    <input type="checkbox" aria-label="Seleziona tutte le righe mostrate"
+                           checked="@TutteSelezionate()" disabled="@(chiaviSelezionabili.Count == 0)" @onclick="AlternaTutteAsync" />
+                </th>
+            }
+            @foreach (var colonna in Colonne)
+            {
+                <th scope="col" class="@(Numerica(colonna) ? "griglia-numero" : null)"
+                    aria-sort="@(OrdinataPer == colonna.Chiave ? (Decrescente ? "descending" : "ascending") : null)">
+                    @if (colonna.Ordinabile)
+                    {
+                        <button type="button" @onclick="() => OnOrdina.InvokeAsync(colonna.Chiave)">@colonna.Etichetta</button>
+                    }
+                    else
+                    {
+                        <text>@colonna.Etichetta</text>
+                    }
+                </th>
+            }
+        </tr>
+    </thead>
+    @{
+        // Roving tabindex: una sola cella nel giro del Tab, calcolata una volta per render (se nessuna è attiva, la prima).
+        var cellaNelTab = attiva ?? (chiaviMostrate.Count > 0 && Colonne.Count > 0
+            ? ((string, string)?)(chiaviMostrate[0], Colonne[0].Chiave) : null);
+    }
+    @foreach (var gruppo in Gruppi)
+    {
+        var chiuso = gruppo.Etichetta is not null && gruppiChiusi.Contains(gruppo.Etichetta);
+        <tbody>
+            @if (gruppo.Etichetta is { } etichetta)
+            {
+                <tr class="griglia-gruppo">
+                    <th scope="rowgroup" colspan="@ColonneTotali">
+                        <button type="button" aria-expanded="@(chiuso ? "false" : "true")"
+                                @onclick="() => AlternaGruppo(etichetta)">@etichetta</button>
+                        <span class="griglia-gruppo-conteggio">(@gruppo.Righe.Count)</span>
+                        @foreach (var colonna in Colonne.Where(c => c.Aggregazioni.HasFlag(Aggregazione.Somma)))
+                        {
+                            var subtotale = Riepiloga(colonna, gruppo.Righe.Where(ContaNeiTotali)).Somma;
+                            <span class="griglia-gruppo-somma">@colonna.Etichetta <span class="dato">@CalcoliGriglia.TestoCella(colonna.Tipo, subtotale)</span></span>
+                        }
+                    </th>
+                </tr>
+            }
+            @if (!chiuso)
+            {
+                foreach (var riga in gruppo.Righe)
+                {
+                    var chiave = ChiaveRiga(riga);
+                    var motivo = MotivoSolaLettura?.Invoke(riga);
+                    var inVolo = rigaInVolo == chiave;
+                    var idErrore = $"griglia-errore-{chiave}";
+                    var sottoRiga = SottoRiga?.Invoke(riga);
+                    @* Il @key tiene il nodo DOM della cella attiva attraverso un riordinamento: senza,
+                       Blazor riuserebbe i nodi per posizione e il fuoco resterebbe sulla riga che ora sta
+                       in quel posto, non su quella che l'utente stava guardando. *@
+                    <tr @key="chiave"
+                        class="@(motivo is not null ? "griglia-sola-lettura" : null) @(Selezione.Contains(chiave) ? "griglia-selezionata" : null) @(inVolo ? "griglia-in-volo" : null)"
+                        title="@motivo" aria-description="@motivo">
+                        @if (colonnaSelezione)
+                        {
+                            <td class="griglia-casella">
+                                @if (Selezionabile(riga))
+                                {
+                                    <input type="checkbox" tabindex="-1" aria-label="Seleziona la riga"
+                                           checked="@Selezione.Contains(chiave)"
+                                           @onclick="(MouseEventArgs e) => ClicRigaAsync(chiave, e)" />
+                                }
+                            </td>
+                        }
+                        @foreach (var colonna in Colonne)
+                        {
+                            var attivaCella = EAttiva(chiave, colonna.Chiave);
+                            <td class="@(Numerica(colonna) ? "griglia-numero dato" : colonna.Tipo == TipoColonna.Data ? "dato" : null) @(attivaCella ? "griglia-attiva" : null)"
+                                tabindex="@(cellaNelTab == (chiave, colonna.Chiave) ? 0 : -1)"
+                                data-riga="@chiave" data-colonna="@colonna.Chiave"
+                                data-tutorial="@(AncoraCella?.Invoke(riga, colonna.Chiave))"
+                                @onclick="() => Attiva(chiave, colonna.Chiave)"
+                                @onkeydown="(KeyboardEventArgs e) => SuTastoAsync(riga, colonna, e)">
+                                @if (inModifica && attivaCella)
+                                {
+                                    <text>@Campo(riga, colonna, inVolo, messaggioCampo is not null ? idErrore : null)</text>
+                                    if (messaggioCampo is not null) { <p id="@idErrore" class="errore-campo" role="alert">@messaggioCampo</p> }
+                                }
+                                else
+                                {
+                                    <text>@CalcoliGriglia.TestoCella(colonna.Tipo, colonna.Valore(riga))</text>
+                                }
+                                @if (inVolo && colonna.Chiave == Colonne[^1].Chiave)
+                                {
+                                    <span class="griglia-stato" role="status">salvo…</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                    if (avviso is { } nota && nota.Riga == chiave)
+                    {
+                        <tr class="griglia-avviso"><td colspan="@ColonneTotali" role="status">@nota.Testo</td></tr>
+                    }
+                    if (sottoRiga is not null)
+                    {
+                        <tr><td colspan="@ColonneTotali">@sottoRiga</td></tr>
+                    }
+                }
+            }
+        </tbody>
+    }
+    @if (Colonne.Any(c => c.Aggregazioni != Aggregazione.Nessuna))
+    {
+        var righeTotali = (Selezione.Count > 0 ? TutteLeRighe().Where(r => Selezione.Contains(ChiaveRiga(r))) : TutteLeRighe())
+            .Where(ContaNeiTotali).ToList();
+        // Una volta per colonna per render, non una per riga del tfoot.
+        var riepiloghi = Colonne.Select(c => c.Aggregazioni == Aggregazione.Nessuna ? null : Riepiloga(c, righeTotali)).ToList();
+        <tfoot>
+            <tr class="griglia-insieme">
+                <td colspan="@ColonneTotali">@(Selezione.Count > 0 ? $"Sulla selezione: {righeTotali.Count} righe" : $"Sulle {righeTotali.Count} righe mostrate")</td>
+            </tr>
+            @foreach (var (flag, etichetta) in ElencoAggregazioni.Where(a => Colonne.Any(c => c.Aggregazioni.HasFlag(a.Flag))))
+            {
+                <tr>
+                    @if (colonnaSelezione)
+                    {
+                        <td class="griglia-casella"></td>
+                    }
+                    @for (var i = 0; i < Colonne.Count; i++)
+                    {
+                        var colonna = Colonne[i];
+                        var valore = TestoRiepilogo(colonna, riepiloghi[i], flag);
+                        // La prima colonna porta l'etichetta della riga: le colonne restano allineate.
+                        if (i == 0)
+                        {
+                            <th scope="row">@etichetta @Aggregato(valore, flag)</th>
+                        }
+                        else
+                        {
+                            <td class="@(Numerica(colonna) ? "griglia-numero" : null)">@Aggregato(valore, flag)</td>
+                        }
+                    }
+                </tr>
+            }
+        </tfoot>
+    }
+</table>
+@if (avviso is { } notaPersa && !chiaviMostrate.Contains(notaPersa.Riga)) { <p class="griglia-avviso" role="status">@notaPersa.Testo</p> }
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ColonnaGriglia<T>> Colonne { get; set; } = [];
+
+    /// <summary>Le righe già filtrate e ordinate dalla pagina, a blocchi. Un solo gruppo con
+    /// <c>Etichetta</c> null = nessun raggruppamento.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<Gruppo<T>> Gruppi { get; set; } = [];
+
+    [Parameter, EditorRequired] public Func<T, string> ChiaveRiga { get; set; } = default!;
+
+    /// <summary>Il titolo della tabella per i lettori di schermo (non si vede).</summary>
+    [Parameter, EditorRequired] public string Didascalia { get; set; } = "";
+
+    /// <summary>Le righe che non contano nei totali (annullate, per esempio) restano visibili.</summary>
+    [Parameter] public Func<T, bool> ContaNeiTotali { get; set; } = _ => true;
+
+    [Parameter] public Func<T, bool> Selezionabile { get; set; } = _ => false;
+    [Parameter] public IReadOnlySet<string> Selezione { get; set; } = new HashSet<string>();
+    [Parameter] public EventCallback<IReadOnlySet<string>> SelezioneChanged { get; set; }
+
+    [Parameter] public string? OrdinataPer { get; set; }
+    [Parameter] public bool Decrescente { get; set; }
+
+    /// <summary>Riceve la chiave della colonna cliccata: il verso lo decide la pagina.</summary>
+    [Parameter] public EventCallback<string> OnOrdina { get; set; }
+
+    /// <summary>Se null nessuna cella si modifica. Un'eccezione non è catturata: è della pagina.</summary>
+    [Parameter] public Func<ModificaCella<T>, Task<RispostaCella>>? SalvaCella { get; set; }
+
+    [Parameter] public Func<T, string?>? MotivoSolaLettura { get; set; }
+    [Parameter] public Func<T, RenderFragment?>? SottoRiga { get; set; }
+    [Parameter] public string? NotaRiepilogo { get; set; }
+
+    /// <summary>L'ancora del tutorial (<c>data-tutorial</c>) di una cella; null = nessuna.</summary>
+    [Parameter] public Func<T, string, string?>? AncoraCella { get; set; }
+
+    private static readonly (Aggregazione Flag, string Etichetta)[] ElencoAggregazioni =
+    [
+        (Aggregazione.Somma, "Somma"), (Aggregazione.Media, "Media"), (Aggregazione.Min, "Minimo"),
+        (Aggregazione.Max, "Massimo"), (Aggregazione.Conteggio, "Conteggio")
+    ];
+
+    // Come in Pages/SpesaEdit.razor: solo un aiuto per il browser, la guardia vera è del salvataggio.
+    private static readonly DateTime DataMinima = new(2000, 1, 1);
+    private static DateTime DataMassima => DateTime.Today.AddYears(1);
+
+    private ElementReference tabella;
+    private IJSObjectReference? modulo;
+    private IJSObjectReference? istanza;
+
+    // La cella attiva è per chiave, mai per indice: un riordinamento o un filtro della pagina non la
+    // sposta su un'altra riga. L'indice serve solo a Riallinea quando la riga sparisce.
+    private (string Riga, string Colonna)? attiva;
+    private int indiceRigaAttiva;
+    private bool inModifica;
+    private string testoInModifica = "";
+    // "Invariato" si confronta col testo all'ingresso in modifica: la pagina può rileggere a metà modifica.
+    private string testoIniziale = "";
+    private string? messaggioCampo;
+    private (string Riga, string Testo)? avviso;
+    private string? rigaInVolo;
+    private readonly HashSet<string> gruppiChiusi = [];
+    private string? ancoraSelezione;
+    // Il fuoco si rimette solo dopo un'azione della griglia, non a ogni render: un render causato
+    // dal campo di filtro della pagina gli ruberebbe il fuoco mentre l'utente scrive.
+    private bool fuocoDaRipristinare;
+
+    // Invio salva, poi il campo sparisce (o si disabilita) e il browser emette anche un focusout: il
+    // secondo arrivo trova il flag già abbassato e non salva una seconda volta.
+    private bool daConfermare;
+
+    private readonly List<T> righeMostrate = [];
+    private readonly List<string> chiaviMostrate = [];
+    private List<string> chiaviSelezionabili = [];
+    private bool colonnaSelezione;
+
+    private int ColonneTotali => Colonne.Count + (colonnaSelezione ? 1 : 0);
+
+    protected override void OnParametersSet() => Ricalcola();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/griglia.js");
+                istanza = await modulo.InvokeAsync<IJSObjectReference>("avvia", tabella);
+            }
+            catch (Exception ex)
+            {
+                // Senza il modulo la griglia funziona ancora col mouse: il guasto si contiene qui.
+                Console.Error.WriteLine($"[Griglia] Modulo non caricato: {ex.Message}");
+            }
+        }
+
+        if (!fuocoDaRipristinare) return;
+        fuocoDaRipristinare = false;
+
+        if (modulo is null || attiva is not { } a) return;
+        try
+        {
+            await modulo.InvokeVoidAsync("focalizza", tabella, a.Riga, a.Colonna);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Griglia] Fuoco non spostato: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (istanza is not null)
+            {
+                await istanza.InvokeVoidAsync("ferma");
+                await istanza.DisposeAsync();
+            }
+
+            if (modulo is not null) await modulo.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Griglia] Chiusura non riuscita: {ex.Message}");
+        }
+    }
+
+    /// <summary>Scarica il CSV: tutte le righe dei gruppi (anche chiusi), o la sola selezione.</summary>
+    public async Task EsportaAsync(string nomeFile)
+    {
+        if (modulo is null)
+        {
+            Console.Error.WriteLine("[Griglia] Esportazione non riuscita: il modulo non è caricato.");
+            return;
+        }
+
+        var righe = TutteLeRighe().Where(r => Selezione.Count == 0 || Selezione.Contains(ChiaveRiga(r))).ToList();
+        try
+        {
+            await modulo.InvokeVoidAsync("scarica", nomeFile, CalcoliGriglia.Csv(Colonne, righe));
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Griglia] Esportazione non riuscita: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<T> TutteLeRighe() => Gruppi.SelectMany(g => g.Righe);
+
+    private static bool Numerica(ColonnaGriglia<T> c) => c.Tipo is TipoColonna.Denaro or TipoColonna.Numero;
+
+    private static string? TestoRiepilogo(ColonnaGriglia<T> colonna, Riepilogo? riepilogo, Aggregazione flag)
+        => riepilogo is null || !colonna.Aggregazioni.HasFlag(flag) ? null : flag switch
+        {
+            Aggregazione.Somma => CalcoliGriglia.TestoCella(colonna.Tipo, riepilogo.Somma),
+            Aggregazione.Media => riepilogo.Media is { } media ? CalcoliGriglia.TestoCella(colonna.Tipo, media) : "—",
+            Aggregazione.Min => riepilogo.Min is { } min ? CalcoliGriglia.TestoCella(colonna.Tipo, min) : "—",
+            Aggregazione.Max => riepilogo.Max is { } max ? CalcoliGriglia.TestoCella(colonna.Tipo, max) : "—",
+            _ => riepilogo.Conteggio.ToString(CultureInfo.InvariantCulture)
+        };
+
+    private RenderFragment Aggregato(string? valore, Aggregazione flag) => @<text>
+        @if (valore is not null)
+        {
+            <span class="dato">@valore</span>
+            if (flag == Aggregazione.Somma && NotaRiepilogo is not null) { <span class="griglia-nota">@NotaRiepilogo</span> }
+        }
+    </text>;
+
+    private RenderFragment Campo(T riga, ColonnaGriglia<T> colonna, bool inVolo, string? descrizione) => @<text>
+        @if (colonna.Tipo == TipoColonna.Selezione)
+        {
+            var attuale = CalcoliGriglia.TestoModificabile(colonna.Tipo, colonna.Valore(riga));
+            <select @bind="testoInModifica" @onfocusout="() => ConfermaAsync(AzioneTasto.Nessuna)" disabled="@inVolo" aria-describedby="@descrizione">
+                @foreach (var opzione in colonna.Opzioni) { <option value="@opzione">@opzione</option> }
+                @* Valore attuale non fra le opzioni — l'elenco è cambiato dopo il salvataggio:
+                   in coda, perché il menù non mostri un'altra scelta come se fosse quella. *@
+                @if (!colonna.Opzioni.Contains(attuale)) { <option value="@attuale">@attuale</option> }
+            </select>
+        }
+        else
+        {
+            var data = colonna.Tipo == TipoColonna.Data;
+            var numero = Numerica(colonna);
+            <input type="@(data ? "date" : "text")" inputmode="@(numero ? "decimal" : null)"
+                   min="@(data ? DataMinima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null)"
+                   max="@(data ? DataMassima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null)"
+                   class="@(numero || data ? "dato" : null)" @bind="testoInModifica" @bind:event="oninput"
+                   @onfocusout="() => ConfermaAsync(AzioneTasto.Nessuna)" disabled="@inVolo" aria-describedby="@descrizione" />
+        }
+    </text>;
+
+    private static Riepilogo Riepiloga(ColonnaGriglia<T> colonna, IEnumerable<T> righe)
+        => CalcoliGriglia.Aggrega(righe.Where(r => colonna.Valore(r) is not null).ToList(),
+            r => Convert.ToDecimal(colonna.Valore(r), CultureInfo.InvariantCulture));
+
+    private int IndiceColonna(string chiave)
+    {
+        for (var i = 0; i < Colonne.Count; i++)
+            if (Colonne[i].Chiave == chiave) return i;
+        return -1;
+    }
+
+    private bool EAttiva(string riga, string colonna)
+        => attiva is { } a && a.Riga == riga && a.Colonna == colonna;
+
+    private void Ricalcola()
+    {
+        righeMostrate.Clear();
+        chiaviMostrate.Clear();
+        foreach (var gruppo in Gruppi)
+        {
+            if (gruppo.Etichetta is not null && gruppiChiusi.Contains(gruppo.Etichetta)) continue;
+            foreach (var riga in gruppo.Righe)
+            {
+                righeMostrate.Add(riga);
+                chiaviMostrate.Add(ChiaveRiga(riga));
+            }
+        }
+
+        colonnaSelezione = Gruppi.Any(g => g.Righe.Any(Selezionabile));
+        chiaviSelezionabili = righeMostrate.Where(Selezionabile).Select(ChiaveRiga).ToList();
+
+        if (attiva is not { } a) return;
+
+        var chiave = TastieraGriglia.Riallinea(chiaviMostrate, a.Riga, indiceRigaAttiva);
+        var colonna = IndiceColonna(a.Colonna) >= 0 ? a.Colonna : Colonne.Count > 0 ? Colonne[0].Chiave : null;
+        if (chiave is null || colonna is null)
+        {
+            attiva = null;
+            UsciDallaModifica();
+            return;
+        }
+
+        // Una modifica non segue la cella su un'altra riga o colonna: finisce lì.
+        if (chiave != a.Riga || colonna != a.Colonna) UsciDallaModifica();
+        attiva = (chiave, colonna);
+        indiceRigaAttiva = chiaviMostrate.IndexOf(chiave);
+    }
+
+    private void UsciDallaModifica()
+    {
+        inModifica = false;
+        messaggioCampo = null;
+        daConfermare = false;
+    }
+
+    private void Attiva(string riga, string colonna)
+    {
+        if (EAttiva(riga, colonna)) return;
+
+        attiva = (riga, colonna);
+        indiceRigaAttiva = chiaviMostrate.IndexOf(riga);
+        UsciDallaModifica();
+    }
+
+    private void SpostaAttiva(AzioneTasto azione)
+    {
+        if (attiva is not { } a || Colonne.Count == 0) return;
+
+        var indiceRiga = chiaviMostrate.IndexOf(a.Riga);
+        if (indiceRiga < 0) return;
+
+        var (riga, colonna) = TastieraGriglia.Sposta((indiceRiga, Math.Max(IndiceColonna(a.Colonna), 0)), azione,
+            chiaviMostrate.Count, Colonne.Count);
+        attiva = (chiaviMostrate[riga], Colonne[colonna].Chiave);
+        indiceRigaAttiva = riga;
+        fuocoDaRipristinare = true;
+    }
+
+    private async Task SuTastoAsync(T riga, ColonnaGriglia<T> colonna, KeyboardEventArgs e)
+    {
+        var chiave = ChiaveRiga(riga);
+        Attiva(chiave, colonna.Chiave);
+
+        // AltGr arriva come Ctrl+Alt insieme e produce caratteri: non è un modificatore.
+        var azione = TastieraGriglia.Interpreta(e.Key, e.ShiftKey, e.MetaKey || e.CtrlKey != e.AltKey, inModifica, colonna.Tipo);
+        switch (azione)
+        {
+            case AzioneTasto.Su or AzioneTasto.Giu or AzioneTasto.Sinistra or AzioneTasto.Destra:
+                SpostaAttiva(azione);
+                break;
+
+            case AzioneTasto.Modifica or AzioneTasto.ModificaSostituendo:
+                if (colonna.Modificabile?.Invoke(riga) != true || SalvaCella is null || rigaInVolo is not null) break;
+                testoIniziale = CalcoliGriglia.TestoModificabile(colonna.Tipo, colonna.Valore(riga));
+                testoInModifica = azione == AzioneTasto.ModificaSostituendo ? e.Key : testoIniziale;
+                inModifica = true;
+                daConfermare = true;
+                messaggioCampo = null;
+                avviso = null;
+                fuocoDaRipristinare = true;
+                break;
+
+            case AzioneTasto.SelezionaRiga:
+                if (Selezionabile(riga)) await AlternaRigaAsync(chiave);
+                break;
+
+            case AzioneTasto.SalvaEGiu or AzioneTasto.SalvaEDestra or AzioneTasto.SalvaESinistra:
+                await ConfermaAsync(azione);
+                break;
+
+            case AzioneTasto.Annulla:
+                UsciDallaModifica();
+                fuocoDaRipristinare = true;
+                break;
+        }
+    }
+
+    // Chiamata dai tre Salva* (da tastiera) e da @onfocusout con Nessuna (l'utente ha cliccato altrove).
+    private async Task ConfermaAsync(AzioneTasto azione)
+    {
+        if (!inModifica || !daConfermare || attiva is not { } a) return;
+        daConfermare = false;
+
+        var colonna = Colonne[IndiceColonna(a.Colonna)];
+        var riga = righeMostrate[chiaviMostrate.IndexOf(a.Riga)];
+        var esito = EsitoCella.Salvata;
+        string? messaggio = null;
+
+        if (SalvaCella is not null && testoInModifica != testoIniziale)
+        {
+            rigaInVolo = a.Riga;
+            StateHasChanged();
+            try
+            {
+                var risposta = await SalvaCella(new ModificaCella<T>(riga, colonna.Chiave, testoInModifica));
+                (esito, messaggio) = (risposta.Esito, risposta.Messaggio);
+            }
+            catch
+            {
+                rigaInVolo = null;
+                daConfermare = true;
+                StateHasChanged();
+                throw;
+            }
+            finally
+            {
+                rigaInVolo = null;
+            }
+        }
+
+        var ripristinaFuoco = azione != AzioneTasto.Nessuna && attiva == a;
+        if (esito == EsitoCella.NonValida)
+        {
+            // La modifica non è finita: una nuova conferma dev'essere di nuovo possibile.
+            if (inModifica)
+            {
+                messaggioCampo = messaggio;
+                daConfermare = true;
+                if (ripristinaFuoco) fuocoDaRipristinare = true;
+            }
+            return;
+        }
+
+        if (esito == EsitoCella.Chiusa && messaggio is not null) avviso = (a.Riga, messaggio);
+        UsciDallaModifica();
+        if (!ripristinaFuoco) return;
+
+        fuocoDaRipristinare = true;
+        SpostaAttiva(azione);
+    }
+
+    private void AlternaGruppo(string etichetta)
+    {
+        if (!gruppiChiusi.Remove(etichetta)) gruppiChiusi.Add(etichetta);
+        Ricalcola();
+    }
+
+    private bool TutteSelezionate() => chiaviSelezionabili.Count > 0 && chiaviSelezionabili.All(Selezione.Contains);
+
+    private async Task AlternaTutteAsync()
+    {
+        var nuova = new HashSet<string>(Selezione);
+        if (TutteSelezionate()) nuova.ExceptWith(chiaviSelezionabili);
+        else nuova.UnionWith(chiaviSelezionabili);
+        await SelezioneChanged.InvokeAsync(nuova);
+    }
+
+    private async Task AlternaRigaAsync(string chiave)
+    {
+        var nuova = new HashSet<string>(Selezione);
+        if (!nuova.Remove(chiave)) nuova.Add(chiave);
+        ancoraSelezione = chiave;
+        await SelezioneChanged.InvokeAsync(nuova);
+    }
+
+    private async Task ClicRigaAsync(string chiave, MouseEventArgs e)
+    {
+        if (!e.ShiftKey || ancoraSelezione is null)
+        {
+            await AlternaRigaAsync(chiave);
+            return;
+        }
+
+        // La casella è controllata dallo stato: un clic che non lo cambia lascia la casella invertita
+        // dal browser. Quindi l'intervallo prende il nuovo stato della riga cliccata, come in Gmail.
+        var nuova = new HashSet<string>(Selezione);
+        var intervallo = CalcoliGriglia.Intervallo(chiaviSelezionabili, ancoraSelezione, chiave);
+        if (nuova.Contains(chiave)) nuova.ExceptWith(intervallo);
+        else nuova.UnionWith(intervallo);
+        await SelezioneChanged.InvokeAsync(nuova);
+    }
+}
