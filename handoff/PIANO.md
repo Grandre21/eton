@@ -152,7 +152,7 @@ confine naturale fra un capo e il successivo.
 | **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
 | **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); **la query di controllo l'ha eseguita l'utente e ha incollato l'esito in chat: `recurring_id`, `recurring_period` — 2 righe su 2 attese.** Resta `PARZIALE` solo per la forma: la regola dei `FATTO` vuole un comando lanciato in sessione, e nessun agente interroga il database. **L'integrazione della 02 su `main` è sbloccata** |
 | **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **FATTO** — integrata su `main`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   328` |
-| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **FATTO** — fusa e pubblicata su `main` il 7 ott, con le sei decisioni ratificate e D6 corretta (avviso data passata anche in modifica a watermark nullo; watermark letto da `conflitto ?? regola`; Elimina bloccato in conflitto come Termina — rilievo `bug-hunter` fondato, `checker`: risolto); collaudo nel browser ancora da fare; verifica: `mcp__synapse__test` -> `0 failed, 335 passed` |
+| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **FATTO** — fusa e pubblicata su `main` il 7 ott, con le sei decisioni ratificate e D6 corretta (avviso data passata anche in modifica a watermark nullo; watermark letto da `conflitto ?? regola`; Elimina bloccato in conflitto come Termina — rilievo `bug-hunter` fondato, `checker`: risolto); **collaudato il 7 ott**: `live-testing` verde 8/8 (regola di prova creata, modificata, terminata ed eliminata), `ui-critic` 4 rilievi → 2 corretti (editor a una colonna con aiuti ed errori attaccati al campo; rimisurato: 0 rilievi), 2 `TIPO: progetto` rinviati alla 2.1-bis (APERTO); verifica: `mcp__synapse__test` -> `0 failed, 335 passed` |
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | documento | S, 2.1 | PIANIFICATA |
 | **2.2** | implementazione | sessioni-unità | P | PIANIFICATA |
 
@@ -169,8 +169,10 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 ## PROSSIMA AZIONE
 
 **7 ottobre — stato attuale.** L'unità 03 è rientrata `FATTO` ed è fusa in `main` **solo in locale**
-(`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. Restano: (3) collaudo della 2.1 nel browser, fatto dal capo; (4) `claude rm` della sessione 03 e
-rimozione del worktree; (5) unità P — piano della 2.2.
+(`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
+all'utente (APERTO). Restano: (4) rimozione del worktree `.claude/worktrees/unita-03-pagine-ricorrenti`
+(branch già fuso; la sessione `321bb5c3` non compare più in `claude agents`) — **cancellazione: si chiede
+all'utente**; (5) unità P — piano della 2.2, in una sessione-unità.
 
 **Ripresa del 23 settembre in poi (sessione nuova) — superata dal paragrafo qui sopra.** L'utente ha chiuso la sessione del 22 mentre
 l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
@@ -193,6 +195,20 @@ non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagi
 task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
 
 ## APERTO
+
+- **Da provare all'utente (7 ott)**: nell'editor di una spesa ricorrente, cambiare un campo e poi
+  premere un link interno → deve comparire la domanda «vuoi uscire senza salvare?». Un agente non può
+  provarla (dialogo nativo).
+- **Per la 2.1-bis, da `ui-critic` del 7 ott (`TIPO: progetto`)**: (a) i link della sotto-navigazione
+  «Registro · Ricorrenti» e i pulsanti `.schede-testo` delle note sono alti 40px, sotto il pavimento di
+  44-48 — da decidere una volta per entrambi; (b) nello stato vuoto delle pagine-elenco (Ricorrenti,
+  Note, Collezioni) compaiono due pulsanti primari identici, e a 390px il titolo «Spese ricorrenti» va a
+  capo per far posto a quello in testata. Più i `FUORI SCOPE` del resoconto 03 (`.sotto-nav` che ricopia
+  `.schede-testo`; `Oggetto.Ricorrente` mancante in `Permessi`; helper `Mostra`/`Dati` e `Bloccato` per
+  tutti gli editor — decisioni di progetto dell'utente).
+- **Osservazioni del collaudo, non difetti**: terminare una ricorrente che parte nel futuro scrive
+  `ends_on` < `starts_on` (innocuo, e lì «Elimina» è offerto); una ricorrente terminata resta
+  modificabile nei campi (ratificata D2: non si riattiva, `SalvaAsync` non scrive `ends_on`).
 
 - **Il rapporto `handoff/CHIUSURA.md` del 20 settembre non è ancora stato letto dall'utente**, e fino
   ad allora non si archivia. ⚠️ Il path è fisso: la chiusura di **questo** goal lo sovrascriverebbe, quindi

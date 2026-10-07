@@ -1,4 +1,17 @@
-# Server di sviluppo — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
+# Server di sviluppo
+
+> # ⛔ FERMO — collaudo della 2.1 finito il 7 ottobre 2026: fermati 5864 e 11852, porta 5000
+> # verificata libera con `netstat`. I PID qui sotto sono storia.
+>
+> ## Avviato dal capo il 7 ottobre 2026 per il collaudo della 2.1
+>
+> Commit `main` pubblicato il 7 ott (unità 03 + correzione D6); build Release 0/0, test 335/335.
+> **Riavviato** dopo la correzione CSS dell'editor: **PID padre 11852** (`dotnet run --launch-profile
+> Eton`), **PID figlio 5864** (devserver, ascolta sulla 5000). I precedenti (19560/3852, 6308/23496)
+> sono fermati. Da fermare a collaudo finito, prima il figlio poi il padre, e verificare la porta.
+> La tabella più sotto è storia del 20 settembre.
+
+## Storia — goal «tutto ciò che rimane», notte fra il 19 e il 20 settembre 2026
 
 > # ⛔ FERMO — il ciclo è chiuso
 >

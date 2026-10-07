@@ -2704,3 +2704,12 @@ button.pastiglia {
 
 /* Terminata = spenta: la riga si legge come un fatto passato, non come qualcosa su cui agire. */
 .riga-terminata { color: var(--testo-tenue); }
+
+/* L'editor delle ricorrenti mette otto figli in .campi-spesa, non i tre di SpesaEdit: la griglia a
+   due colonne dello schermo largo (media query più sopra, celle fisse per importo/data/descrizione)
+   li sparpaglia e allontana ogni riga d'aiuto dal suo campo. Qui resta una colonna a ogni
+   larghezza — resa provvisoria fino alla 2.1-bis. Aiuti ed errori non portano margine proprio e
+   accorciano il gap che li precede: stanno a --s2 dal loro campo e a --s4 dal gruppo seguente. */
+.campi-spesa.campi-ricorrente { display: flex; margin-bottom: var(--s4); }
+.campi-ricorrente > p.spiega,
+.campi-ricorrente > .errore-campo { margin: calc(var(--s2) - var(--s4)) 0 0; }
