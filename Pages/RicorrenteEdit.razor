@@ -1,0 +1,535 @@
+@page "/expenses/recurring/new"
+@page "/expenses/recurring/{Id:guid}"
+@using Eton.Models
+@using System.Globalization
+@inherits PaginaEditor
+@inject RecurringExpenseRepository Repository
+@inject SpaceStateService Spazi
+@inject AuthStateService AuthState
+
+<PageTitle>@TitoloSchermata — Eton</PageTitle>
+
+<TestataPagina Titolo="@TitoloSchermata">
+    <Aiuto>
+        <p>La spesa ricorrente segna da sola una spesa nel mese in cui è dovuta, quando chi la paga apre Eton.</p>
+        <p>Se qualcun altro salva questa spesa ricorrente mentre la modifichi, o se nel frattempo Eton ci segna una spesa del mese, il salvataggio si ferma e ti fa scegliere fra ricaricare la versione più recente e sovrascrivere con la tua.</p>
+        <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
+    </Aiuto>
+</TestataPagina>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (sparita)
+{
+    <div class="vuoto">
+        <p>Questa spesa ricorrente non c'è più: l'ha cancellata qualcuno, oppure non fai più parte dello spazio.</p>
+        <a class="btn" href="expenses/recurring">Torna alle ricorrenti</a>
+    </div>
+}
+else if (regola is null && !Nuova)
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <a class="btn" href="expenses/recurring">Torna alle ricorrenti</a>
+    </div>
+}
+else
+{
+    <NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
+
+    @if (conflitto is not null)
+    {
+        @* Qui il conflitto è frequente e atteso, non un caso raro: ogni materializzazione alza
+           version. Si mostra sempre, non si sopprime. SovrascriviAbilitato in più su Valido &&
+           PuoIntervenire: v. Pages/SpesaEdit.razor:41-53 per il perché di entrambe le condizioni. *@
+        <SchedaConflitto Premessa="Mentre la modificavi, questa spesa ricorrente è cambiata." Occupato="@occupato" SovrascriviAbilitato="@(Valido && PuoIntervenire)"
+                         OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
+    }
+
+    @* Stessa regola di Services/Permessi.cs (la RLS di recurring_expenses ha la forma di expenses), ma senza un Oggetto dedicato lì: quando se ne aggiunge uno, questa frase va spostata in Permessi.Spiegazione. *@
+    @if (!PuoIntervenire)
+    {
+        <p class="spiega">Questa spesa ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
+    }
+
+    <div class="campi-spesa">
+        @{
+            RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
+        }
+        @* v. Pages/SpesaEdit.razor:68-81 per il perché delle due rese (Denaro.Testo in lettura,
+           Denaro.TestoDigitabile nel campo modificabile) e per il perché di .campo-lettura. *@
+        @if (PuoIntervenire)
+        {
+            <label class="campo">
+                @etichettaImporto
+                <input class="importo-spesa dato" type="text" inputmode="decimal"
+                       placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+            </label>
+        }
+        else
+        {
+            <div class="campo campo-lettura">
+                @etichettaImporto
+                <p class="importo-spesa dato">@Denaro.Testo(regola!.Amount)&#160;€</p>
+            </div>
+        }
+        @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
+        {
+            <p class="errore-campo">@erroreImporto</p>
+        }
+        <p class="spiega">L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.</p>
+
+        <label class="campo">
+            <span class="etichetta-campo">Descrizione</span>
+            <input class="descrizione-spesa" type="text" maxlength="200" placeholder="Per cosa?"
+                   @bind="descrizione" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+        </label>
+
+        <label class="campo">
+            <span class="etichetta-campo">Ogni quanto</span>
+            <select @bind="ogniMesi" disabled="@(occupato || !PuoIntervenire)">
+                <option value="1">ogni mese</option>
+                <option value="2">ogni 2 mesi</option>
+                <option value="3">ogni 3 mesi</option>
+                <option value="6">ogni 6 mesi</option>
+                <option value="12">ogni anno</option>
+                @* Il database ammette 1..12: un valore fuori da queste cinque tappe resta visibile
+                   con un'opzione in più, stesso principio della pastiglia extra sulla categoria
+                   più sotto (v. Pages/SpesaEdit.razor:140-148). *@
+                @if (ogniMesi is not (1 or 2 or 3 or 6 or 12))
+                {
+                    <option value="@ogniMesi">ogni @ogniMesi mesi</option>
+                }
+            </select>
+        </label>
+
+        <label class="campo">
+            <span class="etichetta-campo">Giorno del mese</span>
+            @* Select e non type="number": nessuno stato invalido possibile, a differenza
+               dell'importo qui sopra. *@
+            <select @bind="giorno" disabled="@(occupato || !PuoIntervenire)">
+                @for (var g = 1; g <= 31; g++)
+                {
+                    <option value="@g">@g</option>
+                }
+            </select>
+        </label>
+        <p class="spiega">31 = ultimo giorno del mese.</p>
+
+        <label class="campo">
+            <span class="etichetta-campo">Dal</span>
+            @* min/max sono solo un aiuto per il browser, la guardia vera è DataRagionevole qui
+               sotto: v. Pages/SpesaEdit.razor:113-126, 202-218 per il perché di entrambi e per
+               DateTime? invece di DateTime. *@
+            <input class="data-spesa dato" type="date" @bind="inizio"
+                   min="@DataMinima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                   max="@DataMassima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" disabled="@(occupato || !PuoIntervenire)" />
+        </label>
+        @if (!DataRagionevole(inizio))
+        {
+            <p class="errore-campo">Non è una data valida: dev'essere fra il 2000 e un anno da oggi.</p>
+        }
+        @if (Nuova)
+        {
+            <p class="spiega">Se la data è già passata, le spese dei mesi trascorsi si segnano da sole: controlla che sia quella giusta.</p>
+        }
+    </div>
+
+    @* Bottoni e non radio nascosti, con la pastiglia extra per una categoria non più in elenco:
+       v. Pages/SpesaEdit.razor:129-148 per il perché di entrambe le scelte. *@
+    <fieldset class="scelta-categoria">
+        <legend class="etichetta-campo">Categoria</legend>
+        @foreach (var c in CategorieSpesa.Elenco)
+        {
+            <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
+                    aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
+        }
+        @if (!CategorieSpesa.Conosciuta(categoria))
+        {
+            <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
+        }
+    </fieldset>
+
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+
+    @* 'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero, come in
+       Pages/NoteEdit.razor:90-104 e Pages/SpesaEdit.razor:160-171. In creazione la riga segue
+       !Valido e non !Cambiata: da quando Cambiata guarda anche cadenza, giorno, categoria e data,
+       può essere vera con importo e descrizione ancora vuoti, e la riga deve restare finché manca
+       qualcosa di valido. Su una regola esistente serve invece !Cambiata && Valido, altrimenti il
+       messaggio comparirebbe insieme a un errore-campo sullo stesso campo. *@
+    @if (!occupato && PuoIntervenire && conflitto is null && (Nuova ? !Valido : !Cambiata && Valido))
+    {
+        <p class="testo-tenue">
+            @(Nuova
+                ? "Scrivi importo e descrizione per poterla salvare."
+                : "Non c'è niente da salvare: non hai ancora cambiato niente.")
+        </p>
+    }
+
+    @if (!Nuova)
+    {
+        <p class="spiega">Le spese già segnate non cambiano.</p>
+    }
+
+    <div class="azioni">
+        <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !Valido || !PuoIntervenire)">
+            @(occupato ? "Salvo…" : "Salva")
+        </button>
+        <a class="btn" href="@(occupato ? null : "expenses/recurring")">Chiudi</a>
+    </div>
+
+    @if (!Nuova && PuoIntervenire)
+    {
+        <section class="scheda">
+            <h2>Fermare questa spesa ricorrente</h2>
+            @if (regola!.EndsOn is DateTime fine)
+            {
+                <p class="testo-tenue">Terminata il @Testi.DataSola(fine): dopo quella data non segna più spese. Le spese già segnate restano.</p>
+            }
+            else
+            {
+                <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
+                <div class="azioni">
+                    <ConfermaAzione Chiave="@Id" Etichetta="Termina" EtichettaConferma="Sì, termina" Occupato="@(occupato || conflitto is not null)" OnConferma="Termina" />
+                </div>
+            }
+            @* MaterializedThrough nullo vuol dire nessuna spesa scritta: ExpenseRepository.MaterializzaAsync
+               alza il watermark solo dopo un upsert riuscito, quindi la pagina lo sa senza interrogare
+               'expenses'. Due casi limite accettati: (a) il watermark non si è avanzato dopo un upsert
+               riuscito -> Elimina offerto ma rifiutato con 23503, e ci pensa il catch di Elimina; (b)
+               l'utente ha cancellato a mano tutte le occorrenze -> Elimina non offerto, anche se
+               riuscirebbe. *@
+            @if (regola.MaterializedThrough is null)
+            {
+                <p class="testo-tenue">Non ha ancora segnato nessuna spesa, quindi si può anche eliminare.</p>
+                <div class="azioni">
+                    <ConfermaAzione Chiave="@Id" Occupato="@occupato" OnConferma="Elimina" />
+                </div>
+            }
+            else
+            {
+                <p class="testo-tenue">Non si può eliminare: ha già segnato delle spese, e cancellarla toglierebbe loro la provenienza. Terminarla basta a fermarla.</p>
+            }
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private RecurringExpense? regola;      // l'ultima versione conosciuta del server: da qui esce la versione
+    private RecurringExpense? conflitto;   // la versione altrui, quando il salvataggio si è scontrato
+    private string importoTesto = "";
+    private string descrizione = "";
+    private string categoria = CategorieSpesa.Elenco[0];
+    private int ogniMesi = 1;
+    private int giorno = DateTime.Today.Day;
+
+    // DateTime? e non DateTime: stesso motivo di 'data' in Pages/SpesaEdit.razor:202-209, uno
+    // stato annullabile invece di 0001-01-01 quando <input type="date"> si svuota.
+    private DateTime? inizio = DateTime.Today;
+
+    // v. Pages/SpesaEdit.razor:212-218 per il perché di questi limiti e della guardia.
+    private static readonly DateTime DataMinima = new(2000, 1, 1);
+    private static DateTime DataMassima => DateTime.Today.AddYears(1);
+    private static bool DataRagionevole(DateTime? d) => d is not null && d.Value >= DataMinima && d.Value <= DataMassima;
+
+    private bool caricato, occupato, sparita;
+    private string? errore, avviso;
+    private int generazione;
+
+    // L'id di chi guarda, come mioId in Pages/SpesaEdit.razor: stesso pattern, GetUserIdAsync()
+    // più Guid.TryParse, letto in OnParametersSetAsync. Se il parsing fallisce resta null, e
+    // PuoIntervenire ne tiene conto fallendo chiuso.
+    private Guid? mioId;
+
+    private bool Nuova => Id is null;
+
+    private string TitoloSchermata => !string.IsNullOrWhiteSpace(descrizione)
+        ? descrizione
+        : (Nuova ? "Nuova spesa ricorrente" : "Spesa ricorrente");
+
+    private bool Valido => Denaro.Prova(importoTesto, out _) && !string.IsNullOrWhiteSpace(descrizione) && DataRagionevole(inizio);
+
+    // TestoDigitabile e non Testo nel confronto: v. Pages/SpesaEdit.razor:250-252, i due lati
+    // devono passare dalla stessa funzione o la pagina nascerebbe già "modificata" sopra i mille euro.
+    // I campi con un default (categoria, ogniMesi, giorno, inizio) contano come modifica solo se si
+    // allontanano da quel default, gli stessi valori che OnParametersSetAsync assegna in creazione.
+    protected override bool Cambiata => Nuova
+        ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
+          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today
+        : regola is not null && (importoTesto != Denaro.TestoDigitabile(regola.Amount) || descrizione != regola.Description
+                                  || categoria != regola.Category || ogniMesi != regola.EveryMonths || giorno != regola.DayOfMonth
+                                  || inizio?.Date != regola.StartsOn.Date);
+
+    // Nuova per prima, come in Pages/NoteEdit.razor:157-161: su /expenses/recurring/new la regola
+    // non esiste ancora, e chiedere a Permessi il permesso su un oggetto non creato risponderebbe no.
+    private bool PuoIntervenire => Nuova || (regola is not null && Permessi.PuoIntervenire(mioId, regola.PaidBy, regola.SpaceId, Spazi.Elenco));
+
+    // Blazor riusa questa istanza passando da una regola all'altra: v. Pages/SpesaEdit.razor:262-271
+    // per il perché di generazione e di un solo try/catch invece di due percorsi di caricamento.
+    protected override async Task OnParametersSetAsync()
+    {
+        var mia = ++generazione;
+
+        caricato = false;
+        errore = avviso = null;
+        conflitto = null;
+        sparita = false;
+
+        try
+        {
+            await Spazi.AssicuraCaricatoAsync();
+            if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+
+            if (mia != generazione) return;
+
+            if (Nuova)
+            {
+                regola = null;
+                importoTesto = "";
+                descrizione = "";
+                categoria = CategorieSpesa.Elenco[0];
+                ogniMesi = 1;
+                giorno = DateTime.Today.Day;
+                inizio = DateTime.Today;
+                caricato = true;
+                return;
+            }
+
+            var letta = await Repository.LeggiAsync(Id!.Value);
+            if (mia != generazione) return;
+
+            regola = letta;
+            if (regola is null)
+            {
+                sparita = true;
+            }
+            else
+            {
+                importoTesto = Denaro.TestoDigitabile(regola.Amount);
+                descrizione = regola.Description;
+                categoria = regola.Category;
+                ogniMesi = regola.EveryMonths;
+                giorno = regola.DayOfMonth;
+                inizio = regola.StartsOn;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            regola = null;
+            // Il testo dell'eccezione NON va all'utente, solo in console: v. il commento nel catch
+            // di Pages/NoteEdit.razor:230-235. Vale per tutti i catch qui sotto.
+            Console.Error.WriteLine($"[Ricorrenti] Apertura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire questa spesa ricorrente: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
+        }
+
+        caricato = true;
+    }
+
+    private async Task Salva()
+    {
+        occupato = true; errore = avviso = null; conflitto = null;
+        try
+        {
+            // Le due guardie ripetono Valido: lo stato del modulo può essere cambiato fra il
+            // render del pulsante e questo clic, come in Pages/SpesaEdit.razor:342-343.
+            if (!Denaro.Prova(importoTesto, out var importo)) return;
+            if (!DataRagionevole(inizio)) return;
+
+            if (Nuova)
+            {
+                await Crea(importo);
+                return;
+            }
+
+            await SalvaCon(regola!.Version, importo);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Ricorrenti] Salvataggio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Crea(decimal importo)
+    {
+        var attivo = await Spazi.AssicuraCaricatoAsync();
+        if (attivo is null)
+        {
+            errore = "Serve uno spazio attivo per creare una spesa ricorrente.";
+            return;
+        }
+
+        if (!Guid.TryParse(await AuthState.GetUserIdAsync(), out var pagante))
+        {
+            errore = "La sessione non è più valida: esci e rientra.";
+            return;
+        }
+
+        var creata = await Repository.CreaAsync(attivo.Id, pagante, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value));
+
+        // replace: true ed Esci, non NavigateTo: qui la guardia va disarmata, la creazione è
+        // riuscita (v. Shared/PaginaEditor.Esci) e /expenses/recurring/new non è un posto in cui
+        // tornare col tasto Indietro, come /notes/new in Pages/NoteEdit.razor:288-293.
+        Esci($"expenses/recurring/{creata.Id}", replace: true);
+    }
+
+    private async Task SalvaCon(int versione, decimal importo)
+    {
+        var esito = await Repository.SalvaAsync(Id!.Value, versione, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value));
+
+        switch (esito.Esito)
+        {
+            case EsitoSalvataggio.Salvata:
+                regola = esito.Aggiornata;
+                importoTesto = Denaro.TestoDigitabile(regola!.Amount);
+                descrizione = regola.Description;
+                categoria = regola.Category;
+                ogniMesi = regola.EveryMonths;
+                giorno = regola.DayOfMonth;
+                inizio = regola.StartsOn;
+                avviso = "Salvata.";
+                break;
+
+            case EsitoSalvataggio.Conflitto:
+                conflitto = esito.Aggiornata;
+                break;
+
+            case EsitoSalvataggio.Rifiutata:
+                // v. il commento sul caso Rifiutata in Pages/NoteEdit.razor:313-320: con
+                // PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo è stantio.
+                errore = "Non hai più il permesso di modificare questa spesa ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                break;
+
+            case EsitoSalvataggio.Sparita:
+                sparita = true;
+                break;
+        }
+    }
+
+    private void Ricarica()
+    {
+        if (conflitto is null) return;
+
+        regola = conflitto;
+        importoTesto = Denaro.TestoDigitabile(conflitto.Amount);
+        descrizione = conflitto.Description;
+        categoria = conflitto.Category;
+        ogniMesi = conflitto.EveryMonths;
+        giorno = conflitto.DayOfMonth;
+        inizio = conflitto.StartsOn;
+        conflitto = null;
+        avviso = "Caricata la versione più recente.";
+    }
+
+    private async Task Sovrascrivi()
+    {
+        if (conflitto is null) return;
+
+        occupato = true; errore = null;
+        try
+        {
+            if (!Denaro.Prova(importoTesto, out var importo) || !Valido)
+            {
+                errore = "Controlla importo, descrizione e data prima di sovrascrivere.";
+                return;
+            }
+
+            // Si risalva con la versione DEL SERVER: v. Pages/NoteEdit.razor:346-350.
+            var versione = conflitto.Version;
+            conflitto = null;
+            await SalvaCon(versione, importo);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Ricorrenti] Sovrascrittura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Termina()
+    {
+        occupato = true; errore = avviso = null;
+        try
+        {
+            var esito = await Repository.TerminaAsync(Id!.Value, regola!.Version, DateTime.Today);
+
+            switch (esito.Esito)
+            {
+                case EsitoSalvataggio.Salvata:
+                    // Solo 'regola', non i campi del modulo: possono contenere modifiche non
+                    // salvate che Termina non deve scartare.
+                    regola = esito.Aggiornata;
+                    avviso = "Terminata: da domani non segna più spese.";
+                    break;
+
+                case EsitoSalvataggio.Conflitto:
+                    conflitto = esito.Aggiornata;
+                    break;
+
+                case EsitoSalvataggio.Rifiutata:
+                    errore = "Non hai più il permesso di terminare questa spesa ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                    break;
+
+                case EsitoSalvataggio.Sparita:
+                    sparita = true;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Ricorrenti] Terminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile terminare la spesa ricorrente: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+
+    private async Task Elimina()
+    {
+        occupato = true; errore = null;
+        try
+        {
+            if (await Repository.EliminaAsync(Id!.Value))
+            {
+                Esci("expenses/recurring");
+                return;
+            }
+            errore = "Non è stato possibile eliminare la spesa ricorrente: può cancellarla solo chi la paga, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminata: ricarica la pagina per vedere com'è adesso.";
+        }
+        catch (Exception ex)
+        {
+            // Il 23503 (FK di expenses.recurring_id, no action) arriva da qui: v.
+            // RecurringExpenseRepository.EliminaAsync. Una regola che ha già generato occorrenze
+            // non si elimina, si termina.
+            Console.Error.WriteLine($"[Ricorrenti] Eliminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare la spesa ricorrente: se nel frattempo ha segnato delle spese si può solo terminare, altrimenti il database non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+        }
+        finally
+        {
+            occupato = false;
+        }
+    }
+}

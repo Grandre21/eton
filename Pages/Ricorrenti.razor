@@ -1,0 +1,119 @@
+@page "/expenses/recurring"
+@using Eton.Models
+@inherits PaginaRegistro
+@inject RecurringExpenseRepository Repository
+
+<PageTitle>Spese ricorrenti — Eton</PageTitle>
+
+<TestataPagina Titolo="Spese ricorrenti">
+    <Azione>
+        @if (Spazi.Attivo is not null)
+        {
+            <a class="btn primario compatto" href="expenses/recurring/new">Nuova ricorrente</a>
+        }
+    </Azione>
+    <Aiuto>
+        <p>Una spesa ricorrente si segna da sola nel registro, nel mese in cui è dovuta, quando chi la paga apre Eton: fino ad allora gli altri membri la vedono come «prevista».</p>
+        <p>Per fermarla la si termina, e le spese già segnate restano. Eliminarla si può solo finché non ne ha segnata nessuna.</p>
+    </Aiuto>
+</TestataPagina>
+
+<NavigazioneSpese Attiva="expenses/recurring" />
+
+@if (!caricato)
+{
+    <Scheletro Righe="4" />
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Serve uno spazio prima di poter dichiarare una spesa ricorrente.</p>
+        <a class="btn primario" href="spaces">Vai agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+
+    <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+
+    @if (datiNonLetti)
+    {
+        <div class="vuoto">
+            <p>Non sono riuscito a leggere le spese ricorrenti di questo spazio.</p>
+            <button class="btn" @onclick="Riprova">Riprova</button>
+        </div>
+    }
+    else if (regole.Count == 0)
+    {
+        <div class="vuoto">
+            <span class="icona-vuoto"><Icona Nome="spese" /></span>
+            <p>Ancora nessuna spesa ricorrente qui.</p>
+            <p class="spiega">L'affitto, una bolletta, un abbonamento: la dichiari una volta, e compare da sola nel registro delle spese nel mese in cui è dovuta.</p>
+            <a class="btn primario" href="expenses/recurring/new">Nuova ricorrente</a>
+        </div>
+    }
+    else
+    {
+        <div class="testa-registro">
+            <span>@Testi.Conteggio(regole.Count, "spesa ricorrente", "spese ricorrenti")</span>
+        </div>
+        <ul class="registro elenco-ricorrenti">
+            @foreach (var r in regole)
+            {
+                // null = regola terminata (v. Prossima in @code)
+                var prossima = Prossima(r);
+                <li>
+                    <a class="riga riga-spesa @(prossima is null ? "riga-terminata" : null)" href="expenses/recurring/@r.Id">
+                        <span class="descrizione">@r.Description</span>
+                        <span class="meta">
+                            <span class="pastiglia">@r.Category</span>
+                            <span>@CalcoliRicorrenti.Cadenza(r.EveryMonths, r.DayOfMonth, r.StartsOn)</span>
+                            @if (prossima is null)
+                            {
+                                <span class="pastiglia">terminata</span>
+                            }
+                            else
+                            {
+                                <span>prossima: <span class="dato">@Testi.DataSola(prossima.Value)</span></span>
+                            }
+                        </span>
+                        <span class="importo dato">@Denaro.Testo(r.Amount)&#160;€</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private IReadOnlyList<RecurringExpense> regole = [];
+
+    protected override string NomePlurale => "le spese ricorrenti";
+
+    protected override async Task Leggi(Space attivo)
+    {
+        regole = [];
+
+        try
+        {
+            regole = await Repository.ElencaAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            SegnalaNonLetti(ex);
+        }
+    }
+
+    // Null quando la regola è terminata: una regola con ends_on futuro ha ancora una prossima
+    // occorrenza, e fino ad allora non è terminata.
+    private DateTime? Prossima(RecurringExpense r)
+        => CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today);
+}

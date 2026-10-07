@@ -103,4 +103,47 @@ public class CalcoliRicorrentiTests
 
         Assert.Null(prossima);
     }
+
+    [Fact]
+    public void Cadenza_mensile_dice_il_giorno()
+    {
+        Assert.Equal("ogni mese, il 5", CalcoliRicorrenti.Cadenza(1, 5, new DateTime(2026, 1, 5)));
+    }
+
+    [Fact]
+    public void Cadenza_ogni_due_mesi_dice_il_giorno()
+    {
+        Assert.Equal("ogni 2 mesi, il 5", CalcoliRicorrenti.Cadenza(2, 5, new DateTime(2026, 1, 5)));
+    }
+
+    [Fact]
+    public void Cadenza_mensile_col_trentuno_e_l_ultimo_giorno()
+    {
+        Assert.Equal("ogni mese, l'ultimo giorno", CalcoliRicorrenti.Cadenza(1, 31, new DateTime(2026, 1, 31)));
+    }
+
+    [Fact]
+    public void Cadenza_elide_l_ottavo_e_ordina_il_primo()
+    {
+        Assert.Equal("ogni mese, il 1°", CalcoliRicorrenti.Cadenza(1, 1, new DateTime(2026, 1, 1)));
+        Assert.Equal("ogni mese, l'8", CalcoliRicorrenti.Cadenza(1, 8, new DateTime(2026, 1, 8)));
+    }
+
+    [Fact]
+    public void Cadenza_annuale_dice_giorno_e_mese()
+    {
+        Assert.Equal("ogni anno, il 5 marzo", CalcoliRicorrenti.Cadenza(12, 5, new DateTime(2026, 3, 5)));
+    }
+
+    [Fact]
+    public void Cadenza_annuale_col_trenta_a_febbraio_e_l_ultimo_giorno_di_febbraio()
+    {
+        Assert.Equal("ogni anno, l'ultimo giorno di febbraio", CalcoliRicorrenti.Cadenza(12, 30, new DateTime(2026, 2, 1)));
+    }
+
+    [Fact]
+    public void Cadenza_con_ogniMesi_zero_lancia()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => CalcoliRicorrenti.Cadenza(0, 5, new DateTime(2026, 1, 5)));
+    }
 }

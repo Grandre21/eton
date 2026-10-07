@@ -2664,3 +2664,43 @@ button.pastiglia {
     white-space: nowrap;
     border: 0;
 }
+
+/* --------------------------------------------------------- spese ricorrenti --- */
+
+/* Stessa forma di .schede-testo (v. sopra, sezione editor): la sotto-navigazione delle
+   pagine di spesa non è una seconda barra nuova, solo un contenitore diverso attorno agli
+   stessi link. */
+.sotto-nav {
+    display: flex;
+    gap: var(--s1);
+    padding: var(--s1);
+    margin-bottom: var(--s3);
+    background: var(--sfondo-alt);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+}
+
+/* Le proprietà di .schede-testo button, meno quelle che qui non servono a un <a>
+   (background/border/font/cursor già a posto per un link): in più display flex e
+   text-decoration: none, che un pulsante non ha bisogno di dichiarare. */
+.sotto-nav a {
+    flex: 1;
+    min-height: calc(var(--tocco) - var(--s2));
+    padding: var(--s2);
+    color: var(--testo-tenue);
+    border-radius: var(--raggio-s);
+    font-size: var(--t-md);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    touch-action: manipulation;
+    transition: background var(--transizione), color var(--transizione);
+}
+
+/* Come .schede-testo button.attiva. */
+.sotto-nav a.attiva { background: var(--superficie-alta); color: var(--testo); }
+
+/* Terminata = spenta: la riga si legge come un fatto passato, non come qualcosa su cui agire. */
+.riga-terminata { color: var(--testo-tenue); }

@@ -1,0 +1,27 @@
+@* Le pagine delle spese sono diventate più d'una, e la barra di navigazione principale
+   (Shared/Navigazione.razor) ha già cinque posti occupati — non c'è dove mettere una sesta
+   voce per "Tabella" o "Ricorrenti" senza affollare uno schermo stretto. La sotto-navigazione
+   qui è la soluzione scelta in docs/superpowers/specs/2026-09-22-spese-tabella-design.md §2.4. *@
+<nav class="sotto-nav" aria-label="Sezioni delle spese">
+    @foreach (var v in Voci.Where(v => v.Visibile))
+    {
+        var attiva = v.Rotta == Attiva;
+        <a href="@v.Rotta" class="@(attiva ? "attiva" : null)" aria-current="@(attiva ? "page" : null)">@v.Etichetta</a>
+    }
+</nav>
+
+@code {
+    /// <summary>La rotta della pagina corrente: "expenses" oppure "expenses/recurring".</summary>
+    [Parameter, EditorRequired] public string Attiva { get; set; } = "";
+
+    private sealed record Voce(string Etichetta, string Rotta, bool Visibile);
+
+    private static readonly Voce[] Voci =
+    [
+        new("Registro", "expenses", true),
+        // Non si mostra finché la pagina /expenses/table non esiste (fase 2.2): quel giorno
+        // si accende cambiando false in true.
+        new("Tabella", "expenses/table", false),
+        new("Ricorrenti", "expenses/recurring", true),
+    ];
+}
