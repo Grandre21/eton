@@ -1379,6 +1379,13 @@ Solo dopo `live-testing` verde: in `Shared/NavigazioneSpese.razor:24` `false` di
 alle righe 22-23 si aggiorna. Il commento in testa al file (`:14`) che elenca le rotte accettate da
 `Attiva` prende anche `"expenses/table"`. Commit.
 
+**Aggiunta del 7 ottobre (decisione dell'utente, punto 6 del popup):** sotto i `40rem` la voce «Tabella»
+**non si mostra**. La regola **non** va in `wwwroot/css/app.css` (riservato al task 6 dal vincolo globale):
+va in un file nuovo `Shared/NavigazioneSpese.razor.css` (CSS isolato), con un marcatore sulla voce — un
+flag «solo schermo largo» nel record della voce, che diventa una classe — nascosta di base e mostrata da
+`40rem` in su, mobile-first. La rotta `/expenses/table` resta raggiungibile: un link salvato funziona e
+mostra l'avviso con il link al registro.
+
 ---
 
 ## Task 6 — Il tutorial guidato, generico
