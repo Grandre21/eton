@@ -182,7 +182,7 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 (`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
 all'utente (APERTO). (4) worktree e branch dell'unità 03 rimossi (utente, chat 7 ott: «Sì, toglilo»). (5) unità P
 integrata, sessione rimossa; domande del piano risposte e ratificate. **In corso**: unità **2.2-A**
-(mandato `handoff/04-tabella-calcoli/`), sessione `--bg` — id nella riga qui sotto. Al rientro: resoconto
+(mandato `handoff/04-tabella-calcoli/`), sessione `--bg` **`c2a4a1fa`**, attesa armata su `claude agents --json`. Al rientro: resoconto
 **dentro il worktree**, audit di `CONTRATTI` (sono le firme che B, C e D consumeranno: i mandati
 successivi ricopiano quelle **reali** dal resoconto, non quelle del piano), integrazione, poi mandato di
 2.2-B. Sequenza: A → B → C → D, mai in parallelo.
