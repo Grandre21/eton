@@ -14,18 +14,18 @@
    La resa (Griglia.razor.css) è provvisoria: la rifà la 2.1-bis. *@
 <table @ref="tabella" class="griglia">
     <caption class="solo-lettori">@Didascalia</caption>
-    <thead>
+    <thead data-tutorial="@AncoraIntestazioni">
         <tr>
             @if (colonnaSelezione)
             {
-                <th scope="col" class="griglia-casella">
+                <th scope="col" class="griglia-casella" data-tutorial="@AncoraSelezione">
                     <input type="checkbox" aria-label="Seleziona tutte le righe mostrate"
                            checked="@TutteSelezionate()" disabled="@(chiaviSelezionabili.Count == 0)" @onclick="AlternaTutteAsync" />
                 </th>
             }
             @foreach (var colonna in Colonne)
             {
-                <th scope="col" class="@(Numerica(colonna) ? "griglia-numero" : null)"
+                <th scope="col" class="@(Numerica(colonna) || colonna.Tipo == TipoColonna.Data ? "griglia-numero" : null)"
                     aria-sort="@(OrdinataPer == colonna.Chiave ? (Decrescente ? "descending" : "ascending") : null)">
                     @if (colonna.Ordinabile)
                     {
@@ -92,7 +92,7 @@
                         @foreach (var colonna in Colonne)
                         {
                             var attivaCella = EAttiva(chiave, colonna.Chiave);
-                            <td class="@(Numerica(colonna) ? "griglia-numero dato" : colonna.Tipo == TipoColonna.Data ? "dato" : null) @(attivaCella ? "griglia-attiva" : null)"
+                            <td class="@(Numerica(colonna) ? "griglia-numero dato" : colonna.Tipo == TipoColonna.Data ? "griglia-numero dato" : null) @(attivaCella ? "griglia-attiva" : null)"
                                 tabindex="@(cellaNelTab == (chiave, colonna.Chiave) ? 0 : -1)"
                                 data-riga="@chiave" data-colonna="@colonna.Chiave"
                                 data-tutorial="@(AncoraCella?.Invoke(riga, colonna.Chiave))"
@@ -132,9 +132,9 @@
             .Where(ContaNeiTotali).ToList();
         // Una volta per colonna per render, non una per riga del tfoot.
         var riepiloghi = Colonne.Select(c => c.Aggregazioni == Aggregazione.Nessuna ? null : Riepiloga(c, righeTotali)).ToList();
-        <tfoot>
+        <tfoot data-tutorial="@AncoraRiepilogo">
             <tr class="griglia-insieme">
-                <td colspan="@ColonneTotali">@(Selezione.Count > 0 ? $"Sulla selezione: {righeTotali.Count} righe" : $"Sulle {righeTotali.Count} righe mostrate")</td>
+                <td colspan="@ColonneTotali">@(Selezione.Count > 0 ? $"Sulla selezione: {Testi.Conteggio(righeTotali.Count, "riga", "righe")}" : righeTotali.Count == 1 ? "Sull'unica riga mostrata" : $"Sulle {righeTotali.Count} righe mostrate")</td>
             </tr>
             @foreach (var (flag, etichetta) in ElencoAggregazioni.Where(a => Colonne.Any(c => c.Aggregazioni.HasFlag(a.Flag))))
             {
@@ -198,6 +198,11 @@
 
     /// <summary>L'ancora del tutorial (<c>data-tutorial</c>) di una cella; null = nessuna.</summary>
     [Parameter] public Func<T, string, string?>? AncoraCella { get; set; }
+
+    /// <summary>Le ancore del tutorial (<c>data-tutorial</c>) di testata, casella «tutte» e riepilogo; null = nessuna.</summary>
+    [Parameter] public string? AncoraIntestazioni { get; set; }
+    [Parameter] public string? AncoraSelezione { get; set; }
+    [Parameter] public string? AncoraRiepilogo { get; set; }
 
     private static readonly (Aggregazione Flag, string Etichetta)[] ElencoAggregazioni =
     [
