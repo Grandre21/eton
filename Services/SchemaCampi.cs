@@ -174,7 +174,7 @@ public static class SchemaCampi
         return chiave;
     }
 
-    private static string RiduciAccenti(string testo)
+    internal static string RiduciAccenti(string testo)
     {
         var risultato = new char[testo.Length];
         for (var i = 0; i < testo.Length; i++)
