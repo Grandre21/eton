@@ -351,6 +351,13 @@
             membriNonLetti = true;
         }
 
+        // Un pagante fuori dai membri dello spazio non ha un'opzione nel menù, e il filtro svuoterebbe la tabella senza mostrarsi.
+        // Dopo la rete la pagina potrebbe non essere più a schermo: l'URL si riallinea alla prossima scelta dell'utente.
+        if (!membriNonLetti && vista.Filtri.Pagante is not null && !membri.Any(m => m.UtenteId == vista.Filtri.Pagante))
+        {
+            vista = vista with { Filtri = vista.Filtri with { Pagante = null } };
+        }
+
         Ricalcola();
     }
 
