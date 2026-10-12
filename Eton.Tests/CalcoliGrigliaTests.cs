@@ -124,6 +124,14 @@ public class CalcoliGrigliaTests
     }
 
     [Fact]
+    public void Un_testo_che_comincia_con_Tab_o_CR_riceve_l_apostrofo()
+    {
+        var csv = CalcoliGriglia.Csv([Nome], new[] { R("\t=SOMMA(A1)"), R("\r=SOMMA(A1)") });
+
+        Assert.Equal("\uFEFFNome\r\n'\t=SOMMA(A1)\r\n\"'\r=SOMMA(A1)\"\r\n", csv);
+    }
+
+    [Fact]
     public void Shift_clic_seleziona_l_intervallo_in_entrambe_le_direzioni()
     {
         string[] chiavi = ["a", "b", "c", "d", "e"];

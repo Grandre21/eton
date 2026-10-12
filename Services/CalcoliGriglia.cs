@@ -77,6 +77,7 @@ public static class CalcoliGriglia
     }
 
     // Un testo scritto da un altro membro che comincia con = + - @ è una formula, per Excel: l'apostrofo
+    // neutralizza anche Tab e CR iniziali, anch'essi caratteri di innesco di formula nell'iniezione CSV, e
     // la rende testo. Denaro, numero e data non si toccano, li formatta il codice. L'apostrofo va prima
     // delle virgolette, sta dentro. Denaro e numero escono come nel campo modificabile (valore esatto,
     // senza migliaia né arrotondamenti); la data come in cella.
@@ -86,7 +87,7 @@ public static class CalcoliGriglia
             ? TestoModificabile(tipo, valore)
             : TestoCella(tipo, valore);
 
-        if ((tipo is TipoColonna.Testo or TipoColonna.Selezione) && testo.Length > 0 && testo[0] is '=' or '+' or '-' or '@')
+        if ((tipo is TipoColonna.Testo or TipoColonna.Selezione) && testo.Length > 0 && testo[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
             testo = "'" + testo;
 
         return Racchiudi(testo);

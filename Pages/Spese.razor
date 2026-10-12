@@ -23,7 +23,7 @@
 }
 else if (Spazi.Attivo is null && errore is not null)
 {
-    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" />
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" Disabilitato="@rileggoMese" />
 }
 else if (Spazi.Attivo is null)
 {
