@@ -2713,3 +2713,9 @@ button.pastiglia {
 .campi-spesa.campi-ricorrente { display: flex; margin-bottom: var(--s4); }
 .campi-ricorrente > p.spiega,
 .campi-ricorrente > .errore-campo { margin: calc(var(--s2) - var(--s4)) 0 0; }
+
+/* Il contorno del tutorial (Shared/Tutorial.razor). Sta qui e non nel CSS isolato del componente:
+   l'elemento marcato sta FUORI dal componente, e il CSS isolato di Blazor non lo raggiunge.
+   Attributo e non classe perché Blazor riscrive l'attributo class delle ancore dinamiche.
+   Resa provvisoria, la rifà la 2.1-bis. */
+[data-tutorial-evidenziato] { outline: 3px solid var(--accento); outline-offset: 4px; }

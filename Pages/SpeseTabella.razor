@@ -10,6 +10,11 @@
 <PageTitle>Spese in tabella — Eton</PageTitle>
 
 <TestataPagina Titolo="Spese in tabella">
+    <Azione>
+        <div class="tabella-larga">
+            <Tutorial Chiave="spese-tabella" Passi="PassiTutorial" />
+        </div>
+    </Azione>
     <Aiuto>
         <p>Ogni riga è una spesa. «registrata» è una spesa vera; «prevista» è una ricorrente già dovuta che diventa una spesa vera quando chi la paga apre Eton; «in arrivo» è una ricorrente che deve ancora cadere.</p>
         <p>Le previste contano nel totale, perché la spesa c'è già; quelle in arrivo no, perché non sono ancora dovute.</p>
@@ -225,6 +230,29 @@
     private static readonly (StatoSpesa Stato, string Testo)[] Stati =
     [
         (StatoSpesa.Registrata, "registrata"), (StatoSpesa.Prevista, "prevista"), (StatoSpesa.InArrivo, "in arrivo")
+    ];
+
+    // Ancore: gli attributi data-tutorial di questa pagina e di Shared/Griglia.razor.
+    private static readonly IReadOnlyList<Tutorial.PassoTutorial> PassiTutorial =
+    [
+        new("periodo", "Il periodo", "Scegli quali mesi mostrare. «Dal … al …» apre due date a scelta.",
+            "Il periodo compare quando le spese dello spazio sono state lette."),
+        new("filtri", "I filtri", "Categorie, pagante, testo e stato restringono le righe mostrate. Tutto finisce nell'indirizzo della pagina: salvalo o condividilo per ritrovare la stessa vista.",
+            "I filtri compaiono quando le spese dello spazio sono state lette."),
+        new("intestazioni", "L'ordinamento", "Clicca un'intestazione per ordinare per quella colonna; cliccala di nuovo per invertire l'ordine.",
+            "Le intestazioni compaiono quando la tabella ha delle colonne da mostrare."),
+        new("cella-modificabile", "Modificare una cella", "Questa riga è tua: muoviti con le frecce, premi Invio o F2 per modificare, oppure inizia a scrivere. Invio salva e scende, Tab salva e va a destra, Esc annulla.",
+            "Nessuna riga che puoi modificare è in vista: in questo periodo non ce ne sono, oppure stanno in un gruppo chiuso. Si modificano le spese registrate che hai pagato tu, o tutte se lo spazio è tuo."),
+        new("riga-sola-lettura", "Una riga in sola lettura", "Questa riga non si modifica: passaci sopra per leggere il motivo.",
+            "Nessuna riga in sola lettura è in vista: in questo periodo non ce ne sono, oppure stanno in un gruppo chiuso. Lo sono le previste, le in arrivo e le spese segnate da altri."),
+        new("selezione", "La selezione", "Con le caselle selezioni le righe; questa in alto le seleziona tutte. Maiusc+clic seleziona un intervallo.",
+            "Le caselle compaiono quando ci sono righe da selezionare."),
+        new("azioni", "Le azioni sulle righe", "Con almeno una riga selezionata, qui cambi la categoria a tutte insieme o le elimini.",
+            "Le azioni compaiono quando le spese dello spazio sono state lette."),
+        new("riepilogo", "Il riepilogo", "In fondo, totale, media, minimo e massimo delle righe mostrate, o della selezione se ce n'è una. Le previste contano, perché la spesa c'è già; le in arrivo no, perché non sono ancora dovute.",
+            "Il riepilogo compare in fondo quando la tabella ha delle righe."),
+        new("esporta", "L'esportazione", "Scarica le righe mostrate, o la selezione, in un file che si apre con Excel.",
+            "L'esportazione compare quando le spese dello spazio sono state lette.")
     ];
 
     private VistaTabella vista = VistaTabella.Predefinita;

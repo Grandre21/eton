@@ -1,0 +1,53 @@
+/* Resa provvisoria del tutorial: solo token di app.css. La rifà la 2.1-bis. */
+.tutorial-riquadro {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    z-index: 90;
+    width: min(90vw, 24rem);
+    padding: var(--s4);
+    background: var(--superficie-alta);
+    border: 1px solid var(--bordo-forte);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+    color: var(--testo);
+    text-align: left;
+    outline: none;
+}
+
+.tutorial-riquadro.centrato {
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+}
+
+.tutorial-riquadro h2 {
+    font-size: var(--t-lg);
+    font-weight: 600;
+    margin: 0 0 var(--s2);
+}
+
+.tutorial-riquadro p {
+    font-size: var(--t-md);
+    line-height: 1.5;
+    margin: 0 0 var(--s3);
+}
+
+.tutorial-riquadro .tutorial-assente {
+    font-size: var(--t-sm);
+    color: var(--testo-tenue);
+}
+
+.tutorial-comandi {
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.tutorial-passo {
+    font-size: var(--t-sm);
+    color: var(--testo-tenue);
+    font-variant-numeric: tabular-nums;
+    margin-right: auto;
+}
