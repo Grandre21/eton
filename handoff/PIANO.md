@@ -122,7 +122,9 @@ confine naturale fra un capo e il successivo.
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
 - **2026-10-12 — Tre decisioni dell'unità 2.2-D, da ratificare** (raccomandazione dell'unità: tenerle;
-  non ancora passate da `tech-advisor`). Capo: la D **non si integra** finché non sono ratificate, come
+  **passate da `tech-advisor` il 12 ott: ratificare tutte e tre, nessun dissenso**; diff pubblicabile una
+  volta ratificate; integrare la D **prima** della E; la decisione del capo sulla E senza D regge, nessun
+  rischio di fusione). Capo: la D **non si integra** finché non sono ratificate, come
   la 2.2-C; la (3) è visibile all'utente.
   1. il contorno dell'elemento evidenziato è l'attributo `data-tutorial-evidenziato`, non la classe del
      piano: Blazor riscrive `class` sulle ancore dinamiche e lo cancellava;
@@ -219,7 +221,7 @@ confine naturale fra un capo e il successivo.
 | **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità, mandato in `handoff/05-tabella-griglia/` | A | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto (da ricopiare in C); due decisioni da ratificare; `live-testing`/`ui-critic` rinviati a C per mandato; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
 | **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **FATTO** — quattro decisioni ratificate il 12 ott, fusa su `main` il 12 ott (`git merge --no-ff worktree-unita-2.2-C`) e pubblicata; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
 | **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | **PARZIALE** — l'unità ha chiuso `FATTO` il 12 ott (Codex autore, `live-testing` verde al secondo giro, `ui-critic` 1 rilievo `TIPO: progetto`, nessuna spesa di prova creata), ma **non è integrata**: commit `9e61370` nel branch `worktree-unita-2.2-D-tutorial`, resoconto in `.claude/worktrees/unita-2.2-D-tutorial/handoff/07-tabella-tutorial/resoconto.md`. Attende la ratifica di tre decisioni (DECISIONI), come la 2.2-C |
-| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità, mandato in `handoff/08-correttiva-lettura/`; worktree da `origin/main` **senza** la D (file disgiunti) | D (solo come ordine; nessun file in comune) | IN CORSO |
+| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità, mandato in `handoff/08-correttiva-lettura/`; worktree da `origin/main` **senza** la D (file disgiunti) | D (solo come ordine; nessun file in comune) | **PARZIALE** — codice fatto (resoconto: build 0/0, 390 test, review adjudicata, collaudo verde; registro **non riprodotto** con tasti reali → chiuso come artefatto). `PARZIALE` perché restano in produzione 3 spese «PROVA COLLAUDO R1/R2/R3» (12/10/2026, 1,00 € l'una, spazio «Personale»): l'eliminazione multipla dell'agente è stata negata dai permessi. **Non integrata**: il `git merge` del capo su `main` è stato negato dal classificatore il 12 ott («Modify Shared Resources»), non aggirato. Commit `186832a`, branch `worktree-unita-2.2-E`, resoconto in `.claude/worktrees/unita-2.2-E/handoff/08-correttiva-lettura/resoconto.md` |
 
 La partizione delle unità di codice si decide **dopo** R, con un `Explore` di ricognizione: oggi i file
 che la 2.2 tocca non sono noti, e la collisione probabile è `Pages/Spese.razor`, che la 2.1 e la 2.2
@@ -233,7 +235,18 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-**12 ottobre, sera — aggiornamento.** La 2.2-D è rientrata `FATTO` ma resta nel suo branch fino alla
+**12 ottobre, notte — tutto fermo sull'utente.** D ed E rientrate, nessuna integrata. Al rientro, **primo
+popup**: (1) ratifica delle tre decisioni della D (con la posizione di `tech-advisor`: tenerle) e della
+decisione del capo sulla E senza D; (2) via libera a fondere D poi E su `main` e pubblicare (il merge della E
+è stato negato dal classificatore: serve il sì dell'utente in chat, o che lo esegua lui); (3) le 3 spese
+«PROVA COLLAUDO R1/R2/R3» da 1 € create dalla E e le 3 vecchie di collaudo (APERTO): le elimina lui dalla
+tabella, o autorizza un agente; (4) tetto alla lettura a blocchi (T1 della E: un membro ostile con 100.000
+spese costringe gli altri a 100 letture): tetto nel client, quota nel database, o niente — prima a
+`tech-advisor`; (5) fuoco che dopo «Segna» va su `body` nel registro (chi digita subito perde i tasti):
+correggerlo ora o alla 2.1-bis. Poi build/test (atteso 390), push, `claude rm` di `8af5150e` e `4a32bf37`,
+archiviazione di `handoff/CHIUSURA.md` del 20 set con prefisso di data, sessione di chiusura.
+
+**12 ottobre, sera — aggiornamento (superato dal paragrafo qui sopra).** La 2.2-D è rientrata `FATTO` ma resta nel suo branch fino alla
 ratifica delle sue tre decisioni (DECISIONI). **In corso: la 2.2-E** (mandato `handoff/08-correttiva-lettura/`,
 Codex autore), da `origin/main` senza la D. Al rientro della E: audit, fusione e push della **sola E**.
 Al rientro dell'utente, **primo popup**: le tre decisioni della D (passate prima da `tech-advisor`), la
@@ -304,6 +317,11 @@ task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
   (04/09/2026, 1.284,50), «PROVA AGENTE» (20/08/2026, 12,50). Falsano i totali dell'anno. Eliminarle è
   un'azione su dati di produzione non creati in sessione: **si chiede**.
 
+- **Per la 2.1-bis, dalla 2.2-D** (`tech-advisor`, 12 ott): un clic su «Tutorial» prima che il modulo JS sia
+  caricato lascia il riquadro invisibile fino al clic successivo; irrobustimento: in `OnAfterRenderAsync`
+  chiamare `mostra` ogni volta che il tutorial è aperto e il modulo è caricato. Più i `FUORI SCOPE` del
+  resoconto 07 (contrasto della pastiglia «nuovo» 4,45:1; riquadro che non segue lo scorrimento; pulsante
+  lontano dal «?»).
 - **Per la 2.1-bis, dalla 2.2-C** (`FUORI SCOPE` del suo resoconto): densità (controlli 48px sopra righe
   38px, barra strumenti 275px); bordi dei controlli a 1,21:1, sotto il 3:1 WCAG, in tutti i moduli;
   transizioni di 160ms; colonna Importo che si allarga in modifica; casella «tutte» senza stato
