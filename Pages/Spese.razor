@@ -62,7 +62,7 @@ else
             <label class="campo">
                 <span class="etichetta-campo">Importo</span>
                 <input class="importo-spesa dato" type="text" inputmode="decimal" autofocus
-                       placeholder="0,00" @bind="nuovoImporto" @bind:event="oninput" disabled="@occupato" />
+                       placeholder="0,00" @bind="nuovoImporto" @bind:event="oninput" disabled="@occupato" @ref="campoImporto" />
             </label>
             @if (Testi.MessaggioImporto(Denaro.Verifica(nuovoImporto, out _)) is string erroreImporto)
             {
@@ -244,6 +244,11 @@ else
     private Guid? mioId;
 
     private string nuovoImporto = "";
+    // Il fuoco si rimette dopo il render, non in Segna(): durante il salvataggio il campo
+    // è disabilitato e FocusAsync non fa nulla. Senza, il fuoco finisce su body e i tasti
+    // della spesa successiva si perdono.
+    private ElementReference campoImporto;
+    private bool rimettiFuocoImporto;
     private string nuovaDescrizione = "";
     private string nuovaCategoria = CategorieSpesa.Elenco[0];
 
@@ -284,6 +289,15 @@ else
     {
         if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
         await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (rimettiFuocoImporto && !occupato)
+        {
+            rimettiFuocoImporto = false;
+            await campoImporto.FocusAsync();
+        }
     }
 
     // Come SpesaEdit.Crea: pagante letto con AuthState.GetUserIdAsync() e Guid.TryParse, stesso
@@ -334,6 +348,7 @@ else
             // riazzerarle costringerebbe a rimetterle ogni volta.
             nuovoImporto = "";
             nuovaDescrizione = "";
+            rimettiFuocoImporto = true;
 
             await Carica();
         }
