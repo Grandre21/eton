@@ -121,7 +121,14 @@ confine naturale fra un capo e il successivo.
      server, non la riga intera come l'editor singolo;
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
-- **2026-10-12 — Tre decisioni dell'unità 2.2-D, da ratificare** (raccomandazione dell'unità: tenerle;
+- **2026-10-12 utente (chat)** — popup con le posizioni di `tech-advisor`: **«Ratifica e pubblica
+  (consigliata)»** → le tre decisioni della 2.2-D e la decisione del capo sulla E senza D sono **ratificate
+  2026-10-12**, ed è il via libera a fondere D poi E su `main` e pubblicare. Spese di prova (le 3 «PROVA
+  COLLAUDO R1/R2/R3» e le 3 vecchie «COLLAUDO GIRO B», «COLLAUDO 4 SET», «PROVA AGENTE»): **«Autorizzo un
+  agente»** — tutte e sei e solo quelle, dalla tabella; se i permessi lo bloccano, tocca all'utente. Tetto
+  alla lettura: **«Nessun limite (consigliata)»**; l'utente legge «Max rows» in Dashboard quando può. Fuoco
+  dopo «Segna»: **«Correggi ora (consigliata)»** → unità **2.2-F**, Codex autore, dopo la pubblicazione di D ed E.
+- **2026-10-12 — Tre decisioni dell'unità 2.2-D, ratificate 2026-10-12** (raccomandazione dell'unità: tenerle;
   **passate da `tech-advisor` il 12 ott: ratificare tutte e tre, nessun dissenso**; diff pubblicabile una
   volta ratificate; integrare la D **prima** della E; la decisione del capo sulla E senza D regge, nessun
   rischio di fusione). Capo: la D **non si integra** finché non sono ratificate, come
@@ -243,7 +250,11 @@ decisione del capo sulla E senza D; (2) via libera a fondere D poi E su `main` e
 tabella, o autorizza un agente; (4) tetto alla lettura a blocchi (T1 della E: un membro ostile con 100.000
 spese costringe gli altri a 100 letture): tetto nel client, quota nel database, o niente — prima a
 `tech-advisor`; (5) fuoco che dopo «Segna» va su `body` nel registro (chi digita subito perde i tasti):
-correggerlo ora o alla 2.1-bis. Poi build/test (atteso 390), push, `claude rm` di `8af5150e` e `4a32bf37`,
+correggerlo ora o alla 2.1-bis. **`tech-advisor` (12 ott)**: T1 → nessun tetto (il danno di un membro ostile
+è altrove, e un tetto rimette il troncamento); il residuo `max_rows` lo chiude l'utente leggendo «Max rows»
+nella Dashboard Supabase (Project Settings → API, percorso a memoria); facoltativo un tetto ai *giri* contro
+un ciclo infinito. F → correggerlo **ora** in un'unità piccola a sé (perdita di input nel percorso più usato;
+il fuoco va rimesso dopo il render, quando il campo non è più `disabled`). Poi build/test (atteso 390), push, `claude rm` di `8af5150e` e `4a32bf37`,
 archiviazione di `handoff/CHIUSURA.md` del 20 set con prefisso di data, sessione di chiusura.
 
 **12 ottobre, sera — aggiornamento (superato dal paragrafo qui sopra).** La 2.2-D è rientrata `FATTO` ma resta nel suo branch fino alla
