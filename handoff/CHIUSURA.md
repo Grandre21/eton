@@ -1,5 +1,12 @@
 # Chiusura del goal «2.1 e 2.2» (22 settembre → 12 ottobre 2026)
 
+> **Nota del capo, 12 ottobre, dopo la fusione.** (1) Le sei spese di prova (FUORI SCOPE, punto 1) sono state
+> **eliminate** dalla sessione interattiva con l'autorizzazione dell'utente in chat, prima che questo rapporto
+> rientrasse («5 spese eliminate.» + «1 spesa eliminata.»): 2.2-E e 2.2-F sono quindi **FATTO**, e le loro
+> cartelle sono state archiviate in `storico/handoff/` dal capo. (2) R1 (righe ripetute nella lettura
+> paginata) **non è corretto**: rinviato come primo candidato del prossimo goal, decisione del capo da
+> ratificare (`PIANO.md`, DECISIONI).
+
 Sessione di chiusura del 12 ottobre 2026, in background, nel worktree `.claude/worktrees/chiusura-2.1-2.2`,
 branch `worktree-chiusura-2.1-2.2`. **Non pushata su `main`** (pubblicherebbe in produzione): integra il capo.
 
