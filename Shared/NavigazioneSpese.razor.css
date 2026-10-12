@@ -1,0 +1,7 @@
+/* La voce «Tabella» solo su schermo largo: sotto i 40rem la pagina mostra solo un avviso. */
+.sotto-nav a.solo-largo { display: none; }
+.sotto-nav a.solo-largo.attiva { display: flex; }
+
+@media (min-width: 40rem) {
+    .sotto-nav a.solo-largo { display: flex; }
+}

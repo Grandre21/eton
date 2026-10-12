@@ -3,25 +3,31 @@
    voce per "Tabella" o "Ricorrenti" senza affollare uno schermo stretto. La sotto-navigazione
    qui è la soluzione scelta in docs/superpowers/specs/2026-09-22-spese-tabella-design.md §2.4. *@
 <nav class="sotto-nav" aria-label="Sezioni delle spese">
-    @foreach (var v in Voci.Where(v => v.Visibile))
+    @foreach (var v in Voci)
     {
         var attiva = v.Rotta == Attiva;
-        <a href="@v.Rotta" class="@(attiva ? "attiva" : null)" aria-current="@(attiva ? "page" : null)">@v.Etichetta</a>
+        var classe = (attiva, v.SoloLargo) switch
+        {
+            (true, true) => "attiva solo-largo",
+            (true, false) => "attiva",
+            (false, true) => "solo-largo",
+            _ => null
+        };
+        <a href="@v.Rotta" class="@classe" aria-current="@(attiva ? "page" : null)">@v.Etichetta</a>
     }
 </nav>
 
 @code {
-    /// <summary>La rotta della pagina corrente: "expenses" oppure "expenses/recurring".</summary>
+    /// <summary>La rotta della pagina corrente: "expenses", "expenses/table" oppure "expenses/recurring".</summary>
     [Parameter, EditorRequired] public string Attiva { get; set; } = "";
 
-    private sealed record Voce(string Etichetta, string Rotta, bool Visibile);
+    private sealed record Voce(string Etichetta, string Rotta, bool SoloLargo);
 
     private static readonly Voce[] Voci =
     [
-        new("Registro", "expenses", true),
-        // Non si mostra finché la pagina /expenses/table non esiste (fase 2.2): quel giorno
-        // si accende cambiando false in true.
-        new("Tabella", "expenses/table", false),
-        new("Ricorrenti", "expenses/recurring", true),
+        new("Registro", "expenses", false),
+        // La tabella è pensata per uno schermo largo: sotto i 40rem la voce non si mostra; la rotta resta raggiungibile e lì mostra un avviso col link al registro (decisione dell'utente del 7 ottobre 2026).
+        new("Tabella", "expenses/table", true),
+        new("Ricorrenti", "expenses/recurring", false),
     ];
 }

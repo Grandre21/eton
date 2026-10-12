@@ -1,0 +1,64 @@
+/* Resa provvisoria della pagina /expenses/table: solo token di app.css e controlli già esistenti.
+   La rifà la 2.1-bis. */
+
+/* Schermo stretto: la tabella non c'è e la pagina rimanda al registro. Mobile-first come
+   wwwroot/css/app.css (sezione «schermo largo»): la base è il telefono. */
+.tabella-larga { display: none; }
+
+@media (min-width: 40rem) {
+    .tabella-larga { display: block; }
+    .tabella-stretta { display: none; }
+}
+
+.strumenti {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding: var(--s3);
+    margin-bottom: var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--bordo);
+    border-radius: var(--raggio);
+}
+
+.strumenti-riga {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--s2);
+}
+
+fieldset.strumenti-riga {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* Il margine inferiore di app.css servirebbe a un modulo, non a una riga di strumenti. */
+.scelta-categoria { margin: 0; }
+
+.esporta { margin-left: auto; }
+
+/* La barra c'è sempre perché comparendo spostava la tabella sotto il cursore; l'accento resta solo con una selezione. */
+.azioni-massa {
+    min-height: calc(var(--tocco) + 2 * var(--s2) + 2px);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    margin-bottom: var(--s4);
+    background: var(--accento-tenue);
+    border: 1px solid var(--accento);
+    border-radius: var(--raggio);
+}
+
+.azioni-massa.vuota {
+    background: transparent;
+    border-color: var(--bordo);
+    color: var(--testo-tenue);
+    font-size: var(--t-sm);
+}
+
+.azioni-massa.vuota p { margin: 0; }

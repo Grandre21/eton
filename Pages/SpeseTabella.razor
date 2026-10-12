@@ -1,0 +1,620 @@
+@page "/expenses/table"
+@using System.Globalization
+@using Eton.Models
+@inherits PaginaRegistro
+@inject ExpenseRepository Repository
+@inject SpaceRepository SpaziRepository
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Spese in tabella — Eton</PageTitle>
+
+<TestataPagina Titolo="Spese in tabella">
+    <Aiuto>
+        <p>Ogni riga è una spesa. «registrata» è una spesa vera; «prevista» è una ricorrente già dovuta che diventa una spesa vera quando chi la paga apre Eton; «in arrivo» è una ricorrente che deve ancora cadere.</p>
+        <p>Le previste contano nel totale, perché la spesa c'è già; quelle in arrivo no, perché non sono ancora dovute.</p>
+        <p>Una riga si modifica solo se l'hai pagata tu o se lo spazio è tuo. Previste e in arrivo non si modificano e non si selezionano.</p>
+        <p>I tasti:</p>
+        <ul>
+            <li>frecce: spostano la cella attiva</li>
+            <li>Invio o F2: modificano la cella</li>
+            <li>un carattere: modifica sostituendo il contenuto</li>
+            <li>Spazio: seleziona la riga</li>
+            <li>in modifica, Invio salva e scende, Tab salva e va a destra, Maiusc+Tab a sinistra</li>
+            <li>Esc: annulla la modifica</li>
+            <li>Maiusc+clic sulle caselle: seleziona un intervallo</li>
+        </ul>
+    </Aiuto>
+</TestataPagina>
+
+<NavigazioneSpese Attiva="expenses/table" />
+
+<div class="tabella-stretta vuoto">
+    <p>La tabella è pensata per uno schermo largo. Per segnare una spesa usa il registro.</p>
+    <a class="btn primario" href="expenses">Vai al registro</a>
+</div>
+
+<div class="tabella-larga">
+    @if (!caricato)
+    {
+        <Scheletro Righe="4" />
+    }
+    else if (Spazi.Attivo is null && errore is not null)
+    {
+        <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" Disabilitato="@rileggo" />
+    }
+    else if (Spazi.Attivo is null)
+    {
+        <div class="vuoto">
+            <p>Serve uno spazio prima di poter vedere le spese in tabella.</p>
+            <a class="btn primario" href="spaces">Vai agli spazi</a>
+        </div>
+    }
+    else
+    {
+        @if (errore is not null)
+        {
+            <div class="errore" role="alert">@errore</div>
+        }
+
+        <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+
+        <div class="strumenti">
+            <div class="strumenti-riga">
+                <div data-tutorial="periodo" class="strumenti-riga">
+                    <label class="campo">
+                        <span class="etichetta-campo">Periodo</span>
+                        <select value="@vista.Periodo.ToString()" @onchange="CambiaPeriodo" disabled="@rileggo">
+                            <option value="@nameof(TipoPeriodo.QuestoMese)">Questo mese</option>
+                            <option value="@nameof(TipoPeriodo.MeseScorso)">Mese scorso</option>
+                            <option value="@nameof(TipoPeriodo.UltimiTreMesi)">Ultimi 3 mesi</option>
+                            <option value="@nameof(TipoPeriodo.QuestAnno)">Quest'anno</option>
+                            <option value="@nameof(TipoPeriodo.Libero)">Dal … al …</option>
+                        </select>
+                    </label>
+                    @if (vista.Periodo == TipoPeriodo.Libero)
+                    {
+                        <label class="campo">
+                            <span class="etichetta-campo">Dal</span>
+                            <input type="date" class="dato" value="@TestoData(daScelta)" @onchange="e => CambiaData(true, e)" disabled="@rileggo" />
+                        </label>
+                        <label class="campo">
+                            <span class="etichetta-campo">Al</span>
+                            <input type="date" class="dato" value="@TestoData(aScelta)" @onchange="e => CambiaData(false, e)" disabled="@rileggo" />
+                        </label>
+                        @if (!IntervalloValido)
+                        {
+                            <p class="errore-campo" role="status">Scegli due date dal 2000 a non oltre un anno da oggi, con «Dal» non dopo «Al».</p>
+                        }
+                    }
+                </div>
+
+                <label class="campo">
+                    <span class="etichetta-campo">Raggruppa per</span>
+                    <select value="@(vista.RaggruppaPer ?? "")" @onchange="CambiaRaggruppa">
+                        <option value="">Nessuno</option>
+                        <option value="@TabellaSpese.Gruppi.Categoria">Categoria</option>
+                        @if (Condiviso)
+                        {
+                            <option value="@TabellaSpese.Gruppi.Pagante">Pagante</option>
+                        }
+                        <option value="@TabellaSpese.Gruppi.Mese">Mese</option>
+                    </select>
+                </label>
+
+                <div class="esporta">
+                    <button type="button" class="btn compatto" data-tutorial="esporta" @onclick="Esporta"
+                            disabled="@(rileggo || !gruppi.Any(g => g.Righe.Count > 0))">@(selezione.Count > 0 ? "Esporta la selezione" : "Esporta le righe mostrate")</button>
+                </div>
+            </div>
+
+            <fieldset class="strumenti-riga" data-tutorial="filtri">
+                <legend class="solo-lettori">Filtri</legend>
+                <div class="scelta-categoria" role="group" aria-label="Categorie">
+                    @foreach (var c in CategorieSpesa.Elenco)
+                    {
+                        var accesa = vista.Filtri.Categorie.Contains(c);
+                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@accesa" @onclick="() => AlternaCategoria(c)">@c</button>
+                    }
+                </div>
+
+                @if (Condiviso)
+                {
+                    <label class="campo">
+                        <span class="etichetta-campo">Pagante</span>
+                        <select value="@(vista.Filtri.Pagante?.ToString() ?? "")" @onchange="CambiaPagante">
+                            <option value="">Tutti</option>
+                            @foreach (var m in membri)
+                            {
+                                <option value="@m.UtenteId">@m.Nome</option>
+                            }
+                        </select>
+                    </label>
+                }
+
+                <label class="campo">
+                    <span class="etichetta-campo solo-lettori">Testo</span>
+                    <input type="text" placeholder="Cerca nella descrizione" @bind:get="vista.Filtri.Testo" @bind:set="CambiaTesto" @bind:event="oninput" />
+                </label>
+
+                <div class="scelta-categoria" role="group" aria-label="Stato">
+                    @foreach (var (stato, testo) in Stati)
+                    {
+                        var accesa = vista.Filtri.Stati.Contains(stato);
+                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@accesa" @onclick="() => AlternaStato(stato)">@testo</button>
+                    }
+                </div>
+            </fieldset>
+        </div>
+
+        @if (esitoMassa is not null)
+        {
+            <p role="status">@esitoMassa</p>
+        }
+
+        @if (avvisoPagina is not null)
+        {
+            <p role="status">@avvisoPagina</p>
+        }
+
+        @if (!datiNonLetti)
+        {
+            var impronta = string.Join(",", selezione.Order(StringComparer.Ordinal));
+            <div class="azioni-massa @(selezione.Count == 0 ? "vuota" : "")" data-tutorial="azioni" role="region" aria-label="Azioni sulle righe selezionate">
+                @if (selezione.Count == 0)
+                {
+                    <p>Seleziona una o più righe con le caselle per cambiarne la categoria o eliminarle.</p>
+                }
+                else
+                {
+                    <span><span class="dato">@selezione.Count</span> @(selezione.Count == 1 ? "selezionata" : "selezionate")</span>
+                    <label class="campo">
+                        <span class="etichetta-campo solo-lettori">Nuova categoria</span>
+                        <select @bind="categoriaMassa" disabled="@rileggo">
+                            @foreach (var c in CategorieSpesa.Elenco)
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </select>
+                    </label>
+                    <button type="button" class="btn compatto" @onclick="CambiaCategoria" disabled="@rileggo">Cambia categoria</button>
+                    @* Chiave = impronta della selezione: una conferma armata su 3 righe non deve sopravvivere a un cambio di selezione. *@
+                    <ConfermaAzione Chiave="@impronta" Etichetta="Elimina"
+                                    EtichettaConferma="@($"Sì, elimina {Testi.Conteggio(selezione.Count, "spesa", "spese")}")"
+                                    Occupato="@rileggo" OnConferma="EliminaSelezionate" />
+                }
+            </div>
+        }
+
+        @if (rileggo)
+        {
+            <Scheletro Righe="4" />
+        }
+        else if (datiNonLetti)
+        {
+            <div class="vuoto">
+                <p>Non sono riuscito a leggere le spese di questo spazio.</p>
+                <button class="btn" @onclick="Riprova" disabled="@rileggo">Riprova</button>
+            </div>
+        }
+        else
+        {
+            @if (!gruppi.Any(g => g.Righe.Count > 0))
+            {
+                <p class="testo-tenue" role="status">Nessuna spesa in questo periodo con questi filtri.</p>
+            }
+            <Griglia T="RigaSpesa" @ref="griglia"
+                     Colonne="colonne" Gruppi="gruppi"
+                     ChiaveRiga="@(r => r.Chiave)"
+                     Didascalia="@($"Spese di {Spazi.Attivo.Name} dal {Testi.DataSola(da)} al {Testi.DataSola(a)}")"
+                     ContaNeiTotali="@(r => r.ContaNeiTotali)"
+                     Selezionabile="@(r => r.Stato == StatoSpesa.Registrata)"
+                     @bind-Selezione="selezione"
+                     OrdinataPer="@vista.OrdinaPer" Decrescente="@vista.Decrescente" OnOrdina="Ordina"
+                     SalvaCella="SalvaCella"
+                     MotivoSolaLettura="MotivoSolaLettura"
+                     SottoRiga="SottoRiga"
+                     NotaRiepilogo="@NotaPreviste()"
+                     AncoraCella="AncoraCella"
+                     AncoraIntestazioni="intestazioni" AncoraSelezione="selezione" AncoraRiepilogo="riepilogo" />
+        }
+    }
+</div>
+
+@code {
+    private static readonly (StatoSpesa Stato, string Testo)[] Stati =
+    [
+        (StatoSpesa.Registrata, "registrata"), (StatoSpesa.Prevista, "prevista"), (StatoSpesa.InArrivo, "in arrivo")
+    ];
+
+    private VistaTabella vista = VistaTabella.Predefinita;
+    private DateTime da, a;
+    // Le date che gli input mostrano: la vista le prende solo quando l'intervallo scelto è valido (v. CambiaData).
+    private DateTime? daScelta, aScelta;
+    private IReadOnlyList<RigaSpesa> righe = [];
+    private IReadOnlyList<Membro> membri = [];
+    private IReadOnlyList<ColonnaGriglia<RigaSpesa>> colonne = [];
+    private IReadOnlyList<Gruppo<RigaSpesa>> gruppi = [];
+    private IReadOnlySet<string> selezione = new HashSet<string>();
+    private Griglia<RigaSpesa>? griglia;
+    private Guid? mioId;
+
+    // Un conflitto aperto per riga, per chiave: la versione del server e la modifica che l'ha provocato.
+    private readonly Dictionary<string, (Expense Server, ModificaCella<RigaSpesa> Modifica)> conflitti = [];
+    private bool salvoConflitto;
+    private string? avvisoPagina;
+    private string? esitoMassa;
+    private string categoriaMassa = CategorieSpesa.Elenco[0];
+
+    // Le due righe che il tutorial indica (la prima modificabile e la prima di sola lettura), nell'ordine di resa.
+    private string? chiavePrimaModificabile;
+    private string? chiavePrimaSolaLettura;
+
+    private bool rileggo;
+    private bool membriNonLetti;
+
+    private bool Condiviso => Spazi.Attivo is { IsPersonal: false };
+
+    private bool IntervalloValido => TabellaSpese.DataRagionevole(daScelta, DateTime.Today)
+        && TabellaSpese.DataRagionevole(aScelta, DateTime.Today) && daScelta <= aScelta;
+
+    protected override string NomePlurale => "le spese";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
+        // L'URL si legge solo qui: da dopo è la pagina a scriverlo (ScriviUrl).
+        vista = VistaTabella.DaQuery(new Uri(Navigation.Uri).Query);
+        (daScelta, aScelta) = (vista.Da, vista.A);
+        await base.OnInitializedAsync();
+    }
+
+    // Stesse regole di Pages/Spese.razor, v. il commento sopra ScartaCambioSpazio lì: i percorsi che
+    // portano a Carica() (Riprova, cambio di periodo, azioni di massa) alzano rileggo come ultima
+    // istruzione sincrona prima del primo await, e ogni controllo che li avvia è disabilitato quando è vero.
+    protected override bool ScartaCambioSpazio() => rileggo;
+
+    protected override void PrimaDiRicaricare()
+    {
+        esitoMassa = null;
+        avvisoPagina = null;
+    }
+
+    protected override async Task Leggi(Space attivo)
+    {
+        righe = [];
+        membri = [];
+        membriNonLetti = false;
+        conflitti.Clear();
+
+        // In uno spazio personale quei controlli non si mostrano, e un filtro invisibile non si potrebbe togliere.
+        if (attivo.IsPersonal && (vista.Filtri.Pagante is not null || vista.RaggruppaPer == TabellaSpese.Gruppi.Pagante))
+        {
+            vista = vista with
+            {
+                Filtri = vista.Filtri with { Pagante = null },
+                RaggruppaPer = vista.RaggruppaPer == TabellaSpese.Gruppi.Pagante ? null : vista.RaggruppaPer
+            };
+            ScriviUrl();
+        }
+
+        (da, a) = TabellaSpese.Intervallo(vista.Periodo, DateTime.Today, vista.Da, vista.A);
+
+        try
+        {
+            righe = TabellaSpese.Righe(await Repository.ElencaConPrevisteAsync(attivo.Id, da, a));
+        }
+        catch (Exception ex)
+        {
+            SegnalaNonLetti(ex);
+            Ricalcola();
+            return;
+        }
+
+        // Try separato, come in Pages/Spese.razor: i membri servono solo ai nomi dei paganti, e un loro
+        // fallimento non deve dichiarare illeggibili delle spese lette benissimo.
+        try
+        {
+            membri = await SpaziRepository.MembriAsync(attivo.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
+            membriNonLetti = true;
+        }
+
+        Ricalcola();
+    }
+
+    // Come in Pages/Spese.razor: non quello ereditato, perché la barra degli strumenti non deve sparire sotto uno scheletro.
+    protected override async Task Riprova()
+    {
+        rileggo = true;
+        try
+        {
+            await Carica();
+        }
+        finally
+        {
+            rileggo = false;
+        }
+    }
+
+    private void Ricalcola()
+    {
+        colonne = CostruisciColonne();
+        var colonnaOrdine = colonne.FirstOrDefault(c => c.Chiave == vista.OrdinaPer) ?? colonne[0];
+        // Prima un ordine totale: a parità di data il database non ne garantisce uno, e Ordina è stabile, quindi conserverebbe il disordine di quella lettura.
+        var filtrate = TabellaSpese.Filtra(righe, vista.Filtri).OrderByDescending(r => r.Spesa.CreatedAt).ThenBy(r => r.Chiave, StringComparer.Ordinal).ToList();
+        var ordinate = CalcoliGriglia.Ordina(filtrate, colonnaOrdine, vista.Decrescente);
+
+        Func<RigaSpesa, string>? chiaveGruppo = vista.RaggruppaPer switch
+        {
+            TabellaSpese.Gruppi.Categoria => r => r.Spesa.Category,
+            TabellaSpese.Gruppi.Pagante => r => NomeMembro(r.Spesa.PaidBy) ?? (membriNonLetti ? "Pagante non disponibile" : "Membro non più nello spazio"),
+            TabellaSpese.Gruppi.Mese => r => $"{CalcoliSpese.NomeMese(r.Spesa.SpentOn.Month)} {r.Spesa.SpentOn.Year}",
+            _ => null
+        };
+        gruppi = CalcoliGriglia.Raggruppa(ordinate, chiaveGruppo);
+
+        var mostrate = gruppi.SelectMany(g => g.Righe).ToList();
+        var chiavi = mostrate.Select(r => r.Chiave).ToHashSet();
+        selezione = selezione.Where(chiavi.Contains).ToHashSet();
+        chiavePrimaModificabile = mostrate.FirstOrDefault(r => MotivoSolaLettura(r) is null)?.Chiave;
+        chiavePrimaSolaLettura = mostrate.FirstOrDefault(r => MotivoSolaLettura(r) is not null)?.Chiave;
+    }
+
+    private string? NomeMembro(Guid utenteId) => membri.FirstOrDefault(m => m.UtenteId == utenteId)?.Nome;
+
+    private IReadOnlyList<ColonnaGriglia<RigaSpesa>> CostruisciColonne()
+    {
+        Func<RigaSpesa, bool> modificabile = r => TabellaSpese.Modificabile(r, mioId, Spazi.Elenco);
+        var elenco = new List<ColonnaGriglia<RigaSpesa>>
+        {
+            new(TabellaSpese.Colonne.Data, "Data", TipoColonna.Data, r => r.Spesa.SpentOn) { Modificabile = modificabile },
+            new(TabellaSpese.Colonne.Descrizione, "Descrizione", TipoColonna.Testo, r => r.Spesa.Description) { Modificabile = modificabile },
+            new(TabellaSpese.Colonne.Categoria, "Categoria", TipoColonna.Selezione, r => r.Spesa.Category)
+                { Modificabile = modificabile, Opzioni = CategorieSpesa.Elenco },
+            new(TabellaSpese.Colonne.Importo, "Importo", TipoColonna.Denaro, r => r.Spesa.Amount)
+            {
+                Modificabile = modificabile,
+                Aggregazioni = Aggregazione.Somma | Aggregazione.Media | Aggregazione.Min | Aggregazione.Max | Aggregazione.Conteggio
+            }
+        };
+        if (Condiviso)
+            elenco.Add(new(TabellaSpese.Colonne.Pagante, "Pagato da", TipoColonna.Testo, r => NomeMembro(r.Spesa.PaidBy) ?? ""));
+        elenco.Add(new(TabellaSpese.Colonne.Stato, "Stato", TipoColonna.Testo, r => TabellaSpese.TestoStato(r)));
+        return elenco;
+    }
+
+    private string? MotivoSolaLettura(RigaSpesa riga) => riga.Stato switch
+    {
+        StatoSpesa.Prevista => "Prevista: diventa una spesa vera quando chi la paga apre Eton.",
+        StatoSpesa.InArrivo => "In arrivo: non è ancora dovuta.",
+        _ => TabellaSpese.Modificabile(riga, mioId, Spazi.Elenco) ? null : Permessi.Spiegazione(Permessi.Oggetto.Spesa)
+    };
+
+    private string? AncoraCella(RigaSpesa riga, string colonna) =>
+        colonna != TabellaSpese.Colonne.Data ? null
+        : riga.Chiave == chiavePrimaModificabile ? "cella-modificabile"
+        : riga.Chiave == chiavePrimaSolaLettura ? "riga-sola-lettura"
+        : null;
+
+    private string? NotaPreviste()
+    {
+        var righeRiepilogo = gruppi.SelectMany(g => g.Righe).Where(r => selezione.Count == 0 || selezione.Contains(r.Chiave));
+        var previste = TabellaSpese.QuantePreviste(righeRiepilogo);
+        return previste > 0 ? $"di cui {previste} previste" : null;
+    }
+
+    private static string TestoData(DateTime? data) => data?.ToString(TabellaSpese.FormatoData, CultureInfo.InvariantCulture) ?? "";
+
+    // replace: true perché ogni tasto nel filtro di testo non deve diventare un passo della cronologia
+    // (decisione dell'utente); il cambio di query non ricrea la pagina perché Layout/MainLayout.razor usa
+    // come @key il percorso senza query.
+    private void ScriviUrl() => Navigation.NavigateTo("expenses/table" + vista.InQuery(), replace: true);
+
+    private void Aggiorna(VistaTabella nuova)
+    {
+        vista = nuova;
+        ScriviUrl();
+        Ricalcola();
+    }
+
+    // Il periodo è l'unico filtro che va in rete: Riprova alza rileggo prima di Carica e lo abbassa nel finally.
+    private async Task Rileggi(VistaTabella nuova)
+    {
+        vista = nuova;
+        esitoMassa = null;
+        avvisoPagina = null;
+        ScriviUrl();
+        await Riprova();
+    }
+
+    private async Task CambiaPeriodo(ChangeEventArgs e)
+    {
+        if (!Enum.TryParse<TipoPeriodo>(e.Value?.ToString(), out var periodo)) return;
+
+        // Passando a «Dal … al …» le date partono dall'intervallo mostrato adesso, così il periodo è subito valido.
+        if (periodo == TipoPeriodo.Libero) (daScelta, aScelta) = (da, a);
+        await Rileggi(periodo == TipoPeriodo.Libero
+            ? vista with { Periodo = periodo, Da = da, A = a }
+            : vista with { Periodo = periodo, Da = null, A = null });
+    }
+
+    // Un intervallo non valido non rilegge e non scrive l'URL: resta negli input, con la sua frase.
+    private async Task CambiaData(bool inizio, ChangeEventArgs e)
+    {
+        DateTime? data = DateTime.TryParseExact(e.Value?.ToString(), TabellaSpese.FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+        if (inizio) daScelta = data; else aScelta = data;
+        if (!IntervalloValido) return;
+
+        await Rileggi(vista with { Da = daScelta, A = aScelta });
+    }
+
+    private void CambiaRaggruppa(ChangeEventArgs e)
+        => Aggiorna(vista with { RaggruppaPer = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString() });
+
+    private void CambiaPagante(ChangeEventArgs e)
+        => Aggiorna(vista with { Filtri = vista.Filtri with { Pagante = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null } });
+
+    private void CambiaTesto(string? testo) => Aggiorna(vista with { Filtri = vista.Filtri with { Testo = testo ?? "" } });
+
+    private void AlternaCategoria(string categoria)
+        => Aggiorna(vista with { Filtri = vista.Filtri with { Categorie = Alterna(vista.Filtri.Categorie, categoria) } });
+
+    private void AlternaStato(StatoSpesa stato)
+        => Aggiorna(vista with { Filtri = vista.Filtri with { Stati = Alterna(vista.Filtri.Stati, stato) } });
+
+    // Un insieme nuovo: quello della vista non si muta, il record è immutabile.
+    private static IReadOnlySet<TValore> Alterna<TValore>(IReadOnlySet<TValore> insieme, TValore valore)
+    {
+        var nuovo = new HashSet<TValore>(insieme);
+        if (!nuovo.Remove(valore)) nuovo.Add(valore);
+        return nuovo;
+    }
+
+    private void Ordina(string chiave)
+        => Aggiorna(chiave == vista.OrdinaPer
+            ? vista with { Decrescente = !vista.Decrescente }
+            : vista with { OrdinaPer = chiave, Decrescente = chiave == TabellaSpese.Colonne.Data });
+
+    private async Task<RispostaCella> SalvaCella(ModificaCella<RigaSpesa> modifica)
+    {
+        if (conflitti.ContainsKey(modifica.Riga.Chiave))
+            return new RispostaCella(EsitoCella.NonValida, "Questa riga ha un conflitto aperto: scegli prima «Ricarica la sua» o «Sovrascrivi con la mia».");
+
+        var esito = TabellaSpese.Applica(modifica.Riga.Spesa, modifica.Colonna, modifica.Testo, DateTime.Today);
+        if (esito.Nuova is not { } nuova) return new RispostaCella(EsitoCella.NonValida, esito.Errore);
+
+        try
+        {
+            var risultato = await Repository.SalvaAsync(nuova.Id, nuova.Version, nuova.Amount, nuova.Description, nuova.Category, nuova.SpentOn);
+            var risposta = EsitoCellaDa(risultato, modifica);
+            // SalvaCella è un Func e non un EventCallback: senza questo la griglia resta coi Gruppi vecchi e la prossima modifica parte con la Version vecchia.
+            StateHasChanged();
+            return risposta;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Spese] Cella non salvata: {ex.Message}");
+            return new RispostaCella(EsitoCella.Chiusa, "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Riscrivi il valore e riprova fra un momento.");
+        }
+    }
+
+    // Come Pages/SpesaEdit.razor SalvaCon, riga per riga. Un conflitto sulla riga resta fino a una scelta
+    // (Ricarica, Sovrascrivi) o finché la riga sparisce.
+    private RispostaCella EsitoCellaDa(RisultatoSalvataggio<Expense> risultato, ModificaCella<RigaSpesa> modifica)
+    {
+        var chiave = modifica.Riga.Chiave;
+        switch (risultato.Esito)
+        {
+            case EsitoSalvataggio.Salvata:
+                conflitti.Remove(chiave);
+                Sostituisci(chiave, risultato.Aggiornata!);
+                return new RispostaCella(EsitoCella.Salvata, null);
+
+            case EsitoSalvataggio.Conflitto:
+                conflitti[chiave] = (risultato.Aggiornata!, modifica);
+                return new RispostaCella(EsitoCella.Chiusa, null);
+
+            case EsitoSalvataggio.Rifiutata:
+                return new RispostaCella(EsitoCella.Chiusa, "Non hai più il permesso di modificare questa spesa: può essere cambiato qualcosa nello spazio. Ricarica la pagina.");
+
+            default:
+                conflitti.Remove(chiave);
+                righe = righe.Where(r => r.Chiave != chiave).ToList();
+                Ricalcola();
+                return new RispostaCella(EsitoCella.Chiusa, "Questa spesa non c'è più: l'ha eliminata qualcun altro.");
+        }
+    }
+
+    private void Sostituisci(string chiave, Expense spesa)
+    {
+        righe = righe.Select(r => r.Chiave == chiave ? new RigaSpesa(spesa, StatoSpesa.Registrata) : r).ToList();
+        Ricalcola();
+    }
+
+    private RenderFragment? SottoRiga(RigaSpesa riga) => !conflitti.ContainsKey(riga.Chiave) ? null
+        : @<SchedaConflitto Premessa="Mentre modificavi, questa spesa è cambiata."
+                            Occupato="@salvoConflitto"
+                            SovrascriviAbilitato="@TabellaSpese.Modificabile(riga, mioId, Spazi.Elenco)"
+                            OnRicarica="() => Ricarica(riga.Chiave)"
+                            OnSovrascrivi="() => Sovrascrivi(riga.Chiave)" />;
+
+    private void Ricarica(string chiave)
+    {
+        if (!conflitti.Remove(chiave, out var conflitto)) return;
+        Sostituisci(chiave, conflitto.Server);
+    }
+
+    private async Task Sovrascrivi(string chiave)
+    {
+        if (!conflitti.TryGetValue(chiave, out var conflitto)) return;
+
+        salvoConflitto = true;
+        avvisoPagina = null;
+        try
+        {
+            // Si riapplica sulla versione del server la sola cella modificata: gli altri campi cambiati
+            // dall'altra persona restano i suoi. La copia porta già server.Version, che è ciò che
+            // «sovrascrivi» vuol dire (come Pages/SpesaEdit.razor).
+            var esito = TabellaSpese.Applica(conflitto.Server, conflitto.Modifica.Colonna, conflitto.Modifica.Testo, DateTime.Today);
+            if (esito.Nuova is not { } nuova)
+            {
+                avvisoPagina = esito.Errore;
+                return;
+            }
+
+            var risultato = await Repository.SalvaAsync(nuova.Id, nuova.Version, nuova.Amount, nuova.Description, nuova.Category, nuova.SpentOn);
+            var risposta = EsitoCellaDa(risultato, conflitto.Modifica);
+            if (risposta.Messaggio is not null)
+            {
+                conflitti.Remove(chiave);
+                avvisoPagina = risposta.Messaggio;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Il conflitto resta: «Sovrascrivi con la mia» si può ripremere.
+            Console.Error.WriteLine($"[Spese] Sovrascrittura non riuscita: {ex.Message}");
+            avvisoPagina = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Riprova fra un momento.";
+        }
+        finally
+        {
+            salvoConflitto = false;
+        }
+    }
+
+    private Task CambiaCategoria() => Massa(AzioneMassa.CambiaCategoria, ids => Repository.CambiaCategoriaAsync(ids, categoriaMassa));
+
+    private Task EliminaSelezionate() => Massa(AzioneMassa.Elimina, ids => Repository.EliminaTutteAsync(ids));
+
+    // Un solo percorso per le due azioni: l'eliminazione non è atomica fra i blocchi, quindi si rilegge
+    // comunque, anche dopo un errore, per mostrare com'è adesso (e riportare veri previste e totali).
+    private async Task Massa(AzioneMassa azione, Func<IReadOnlyCollection<Guid>, Task<EsitoMassa>> esegui)
+    {
+        esitoMassa = null;
+        avvisoPagina = null;
+        var ids = righe.Where(r => r.Stato == StatoSpesa.Registrata && selezione.Contains(r.Chiave)).Select(r => r.Spesa.Id).ToList();
+        // Alzato qui, non solo in Riprova: i controlli vanno spenti anche durante la scrittura.
+        rileggo = true;
+        try
+        {
+            esitoMassa = TabellaSpese.TestoEsitoMassa(azione, await esegui(ids));
+        }
+        catch (Exception ex)
+        {
+            // Una frase che non promette nulla: l'eliminazione a blocchi può essere riuscita in parte.
+            Console.Error.WriteLine($"[Spese] Azione di massa non riuscita: {ex.Message}");
+            esitoMassa = "Non è stato possibile completare l'operazione: ricarica per vedere com'è adesso.";
+        }
+
+        selezione = new HashSet<string>();
+        await Riprova();
+    }
+
+    private Task Esporta()
+        => griglia is null ? Task.CompletedTask
+            : griglia.EsportaAsync(string.Create(CultureInfo.InvariantCulture, $"spese-{da:yyyy-MM-dd}-{a:yyyy-MM-dd}.csv"));
+}
