@@ -103,8 +103,15 @@ confine naturale fra un capo e il successivo.
   campo in modifica e nel CSV resta il valore pieno, perché lì la stringa si rilegge e arrotondarla
   riscriverebbe il dato. La tabella delle spese non ha colonne `Numero`: oggi non si vede, conta dalla
   fase 3. Si annulla con un revert locale.
-- **2026-10-07 — Quattro decisioni dell'unità 2.2-C, da ratificare** (tutte visibili all'utente; la
-  raccomandazione dell'unità è tenerle; **non ancora passate da `tech-advisor`**):
+- **2026-10-12 utente (chat)** — popup con la posizione di `tech-advisor` (tenerle tutte, nessun dissenso):
+  **«Ratifica tutte (consigliata)»**; le quattro decisioni della 2.2-C qui sotto sono **ratificate
+  2026-10-12**. Sul troncamento a 1000 righe: **«Correggi dopo la 2.2-D (consigliata)»** → unità correttiva
+  **2.2-E** dopo la D (paginazione della lettura in `ExpenseRepository` + difetto del registro + i due minori:
+  `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV). Sul difetto del registro
+  («l'hai mai visto?»): **«Non ci ho fatto caso»** → la 2.2-E lo riproduce a mano prima di correggerlo e, se
+  non si riproduce, lo chiude come artefatto della prova automatica.
+- **2026-10-07 — Quattro decisioni dell'unità 2.2-C, ratificate 2026-10-12** (tutte visibili all'utente; la
+  raccomandazione dell'unità è tenerle; passate da `tech-advisor` il 12 ott):
   1. `Shared/Griglia.razor` toccata oltre «solo per difetti»: tre parametri opzionali `AncoraIntestazioni`,
      `AncoraSelezione`, `AncoraRiepilogo` (servono le ancore del tutorial), «1 riga» al singolare, date
      allineate a destra, `line-height` delle righe;
@@ -114,6 +121,15 @@ confine naturale fra un capo e il successivo.
      server, non la riga intera come l'editor singolo;
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
+- **2026-10-12 utente (chat)** — «ricordati di sfruttare copdex finche puoi» (Codex). Quindi vale anche
+  per Eton la deroga a tempo scritta per Synapse in `~/.claude/TODO-synapse-codex.md`, «Regola per il
+  mandato»: **autore del diff Codex 0.161.0 al posto di `implementer`, fino al 2026-11-08**; lanci
+  `codex exec -s workspace-write -C <worktree> - < <scratchpad>/brief.md -o <scratchpad>/resoconto.md`,
+  fix con `codex exec -C <worktree> -s workspace-write -o <out> resume --last - < fix.md`; mai
+  `--dangerously-bypass-*`, `--add-dir`, `danger-full-access`; §3-§6 del protocollo inalterati; prima
+  riga del tracciato `autore  codex exec 0.161.0 — <stat>`; seconda ripetizione fallita → `BLOCKED`,
+  non `implementer`. Codex è senza rete nella sandbox: se `dotnet restore` nel worktree fallisce per
+  rete, l'unità lo dichiara e ripiega su `implementer` per quel brief (scostamento, non `BLOCKED`).
 - **2026-10-07 utente (chat)** — «appena rientra ferma il lavoro per oggi, riprenderemo da una nuova
   sessione piu avanti»: al rientro della 2.2-C si processa il resoconto e ci si ferma; la 2.2-D la apre
   la sessione nuova.
@@ -189,8 +205,9 @@ confine naturale fra un capo e il successivo.
 | **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | sessione-unità, mandato in `handoff/P-piano-tabella/` | S, 2.1 | **FATTO** — `docs/superpowers/plans/2026-10-07-spese-tabella.md`, sei task in quattro unità, nessuna migrazione; 4 decisioni da ratificare e 4 domande (resoconto); verifica: `git -C /g/Sviluppo/Eton diff --stat HEAD~1 HEAD` -> `2 files changed, 1620 insertions(+)` |
 | **2.2-A** | task 1 e 2 del piano: tipi puri della griglia e della tabella spese (`ColonnaGriglia<T>`, `CalcoliGriglia`, `RigaSpesa`, `TabellaSpese`, `EsitoMassa`…) e i loro test | sessione-unità, mandato in `handoff/04-tabella-calcoli/` | P + risposte (date il 7 ott) | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto; una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 380 passed` |
 | **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità, mandato in `handoff/05-tabella-griglia/` | A | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto (da ricopiare in C); due decisioni da ratificare; `live-testing`/`ui-critic` rinviati a C per mandato; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
-| **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **PARZIALE** — l'unità ha chiuso `FATTO` il 7 ott (`live-testing` e `ui-critic` verdi, nessuna `PROVA COLLAUDO` residua, porta 5000 libera), ma **non è integrata**: commit `b88788a` nel branch `worktree-unita-2.2-C`, worktree conservato, resoconto in `.claude/worktrees/unita-2.2-C/handoff/06-tabella-pagina/resoconto.md`. Attende la ratifica di quattro decisioni visibili (DECISIONI) prima di andare in produzione |
-| **2.2-D** | task 6: tutorial generico e «?» della tabella | sessione-unità | C | PIANIFICATA |
+| **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **FATTO** — quattro decisioni ratificate il 12 ott, fusa su `main` il 12 ott (`git merge --no-ff worktree-unita-2.2-C`) e pubblicata; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
+| **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | IN CORSO |
+| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità | D | PIANIFICATA |
 
 La partizione delle unità di codice si decide **dopo** R, con un `Explore` di ricognizione: oggi i file
 che la 2.2 tocca non sono noti, e la collisione probabile è `Pages/Spese.razor`, che la 2.1 e la 2.2
@@ -204,7 +221,16 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-**Per la sessione nuova (scritto la sera del 7 ottobre, l'utente ha fermato il lavoro).**
+**12 ottobre — l'utente è lontano dal PC per un po', tutte le domande poste e risposte.** Fatto: ratifica
+delle quattro decisioni della 2.2-C, fusione su `main` (389 test), push. **In corso: la 2.2-D** (mandato
+`handoff/07-tabella-tutorial/`, autore del diff Codex), con attesa armata. Al rientro: audit del
+resoconto, fusione, push; poi mandato e apertura della **2.2-E** (correttiva, riga di PARTIZIONE); poi
+archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data (l'utente non l'ha ancora letto: si
+sposta, non si cancella) e aprire la **sessione di chiusura** del goal. Domande nuove che maturano: in
+`APERTO`, poste tutte insieme al rientro dell'utente. Le prove `DA PROVARE ALL'UTENTE` della 2.2-C si
+spiegano in chat al suo rientro (la pagina è pubblicata dal 12 ott).
+
+**Per la sessione nuova (scritto la sera del 7 ottobre, l'utente ha fermato il lavoro) — punti 1-3 fatti il 12 ott.**
 1. **Primo popup**: le quattro decisioni «da ratificare» della 2.2-C (DECISIONI), ciascuna col suo
    contesto, **dopo** averle passate a `tech-advisor`.
 2. Ratificate: fondere `worktree-unita-2.2-C` su `main` (`git merge --no-ff`), `mcp__synapse__build` +
