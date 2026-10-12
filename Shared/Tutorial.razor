@@ -1,0 +1,211 @@
+@using System.Globalization
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@* Accompagna la pagina un passo alla volta, solo quando si preme «Tutorial».
+   Non oscura la pagina: gli elementi restano visibili e cliccabili mentre si legge.
+   Il ricordo serve solo alla pastiglia d'invito, mai all'apertura o ai passi.
+   Il riquadro prende la posizione quando cambia passo e non segue lo scorrimento:
+   questa resa è provvisoria, la rifà la 2.1-bis. *@
+@if (Passi.Count > 0)
+{
+    <button type="button" class="btn compatto tutorial-apri" @ref="pulsante" @onclick="Apri">
+        Tutorial
+        @if (invito)
+        {
+            <span class="pastiglia accesa">nuovo</span>
+        }
+    </button>
+    @if (aperto)
+    {
+        var passo = Passi[indice];
+        var ultimo = indice == Passi.Count - 1;
+        <div class="tutorial-riquadro @(stile is null ? "centrato" : "")" style="@stile" role="dialog" aria-modal="false"
+             popover="@(modulo is null ? null : "manual")"
+             aria-labelledby="@IdTitolo" tabindex="-1" @ref="riquadro" @onkeydown="Tasto">
+            <h2 id="@IdTitolo">@passo.Titolo</h2>
+            <p>@passo.Testo</p>
+            @if (assente) { <p class="tutorial-assente">@passo.SeAssente</p> }
+            <div class="tutorial-comandi">
+                <span class="tutorial-passo">Passo @(indice + 1) di @Passi.Count</span>
+                <button type="button" class="btn compatto" @onclick="Indietro" disabled="@(indice == 0)">Indietro</button>
+                <button type="button" class="btn compatto primario" @onclick="Avanti">@(ultimo ? "Fine" : "Avanti")</button>
+                <button type="button" class="btn compatto" @onclick="Chiudi">Chiudi</button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    public sealed record PassoTutorial(string Ancora, string Titolo, string Testo, string SeAssente);
+    private sealed record Rettangolo(double Sopra, double Sotto, double Sinistra, double AltezzaFinestra);
+
+    /// <summary>I passi, con le ancore data-tutorial e il testo da leggere quando sono assenti.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PassoTutorial> Passi { get; set; } = [];
+
+    /// <summary>Il nome del tutorial, usato per ricordare soltanto se l'invito è stato visto.</summary>
+    [Parameter, EditorRequired] public string Chiave { get; set; } = "";
+
+    private ElementReference pulsante, riquadro;
+    private IJSObjectReference? modulo;
+    private int indice;
+    private bool invito, aperto, assente;
+    private bool focalizzaRiquadro, focalizzaPulsante;
+    private string? stile;
+    private string IdTitolo => $"tutorial-titolo-{Chiave}";
+    private string ChiaveRicordo => $"eton.tutorial.{Chiave}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/tutorial.js");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Tutorial] Modulo non caricato, i passi restano centrati: {ex.Message}");
+            }
+
+            try
+            {
+                if (await JS.InvokeAsync<string?>("localStorage.getItem", ChiaveRicordo) is null)
+                {
+                    invito = true;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Tutorial] Ricordo illeggibile, l'invito non viene mostrato: {ex.Message}");
+            }
+        }
+
+        if (focalizzaRiquadro)
+        {
+            focalizzaRiquadro = false;
+            if (modulo is not null)
+            {
+                try
+                {
+                    await modulo.InvokeVoidAsync("mostra", riquadro);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[Tutorial] Riquadro non portato in primo piano: {ex.Message}");
+                }
+            }
+            await riquadro.FocusAsync();
+        }
+        if (focalizzaPulsante)
+        {
+            focalizzaPulsante = false;
+            await pulsante.FocusAsync();
+        }
+    }
+
+    private async Task Apri()
+    {
+        if (invito)
+        {
+            invito = false;
+            try
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", ChiaveRicordo, "visto");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Tutorial] Ricordo non salvato, l'invito potrà ricomparire: {ex.Message}");
+            }
+        }
+        await MostraPasso(0);
+        aperto = true;
+    }
+
+    private async Task MostraPasso(int nuovo)
+    {
+        string? nuovoStile = null;
+        var nuovoAssente = false;
+        if (modulo is null)
+        {
+            stile = null;
+            assente = false;
+            indice = nuovo;
+            focalizzaRiquadro = true;
+            return;
+        }
+        try
+        {
+            var r = await modulo.InvokeAsync<Rettangolo?>("evidenzia", Passi[nuovo].Ancora);
+            if (r is null)
+            {
+                nuovoAssente = true;
+            }
+            else
+            {
+                var verticale = r.AltezzaFinestra - r.Sotto >= 240
+                    ? string.Create(CultureInfo.InvariantCulture, $"top: {r.Sotto + 12}px")
+                    : string.Create(CultureInfo.InvariantCulture, $"bottom: {r.AltezzaFinestra - r.Sopra + 12}px");
+                nuovoStile = string.Create(CultureInfo.InvariantCulture, $"{verticale}; left: clamp(16px, {r.Sinistra}px, calc(100vw - min(90vw, 24rem) - 16px))");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Un guasto non dimostra che l'ancora manca: resta solo il testo del passo.
+            Console.Error.WriteLine($"[Tutorial] Elemento non evidenziato, il passo resta centrato: {ex.Message}");
+        }
+        stile = nuovoStile;
+        assente = nuovoAssente;
+        indice = nuovo;
+        focalizzaRiquadro = true;
+    }
+
+    private async Task Avanti()
+    {
+        if (indice == Passi.Count - 1) await Chiudi();
+        else await MostraPasso(indice + 1);
+    }
+
+    private async Task Indietro()
+    {
+        if (indice == 0) return;
+        await MostraPasso(indice - 1);
+    }
+
+    private async Task Tasto(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") await Chiudi();
+    }
+
+    private async Task Chiudi()
+    {
+        aperto = false;
+        focalizzaRiquadro = false;
+        try
+        {
+            if (modulo is not null) await modulo.InvokeVoidAsync("togli");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Tutorial] Contorno non rimosso: {ex.Message}");
+        }
+        focalizzaPulsante = true;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (modulo is not null)
+            {
+                await modulo.InvokeVoidAsync("togli");
+                await modulo.DisposeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Tutorial] Chiusura non riuscita: {ex.Message}");
+        }
+    }
+}
