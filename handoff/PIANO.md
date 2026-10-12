@@ -121,6 +121,18 @@ confine naturale fra un capo e il successivo.
      server, non la riga intera come l'editor singolo;
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
+- **2026-10-12 — Tre decisioni dell'unità 2.2-D, da ratificare** (raccomandazione dell'unità: tenerle;
+  non ancora passate da `tech-advisor`). Capo: la D **non si integra** finché non sono ratificate, come
+  la 2.2-C; la (3) è visibile all'utente.
+  1. il contorno dell'elemento evidenziato è l'attributo `data-tutorial-evidenziato`, non la classe del
+     piano: Blazor riscrive `class` sulle ancore dinamiche e lo cancellava;
+  2. il riquadro del tutorial sta nel top layer (`popover="manual"`), non previsto dal piano: senza,
+     l'animazione d'ingresso della pagina lo spostava di 280px e copriva le zone indicate;
+  3. il pulsante «Tutorial» è nascosto sotto i `40rem` insieme alla tabella, e due frasi «se assente» (cella
+     modificabile, riga di sola lettura) citano il gruppo chiuso invece della causa del piano, che era falsa.
+- **2026-10-12 — Decisione del capo, da ratificare**: la 2.2-E parte da `origin/main` **senza** la 2.2-D
+  (unità in sequenza, ma file disgiunti: la D non è integrabile prima della ratifica). Si annulla
+  non aprendo la E. Raccomandazione: tenerla, l'alternativa era fermare tutto fino al rientro.
 - **2026-10-12 utente (chat)** — «ricordati di sfruttare copdex finche puoi» (Codex). Quindi vale anche
   per Eton la deroga a tempo scritta per Synapse in `~/.claude/TODO-synapse-codex.md`, «Regola per il
   mandato»: **autore del diff Codex 0.161.0 al posto di `implementer`, fino al 2026-11-08**; lanci
@@ -206,8 +218,8 @@ confine naturale fra un capo e il successivo.
 | **2.2-A** | task 1 e 2 del piano: tipi puri della griglia e della tabella spese (`ColonnaGriglia<T>`, `CalcoliGriglia`, `RigaSpesa`, `TabellaSpese`, `EsitoMassa`…) e i loro test | sessione-unità, mandato in `handoff/04-tabella-calcoli/` | P + risposte (date il 7 ott) | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto; una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 380 passed` |
 | **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità, mandato in `handoff/05-tabella-griglia/` | A | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto (da ricopiare in C); due decisioni da ratificare; `live-testing`/`ui-critic` rinviati a C per mandato; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
 | **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **FATTO** — quattro decisioni ratificate il 12 ott, fusa su `main` il 12 ott (`git merge --no-ff worktree-unita-2.2-C`) e pubblicata; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
-| **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | IN CORSO |
-| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità | D | PIANIFICATA |
+| **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | **PARZIALE** — l'unità ha chiuso `FATTO` il 12 ott (Codex autore, `live-testing` verde al secondo giro, `ui-critic` 1 rilievo `TIPO: progetto`, nessuna spesa di prova creata), ma **non è integrata**: commit `9e61370` nel branch `worktree-unita-2.2-D-tutorial`, resoconto in `.claude/worktrees/unita-2.2-D-tutorial/handoff/07-tabella-tutorial/resoconto.md`. Attende la ratifica di tre decisioni (DECISIONI), come la 2.2-C |
+| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità, mandato in `handoff/08-correttiva-lettura/`; worktree da `origin/main` **senza** la D (file disgiunti) | D (solo come ordine; nessun file in comune) | IN CORSO |
 
 La partizione delle unità di codice si decide **dopo** R, con un `Explore` di ricognizione: oggi i file
 che la 2.2 tocca non sono noti, e la collisione probabile è `Pages/Spese.razor`, che la 2.1 e la 2.2
@@ -221,9 +233,18 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
+**12 ottobre, sera — aggiornamento.** La 2.2-D è rientrata `FATTO` ma resta nel suo branch fino alla
+ratifica delle sue tre decisioni (DECISIONI). **In corso: la 2.2-E** (mandato `handoff/08-correttiva-lettura/`,
+Codex autore), da `origin/main` senza la D. Al rientro della E: audit, fusione e push della **sola E**.
+Al rientro dell'utente, **primo popup**: le tre decisioni della D (passate prima da `tech-advisor`), la
+decisione del capo sulla E senza D, e le tre spese di collaudo vecchie (APERTO). Ratificate: fondere la D,
+build/test, push; poi archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data e aprire la
+sessione di chiusura.
+
 **12 ottobre — l'utente è lontano dal PC per un po', tutte le domande poste e risposte.** Fatto: ratifica
 delle quattro decisioni della 2.2-C, fusione su `main` (389 test), push. **In corso: la 2.2-D** (mandato
-`handoff/07-tabella-tutorial/`, autore del diff Codex), con attesa armata. Al rientro: audit del
+`handoff/07-tabella-tutorial/`, autore del diff Codex), sessione `--bg` **`8af5150e`**, con attesa armata; worktree e branch della 2.2-C
+già rimossi. Al rientro: audit del
 resoconto, fusione, push; poi mandato e apertura della **2.2-E** (correttiva, riga di PARTIZIONE); poi
 archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data (l'utente non l'ha ancora letto: si
 sposta, non si cancella) e aprire la **sessione di chiusura** del goal. Domande nuove che maturano: in
@@ -277,6 +298,11 @@ non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagi
 task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
 
 ## APERTO
+
+- **Domanda per l'utente (dalla 2.2-D)**: nella tabella, in «Quest'anno», ci sono tre spese rimaste da
+  collaudi vecchi, non create da questo goal: «COLLAUDO GIRO B» (19/09/2026, 1.284,50), «COLLAUDO 4 SET»
+  (04/09/2026, 1.284,50), «PROVA AGENTE» (20/08/2026, 12,50). Falsano i totali dell'anno. Eliminarle è
+  un'azione su dati di produzione non creati in sessione: **si chiede**.
 
 - **Per la 2.1-bis, dalla 2.2-C** (`FUORI SCOPE` del suo resoconto): densità (controlli 48px sopra righe
   38px, barra strumenti 275px); bordi dei controlli a 1,21:1, sotto il 3:1 WCAG, in tutti i moduli;
