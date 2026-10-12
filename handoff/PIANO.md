@@ -121,6 +121,9 @@ confine naturale fra un capo e il successivo.
      server, non la riga intera come l'editor singolo;
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
+- **2026-10-12 utente (chat)** — «Rinomina e chiudi»: il rapporto del 20 settembre, non ancora letto, è
+  rinominato `handoff/2026-09-20-CHIUSURA.md` e **resta in `handoff/`** (non archiviato finché l'utente non
+  l'ha letto); si apre la sessione di chiusura di questo goal.
 - **2026-10-12 utente (chat)** — popup con le posizioni di `tech-advisor`: **«Ratifica e pubblica
   (consigliata)»** → le tre decisioni della 2.2-D e la decisione del capo sulla E senza D sono **ratificate
   2026-10-12**, ed è il via libera a fondere D poi E su `main` e pubblicare. Spese di prova (le 3 «PROVA
@@ -229,7 +232,7 @@ confine naturale fra un capo e il successivo.
 | **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **FATTO** — quattro decisioni ratificate il 12 ott, fusa su `main` il 12 ott (`git merge --no-ff worktree-unita-2.2-C`) e pubblicata; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
 | **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | **FATTO** — Codex autore; tre decisioni ratificate il 12 ott; fusa e pubblicata il 12 ott; verifica: `mcp__synapse__test` -> `0 failed, 390 passed` (dopo D+E) |
 | **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità, mandato in `handoff/08-correttiva-lettura/`; worktree da `origin/main` **senza** la D (file disgiunti) | D (solo come ordine; nessun file in comune) | **FATTO** per il codice — fusa e pubblicata il 12 ott col via libera dell'utente; verifica: `mcp__synapse__build` -> `0 errors, 0 warnings`, `mcp__synapse__test` -> `0 failed, 390 passed`; la pulizia delle spese di prova passa alla 2.2-F. Storia: codice fatto (resoconto: build 0/0, 390 test, review adjudicata, collaudo verde; registro **non riprodotto** con tasti reali → chiuso come artefatto). `PARZIALE` perché restano in produzione 3 spese «PROVA COLLAUDO R1/R2/R3» (12/10/2026, 1,00 € l'una, spazio «Personale»): l'eliminazione multipla dell'agente è stata negata dai permessi. **Non integrata**: il `git merge` del capo su `main` è stato negato dal classificatore il 12 ott («Modify Shared Resources»), non aggirato. Commit `186832a`, branch `worktree-unita-2.2-E`, resoconto in `.claude/worktrees/unita-2.2-E/handoff/08-correttiva-lettura/resoconto.md` |
-| **2.2-F** | fuoco sul campo importo dopo «Segna» (registro) + eliminazione delle sei spese di prova autorizzata dall'utente; Codex autore | sessione-unità, mandato in `handoff/09-registro-fuoco/` | E | IN CORSO |
+| **2.2-F** | fuoco sul campo importo dopo «Segna» (registro) + eliminazione delle sei spese di prova autorizzata dall'utente; Codex autore | sessione-unità, mandato in `handoff/09-registro-fuoco/` | E | **FATTO** per il codice — Codex autore, 0 rilievi, `live-testing` verde 7/7; fusa e pubblicata il 12 ott; verifica: `mcp__synapse__test` -> `0 failed, 390 passed`. La pulizia **non** l'ha fatta (correttamente: in background un'autorizzazione che arriva da un file non vale — difetto del mandato del capo); riaffidata da questa sessione a un agente sulla produzione |
 
 La partizione delle unità di codice si decide **dopo** R, con un `Explore` di ricognizione: oggi i file
 che la 2.2 tocca non sono noti, e la collisione probabile è `Pages/Spese.razor`, che la 2.1 e la 2.2
@@ -243,7 +246,17 @@ Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate d
 
 ## PROSSIMA AZIONE
 
-**12 ottobre, notte — dopo le risposte dell'utente.** D ed E fuse e pubblicate (390 test), sessioni e
+**12 ottobre, notte — sessione di chiusura aperta.** Rapporto atteso in `handoff/CHIUSURA.md`. Al rientro:
+leggerlo; scrivere `PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova`; messaggio di passaggio.
+
+**12 ottobre, notte — 2.2-F fusa e pubblicata (390 test) (superato).** Tutte le unità di codice del goal sono
+`FATTO`. Restano: l'esito dell'agente che elimina le sei spese di prova da questa sessione (autorizzazione in
+chat); la conferma dell'utente a rinominare `handoff/CHIUSURA.md` del 20 set (non ancora letto: non si
+archivia, ma la chiusura di questo goal lo sovrascriverebbe); poi la **sessione di chiusura**.
+⚠️ Lezione: un'autorizzazione dell'utente su dati di produzione **non si passa a un'unità `--bg`** attraverso
+il mandato: l'unità la rifiuta per regola. Si esegue dalla sessione interattiva.
+
+**12 ottobre, notte — dopo le risposte dell'utente (superato).** D ed E fuse e pubblicate (390 test), sessioni e
 worktree rimossi. **In corso: 2.2-F** (mandato `handoff/09-registro-fuoco/`). Al rientro: audit, fusione,
 push; poi archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data (`git mv` in
 `storico/handoff/2026-09-20-CHIUSURA.md`, l'utente non l'ha letto: si sposta, non si cancella) e aprire la
@@ -360,9 +373,9 @@ task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
   `ends_on` < `starts_on` (innocuo, e lì «Elimina» è offerto); una ricorrente terminata resta
   modificabile nei campi (ratificata D2: non si riattiva, `SalvaAsync` non scrive `ends_on`).
 
-- **Il rapporto `handoff/CHIUSURA.md` del 20 settembre non è ancora stato letto dall'utente**, e fino
-  ad allora non si archivia. ⚠️ Il path è fisso: la chiusura di **questo** goal lo sovrascriverebbe, quindi
-  prima di scrivere il mandato di chiusura va archiviato con prefisso di data.
+- **Il rapporto del 20 settembre non è ancora stato letto dall'utente**: dal 12 ottobre sta in
+  `handoff/2026-09-20-CHIUSURA.md` (rinominato su suo sì) e **non si archivia** finché non l'ha letto. La
+  sessione di chiusura non lo sposta.
 - Restano vivi dal goal precedente e **non sono di questo goal**: `handoff/configurazione-da-applicare.md`
   (gesto dell'utente, clausola 37), `handoff/collaudo/`, `handoff/01-punto-interrogativo/` (`PARZIALE`),
   `handoff/server.md`.
