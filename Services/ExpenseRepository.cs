@@ -26,9 +26,33 @@ public class ExpenseRepository
         _ricorrenti = ricorrenti;
     }
 
+    // È il max_rows di PostgREST (supabase/config.toml) e deve restare minore o uguale al tetto:
+    // il ciclo si ferma al primo blocco con meno righe di quante ne ha chieste. Con un blocco
+    // più grande del tetto ogni risposta sarebbe corta e ci si fermerebbe al primo giro.
+    private const int RighePerBlocco = 1000;
+
     /// <summary>Le spese di uno spazio con spent_on nell'intervallo [<paramref name="da"/>,
-    /// <paramref name="a"/>], estremi inclusi, dalla più recente. L'ordine combacia con l'indice
-    /// (space_id, spent_on desc), quindi il database non deve ordinare a parte.
+    /// <paramref name="a"/>], estremi inclusi, in ordine spent_on desc e poi id desc. Il secondo
+    /// criterio è univoco e serve perché i blocchi successivi non saltino né ripetano righe fra
+    /// spese della stessa data: con il solo spent_on l'ordine fra pari data non è garantito da
+    /// una richiesta all'altra.
+    /// <para>
+    /// PostgREST tronca ogni risposta a max_rows senza errore: si legge a blocchi di
+    /// RighePerBlocco finché un blocco torna incompleto. Se il totale è un multiplo esatto del
+    /// blocco, serve un giro in più che torna vuoto.
+    /// Una spesa inserita o eliminata da un altro membro fra due blocchi può spostare di una riga
+    /// l'offset, ripetendo o saltando una riga in quella sola lettura; succede solo oltre 1000 spese
+    /// nel periodo e si accetta: la lettura successiva è di nuovo esatta.
+    /// </para>
+    /// <para>
+    /// Get() senza argomenti manda sempre Prefer: count=estimated, e sopra max_rows PostgREST usa
+    /// come totale la stima del planner. PostgREST risponde 416 quando l'offset di un Range supera
+    /// il totale: con una stima bassa un blocco che esiste davvero tornerebbe 416 e farebbe fallire
+    /// la lettura. Con il conteggio esatto l'offset non supera mai il totale: il ciclo avanza solo
+    /// dopo un blocco pieno, e un offset uguale al totale dà un blocco vuoto, non 416. Resta
+    /// possibile solo se un altro membro elimina spese fra due blocchi, e allora la lettura
+    /// fallisce e si riprova. Il conteggio è sulle sole righe filtrate per spazio e periodo.
+    /// </para>
     /// <para>
     /// L'intervallo e non un singolo mese perché la pagina ha bisogno del mese corrente E di
     /// quello precedente per il confronto: due viaggi di rete dove ne basta uno sono due viaggi
@@ -63,15 +87,22 @@ public class ExpenseRepository
     private async Task<IReadOnlyList<Expense>> ElencaAsync(Guid spazioId, DateTime da, DateTime a)
     {
         var client = await _supabase.GetClientAsync();
+        var spese = new List<Expense>();
 
-        var risposta = await client.From<Expense>()
-            .Where(e => e.SpaceId == spazioId)
-            .Filter("spent_on", Constants.Operator.GreaterThanOrEqual, da.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
-            .Filter("spent_on", Constants.Operator.LessThanOrEqual, a.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
-            .Order("spent_on", Constants.Ordering.Descending)
-            .Get();
+        while (true)
+        {
+            var risposta = await client.From<Expense>()
+                .Where(e => e.SpaceId == spazioId)
+                .Filter("spent_on", Constants.Operator.GreaterThanOrEqual, da.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
+                .Filter("spent_on", Constants.Operator.LessThanOrEqual, a.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
+                .Order("spent_on", Constants.Ordering.Descending)
+                .Order("id", Constants.Ordering.Descending)
+                .Range(spese.Count, spese.Count + RighePerBlocco - 1)
+                .Get(default, Constants.CountType.Exact);
 
-        return risposta.Models;
+            spese.AddRange(risposta.Models);
+            if (risposta.Models.Count < RighePerBlocco) return spese;
+        }
     }
 
     /// <summary>L'unico percorso di lettura delle spese (divieto §5 del design delle ricorrenti).
