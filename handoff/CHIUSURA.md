@@ -60,9 +60,13 @@ ARCHIVIATO: storico/handoff/01-calcolo-e-schema, 02-regole-e-lettura, 03-pagine-
             handoff/2026-09-20-CHIUSURA.md (l'utente non l'ha letto); i residui del goal precedente
             (configurazione-da-applicare.md, collaudo/, 01-punto-interrogativo/, server.md); PIANO.md.
 
-BUDGET: (da compilare con MISURE)
+BUDGET: atteso (dai mandati) → reale da `costo_unita_Mtok_eq`: per tutte le unità «n/d» — MISURE restituisce
+        `costo_unita_Mtok_eq: {}` («nessuna unita della PARTIZIONE con transcript di worktree»)
+        01 bassa-media → n/d · 02 media-alta → n/d · 03 media → n/d · P media → n/d · 2.2-A media → n/d ·
+        2.2-B alta → n/d · 2.2-C alta → n/d · 2.2-D media → n/d · 2.2-E bassa-media → n/d · 2.2-F bassa → n/d
+        (S e R senza mandato: fatte in chat)
 
-MISURE: (da compilare)
+MISURE: {"ts":"2026-10-12T22:21:21.2273664+02:00","progetto":"G:\\Sviluppo\\Eton","da":"","chiusure":1,"unita_fatto":15,"combinato":{"rilievi":2,"corretti":1},"fuga_interna":0.133,"fuga_interna_ciclo":null,"costo_unita_Mtok_eq":{},"fuga_esterna":0,"verdetti":{"fondati":50,"infondati":0},"resa":{"backend-expert":{"lanci":14,"rilievi":37,"tok_eq":1586081,"rilievi_per_100k":2.333},"bug-hunter":{"lanci":21,"rilievi":29,"tok_eq":6265438,"rilievi_per_100k":0.463},"checker":{"lanci":39,"tok_eq":3973039},"conformity":{"lanci":15,"rilievi":22,"tok_eq":3152969,"rilievi_per_100k":0.698},"coverage":{"lanci":2,"tok_eq":242057},"doc-checker":{"lanci":6,"tok_eq":936729},"general-purpose":{"lanci":1,"tok_eq":248052},"implementer":{"lanci":28,"tok_eq":7825180},"live-testing":{"lanci":9,"tok_eq":7075377},"tech-advisor":{"lanci":9,"tok_eq":811410},"threat-hunter":{"lanci":20,"rilievi":2,"tok_eq":1688049,"rilievi_per_100k":0.118},"ui-critic":{"lanci":6,"rilievi":11,"tok_eq":1408146,"rilievi_per_100k":0.781}},"limiti":["risalito dal worktree G:\\Sviluppo\\Eton\\.claude\\worktrees\\chiusura-2.1-2.2 al repo G:\\Sviluppo\\Eton","2 lanci registrati prima dei campi token: esclusi dalla resa","nessuna unita della PARTIZIONE con transcript di worktree: costo_unita vuoto"]}
 ```
 
 ## Rimandato al capo (tocca un contratto fra unità)
