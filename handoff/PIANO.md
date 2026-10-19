@@ -121,7 +121,11 @@ confine naturale fra un capo e il successivo.
      server, non la riga intera come l'editor singolo;
   4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
      nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
-- **2026-10-12 — Decisione del capo, da ratificare**: il rilievo R1 della chiusura (la lettura paginata può
+- **2026-10-19 utente (chat, popup)** — prossima fase: «Prima i dati (Consigliata)» (rate, entrate e bilancio,
+  ricorrenti divise mensili/annuali con quota da accantonare; poi la 2.1-bis). Dati sul dispositivo con il DB
+  come backup zippato: «Lasciamo perdere» — né local-first né l'alternativa leggera (coda di soli INSERT,
+  esportazione JSON). Le due decisioni del capo del 12 ott: «Ratifico entrambe (Consigliata)».
+- **2026-10-12 — Decisione del capo, ratificata 2026-10-19**: il rilievo R1 della chiusura (la lettura paginata può
   restituire due volte la stessa spesa se un altro membro scrive fra due blocchi, solo oltre 1000 spese nel
   periodo; doppio conteggio nei totali e, secondo `bug-hunter`, un errore di Blazor per `@key` duplicata) **non
   si corregge in questo goal**: è il primo candidato del prossimo. Raccomandazione: `DistinctBy(e => e.Id)` in
@@ -148,7 +152,7 @@ confine naturale fra un capo e il successivo.
      l'animazione d'ingresso della pagina lo spostava di 280px e copriva le zone indicate;
   3. il pulsante «Tutorial» è nascosto sotto i `40rem` insieme alla tabella, e due frasi «se assente» (cella
      modificabile, riga di sola lettura) citano il gruppo chiuso invece della causa del piano, che era falsa.
-- **2026-10-12 — Decisione del capo, da ratificare**: la 2.2-E parte da `origin/main` **senza** la 2.2-D
+- **2026-10-12 — Decisione del capo, ratificata 2026-10-19**: la 2.2-E parte da `origin/main` **senza** la 2.2-D
   (unità in sequenza, ma file disgiunti: la D non è integrabile prima della ratifica). Si annulla
   non aprendo la E. Raccomandazione: tenerla, l'alternativa era fermare tutto fino al rientro.
 - **2026-10-12 utente (chat)** — «ricordati di sfruttare copdex finche puoi» (Codex). Quindi vale anche

@@ -253,7 +253,7 @@ decomposizione: serve eseguirla.
 |---|---|---|
 | 2.1 | **Spese ricorrenti** | Design e piano da **sei task** già scritti e approvati (`2026-09-03-spese-ricorrenti-design.md`, `plans/2026-09-03-spese-ricorrenti.md`). Pronto a partire |
 | 2.2 | **Vista tabellare** | Da progettare — è il cuore della direzione «puntuale, non da app scema» |
-| 2.3 | **Analisi** | Da progettare |
+| 2.3 | **Analisi** | Da progettare — dal 19 ottobre 2026 comprende rate, entrate e bilancio (v. §6, «Richieste del 19 ottobre») |
 
 **Perché le ricorrenti vengono per prime, e non la tabella che l'utente ha nominato.** Il
 motivo è scritto al §2 di quel design ed è tecnico, non di preferenza: le ricorrenti sono
@@ -549,6 +549,27 @@ provvisoria**. Le ragioni 1 e 3 restano vere e non sono toccate.
 interazione delle righe, e non solo i token, la tabellare fatta prima si riscrive invece di
 restilizzarsi. Il dettaglio sta in `handoff/PIANO.md` del goal del 22 settembre, sezione `DECISIONI`.
 
+### Richieste del 19 ottobre 2026
+
+L'utente ha consegnato in chat un elenco di richieste dopo l'uso delle fasi 2.1 e 2.2. Collocazione
+proposta con `tech-advisor` (19 ott, posizioni verificate sul codice); l'ordine delle prime due
+l'ha scelto l'utente: 2026-10-19 utente (chat, popup): «Prima i dati (Consigliata)».
+
+| Richiesta | Fase | Nota |
+|---|---|---|
+| Spese a rate (Scalapay, Cofidis) | **2.3**, prima | Una regola ricorrente che si chiude da sola dopo N quote (`amount` = totale/N, `ends_on` = inizio + N-1 mesi), non un campo «numero rate» su una spesa singola: il passato si materializza, il futuro si calcola. Migrazione piccola su `recurring_expenses` (totale del piano, numero di quote) per «rata k/N» e il resto dell'arrotondamento sull'ultima |
+| Ricorrenti divise mensili / annuali / ogni N mesi, con totali | **2.3** | Oggi ordinate per `updated_at` desc (`RecurringExpenseRepository.cs:34`) |
+| Quota mensile da accantonare per le annuali | **2.3** | Calcolo puro (importo / mesi del periodo), nessuna migrazione |
+| Entrate e bilancio | **2.3** | Tipo di movimento, non importo negativo: `amount > 0` è un check (`20260824000000_spese.sql:22`) |
+| Rilievo R1 della chiusura del 12 ott (doppioni oltre 1000 spese) | **2.3**, primo lavoro | Ratificato il 19 ott |
+| Registro con solo elenco e grafici; inserimento in drawer su PC e modale su telefono | **2.1-bis** | Nessun drawer né dialog oggi |
+| Notifiche a comparsa al posto degli avvisi in pagina | **2.1-bis** | Oggi `<div class="errore" role="alert">` in pagina |
+| Loader, sfondo canvas, fasce luminose su componenti e menu | **2.1-bis** | ⚠️ L'utente chiede «fasce neon scattanti», la 2.1-bis.1 dice «non neon»: da sciogliere in brainstorming con prove a confronto |
+| Spazi in alto come barra di schede, profilo in alto a destra; tabella delle ricorrenti più curata | **2.1-bis** | Oggi spazi e profilo in fondo al menu laterale (`Shared/Navigazione.razor:41,49`) |
+| Importare una collezione privata in uno spazio condiviso | **3** (template) | È una copia, non uno spostamento: `space_id` non ha GRANT UPDATE |
+| Tasto «segnala un bug» per utenti scelti e casella delle segnalazioni | anticipabile, senza server | Flag sul profilo + tabella `bug_reports` |
+| Area di amministrazione: utenti, blocco, log | **fase nuova, non prima della 5** | Il blocco passa dall'Auth Admin API: serve una Edge Function, la service key mai nel client. `profiles` non ha un ruolo: tabella `admins` senza GRANT ad `authenticated` e `is_admin()` security definer; l'admin **non** entra nelle policy di spese e note |
+
 ---
 
 ## 7. Cosa non si fa
@@ -559,6 +580,7 @@ restilizzarsi. Il dettaglio sta in `handoff/PIANO.md` del goal del 22 settembre,
 | **Proxy generico verso API arbitrarie** | §3.3. DNS rebinding non chiudibile in Deno, e custodia di chiavi altrui senza capacità di risposta |
 | **Esecuzione di codice scritto dall'utente** | Escluso dall'utente. Senza sandbox è XSS persistente su chi condivide lo spazio; con sandbox è un'API di plugin da versionare; se deve girare quando l'utente non c'è serve un runtime multi-tenant |
 | **API pubblica dichiarata** | §2.3. Quando il server OAuth 2.1 esce di beta *e* qualcuno la chiede |
+| **Dati sul dispositivo, con il database come copia compressa** | §3.6 e fondazione dell'11 agosto (online, concorrenza ottimistica). Spazi condivisi con due verità, storage del browser cancellabile, dati in chiaro fuori dalla RLS, un blob compresso annulla RLS per riga, vincoli e indici. Proposto e ritirato dall'utente il 19 ottobre 2026, alternativa leggera compresa (2026-10-19 utente (chat, popup): «Lasciamo perdere») |
 | **Kickstarter** | §3.4. È una prevendita, cioè attività commerciale |
 | **«Dona per sbloccare X»** | §3.4. Fa collassare la fase 1 dentro la fase 7 |
 
