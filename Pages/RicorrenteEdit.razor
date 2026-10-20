@@ -44,14 +44,14 @@ else
         @* Qui il conflitto è frequente e atteso, non un caso raro: ogni materializzazione alza
            version. Si mostra sempre, non si sopprime. SovrascriviAbilitato in più su Valido &&
            PuoIntervenire: v. Pages/SpesaEdit.razor:41-53 per il perché di entrambe le condizioni. *@
-        <SchedaConflitto Premessa="Mentre la modificavi, questa spesa ricorrente è cambiata." Occupato="@occupato" SovrascriviAbilitato="@(Valido && PuoIntervenire)"
+        <SchedaConflitto Premessa="@($"Mentre la modificavi, questa {NomeTipo} ricorrente è cambiata.")" Occupato="@occupato" SovrascriviAbilitato="@(Valido && PuoIntervenire)"
                          OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @* Stessa regola di Services/Permessi.cs (la RLS di recurring_expenses ha la forma di expenses), ma senza un Oggetto dedicato lì: quando se ne aggiunge uno, questa frase va spostata in Permessi.Spiegazione. *@
     @if (!PuoIntervenire)
     {
-        <p class="spiega">Questa spesa ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
+        <p class="spiega">Questa @NomeTipo ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
     }
 
     @if (Bloccato)
@@ -59,6 +59,21 @@ else
         <p class="spiega">Il piano è partito: si possono cambiare solo descrizione e categoria, oppure terminarlo se l'hai estinto prima.</p>
     }
 
+    @if (Nuova)
+    {
+        <fieldset class="scelta-categoria">
+            <legend class="etichetta-campo">Tipo</legend>
+            @foreach (var t in new[] { TipoMovimento.Spesa, TipoMovimento.Entrata })
+            {
+                <button type="button" class="pastiglia @(t == tipo ? "accesa" : "")"
+                        aria-pressed="@(t == tipo)" @onclick="() => ScegliTipo(t)" disabled="@occupato">@TipoMovimento.Testo(t)</button>
+            }
+        </fieldset>
+    }
+    else
+    {
+        <div class="campo campo-lettura"><span class="etichetta-campo">Tipo</span><p>@TipoMovimento.Testo(tipo)</p></div>
+    }
     <div class="campi-spesa campi-ricorrente">
         @if (Piano)
         {
@@ -116,7 +131,9 @@ else
             {
                 <p class="errore-campo">@erroreImporto</p>
             }
-            <p class="spiega">L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.</p>
+            <p class="spiega">@(tipo == TipoMovimento.Entrata
+                ? "L'importo è quello atteso: se arriva diverso, lo correggi sull'entrata del mese."
+                : "L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.")</p>
         }
 
         <label class="campo">
@@ -188,12 +205,12 @@ else
        v. Pages/SpesaEdit.razor:129-148 per il perché di entrambe le scelte. *@
     <fieldset class="scelta-categoria">
         <legend class="etichetta-campo">Categoria</legend>
-        @foreach (var c in CategorieSpesa.Elenco)
+        @foreach (var c in CategorieSpesa.Di(tipo))
         {
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
                     aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
         }
-        @if (!CategorieSpesa.Conosciuta(categoria))
+        @if (!CategorieSpesa.Conosciuta(categoria, tipo))
         {
             <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
         }
@@ -244,7 +261,7 @@ else
                 var attiva = Piano
                     ? CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today) is not null
                     : regola!.EndsOn is null;
-                <h2>Fermare questa spesa ricorrente</h2>
+                <h2>Fermare questa @NomeTipo ricorrente</h2>
                 @if (attiva)
                 {
                     <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
@@ -270,7 +287,7 @@ else
             @* Durante un conflitto 'regola' è la versione letta all'apertura e 'conflitto' quella fresca dal server: il watermark si legge dalla più recente. *@
             @if ((conflitto ?? regola)?.MaterializedThrough is null)
             {
-                <p class="testo-tenue">Non ha ancora segnato nessuna spesa, quindi si può anche eliminare.</p>
+                <p class="testo-tenue">Non ha ancora segnato nessuna @NomeTipo, quindi si può anche eliminare.</p>
                 <div class="azioni">
                     <ConfermaAzione Chiave="@Id" Occupato="@(occupato || conflitto is not null)" OnConferma="Elimina" />
                 </div>
@@ -293,6 +310,7 @@ else
     private int rate = 2;
     private string descrizione = "";
     private string categoria = CategorieSpesa.Elenco[0];
+    private string tipo = TipoMovimento.Spesa;
     private int ogniMesi = 1;
     private int giorno = DateTime.Today.Day;
 
@@ -318,9 +336,23 @@ else
     private bool Piano => !Nuova && regola?.Installments is not null;
     private bool Bloccato => Piano && CalcoliRicorrenti.PianoPartito(conflitto ?? regola!, DateTime.Today);
 
-    private string TitoloSchermata => !string.IsNullOrWhiteSpace(descrizione)
-        ? descrizione
-        : (Nuova ? "Nuova spesa ricorrente" : "Spesa ricorrente");
+    // «spesa» o «entrata», per i testi della pagina che nominano il tipo della regola.
+    private string NomeTipo => TipoMovimento.Testo(tipo).ToLowerInvariant();
+
+    private string TitoloSchermata
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(descrizione)) return descrizione;
+            return Nuova ? $"Nuova {NomeTipo} ricorrente" : $"{TipoMovimento.Testo(tipo)} ricorrente";
+        }
+    }
+
+    private void ScegliTipo(string scelto)
+    {
+        tipo = scelto;
+        if (!CategorieSpesa.Conosciuta(categoria, tipo)) categoria = CategorieSpesa.Di(tipo)[0];
+    }
 
     private bool Valido => DatiDaSalvare() is not null;
 
@@ -330,7 +362,7 @@ else
     // allontanano da quel default, gli stessi valori che OnParametersSetAsync assegna in creazione.
     protected override bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
-          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today
+          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today || tipo != TipoMovimento.Spesa
         : regola is not null && (Piano
             ? totaleTesto != Denaro.TestoDigitabile(regola.PlanTotal ?? 0) || rate != regola.Installments
               || descrizione != regola.Description || categoria != regola.Category || inizio?.Date != regola.StartsOn.Date
@@ -363,6 +395,7 @@ else
             if (Nuova)
             {
                 regola = null;
+                tipo = TipoMovimento.Spesa;
                 importoTesto = "";
                 totaleTesto = "";
                 rate = 2;
@@ -390,6 +423,7 @@ else
                 rate = regola.Installments ?? 2;
                 descrizione = regola.Description;
                 categoria = regola.Category;
+                tipo = regola.Kind;
                 ogniMesi = regola.EveryMonths;
                 giorno = regola.DayOfMonth;
                 inizio = regola.StartsOn;
@@ -452,7 +486,7 @@ else
             return;
         }
 
-        var creata = await Repository.CreaAsync(attivo.Id, pagante, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value));
+        var creata = await Repository.CreaAsync(attivo.Id, pagante, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value, Kind: tipo));
 
         // replace: true ed Esci, non NavigateTo: qui la guardia va disarmata, la creazione è
         // riuscita (v. Shared/PaginaEditor.Esci) e /expenses/recurring/new non è un posto in cui

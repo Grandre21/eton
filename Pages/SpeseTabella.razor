@@ -16,7 +16,8 @@
         </div>
     </Azione>
     <Aiuto>
-        <p>Ogni riga è una spesa. «registrata» è una spesa vera; «prevista» è una ricorrente già dovuta che diventa una spesa vera quando chi la paga apre Eton; «in arrivo» è una ricorrente che deve ancora cadere.</p>
+        <p>Ogni riga è una spesa o un'entrata. «registrata» è una spesa vera; «prevista» è una ricorrente già dovuta che diventa una spesa vera quando chi la paga apre Eton; «in arrivo» è una ricorrente che deve ancora cadere.</p>
+        <p>Il riepilogo in fondo dà spese, entrate e saldo; le entrate non si sommano alle spese.</p>
         <p>Le previste contano nel totale, perché la spesa c'è già; quelle in arrivo no, perché non sono ancora dovute.</p>
         <p>Una riga si modifica solo se l'hai pagata tu o se lo spazio è tuo. Previste e in arrivo non si modificano e non si selezionano.</p>
         <p>I tasti:</p>
@@ -115,8 +116,16 @@
 
             <fieldset class="strumenti-riga" data-tutorial="filtri">
                 <legend class="solo-lettori">Filtri</legend>
+                <label class="campo">
+                    <span class="etichetta-campo">Tipo</span>
+                    <select value="@(vista.Filtri.Tipo ?? "")" @onchange="CambiaTipo">
+                        <option value="">Tutti</option>
+                        <option value="@TipoMovimento.Spesa">Spese</option>
+                        <option value="@TipoMovimento.Entrata">Entrate</option>
+                    </select>
+                </label>
                 <div class="scelta-categoria" role="group" aria-label="Categorie">
-                    @foreach (var c in CategorieSpesa.Elenco)
+                    @foreach (var c in CategorieSpesa.Tutte)
                     {
                         var accesa = vista.Filtri.Categorie.Contains(c);
                         <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@accesa" @onclick="() => AlternaCategoria(c)">@c</button>
@@ -173,19 +182,29 @@
                 else
                 {
                     <span><span class="dato">@selezione.Count</span> @(selezione.Count == 1 ? "selezionata" : "selezionate")</span>
-                    <label class="campo">
-                        <span class="etichetta-campo solo-lettori">Nuova categoria</span>
-                        <select @bind="categoriaMassa" disabled="@rileggo">
-                            @foreach (var c in CategorieSpesa.Elenco)
-                            {
-                                <option value="@c">@c</option>
-                            }
-                        </select>
-                    </label>
-                    <button type="button" class="btn compatto" @onclick="CambiaCategoria" disabled="@rileggo">Cambia categoria</button>
+                    @if (TipoSelezione is not { } tipoSelezione)
+                    {
+                        @if (righe.Any(r => selezione.Contains(r.Chiave)))
+                        {
+                            <p class="testo-tenue">La selezione ha spese ed entrate: la categoria si cambia a un tipo alla volta.</p>
+                        }
+                    }
+                    else
+                    {
+                        <label class="campo">
+                            <span class="etichetta-campo solo-lettori">Nuova categoria</span>
+                            <select value="@CategoriaMassa" @onchange='e => categoriaMassa = e.Value?.ToString() ?? ""' disabled="@rileggo">
+                                @foreach (var c in CategorieSpesa.Di(tipoSelezione))
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            </select>
+                        </label>
+                        <button type="button" class="btn compatto" @onclick="CambiaCategoria" disabled="@rileggo">Cambia categoria</button>
+                    }
                     @* Chiave = impronta della selezione: una conferma armata su 3 righe non deve sopravvivere a un cambio di selezione. *@
                     <ConfermaAzione Chiave="@impronta" Etichetta="Elimina"
-                                    EtichettaConferma="@($"Sì, elimina {Testi.Conteggio(selezione.Count, "spesa", "spese")}")"
+                                    EtichettaConferma="@($"Sì, elimina {Testi.Conteggio(selezione.Count, "movimento", "movimenti")}")"
                                     Occupato="@rileggo" OnConferma="EliminaSelezionate" />
                 }
             </div>
@@ -206,7 +225,7 @@
         {
             @if (!gruppi.Any(g => g.Righe.Count > 0))
             {
-                <p class="testo-tenue" role="status">Nessuna spesa in questo periodo con questi filtri.</p>
+                <p class="testo-tenue" role="status">Nessun movimento in questo periodo con questi filtri.</p>
             }
             <Griglia T="RigaSpesa" @ref="griglia"
                      Colonne="colonne" Gruppi="gruppi"
@@ -220,6 +239,7 @@
                      MotivoSolaLettura="MotivoSolaLettura"
                      SottoRiga="SottoRiga"
                      NotaRiepilogo="@NotaPreviste()"
+                     VociRiepilogo="Bilancio"
                      AncoraCella="AncoraCella"
                      AncoraIntestazioni="intestazioni" AncoraSelezione="selezione" AncoraRiepilogo="riepilogo" />
         }
@@ -237,7 +257,7 @@
     [
         new("periodo", "Il periodo", "Scegli quali mesi mostrare. «Dal … al …» apre due date a scelta.",
             "Il periodo compare quando le spese dello spazio sono state lette."),
-        new("filtri", "I filtri", "Categorie, pagante, testo e stato restringono le righe mostrate. Tutto finisce nell'indirizzo della pagina: salvalo o condividilo per ritrovare la stessa vista.",
+        new("filtri", "I filtri", "Tipo, categorie, pagante, testo e stato restringono le righe mostrate. Tutto finisce nell'indirizzo della pagina: salvalo o condividilo per ritrovare la stessa vista.",
             "I filtri compaiono quando le spese dello spazio sono state lette."),
         new("intestazioni", "L'ordinamento", "Clicca un'intestazione per ordinare per quella colonna; cliccala di nuovo per invertire l'ordine.",
             "Le intestazioni compaiono quando la tabella ha delle colonne da mostrare."),
@@ -249,7 +269,7 @@
             "Le caselle compaiono quando ci sono righe da selezionare."),
         new("azioni", "Le azioni sulle righe", "Con almeno una riga selezionata, qui cambi la categoria a tutte insieme o le elimini.",
             "Le azioni compaiono quando le spese dello spazio sono state lette."),
-        new("riepilogo", "Il riepilogo", "In fondo, totale, media, minimo e massimo delle righe mostrate, o della selezione se ce n'è una. Le previste contano, perché la spesa c'è già; le in arrivo no, perché non sono ancora dovute.",
+        new("riepilogo", "Il riepilogo", "In fondo, spese, entrate e saldo delle righe mostrate, o della selezione se ce n'è una. Le previste contano, perché la spesa c'è già; le in arrivo no, perché non sono ancora dovute.",
             "Il riepilogo compare in fondo quando la tabella ha delle righe."),
         new("esporta", "L'esportazione", "Scarica le righe mostrate, o la selezione, in un file che si apre con Excel.",
             "L'esportazione compare quando le spese dello spazio sono state lette.")
@@ -409,12 +429,13 @@
             new(TabellaSpese.Colonne.Data, "Data", TipoColonna.Data, r => r.Spesa.SpentOn) { Modificabile = modificabile },
             new(TabellaSpese.Colonne.Descrizione, "Descrizione", TipoColonna.Testo, r => r.Spesa.Description) { Modificabile = modificabile },
             new(TabellaSpese.Colonne.Categoria, "Categoria", TipoColonna.Selezione, r => r.Spesa.Category)
-                { Modificabile = modificabile, Opzioni = CategorieSpesa.Elenco },
+                // Un solo elenco per colonna: le categorie delle entrate si cambiano nell'editor della riga.
+                { Modificabile = r => modificabile(r) && r.Spesa.Kind == TipoMovimento.Spesa, Opzioni = CategorieSpesa.Elenco },
             new(TabellaSpese.Colonne.Importo, "Importo", TipoColonna.Denaro, r => r.Spesa.Amount)
             {
-                Modificabile = modificabile,
-                Aggregazioni = Aggregazione.Somma | Aggregazione.Media | Aggregazione.Min | Aggregazione.Max | Aggregazione.Conteggio
-            }
+                Modificabile = modificabile
+            },
+            new(TabellaSpese.Colonne.Tipo, "Tipo", TipoColonna.Testo, r => TipoMovimento.Testo(r.Spesa.Kind))
         };
         if (Condiviso)
             elenco.Add(new(TabellaSpese.Colonne.Pagante, "Pagato da", TipoColonna.Testo, r => NomeMembro(r.Spesa.PaidBy) ?? ""));
@@ -492,6 +513,9 @@
 
     private void CambiaPagante(ChangeEventArgs e)
         => Aggiorna(vista with { Filtri = vista.Filtri with { Pagante = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null } });
+
+    private void CambiaTipo(ChangeEventArgs e)
+        => Aggiorna(vista with { Filtri = vista.Filtri with { Tipo = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString() } });
 
     private void CambiaTesto(string? testo) => Aggiorna(vista with { Filtri = vista.Filtri with { Testo = testo ?? "" } });
 
@@ -621,7 +645,35 @@
         }
     }
 
-    private Task CambiaCategoria() => Massa(AzioneMassa.CambiaCategoria, ids => Repository.CambiaCategoriaAsync(ids, categoriaMassa));
+    // null = selezione vuota, mista (spese ed entrate) o con chiavi che non sono più fra le righe lette.
+    private string? TipoSelezione
+    {
+        get
+        {
+            var tipi = righe.Where(r => selezione.Contains(r.Chiave)).Select(r => r.Spesa.Kind).Distinct().ToList();
+            return tipi.Count == 1 ? tipi[0] : null;
+        }
+    }
+
+    private string CategoriaMassa
+    {
+        get
+        {
+            var tipo = TipoSelezione ?? TipoMovimento.Spesa;
+            return CategorieSpesa.Conosciuta(categoriaMassa, tipo) ? categoriaMassa : CategorieSpesa.Di(tipo)[0];
+        }
+    }
+
+    private IReadOnlyList<(string, string)> Bilancio(IReadOnlyList<RigaSpesa> righe)
+    {
+        var b = CalcoliSpese.BilancioDi(righe.Select(r => r.Spesa));
+        return [("Spese", Denaro.Testo(b.Spese) + "\u00A0€"),
+            ("Entrate", CalcoliSpese.ConSegno(b.Entrate) + "\u00A0€"),
+            ("Saldo", CalcoliSpese.ConSegno(b.Saldo) + "\u00A0€")];
+    }
+
+    private Task CambiaCategoria() => TipoSelezione is null ? Task.CompletedTask
+        : Massa(AzioneMassa.CambiaCategoria, ids => Repository.CambiaCategoriaAsync(ids, CategoriaMassa));
 
     private Task EliminaSelezionate() => Massa(AzioneMassa.Elimina, ids => Repository.EliminaTutteAsync(ids));
 

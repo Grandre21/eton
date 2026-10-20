@@ -1,0 +1,1 @@
+BLOCKED: Qual è il percorso del file `-o` in cui scrivere il resoconto? Nel messaggio non è specificato e `handoff/05-entrate/resoconto.md` è vietato.

@@ -49,6 +49,8 @@ che i totali del mese sono tornati quelli di prima. Browser con `deviceId d3148d
 GATE: `mcp__synapse__build root=<worktree>` → 0 errori; `mcp__synapse__test root=<worktree>` → 0 failed;
 `live-testing` verde | BUDGET: 12 M tok_eq
 
+⚠️ Lezioni delle unità 02 e 04: (1) nel resoconto **una riga `GATE:` per comando**, nella forma `GATE: mcp__synapse__test root=<worktree> → 0 failed, N passed`: tre comandi su una riga separati da `|` fanno respingere l'esito da `verifica-fatto`. (2) Il modulo del Registro ha già `aRate`/`numeroRate` dalla 04: la scelta «Spesa / Entrata» deve nascondere l'interruttore e spegnerlo quando si passa a «Entrata» (resoconto 04, `CONTRATTI`). (3) Nei brief a Codex aggiungi la riga che vieta `Set-Content`, `Out-File` e `[System.IO.File]::Write*`, come ha fatto la 04.
+
 RESOCONTO IN: `handoff/05-entrate/resoconto.md` nel tuo worktree
 
 PARTI COMUNI: prima di cominciare, e di nuovo dopo ogni compaction, leggi per intero con Read

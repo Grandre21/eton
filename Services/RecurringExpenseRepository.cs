@@ -7,8 +7,8 @@ namespace Eton.Services;
 /// <summary>I dati di una regola ricorrente per <see cref="RecurringExpenseRepository.CreaAsync"/> e
 /// <see cref="RecurringExpenseRepository.SalvaAsync"/>: due interi adiacenti come
 /// <c>ogniMesi</c> e <c>giorno</c> scambiati compilano lo stesso se sono argomenti posizionali,
-/// con i nomi no. Rate e TotalePiano valorizzati = piano a rate (v. <see cref="CalcoliRicorrenti.DatiPiano"/>).</summary>
-public sealed record DatiRegola(decimal Importo, string Descrizione, string Categoria, int OgniMesi, int Giorno, DateTime Inizio, int? Rate = null, decimal? TotalePiano = null);
+/// con i nomi no. Kind vale solo in creazione. Rate e TotalePiano valorizzati = piano a rate (v. <see cref="CalcoliRicorrenti.DatiPiano"/>).</summary>
+public sealed record DatiRegola(decimal Importo, string Descrizione, string Categoria, int OgniMesi, int Giorno, DateTime Inizio, int? Rate = null, decimal? TotalePiano = null, string Kind = TipoMovimento.Spesa);
 
 /// <summary>
 /// Accesso alle regole di spesa ricorrente. Come <see cref="ExpenseRepository"/>: ogni metodo
@@ -55,6 +55,7 @@ public class RecurringExpenseRepository
             SpaceId              = spazioId,
             PaidBy               = pagante,
             Amount               = dati.Importo,
+            Kind                 = dati.Kind,
             Description          = dati.Descrizione.Trim(),
             Category             = dati.Categoria.Trim(),
             EveryMonths          = dati.OgniMesi,

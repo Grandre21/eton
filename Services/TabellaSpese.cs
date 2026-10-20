@@ -27,7 +27,7 @@ public enum TipoPeriodo { QuestoMese, MeseScorso, UltimiTreMesi, QuestAnno, Libe
 
 /// <summary>I filtri della tabella, tutti in AND. Un insieme vuoto, un pagante nullo e un testo vuoto
 /// non filtrano.</summary>
-public sealed record FiltriSpese(IReadOnlySet<string> Categorie, Guid? Pagante, string Testo, IReadOnlySet<StatoSpesa> Stati)
+public sealed record FiltriSpese(IReadOnlySet<string> Categorie, Guid? Pagante, string Testo, IReadOnlySet<StatoSpesa> Stati, string? Tipo = null)
 {
     public static FiltriSpese Nessuno { get; } = new(new HashSet<string>(), null, "", new HashSet<StatoSpesa>());
 }
@@ -48,10 +48,13 @@ public sealed record VistaTabella(TipoPeriodo Periodo, DateTime? Da, DateTime? A
         ("registrata", StatoSpesa.Registrata), ("prevista", StatoSpesa.Prevista), ("in-arrivo", StatoSpesa.InArrivo)
     ];
 
+    private static readonly (string Nome, string Tipo)[] Tipi =
+        [("spesa", TipoMovimento.Spesa), ("entrata", TipoMovimento.Entrata)];
+
     private static readonly string[] ColonneOrdinabili =
     [
         TabellaSpese.Colonne.Data, TabellaSpese.Colonne.Descrizione, TabellaSpese.Colonne.Categoria,
-        TabellaSpese.Colonne.Importo, TabellaSpese.Colonne.Pagante, TabellaSpese.Colonne.Stato
+        TabellaSpese.Colonne.Importo, TabellaSpese.Colonne.Pagante, TabellaSpese.Colonne.Stato, TabellaSpese.Colonne.Tipo
     ];
 
     private static readonly string[] GruppiValidi =
@@ -98,14 +101,15 @@ public sealed record VistaTabella(TipoPeriodo Periodo, DateTime? Da, DateTime? A
             }
         }
 
-        var categorie = Valore("cat").Split(',').Where(CategorieSpesa.Conosciuta).ToHashSet();
+        var categorie = Valore("cat").Split(',').Where(CategorieSpesa.Tutte.Contains).ToHashSet();
+        var tipo = Tipi.FirstOrDefault(p => p.Nome == Valore("tipo")).Tipo;
         var pagante = Guid.TryParse(Valore("pagante"), out var id) ? id : (Guid?)null;
         var nomiStati = Valore("stato").Split(',');
         var stati = Stati.Where(p => nomiStati.Contains(p.Nome)).Select(p => p.Stato).ToHashSet();
         var ordinaPer = ColonneOrdinabili.Contains(Valore("ord")) ? Valore("ord") : TabellaSpese.Colonne.Data;
         var raggruppaPer = GruppiValidi.Contains(Valore("grp")) ? Valore("grp") : null;
 
-        return new VistaTabella(periodo, da, a, new FiltriSpese(categorie, pagante, Valore("testo"), stati),
+        return new VistaTabella(periodo, da, a, new FiltriSpese(categorie, pagante, Valore("testo"), stati, tipo),
             ordinaPer, Valore("dir") != "asc", raggruppaPer);
     }
 
@@ -123,13 +127,14 @@ public sealed record VistaTabella(TipoPeriodo Periodo, DateTime? Da, DateTime? A
             if (A is { } a) Aggiungi("a", a.ToString(TabellaSpese.FormatoData,CultureInfo.InvariantCulture));
         }
 
-        var categorie = CategorieSpesa.Elenco.Where(Filtri.Categorie.Contains).ToList();
+        var categorie = CategorieSpesa.Tutte.Where(Filtri.Categorie.Contains).ToList();
         if (categorie.Count > 0) Aggiungi("cat", string.Join(',', categorie));
         if (Filtri.Pagante is { } pagante) Aggiungi("pagante", pagante.ToString());
         if (Filtri.Testo.Length > 0) Aggiungi("testo", Filtri.Testo);
 
         var stati = Stati.Where(p => Filtri.Stati.Contains(p.Stato)).Select(p => p.Nome).ToList();
         if (stati.Count > 0) Aggiungi("stato", string.Join(',', stati));
+        if (Filtri.Tipo is not null) Aggiungi("tipo", Array.Find(Tipi, p => p.Tipo == Filtri.Tipo).Nome);
 
         if (OrdinaPer != TabellaSpese.Colonne.Data) Aggiungi("ord", OrdinaPer);
         if (!Decrescente) Aggiungi("dir", "asc");
@@ -184,7 +189,7 @@ public static class TabellaSpese
     public static class Colonne
     {
         public const string Data = "data", Descrizione = "descrizione", Categoria = "categoria",
-            Importo = "importo", Pagante = "pagante", Stato = "stato";
+            Importo = "importo", Pagante = "pagante", Stato = "stato", Tipo = "tipo";
     }
 
     public static class Gruppi
@@ -226,6 +231,7 @@ public static class TabellaSpese
         var cercato = Normalizza(filtri.Testo);
 
         return righe
+            .Where(r => filtri.Tipo is null || r.Spesa.Kind == filtri.Tipo)
             .Where(r => filtri.Categorie.Count == 0 || filtri.Categorie.Contains(r.Spesa.Category))
             .Where(r => filtri.Pagante is null || r.Spesa.PaidBy == filtri.Pagante)
             .Where(r => filtri.Stati.Count == 0 || filtri.Stati.Contains(r.Stato))
@@ -283,7 +289,7 @@ public static class TabellaSpese
 
             case Colonne.Categoria:
                 // Una categoria uscita dall'elenco dopo che la spesa è stata segnata: riconfermarla non è un errore.
-                if (!CategorieSpesa.Conosciuta(testo) && testo != spesa.Category)
+                if (!CategorieSpesa.Conosciuta(testo, spesa.Kind) && testo != spesa.Category)
                     return new EsitoModifica(null, "Scegli una categoria dall'elenco.");
                 var conCategoria = Copia(spesa);
                 conCategoria.Category = testo;
@@ -299,7 +305,7 @@ public static class TabellaSpese
         Id = s.Id, SpaceId = s.SpaceId, PaidBy = s.PaidBy, RecurringId = s.RecurringId,
         RecurringPeriod = s.RecurringPeriod, Amount = s.Amount, Description = s.Description,
         Category = s.Category, SpentOn = s.SpentOn, Version = s.Version, CreatedAt = s.CreatedAt,
-        UpdatedAt = s.UpdatedAt
+        UpdatedAt = s.UpdatedAt, Kind = s.Kind
     };
 
     /// <summary>«registrata», «prevista», «in arrivo»; una registrata nata da una regola ricorrente

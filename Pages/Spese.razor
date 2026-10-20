@@ -10,6 +10,7 @@
 
 <TestataPagina Titolo="Spese">
     <Aiuto>
+        <p>Un'entrata — lo stipendio, un rimborso — si segna scegliendo «Entrata». Non entra nel totale delle spese né nelle categorie: conta nelle entrate e nel saldo del mese.</p>
         <p>Il riepilogo conta solo il mese che stai guardando: cambiando mese cambiano il totale e le categorie.</p>
         <p>Ogni spesa resta legata a chi l'ha pagata, e questo non cambia più dopo averla segnata.</p>
         <p>Una spesa ricorrente conta nel mese in cui è dovuta anche prima che chi la paga apra Eton: fino ad allora compare come «prevista» e non si apre.</p>
@@ -59,6 +60,14 @@ else
        spesa è esattamente ciò che fa abbandonare l'abitudine dopo una settimana. Il markup dei
        campi ricalca Pages/SpesaEdit.razor: gli stili sono scritti contro quelle classi. *@
     <section class="modulo-spesa">
+        <fieldset class="scelta-categoria">
+            <legend class="etichetta-campo">Tipo</legend>
+            @foreach (var tipo in new[] { TipoMovimento.Spesa, TipoMovimento.Entrata })
+            {
+                <button type="button" class="pastiglia @(tipo == nuovoTipo ? "accesa" : "")"
+                        aria-pressed="@(tipo == nuovoTipo)" @onclick="() => ScegliTipo(tipo)" disabled="@occupato">@TipoMovimento.Testo(tipo)</button>
+            }
+        </fieldset>
         @* Con «a rate» il modulo ha più figli dei tre della griglia, e prende la colonna unica dell'editor delle ricorrenti (app.css, .campi-ricorrente). *@
         <div class="campi-spesa @(aRate ? "campi-ricorrente" : null)">
             <label class="campo">
@@ -97,33 +106,36 @@ else
             {
                 <p class="errore-campo">L'anno non è verosimile: dev'essere fra il 2000 e l'anno prossimo.</p>
             }
-            <label class="interruttore">
-                <input type="checkbox" @bind="aRate" disabled="@occupato" />
-                <span class="testi">
-                    <span class="titolo">A rate</span>
-                    <span class="spiega">Diventa un piano fra le ricorrenti: una rata al mese dalla data qui sopra, e l'ultima prende i centesimi avanzati.</span>
-                </span>
-            </label>
-            @if (aRate)
+            @if (nuovoTipo == TipoMovimento.Spesa)
             {
-                <label class="campo">
-                    <span class="etichetta-campo">Numero di rate</span>
-                    <select @bind="numeroRate" disabled="@occupato">
-                        @for (var n = 2; n <= 60; n++)
-                        {
-                            <option value="@n">@n</option>
-                        }
-                    </select>
+                <label class="interruttore">
+                    <input type="checkbox" @bind="aRate" disabled="@occupato" />
+                    <span class="testi">
+                        <span class="titolo">A rate</span>
+                        <span class="spiega">Diventa un piano fra le ricorrenti: una rata al mese dalla data qui sopra, e l'ultima prende i centesimi avanzati.</span>
+                    </span>
                 </label>
-                @if (Denaro.Prova(nuovoImporto, out var totale))
+                @if (aRate)
                 {
-                    @if (!CalcoliRicorrenti.RataValida(totale, numeroRate))
+                    <label class="campo">
+                        <span class="etichetta-campo">Numero di rate</span>
+                        <select @bind="numeroRate" disabled="@occupato">
+                            @for (var n = 2; n <= 60; n++)
+                            {
+                                <option value="@n">@n</option>
+                            }
+                        </select>
+                    </label>
+                    @if (Denaro.Prova(nuovoImporto, out var totale))
                     {
-                        <p class="errore-campo">Diviso in @numeroRate rate fa meno di un centesimo a rata.</p>
-                    }
-                    else
-                    {
-                        <p class="spiega">@numeroRate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, numeroRate)) €</p>
+                        @if (!CalcoliRicorrenti.RataValida(totale, numeroRate))
+                        {
+                            <p class="errore-campo">Diviso in @numeroRate rate fa meno di un centesimo a rata.</p>
+                        }
+                        else
+                        {
+                            <p class="spiega">@numeroRate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, numeroRate)) €</p>
+                        }
                     }
                 }
             }
@@ -131,7 +143,7 @@ else
 
         <fieldset class="scelta-categoria">
             <legend class="etichetta-campo">Categoria</legend>
-            @foreach (var c in CategorieSpesa.Elenco)
+            @foreach (var c in CategorieSpesa.Di(nuovoTipo))
             {
                 <button type="button" class="pastiglia @(c == nuovaCategoria ? "accesa" : "")"
                         aria-pressed="@(c == nuovaCategoria)" @onclick="() => nuovaCategoria = c" disabled="@occupato">@c</button>
@@ -184,6 +196,7 @@ else
                Confidenza media su questo meccanismo, non alta, e non verificato sui sorgenti di
                .NET 10: se si rivela sbagliato va corretto qui, non spacciato per funzionante. *@
             <p class="totale-mese dato valore-cambia" @key="riepilogo.Totale">@Denaro.Testo(riepilogo.Totale)&#160;€</p>
+            <p class="testo-tenue">Entrate <span class="dato">@CalcoliSpese.ConSegno(riepilogo.Entrate)&#160;€</span> · Saldo <span class="dato">@CalcoliSpese.ConSegno(riepilogo.Saldo)&#160;€</span></p>
             <p class="confronto-mese testo-tenue">@TestoConfronto()</p>
 
             <ul class="barre-categorie">
@@ -216,7 +229,7 @@ else
         else
         {
             <div class="testa-registro">
-                <span>@Testi.Conteggio(speseDelMese.Count, "spesa", "spese")</span>
+                <span>@Testi.Conteggio(speseDelMese.Count, "movimento", "movimenti")</span>
             </div>
 
             <ul class="registro elenco-spese">
@@ -236,6 +249,10 @@ else
                         <a class="riga riga-spesa @(s.Id == ultimaSpesaCreataId ? "riga-nuova" : "")" href="@(prevista ? null : $"expenses/{s.Id}")">
                             <span class="descrizione">@s.Description</span>
                             <span class="meta">
+                                @if (s.Kind == TipoMovimento.Entrata)
+                                {
+                                    <span class="pastiglia">Entrata</span>
+                                }
                                 <span class="pastiglia">@s.Category</span>
                                 <span class="dato">@Testi.DataSola(s.SpentOn)</span>
                                 @if (prevista)
@@ -247,7 +264,7 @@ else
                                     <text> · @pagante</text>
                                 }
                             </span>
-                            <span class="importo dato">@Denaro.Testo(s.Amount)&#160;€</span>
+                            <span class="importo dato">@(s.Kind == TipoMovimento.Entrata ? CalcoliSpese.ConSegno(s.Amount) : Denaro.Testo(s.Amount))&#160;€</span>
                         </a>
                     </li>
                 }
@@ -294,6 +311,14 @@ else
     private bool rimettiFuocoImporto;
     private string nuovaDescrizione = "";
     private string nuovaCategoria = CategorieSpesa.Elenco[0];
+    private string nuovoTipo = TipoMovimento.Spesa;
+
+    private void ScegliTipo(string tipo)
+    {
+        nuovoTipo = tipo;
+        if (tipo == TipoMovimento.Entrata) aRate = false;
+        if (!CategorieSpesa.Conosciuta(nuovaCategoria, tipo)) nuovaCategoria = CategorieSpesa.Di(tipo)[0];
+    }
 
     // DateTime? e non DateTime: con un tipo non annullabile lo stato "vuoto" non è rappresentabile,
     // e il binder di Blazor lo contrabbanda dentro un valore legale. Verificato decompilando
@@ -399,11 +424,11 @@ else
             }
             else
             {
-                var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+                var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value, nuovoTipo);
                 ultimaSpesaCreataId = creata.Id;
             }
 
-            // Importo e descrizione si svuotano, data e categoria restano: chi segna tre spese al
+            // Importo e descrizione si svuotano, data, categoria e tipo restano: chi segna tre spese al
             // supermercato le segna nello stesso giorno e spesso nella stessa categoria, e
             // riazzerarle costringerebbe a rimetterle ogni volta; tranne la data dopo un piano a rate, v. sopra.
             nuovoImporto = "";

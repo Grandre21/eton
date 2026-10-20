@@ -130,6 +130,23 @@ public class PrivilegiInsertTests
         }
     }
 
+    [Fact]
+    public void Il_tipo_si_scrive_solo_in_creazione()
+    {
+        foreach (var tipo in new[] { typeof(Expense), typeof(RecurringExpense) })
+        {
+            var proprieta = tipo.GetProperty(nameof(Expense.Kind));
+            Assert.NotNull(proprieta);
+            var colonna = proprieta.GetCustomAttribute<ColumnAttribute>();
+            Assert.NotNull(colonna);
+            Assert.Equal("kind", colonna.ColumnName);
+            Assert.False(colonna.IgnoreOnInsert);
+            Assert.True(colonna.IgnoreOnUpdate);
+        }
+        Assert.Contains("kind", Concesso["expenses"]);
+        Assert.Contains("kind", Concesso["recurring_expenses"]);
+    }
+
     // Il difetto delle collezioni, generalizzato: se un modello invia una colonna che nessuna
     // migrazione ha concesso in INSERT, il database risponde 42501 senza dire quale colonna manca.
     // Qui la si nomina prima ancora di toccare un database.

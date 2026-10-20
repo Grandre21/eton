@@ -62,6 +62,11 @@ else
     }
 
     <div class="campi-spesa">
+        <div class="campo campo-lettura">
+            <span class="etichetta-campo">Tipo</span>
+            <p>@TipoMovimento.Testo(Tipo)</p>
+            <p class="spiega">Il tipo non si cambia: per farne una spesa o un'entrata, eliminala e segnala di nuovo.</p>
+        </div>
         @{
             RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
         }
@@ -132,7 +137,7 @@ else
        rende leggibile lo stato a chi ascolta la pagina. *@
     <fieldset class="scelta-categoria">
         <legend class="etichetta-campo">Categoria</legend>
-        @foreach (var c in CategorieSpesa.Elenco)
+        @foreach (var c in CategorieSpesa.Di(Tipo))
         {
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
                     aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
@@ -142,7 +147,7 @@ else
            pastiglia in più, sempre accesa: senza, nessuna pastiglia risulterebbe accesa e chi
            guarda non vedrebbe quale categoria è impostata. Stesso trattamento riservato da
            CampoInput.razor a un'opzione rimossa da un elenco a scelta. *@
-        @if (!CategorieSpesa.Conosciuta(categoria))
+        @if (!CategorieSpesa.Conosciuta(categoria, Tipo))
         {
             <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
         }
@@ -234,7 +239,8 @@ else
     // come Pagante() fa con la riga in più invece che con un buco di sicurezza.
     private Guid? mioId;
 
-    private string TitoloSchermata => string.IsNullOrWhiteSpace(descrizione) ? "Spesa" : descrizione;
+    private string Tipo => spesa?.Kind ?? TipoMovimento.Spesa;
+    private string TitoloSchermata => string.IsNullOrWhiteSpace(descrizione) ? TipoMovimento.Testo(Tipo) : descrizione;
 
     // Il pulsante resta spento anche senza un importo valido, una descrizione o una data
     // ragionevole. I primi due sono i vincoli che il database rifiuterebbe (amount > 0,

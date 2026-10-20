@@ -6,14 +6,22 @@ namespace Eton.Services;
 /// mese — serve alla larghezza delle barre del registro.</summary>
 public sealed record VoceCategoria(string Categoria, decimal Totale, int Quota);
 
-/// <summary>Il riepilogo di un mese: quanto si è speso, in cosa, e il confronto col mese prima.
-/// <c>VariazionePercentuale</c> è null quando il mese precedente è a zero — è il primo mese, non
-/// una variazione dello 0%.</summary>
+/// <summary>Spese ed entrate di un insieme di movimenti, e il saldo.</summary>
+public sealed record Bilancio(decimal Spese, decimal Entrate)
+{
+    public decimal Saldo => Entrate - Spese;
+}
+
+/// <summary>Il riepilogo del mese e il confronto col precedente: solo spese; le entrate a parte.</summary>
 public sealed record RiepilogoMese(
     decimal Totale,
     IReadOnlyList<VoceCategoria> Categorie,
     decimal TotalePrecedente,
-    int? VariazionePercentuale);
+    int? VariazionePercentuale,
+    decimal Entrate = 0)
+{
+    public decimal Saldo => Entrate - Totale;
+}
 
 /// <summary>
 /// Calcoli puri sulle spese: nessun accesso a rete o a stato, solo aggregazione di dati già in
@@ -21,6 +29,24 @@ public sealed record RiepilogoMese(
 /// </summary>
 public static class CalcoliSpese
 {
+    public static Bilancio BilancioDi(IEnumerable<Expense> movimenti)
+    {
+        decimal spese = 0, entrate = 0;
+        foreach (var movimento in movimenti)
+        {
+            if (movimento.Kind == TipoMovimento.Entrata) entrate += movimento.Amount;
+            else spese += movimento.Amount;
+        }
+        return new Bilancio(spese, entrate);
+    }
+
+    public static string ConSegno(decimal importo) => importo switch
+    {
+        > 0 => "+" + Denaro.Testo(importo),
+        < 0 => "−" + Denaro.Testo(-importo),
+        _ => Denaro.Testo(0m)
+    };
+
     // DateTime.ToString("MMMM") sotto InvariantGlobalization restituisce "August", non "agosto":
     // non esiste una cultura it-IT da poter impostare (v. CalcoliVoti.Testo per lo stesso problema
     // sui numeri). I nomi restano qui, e non in una pagina, perché la stessa tabella serve sia al
@@ -36,34 +62,33 @@ public static class CalcoliSpese
     /// motivo per far cadere una pagina che sta solo mostrando un'intestazione.</summary>
     public static string NomeMese(int mese) => mese is >= 1 and <= 12 ? NomiMesi[mese - 1] : "";
 
-    /// <summary>Il riepilogo di un mese: totale, ripartizione per categoria e confronto col mese
-    /// precedente. <paramref name="spese"/> deve contenere anche le spese del mese precedente,
-    /// perché il confronto si calcola dalla stessa raccolta — è per questo che
-    /// <see cref="ExpenseRepository.ElencaAsync"/> scarica due mesi in un colpo solo.</summary>
+    /// <summary>Totale, categorie e confronto col mese precedente (da includere nella raccolta): solo spese; le entrate a parte.</summary>
     public static RiepilogoMese PerMese(IEnumerable<Expense> spese, int anno, int mese)
     {
         var lista = spese as IReadOnlyCollection<Expense> ?? spese.ToList();
 
         var delMese = lista.Where(s => s.SpentOn.Year == anno && s.SpentOn.Month == mese).ToList();
-        var totale = delMese.Sum(s => s.Amount);
+        var speseDelMese = delMese.Where(s => s.Kind != TipoMovimento.Entrata).ToList();
+        var totale = speseDelMese.Sum(s => s.Amount);
+        var entrate = delMese.Where(s => s.Kind == TipoMovimento.Entrata).Sum(s => s.Amount);
 
         var mesePrecedente = mese == 1 ? 12 : mese - 1;
         var annoPrecedente = mese == 1 ? anno - 1 : anno;
         var totalePrecedente = lista
-            .Where(s => s.SpentOn.Year == annoPrecedente && s.SpentOn.Month == mesePrecedente)
+            .Where(s => s.SpentOn.Year == annoPrecedente && s.SpentOn.Month == mesePrecedente && s.Kind != TipoMovimento.Entrata)
             .Sum(s => s.Amount);
 
         int? variazione = totalePrecedente == 0
             ? null
             : (int)Math.Round((totale - totalePrecedente) / totalePrecedente * 100, MidpointRounding.AwayFromZero);
 
-        var categorie = delMese
+        var categorie = speseDelMese
             .GroupBy(s => s.Category)
             .Select(g => (Categoria: g.Key, Totale: g.Sum(s => s.Amount)))
             .OrderByDescending(c => c.Totale)
             .ToList();
 
-        return new RiepilogoMese(totale, ConQuote(categorie, totale), totalePrecedente, variazione);
+        return new RiepilogoMese(totale, ConQuote(categorie, totale), totalePrecedente, variazione, entrate);
     }
 
     /// <summary>Assegna a ogni categoria una quota intera, con la garanzia che la somma faccia

@@ -15,9 +15,9 @@ public sealed record PeriodoDovuto(string Periodo, DateTime Data);
 public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<Guid> Previste,
     IReadOnlyList<Expense> InArrivo);
 
-/// <summary>I gruppi della pagina Ricorrenti. L'ordine di dichiarazione è l'ordine in pagina: i gruppi
-/// futuri (Entrate prima di Mensili) si inseriscono al loro posto; A rate segue Mensili.</summary>
-public enum GruppoRicorrenti { Mensili, ARate, Annuali, OgniNMesi, Terminate }
+/// <summary>I gruppi della pagina Ricorrenti. L'ordine di dichiarazione è l'ordine in pagina:
+/// Entrate precede Mensili; A rate segue Mensili.</summary>
+public enum GruppoRicorrenti { Entrate, Mensili, ARate, Annuali, OgniNMesi, Terminate }
 
 /// <summary>Lo stato di un piano a rate attivo: il numero della prossima rata, il numero di rate e quanto resta da pagare, prossima compresa.</summary>
 public sealed record StatoPiano(int Prossima, int Rate, decimal Residuo);
@@ -160,6 +160,7 @@ public static class CalcoliRicorrenti
             SpaceId         = r.SpaceId,
             PaidBy          = r.PaidBy,
             Amount          = importo,
+            Kind            = r.Kind,
             Description     = descrizione,
             Category        = r.Category,
             SpentOn         = d.Data,
@@ -244,6 +245,7 @@ public static class CalcoliRicorrenti
         if (Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is null)
             return GruppoRicorrenti.Terminate;
 
+        if (r.Kind == TipoMovimento.Entrata) return GruppoRicorrenti.Entrate;
         if (r.Installments is not null) return GruppoRicorrenti.ARate;
 
         return r.EveryMonths switch

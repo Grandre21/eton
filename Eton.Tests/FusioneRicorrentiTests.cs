@@ -26,6 +26,19 @@ public class FusioneRicorrentiTests
         };
 
     [Fact]
+    public void Un_entrata_ricorrente_prevista_e_in_arrivo_resta_un_entrata()
+    {
+        var regola = Regola();
+        regola.Kind = TipoMovimento.Entrata;
+        var r = CalcoliRicorrenti.Fondi([], [regola], new DateTime(2026, 9, 1),
+            new DateTime(2026, 10, 31), new DateTime(2026, 9, 20));
+        var prevista = Assert.Single(r.Righe);
+        Assert.Contains(prevista.Id, r.Previste);
+        Assert.Equal(TipoMovimento.Entrata, prevista.Kind);
+        Assert.Equal(TipoMovimento.Entrata, Assert.Single(r.InArrivo).Kind);
+    }
+
+    [Fact]
     public void La_riga_vera_vince_sulla_previsione()
     {
         var regola = Regola(amount: 50m, day: 5, startsOn: new DateTime(2026, 6, 5));

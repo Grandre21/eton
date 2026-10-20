@@ -55,10 +55,21 @@
                         <button type="button" aria-expanded="@(chiuso ? "false" : "true")"
                                 @onclick="() => AlternaGruppo(etichetta)">@etichetta</button>
                         <span class="griglia-gruppo-conteggio">(@gruppo.Righe.Count)</span>
-                        @foreach (var colonna in Colonne.Where(c => c.Aggregazioni.HasFlag(Aggregazione.Somma)))
+                        @if (VociRiepilogo is not null)
                         {
-                            var subtotale = Riepiloga(colonna, gruppo.Righe.Where(ContaNeiTotali)).Somma;
-                            <span class="griglia-gruppo-somma">@colonna.Etichetta <span class="dato">@CalcoliGriglia.TestoCella(colonna.Tipo, subtotale)</span></span>
+                            var voci = VociRiepilogo(gruppo.Righe.Where(ContaNeiTotali).ToList());
+                            @foreach (var voce in voci)
+                            {
+                                <span class="griglia-gruppo-somma">@voce.Etichetta <span class="dato">@voce.Valore</span></span>
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var colonna in Colonne.Where(c => c.Aggregazioni.HasFlag(Aggregazione.Somma)))
+                            {
+                                var subtotale = Riepiloga(colonna, gruppo.Righe.Where(ContaNeiTotali)).Somma;
+                                <span class="griglia-gruppo-somma">@colonna.Etichetta <span class="dato">@CalcoliGriglia.TestoCella(colonna.Tipo, subtotale)</span></span>
+                            }
                         }
                     </th>
                 </tr>
@@ -126,7 +137,7 @@
             }
         </tbody>
     }
-    @if (Colonne.Any(c => c.Aggregazioni != Aggregazione.Nessuna))
+    @if (Colonne.Any(c => c.Aggregazioni != Aggregazione.Nessuna) || VociRiepilogo is not null)
     {
         var righeTotali = (Selezione.Count > 0 ? TutteLeRighe().Where(r => Selezione.Contains(ChiaveRiga(r))) : TutteLeRighe())
             .Where(ContaNeiTotali).ToList();
@@ -136,6 +147,20 @@
             <tr class="griglia-insieme">
                 <td colspan="@ColonneTotali">@(Selezione.Count > 0 ? $"Sulla selezione: {Testi.Conteggio(righeTotali.Count, "riga", "righe")}" : righeTotali.Count == 1 ? "Sull'unica riga mostrata" : $"Sulle {righeTotali.Count} righe mostrate")</td>
             </tr>
+            @if (VociRiepilogo is not null)
+            {
+                var voci = VociRiepilogo(righeTotali);
+                <tr><td colspan="@ColonneTotali">
+                    @foreach (var voce in voci)
+                    {
+                        <span class="griglia-gruppo-somma">@voce.Etichetta <span class="dato">@voce.Valore</span></span>
+                    }
+                    @if (NotaRiepilogo is not null)
+                    {
+                        <span class="griglia-nota">@NotaRiepilogo</span>
+                    }
+                </td></tr>
+            }
             @foreach (var (flag, etichetta) in ElencoAggregazioni.Where(a => Colonne.Any(c => c.Aggregazioni.HasFlag(a.Flag))))
             {
                 <tr>
@@ -195,6 +220,11 @@
     [Parameter] public Func<T, string?>? MotivoSolaLettura { get; set; }
     [Parameter] public Func<T, RenderFragment?>? SottoRiga { get; set; }
     [Parameter] public string? NotaRiepilogo { get; set; }
+
+    /// <summary>Voci di riepilogo calcolate dalla pagina sulle righe che contano nei totali — le mostrate, o la
+    /// selezione — al posto della somma per colonna: per esempio Spese, Entrate e Saldo. Null = solo le
+    /// aggregazioni delle colonne.</summary>
+    [Parameter] public Func<IReadOnlyList<T>, IReadOnlyList<(string Etichetta, string Valore)>>? VociRiepilogo { get; set; }
 
     /// <summary>L'ancora del tutorial (<c>data-tutorial</c>) di una cella; null = nessuna.</summary>
     [Parameter] public Func<T, string, string?>? AncoraCella { get; set; }

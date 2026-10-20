@@ -8,6 +8,19 @@ public class GruppiRicorrentiTests
     private static readonly DateTime Oggi = new(2026, 10, 20);
 
     [Fact]
+    public void Le_entrate_hanno_il_loro_gruppo_e_stanno_fuori_dalla_quota()
+    {
+        var mensile = Regola(tipo: TipoMovimento.Entrata);
+        var annuale = Regola(importo: 1200, mesi: 12, tipo: TipoMovimento.Entrata);
+        var terminata = Regola(fine: Oggi.AddMonths(-1), tipo: TipoMovimento.Entrata);
+        Assert.Equal(GruppoRicorrenti.Entrate, CalcoliRicorrenti.Gruppo(mensile, Oggi));
+        Assert.Equal(GruppoRicorrenti.Entrate, CalcoliRicorrenti.Gruppo(annuale, Oggi));
+        Assert.Equal(GruppoRicorrenti.Terminate, CalcoliRicorrenti.Gruppo(terminata, Oggi));
+        Assert.Equal(GruppoRicorrenti.Entrate, CalcoliRicorrenti.Raggruppa([Regola(), annuale, mensile, terminata], Oggi)[0].Gruppo);
+        Assert.Equal(10m, CalcoliRicorrenti.QuotaDaAccantonare([Regola(importo: 120, mesi: 12), annuale], Oggi));
+    }
+
+    [Fact]
     public void Classifica_per_cadenza_e_prossima_occorrenza()
     {
         Assert.Equal(GruppoRicorrenti.Mensili, CalcoliRicorrenti.Gruppo(Regola(), Oggi));
@@ -78,9 +91,10 @@ public class GruppiRicorrentiTests
     }
 
     private static RecurringExpense Regola(decimal importo = 10, int mesi = 1,
-        string descrizione = "Regola", DateTime? fine = null, DateTime? inizio = null, Guid? id = null) => new()
+        string descrizione = "Regola", DateTime? fine = null, DateTime? inizio = null, Guid? id = null, string tipo = TipoMovimento.Spesa) => new()
     {
         Id = id ?? Guid.NewGuid(), Amount = importo, Description = descrizione,
+        Kind = tipo,
         EveryMonths = mesi, DayOfMonth = 1, StartsOn = inizio ?? new DateTime(2026, 1, 1), EndsOn = fine
     };
 }
