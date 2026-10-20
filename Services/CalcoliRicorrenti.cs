@@ -102,6 +102,10 @@ public static class CalcoliRicorrenti
         return dovuti.Count > 0 ? dovuti[0].Data : null;
     }
 
+    /// <summary>La prossima occorrenza di una regola: v. l'overload sui campi.</summary>
+    public static DateTime? Prossima(RecurringExpense r, DateTime oggi)
+        => Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi);
+
     /// <summary>La cadenza di una regola in una frase italiana, per l'elenco e i form: "ogni mese, il 5",
     /// "ogni 2 mesi, l'ultimo giorno", "ogni anno, l'8 marzo". Stessa validazione di
     /// <see cref="Dovuti"/> e stesso motivo: v. lì.</summary>
@@ -191,7 +195,7 @@ public static class CalcoliRicorrenti
     /// <summary>La prossima rata e il residuo, prossima compresa; la rata di oggi conta come già pagata.</summary>
     public static StatoPiano? Stato(RecurringExpense r, DateTime oggi)
     {
-        if (r.Installments is null || Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is not DateTime prossima)
+        if (r.Installments is null || Prossima(r, oggi) is not DateTime prossima)
             return null;
         var k = NumeroRata(r, prossima);
         var residuo = r.PlanTotal!.Value - r.Amount * (k - 1);
@@ -242,7 +246,7 @@ public static class CalcoliRicorrenti
     /// <summary>Il gruppo della regola, secondo la prossima occorrenza e la cadenza.</summary>
     public static GruppoRicorrenti Gruppo(RecurringExpense r, DateTime oggi)
     {
-        if (Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is null)
+        if (Prossima(r, oggi) is null)
             return GruppoRicorrenti.Terminate;
 
         if (r.Kind == TipoMovimento.Entrata) return GruppoRicorrenti.Entrate;
