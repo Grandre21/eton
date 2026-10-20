@@ -1,5 +1,8 @@
 # Server di sviluppo — unità 07 (testi)
 
+> ⛔ **FERMO** — fermato alle 19:26 su indicazione del capo (prova nel browser rinviata): prima il figlio
+> 30012, poi il padre 11968; porta 5000 verificata libera. I PID qui sotto sono storia.
+
 Avviato dalla sessione-unità il 20 ottobre 2026, dal worktree `G:\Sviluppo\wt-Eton\07-testi`
 (ramo `unita-07-testi`, diff non ancora committato), dopo build 0 errori e test 417/0.
 
