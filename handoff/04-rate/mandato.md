@@ -30,6 +30,7 @@ STATO: unità 1, 2, 3 e passaggio dell'utente sulla migrazione — vedi `handoff
 
 AUTORE DEL DIFF: Codex 0.161.0, nella forma di `C:\Users\Andre!\.claude\TODO-synapse-codex.md`, «Regola per il
 mandato». Leggila prima del primo `codex exec`, insieme a `C:\Users\Andre!\.claude\protocollo.md` per intero.
+⚠️ Lezione dell'unità 01: la clausola verbatim «il file `-o`» fa creare a Codex un file chiamato `-o` nella radice del worktree, con il resoconto dentro (segnalazione aperta, la clausola resta verbatim). Dopo ogni lancio controlla se esiste, sposta il contenuto nel file `codex-<n>.md` e toglilo prima del commit. Se Codex scrive file con uno script PowerShell inline, scrivilo in `SCOSTAMENTI` e verifica encoding e accenti.
 
 RESA: minima, sui token esistenti, dichiarata provvisoria fino alla 2.1-bis.
 

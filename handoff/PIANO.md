@@ -49,13 +49,16 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 - **2026-10-20 — Decisione del capo, da ratificare**: nessun piano a task (`writing-plans`) fra spec e unità;
   ogni unità scrive il proprio brief dalla spec. Raccomandazione: tenerla, la spec nomina già file, regole e
   test, e un'unità di solo piano costerebbe un giro intero. Si annulla scrivendo il piano prima della 03.
+- **2026-10-20 — Decisione dell'unità 01, da ratificare**: il test della lettura a blocchi passa da un metodo
+  estratto `internal static` (`LeggiABlocchiAsync`) invece che da un finto client Supabase. Raccomandazione
+  dell'unità: tenerlo, è l'unica astrazione e ha un solo chiamante. Si annulla con un revert locale.
 
 ## PARTIZIONE
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
 | **S — progetto 2.3** | spec dei punti 0-4, approvata in chat | `docs/superpowers/specs/2026-10-20-rate-entrate-design.md` | — | **PARZIALE** — approvata dall'utente in chat il 20 ott («Approvo, vai»); è un documento, non c'è un comando che lo verifichi |
-| **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | **IN CORSO** — job `432f3b03`, ramo `unita-01-doppioni`, rete armata |
+| **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | **FATTO** — fusa su `main` il 20 ott, 0 rilievi aperti, una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 392 passed` |
 | **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | PIANIFICATA |
 | **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità | 02 | PIANIFICATA |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | PIANIFICATA |
@@ -70,11 +73,15 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 
 ## PROSSIMA AZIONE
 
-Lanciare **01-doppioni** nel suo worktree e armare la rete; mentre corre, il mandato della 02 è già scritto.
-Nessun piano a task separato: ogni unità scrive il proprio brief dalla spec, che è abbastanza puntuale.
+Lanciare **02-gruppi-quota** nel suo worktree e armare la rete. Poi 03, gate dell'utente, 04, 05.
+
+controllo contesto 2026-10-20 14:15: nulla
 
 ## APERTO
 
+- Due segnalazioni sulla configurazione dall'unità 01, trascritte in `~/.claude/segnalazioni/` il 20 ott:
+  `2026-10-20-codex-file-meno-o.md` (la clausola «il file `-o`» fa creare a Codex un file «-o») e
+  `2026-10-20-codex-powershell-scrive-file.md`. Nei mandati 02-05 c'è un'avvertenza in attesa della correzione.
 - `RecurringExpenseRepository` non ha un file di test dedicato (scout, 20 ott): da considerare nel piano.
 - Restano vivi dai goal precedenti e **non sono di questo goal**: `handoff/CHIUSURA.md` (12 ott) e
   `handoff/2026-09-20-CHIUSURA.md`, non ancora letti dall'utente, quindi non archiviati;

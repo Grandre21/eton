@@ -28,6 +28,7 @@ seconda che ha già un trigger e i privilegi per colonna.
 
 AUTORE DEL DIFF: Codex 0.161.0, nella forma di `C:\Users\Andre!\.claude\TODO-synapse-codex.md`, «Regola per il
 mandato». Leggila prima del primo `codex exec`, insieme a `C:\Users\Andre!\.claude\protocollo.md` per intero.
+⚠️ Lezione dell'unità 01: la clausola verbatim «il file `-o`» fa creare a Codex un file chiamato `-o` nella radice del worktree, con il resoconto dentro (segnalazione aperta, la clausola resta verbatim). Dopo ogni lancio controlla se esiste, sposta il contenuto nel file `codex-<n>.md` e toglilo prima del commit. Se Codex scrive file con uno script PowerShell inline, scrivilo in `SCOSTAMENTI` e verifica encoding e accenti.
 `threat-hunter` guarda in particolare i privilegi per colonna e il trigger: un membro non deve poter cambiare
 il tipo di un movimento di un altro, né il proprio dopo la creazione.
 
