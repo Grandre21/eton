@@ -108,36 +108,36 @@ else
             }
             @if (nuovoTipo == TipoMovimento.Spesa)
             {
-            <label class="interruttore">
-                <input type="checkbox" @bind="aRate" disabled="@occupato" />
-                <span class="testi">
-                    <span class="titolo">A rate</span>
-                    <span class="spiega">Diventa un piano fra le ricorrenti: una rata al mese dalla data qui sopra, e l'ultima prende i centesimi avanzati.</span>
-                </span>
-            </label>
-            @if (aRate)
-            {
-                <label class="campo">
-                    <span class="etichetta-campo">Numero di rate</span>
-                    <select @bind="numeroRate" disabled="@occupato">
-                        @for (var n = 2; n <= 60; n++)
-                        {
-                            <option value="@n">@n</option>
-                        }
-                    </select>
+                <label class="interruttore">
+                    <input type="checkbox" @bind="aRate" disabled="@occupato" />
+                    <span class="testi">
+                        <span class="titolo">A rate</span>
+                        <span class="spiega">Diventa un piano fra le ricorrenti: una rata al mese dalla data qui sopra, e l'ultima prende i centesimi avanzati.</span>
+                    </span>
                 </label>
-                @if (Denaro.Prova(nuovoImporto, out var totale))
+                @if (aRate)
                 {
-                    @if (!CalcoliRicorrenti.RataValida(totale, numeroRate))
+                    <label class="campo">
+                        <span class="etichetta-campo">Numero di rate</span>
+                        <select @bind="numeroRate" disabled="@occupato">
+                            @for (var n = 2; n <= 60; n++)
+                            {
+                                <option value="@n">@n</option>
+                            }
+                        </select>
+                    </label>
+                    @if (Denaro.Prova(nuovoImporto, out var totale))
                     {
-                        <p class="errore-campo">Diviso in @numeroRate rate fa meno di un centesimo a rata.</p>
-                    }
-                    else
-                    {
-                        <p class="spiega">@numeroRate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, numeroRate)) €</p>
+                        @if (!CalcoliRicorrenti.RataValida(totale, numeroRate))
+                        {
+                            <p class="errore-campo">Diviso in @numeroRate rate fa meno di un centesimo a rata.</p>
+                        }
+                        else
+                        {
+                            <p class="spiega">@numeroRate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, numeroRate)) €</p>
+                        }
                     }
                 }
-            }
             }
         </div>
 
@@ -264,7 +264,7 @@ else
                                     <text> · @pagante</text>
                                 }
                             </span>
-                            <span class="importo dato">@(s.Kind == TipoMovimento.Entrata ? "+" : "")@Denaro.Testo(s.Amount)&#160;€</span>
+                            <span class="importo dato">@(s.Kind == TipoMovimento.Entrata ? CalcoliSpese.ConSegno(s.Amount) : Denaro.Testo(s.Amount))&#160;€</span>
                         </a>
                     </li>
                 }

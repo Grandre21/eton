@@ -309,12 +309,6 @@ else
     private string descrizione = "";
     private string categoria = CategorieSpesa.Elenco[0];
     private string tipo = TipoMovimento.Spesa;
-
-    private void ScegliTipo(string scelto)
-    {
-        tipo = scelto;
-        if (!CategorieSpesa.Conosciuta(categoria, tipo)) categoria = CategorieSpesa.Di(tipo)[0];
-    }
     private int ogniMesi = 1;
     private int giorno = DateTime.Today.Day;
 
@@ -340,10 +334,20 @@ else
     private bool Piano => !Nuova && regola?.Installments is not null;
     private bool Bloccato => Piano && CalcoliRicorrenti.PianoPartito(conflitto ?? regola!, DateTime.Today);
 
-    private string TitoloSchermata => !string.IsNullOrWhiteSpace(descrizione)
-        ? descrizione
-        : (Nuova ? (tipo == TipoMovimento.Entrata ? "Nuova entrata ricorrente" : "Nuova spesa ricorrente")
-                 : (tipo == TipoMovimento.Entrata ? "Entrata ricorrente" : "Spesa ricorrente"));
+    private string TitoloSchermata
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(descrizione)) return descrizione;
+            return Nuova ? $"Nuova {TipoMovimento.Testo(tipo).ToLowerInvariant()} ricorrente" : $"{TipoMovimento.Testo(tipo)} ricorrente";
+        }
+    }
+
+    private void ScegliTipo(string scelto)
+    {
+        tipo = scelto;
+        if (!CategorieSpesa.Conosciuta(categoria, tipo)) categoria = CategorieSpesa.Di(tipo)[0];
+    }
 
     private bool Valido => DatiDaSalvare() is not null;
 

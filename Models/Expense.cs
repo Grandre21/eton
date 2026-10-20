@@ -1,4 +1,3 @@
-using Eton.Services;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -61,4 +60,13 @@ public class Expense : BaseModel
     [Column("version",    ignoreOnInsert: true, ignoreOnUpdate: true)] public int      Version   { get; set; }
     [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)] public DateTime CreatedAt { get; set; }
     [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)] public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>I due tipi di movimento, con i valori della colonna <c>kind</c> (check del database).</summary>
+public static class TipoMovimento
+{
+    public const string Spesa = "expense", Entrata = "income";
+
+    /// <summary>«Spesa» o «Entrata», per la colonna e il filtro della tabella e per gli editor.</summary>
+    public static string Testo(string tipo) => tipo == Entrata ? "Entrata" : "Spesa";
 }

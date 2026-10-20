@@ -182,26 +182,29 @@
                 else
                 {
                     <span><span class="dato">@selezione.Count</span> @(selezione.Count == 1 ? "selezionata" : "selezionate")</span>
-                    @if (righe.Where(r => selezione.Contains(r.Chiave)).Select(r => r.Spesa.Kind).Distinct().Count() > 1)
+                    @if (TipoSelezione is not { } tipoSelezione)
                     {
-                        <p class="testo-tenue">La selezione ha spese ed entrate: la categoria si cambia a un tipo alla volta.</p>
+                        @if (righe.Any(r => selezione.Contains(r.Chiave)))
+                        {
+                            <p class="testo-tenue">La selezione ha spese ed entrate: la categoria si cambia a un tipo alla volta.</p>
+                        }
                     }
                     else
                     {
-                    <label class="campo">
-                        <span class="etichetta-campo solo-lettori">Nuova categoria</span>
-                        <select value="@CategoriaMassa" @onchange='e => categoriaMassa = e.Value?.ToString() ?? ""' disabled="@rileggo">
-                            @foreach (var c in CategorieSpesa.Di(righe.First(r => selezione.Contains(r.Chiave)).Spesa.Kind))
-                            {
-                                <option value="@c">@c</option>
-                            }
-                        </select>
-                    </label>
-                    <button type="button" class="btn compatto" @onclick="CambiaCategoria" disabled="@rileggo">Cambia categoria</button>
+                        <label class="campo">
+                            <span class="etichetta-campo solo-lettori">Nuova categoria</span>
+                            <select value="@CategoriaMassa" @onchange='e => categoriaMassa = e.Value?.ToString() ?? ""' disabled="@rileggo">
+                                @foreach (var c in CategorieSpesa.Di(tipoSelezione))
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            </select>
+                        </label>
+                        <button type="button" class="btn compatto" @onclick="CambiaCategoria" disabled="@rileggo">Cambia categoria</button>
                     }
                     @* Chiave = impronta della selezione: una conferma armata su 3 righe non deve sopravvivere a un cambio di selezione. *@
                     <ConfermaAzione Chiave="@impronta" Etichetta="Elimina"
-                                    EtichettaConferma="@($"Sì, elimina {Testi.Conteggio(selezione.Count, "spesa", "spese")}")"
+                                    EtichettaConferma="@($"Sì, elimina {Testi.Conteggio(selezione.Count, "movimento", "movimenti")}")"
                                     Occupato="@rileggo" OnConferma="EliminaSelezionate" />
                 }
             </div>
@@ -642,11 +645,21 @@
         }
     }
 
+    // null = selezione vuota, mista (spese ed entrate) o con chiavi che non sono più fra le righe lette.
+    private string? TipoSelezione
+    {
+        get
+        {
+            var tipi = righe.Where(r => selezione.Contains(r.Chiave)).Select(r => r.Spesa.Kind).Distinct().ToList();
+            return tipi.Count == 1 ? tipi[0] : null;
+        }
+    }
+
     private string CategoriaMassa
     {
         get
         {
-            var tipo = righe.FirstOrDefault(r => selezione.Contains(r.Chiave))?.Spesa.Kind ?? TipoMovimento.Spesa;
+            var tipo = TipoSelezione ?? TipoMovimento.Spesa;
             return CategorieSpesa.Conosciuta(categoriaMassa, tipo) ? categoriaMassa : CategorieSpesa.Di(tipo)[0];
         }
     }
@@ -659,7 +672,8 @@
             ("Saldo", CalcoliSpese.ConSegno(b.Saldo) + "\u00A0€")];
     }
 
-    private Task CambiaCategoria() => Massa(AzioneMassa.CambiaCategoria, ids => Repository.CambiaCategoriaAsync(ids, CategoriaMassa));
+    private Task CambiaCategoria() => TipoSelezione is null ? Task.CompletedTask
+        : Massa(AzioneMassa.CambiaCategoria, ids => Repository.CambiaCategoriaAsync(ids, CategoriaMassa));
 
     private Task EliminaSelezionate() => Massa(AzioneMassa.Elimina, ids => Repository.EliminaTutteAsync(ids));
 

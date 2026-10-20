@@ -19,7 +19,7 @@ public class RecurringExpense : BaseModel
     [Column("paid_by",  ignoreOnUpdate: true)] public Guid PaidBy  { get; set; }
 
     // Tipo immutabile dopo la creazione, come Expense.Kind.
-    [Column("kind", ignoreOnUpdate: true)] public string Kind { get; set; } = Eton.Services.TipoMovimento.Spesa;
+    [Column("kind", ignoreOnUpdate: true)] public string Kind { get; set; } = TipoMovimento.Spesa;
 
     [Column("amount")]      public decimal Amount      { get; set; }
     [Column("description")] public string  Description { get; set; } = "";

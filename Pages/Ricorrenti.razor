@@ -76,7 +76,7 @@ else
                     <span>@Titolo(g.Gruppo)</span>
                     @if (g.TotaleMensile is { } totale)
                     {
-                        <span class="totale dato">@(g.Gruppo == GruppoRicorrenti.Entrate ? "+" : "")@Denaro.Testo(totale)&#160;€ al mese</span>
+                        <span class="totale dato">@(g.Gruppo == GruppoRicorrenti.Entrate ? CalcoliSpese.ConSegno(totale) : Denaro.Testo(totale))&#160;€ al mese</span>
                     }
                 </div>
                 <ul class="registro elenco-ricorrenti">
@@ -104,7 +104,7 @@ else
                                         }
                                     }
                                 </span>
-                                <span class="importo dato">@(r.Kind == TipoMovimento.Entrata ? "+" : "")@Denaro.Testo(r.Amount)&#160;€</span>
+                                <span class="importo dato">@(r.Kind == TipoMovimento.Entrata ? CalcoliSpese.ConSegno(r.Amount) : Denaro.Testo(r.Amount))&#160;€</span>
                             </a>
                         </li>
                     }

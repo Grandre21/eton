@@ -65,11 +65,11 @@
                         }
                         else
                         {
-                        @foreach (var colonna in Colonne.Where(c => c.Aggregazioni.HasFlag(Aggregazione.Somma)))
-                        {
-                            var subtotale = Riepiloga(colonna, gruppo.Righe.Where(ContaNeiTotali)).Somma;
-                            <span class="griglia-gruppo-somma">@colonna.Etichetta <span class="dato">@CalcoliGriglia.TestoCella(colonna.Tipo, subtotale)</span></span>
-                        }
+                            @foreach (var colonna in Colonne.Where(c => c.Aggregazioni.HasFlag(Aggregazione.Somma)))
+                            {
+                                var subtotale = Riepiloga(colonna, gruppo.Righe.Where(ContaNeiTotali)).Somma;
+                                <span class="griglia-gruppo-somma">@colonna.Etichetta <span class="dato">@CalcoliGriglia.TestoCella(colonna.Tipo, subtotale)</span></span>
+                            }
                         }
                     </th>
                 </tr>

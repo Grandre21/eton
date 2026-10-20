@@ -1,3 +1,4 @@
+using Eton.Models;
 using Eton.Services;
 
 namespace Eton.Tests;
@@ -7,12 +8,12 @@ public class CategorieSpesaTests
     [Fact]
     public void Una_categoria_vale_solo_per_il_suo_tipo()
     {
-        Assert.True(CategorieSpesa.Conosciuta("Stipendio", "income"));
-        Assert.False(CategorieSpesa.Conosciuta("Stipendio", "expense"));
-        Assert.True(CategorieSpesa.Conosciuta("Casa", "expense"));
-        Assert.False(CategorieSpesa.Conosciuta("Casa", "income"));
-        Assert.True(CategorieSpesa.Conosciuta("Altro", "expense"));
-        Assert.True(CategorieSpesa.Conosciuta("Altro", "income"));
+        Assert.True(CategorieSpesa.Conosciuta("Stipendio", TipoMovimento.Entrata));
+        Assert.False(CategorieSpesa.Conosciuta("Stipendio", TipoMovimento.Spesa));
+        Assert.True(CategorieSpesa.Conosciuta("Casa", TipoMovimento.Spesa));
+        Assert.False(CategorieSpesa.Conosciuta("Casa", TipoMovimento.Entrata));
+        Assert.True(CategorieSpesa.Conosciuta("Altro", TipoMovimento.Spesa));
+        Assert.True(CategorieSpesa.Conosciuta("Altro", TipoMovimento.Entrata));
         Assert.Equal(["Stipendio", "Rimborso", "Regalo", "Vendita", "Altro"], CategorieSpesa.Entrate);
         Assert.Equal(CategorieSpesa.Tutte.Count, CategorieSpesa.Tutte.Distinct().Count());
     }

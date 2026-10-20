@@ -7,19 +7,6 @@ namespace Eton.Tests;
 
 public class FusioneRicorrentiTests
 {
-    [Fact]
-    public void Un_entrata_ricorrente_prevista_e_in_arrivo_resta_un_entrata()
-    {
-        var regola = Regola();
-        regola.Kind = "income";
-        var r = CalcoliRicorrenti.Fondi([], [regola], new DateTime(2026, 9, 1),
-            new DateTime(2026, 10, 31), new DateTime(2026, 9, 20));
-        var prevista = Assert.Single(r.Righe);
-        Assert.Contains(prevista.Id, r.Previste);
-        Assert.Equal("income", prevista.Kind);
-        Assert.Equal("income", Assert.Single(r.InArrivo).Kind);
-    }
-
     private static RecurringExpense Regola(
         decimal amount = 50m, int day = 5, DateTime? startsOn = null,
         string? materializedThrough = null) =>
@@ -37,6 +24,19 @@ public class FusioneRicorrentiTests
             EndsOn = null,
             MaterializedThrough = materializedThrough
         };
+
+    [Fact]
+    public void Un_entrata_ricorrente_prevista_e_in_arrivo_resta_un_entrata()
+    {
+        var regola = Regola();
+        regola.Kind = TipoMovimento.Entrata;
+        var r = CalcoliRicorrenti.Fondi([], [regola], new DateTime(2026, 9, 1),
+            new DateTime(2026, 10, 31), new DateTime(2026, 9, 20));
+        var prevista = Assert.Single(r.Righe);
+        Assert.Contains(prevista.Id, r.Previste);
+        Assert.Equal(TipoMovimento.Entrata, prevista.Kind);
+        Assert.Equal(TipoMovimento.Entrata, Assert.Single(r.InArrivo).Kind);
+    }
 
     [Fact]
     public void La_riga_vera_vince_sulla_previsione()

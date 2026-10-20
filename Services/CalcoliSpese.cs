@@ -40,8 +40,12 @@ public static class CalcoliSpese
         return new Bilancio(spese, entrate);
     }
 
-    public static string ConSegno(decimal importo) => importo > 0 ? "+" + Denaro.Testo(importo)
-        : importo < 0 ? "−" + Denaro.Testo(-importo) : Denaro.Testo(0m);
+    public static string ConSegno(decimal importo) => importo switch
+    {
+        > 0 => "+" + Denaro.Testo(importo),
+        < 0 => "−" + Denaro.Testo(-importo),
+        _ => Denaro.Testo(0m)
+    };
 
     // DateTime.ToString("MMMM") sotto InvariantGlobalization restituisce "August", non "agosto":
     // non esiste una cultura it-IT da poter impostare (v. CalcoliVoti.Testo per lo stesso problema
@@ -64,26 +68,27 @@ public static class CalcoliSpese
         var lista = spese as IReadOnlyCollection<Expense> ?? spese.ToList();
 
         var delMese = lista.Where(s => s.SpentOn.Year == anno && s.SpentOn.Month == mese).ToList();
-        var bilancio = BilancioDi(delMese);
-        var totale = bilancio.Spese;
+        var speseDelMese = delMese.Where(s => s.Kind != TipoMovimento.Entrata).ToList();
+        var totale = speseDelMese.Sum(s => s.Amount);
+        var entrate = delMese.Where(s => s.Kind == TipoMovimento.Entrata).Sum(s => s.Amount);
 
         var mesePrecedente = mese == 1 ? 12 : mese - 1;
         var annoPrecedente = mese == 1 ? anno - 1 : anno;
-        var totalePrecedente = BilancioDi(lista
-            .Where(s => s.SpentOn.Year == annoPrecedente && s.SpentOn.Month == mesePrecedente)).Spese;
+        var totalePrecedente = lista
+            .Where(s => s.SpentOn.Year == annoPrecedente && s.SpentOn.Month == mesePrecedente && s.Kind != TipoMovimento.Entrata)
+            .Sum(s => s.Amount);
 
         int? variazione = totalePrecedente == 0
             ? null
             : (int)Math.Round((totale - totalePrecedente) / totalePrecedente * 100, MidpointRounding.AwayFromZero);
 
-        var categorie = delMese
-            .Where(s => s.Kind != TipoMovimento.Entrata)
+        var categorie = speseDelMese
             .GroupBy(s => s.Category)
             .Select(g => (Categoria: g.Key, Totale: g.Sum(s => s.Amount)))
             .OrderByDescending(c => c.Totale)
             .ToList();
 
-        return new RiepilogoMese(totale, ConQuote(categorie, totale), totalePrecedente, variazione, bilancio.Entrate);
+        return new RiepilogoMese(totale, ConQuote(categorie, totale), totalePrecedente, variazione, entrate);
     }
 
     /// <summary>Assegna a ogni categoria una quota intera, con la garanzia che la somma faccia

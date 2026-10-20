@@ -5,11 +5,24 @@ namespace Eton.Tests;
 
 public class CalcoliSpeseTests
 {
+    private static Expense Spesa(decimal importo, string categoria, int anno, int mese, int giorno, string tipo = TipoMovimento.Spesa)
+        => new()
+        {
+            Id = Guid.NewGuid(),
+            SpaceId = Guid.NewGuid(),
+            PaidBy = Guid.NewGuid(),
+            Amount = importo,
+            Kind = tipo,
+            Description = "Spesa",
+            Category = categoria,
+            SpentOn = new DateTime(anno, mese, giorno)
+        };
+
     [Fact]
     public void Le_entrate_non_entrano_nel_totale_ne_nelle_categorie()
     {
         var r = CalcoliSpese.PerMese([Spesa(60, "Casa", 2026, 8, 1), Spesa(40, "Svago", 2026, 8, 2),
-            Spesa(1500, "Stipendio", 2026, 8, 3, "income")], 2026, 8);
+            Spesa(1500, "Stipendio", 2026, 8, 3, TipoMovimento.Entrata)], 2026, 8);
         Assert.Equal(100m, r.Totale);
         Assert.Equal(1500m, r.Entrate);
         Assert.Equal(1400m, r.Saldo);
@@ -21,7 +34,7 @@ public class CalcoliSpeseTests
     public void Il_confronto_col_mese_prima_guarda_solo_le_spese()
     {
         var r = CalcoliSpese.PerMese([Spesa(150, "Casa", 2026, 8, 1), Spesa(100, "Casa", 2026, 7, 1),
-            Spesa(1500, "Stipendio", 2026, 7, 1, "income")], 2026, 8);
+            Spesa(1500, "Stipendio", 2026, 7, 1, TipoMovimento.Entrata)], 2026, 8);
         Assert.Equal(100m, r.TotalePrecedente);
         Assert.Equal(50, r.VariazionePercentuale);
     }
@@ -30,7 +43,7 @@ public class CalcoliSpeseTests
     public void BilancioDi_separa_spese_ed_entrate()
     {
         var b = CalcoliSpese.BilancioDi([Spesa(20, "Casa", 2026, 8, 1),
-            Spesa(100, "Stipendio", 2026, 8, 1, "income"), Spesa(5, "Altro", 2026, 8, 1, "boh")]);
+            Spesa(100, "Stipendio", 2026, 8, 1, TipoMovimento.Entrata), Spesa(5, "Altro", 2026, 8, 1, "boh")]);
         Assert.Equal(25m, b.Spese);
         Assert.Equal(100m, b.Entrate);
         Assert.Equal(75m, b.Saldo);
@@ -47,19 +60,6 @@ public class CalcoliSpeseTests
         Assert.Equal("−20,50", CalcoliSpese.ConSegno(-20.50m));
         Assert.Equal("0,00", CalcoliSpese.ConSegno(0));
     }
-
-    private static Expense Spesa(decimal importo, string categoria, int anno, int mese, int giorno, string tipo = "expense")
-        => new()
-        {
-            Id = Guid.NewGuid(),
-            SpaceId = Guid.NewGuid(),
-            PaidBy = Guid.NewGuid(),
-            Amount = importo,
-            Kind = tipo,
-            Description = "Spesa",
-            Category = categoria,
-            SpentOn = new DateTime(anno, mese, giorno)
-        };
 
     // ---------- PerMese ----------
 
