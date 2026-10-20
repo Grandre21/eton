@@ -55,7 +55,7 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
 | **S — progetto 2.3** | spec dei punti 0-4, approvata in chat | `docs/superpowers/specs/2026-10-20-rate-entrate-design.md` | — | **PARZIALE** — approvata dall'utente in chat il 20 ott («Approvo, vai»); è un documento, non c'è un comando che lo verifichi |
-| **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | PIANIFICATA |
+| **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | **IN CORSO** — job `432f3b03`, ramo `unita-01-doppioni`, rete armata |
 | **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | PIANIFICATA |
 | **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità | 02 | PIANIFICATA |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | PIANIFICATA |
