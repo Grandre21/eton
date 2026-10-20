@@ -9,6 +9,11 @@ cambiare solo descrizione e categoria, e si può usare Termina; prima della prim
 Spec: `docs/superpowers/specs/2026-10-20-rate-entrate-design.md` §4 e §5. Scelte dell'utente del 20 ott:
 interruttore solo sulla spesa nuova, piano avviato solo chiudibile.
 
+**Due ritocchi della pagina Ricorrenti, ratificati dall'utente il 20 ott**, da fare in questa unità: (a) il
+gruppo «Ogni N mesi» si chiama **«Periodiche»** (la riga della quota dice già «periodiche»); (b) la quota da
+accantonare è la **somma dei totali di gruppo già arrotondati** (Annuali + Periodiche), non l'arrotondamento
+della somma esatta, così torna al centesimo con le testate. Con un test che lo fissa.
+
 PERIMETRO: `Models/RecurringExpense.cs`, `Services/RecurringExpenseRepository.cs`, `Services/CalcoliRicorrenti.cs`,
 `Pages/Spese.razor` (solo il modulo di inserimento), `Pages/RicorrenteEdit.razor`, `Pages/Ricorrenti.razor`
 (solo il gruppo «A rate»), test sotto `Eton.Tests/`, `handoff/04-rate/` | NON TOCCARE: `supabase/`,

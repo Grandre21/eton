@@ -57,6 +57,25 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
   il conteggio «N spese ricorrenti» in testa, sostituito dalle testate dei gruppi; (3) il gruppo si chiama
   «Ogni N mesi» come nella spec, «Periodiche» da valutare in 2.1-bis; (4) la quota è l'arrotondamento della
   somma esatta, e può differire di 1 centesimo dalla somma dei totali di gruppo.
+  **`tech-advisor` (20 ott)**: tenere (1), (2) e la D1 della 01 e la mia sul piano a task; **cambiare** (3) in
+  «Periodiche» adesso (la riga della quota dice già «periodiche», due nomi per la stessa cosa) e (4) la quota =
+  somma dei totali di gruppo già arrotondati (un centesimo di scarto sullo stesso schermo sembra un bug); se
+  l'utente accetta, i due ritocchi vanno nel mandato della 04, che tocca gli stessi file. `ui-critic` della 02:
+  **una misura unica a fine 2.3**, dopo 04 e 05 (stessa pagina), lanciata dal coordinatore in interattivo con
+  l'autorizzazione dell'utente; regole di prova con inizio «il mese dopo la misura». BE1 (chiave di
+  ordinamento in tre copie): rinviato, fuori dal goal.
+- **2026-10-20 utente (chat, popup)** — sulle ratifiche: «Tieni, con i due ritocchi (Consigliata)» → D1 della 01,
+  le quattro della 02 e quella del capo sul piano a task **ratificate 2026-10-20**, con (3) «Periodiche» e (4)
+  quota = somma dei totali di gruppo, nel mandato della 04. Migrazione: «La applico ora». Misura `ui-critic`:
+  «Sì, a fine 2.3 (Consigliata)» — autorizzazione a creare ed eliminare 5 regole «PROVA COLLAUDO» nello spazio
+  «COLLAUDO GIRO B TEST», una volta, dalla sessione interattiva.
+- **2026-10-20 — Decisione del capo, da ratificare** (domanda dell'unità 03, rilievi fondati di `bug-hunter`
+  confermati dal `checker`): due vincoli in più rispetto alla spec §3. (BH2) il check sul piano diventa
+  `plan_total >= amount * installments`, perché con il solo `plan_total >= amount` l'ultima rata può venire 0 e
+  la sua materializzazione fallirebbe per sempre; (BH1) un trigger BEFORE INSERT su `expenses` copia `kind` dalla
+  regola quando `recurring_id` è valorizzato, perché una PWA vecchia materializzerebbe come spesa, per sempre,
+  l'occorrenza di un'entrata ricorrente. Vincolo operativo che resta: aggiornare la PWA su tutti i dispositivi
+  prima di creare il primo piano a rate. Entrambi restrittivi; la ratifica coincide con l'applicazione.
 
 ## PARTIZIONE
 
@@ -64,8 +83,8 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 |---|---|---|---|---|
 | **S — progetto 2.3** | spec dei punti 0-4, approvata in chat | `docs/superpowers/specs/2026-10-20-rate-entrate-design.md` | — | **PARZIALE** — approvata dall'utente in chat il 20 ott («Approvo, vai»); è un documento, non c'è un comando che lo verifichi |
 | **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | **FATTO** — fusa su `main` il 20 ott, 0 rilievi aperti, una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 392 passed` |
-| **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | **PARZIALE** — fusa su `main` **solo in locale** il 20 ott (non pubblicata: quattro decisioni da ratificare, DECISIONI); gate dell'unità verdi (398 test), `live-testing` verde; manca `ui-critic` (servono regole di prova lasciate a schermo in produzione, negato dal classificatore all'unità) |
-| **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità, worktree da `origin/main` **senza** la 02 (file disgiunti) | 02 (solo ordine) | **IN CORSO** — job `8e5fe2f0`, rete armata |
+| **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | **PARZIALE** — fusa su `main` il 20 ott e pubblicata dopo la ratifica delle sue quattro decisioni (due ritocchi passati alla 04); gate dell'unità verdi (398 test), `live-testing` verde; manca `ui-critic` (servono regole di prova lasciate a schermo in produzione, negato dal classificatore all'unità) |
+| **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità, worktree da `origin/main` **senza** la 02 (file disgiunti) | 02 (solo ordine) | **FATTO** — fusa su `main` in locale il 20 ott con la 02; migrazione `supabase/migrations/20261020000000_rate_entrate.sql`, provata sul Supabase locale (collaudo: 11 errori attesi su 11); SQL per l'utente nel resoconto; verifica: `mcp__synapse__test` -> `0 failed, 398 passed` |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | PIANIFICATA |
 | **04-rate** | punto 1 | sessione-unità | GATE | PIANIFICATA |
 | **05-entrate** | punto 4 | sessione-unità | 04 | PIANIFICATA |
@@ -78,10 +97,9 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 
 ## PROSSIMA AZIONE
 
-Aspettare il resoconto della **03** e il parere di `tech-advisor` sulle ratifiche (D1-D6), sulla misura
-`ui-critic` mancante della 02 e sul FUORI SCOPE BE1 della 02 (chiave di ordinamento in tre copie); poi **un solo
-popup** all'utente: ratifiche + SQL della migrazione. Ratificate: push di `main` (01 già pubblicata, 02 solo
-locale). Dopo «applicata»: 04, poi 05. ⚠️ `main` locale è avanti a `origin/main` con la 02.
+**GATE migrazione**: aspettare in chat la riga della query di controllo (atteso `4 | 6 | 1 | true | false |
+false | true | 0`) e trascriverla. Poi lanciare la **04** (da `origin/main`, che ha già 02 e 03), poi la 05, poi
+la misura `ui-critic` della pagina Ricorrenti dalla sessione interattiva (autorizzata), poi la chiusura.
 
 controllo contesto 2026-10-20 14:15: nulla
 
