@@ -29,7 +29,21 @@ public class ExpenseRepository
     // È il max_rows di PostgREST (supabase/config.toml) e deve restare minore o uguale al tetto:
     // il ciclo si ferma al primo blocco con meno righe di quante ne ha chieste. Con un blocco
     // più grande del tetto ogni risposta sarebbe corta e ci si fermerebbe al primo giro.
-    private const int RighePerBlocco = 1000;
+    internal const int RighePerBlocco = 1000;
+
+    // Separato da ElencaAsync per provarlo senza il client: blocco(da, a) chiede le righe
+    // con estremi inclusi, come .Range. L'offset conta le righe lette, duplicati compresi;
+    // in fondo si deduplica per Id e vince la prima occorrenza.
+    internal static async Task<IReadOnlyList<Expense>> LeggiABlocchiAsync(Func<int, int, Task<IReadOnlyList<Expense>>> blocco)
+    {
+        var spese = new List<Expense>();
+        while (true)
+        {
+            var righe = await blocco(spese.Count, spese.Count + RighePerBlocco - 1);
+            spese.AddRange(righe);
+            if (righe.Count < RighePerBlocco) return spese.DistinctBy(e => e.Id).ToList();
+        }
+    }
 
     /// <summary>Le spese di uno spazio con spent_on nell'intervallo [<paramref name="da"/>,
     /// <paramref name="a"/>], estremi inclusi, in ordine spent_on desc e poi id desc. Il secondo
@@ -40,9 +54,9 @@ public class ExpenseRepository
     /// PostgREST tronca ogni risposta a max_rows senza errore: si legge a blocchi di
     /// RighePerBlocco finché un blocco torna incompleto. Se il totale è un multiplo esatto del
     /// blocco, serve un giro in più che torna vuoto.
-    /// Una spesa inserita o eliminata da un altro membro fra due blocchi può spostare di una riga
-    /// l'offset, ripetendo o saltando una riga in quella sola lettura; succede solo oltre 1000 spese
-    /// nel periodo e si accetta: la lettura successiva è di nuovo esatta.
+    /// Una spesa ripetuta fra due blocchi si scarta per Id: vince la prima occorrenza letta.
+    /// Inserimenti o eliminazioni possono ancora far saltare una riga in quella sola lettura,
+    /// oltre 1000 spese nel periodo; si accetta: la lettura successiva è di nuovo esatta.
     /// </para>
     /// <para>
     /// Get() senza argomenti manda sempre Prefer: count=estimated, e sopra max_rows PostgREST usa
@@ -87,22 +101,14 @@ public class ExpenseRepository
     private async Task<IReadOnlyList<Expense>> ElencaAsync(Guid spazioId, DateTime da, DateTime a)
     {
         var client = await _supabase.GetClientAsync();
-        var spese = new List<Expense>();
-
-        while (true)
-        {
-            var risposta = await client.From<Expense>()
+        return await LeggiABlocchiAsync(async (inizio, fine) => (await client.From<Expense>()
                 .Where(e => e.SpaceId == spazioId)
                 .Filter("spent_on", Constants.Operator.GreaterThanOrEqual, da.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                 .Filter("spent_on", Constants.Operator.LessThanOrEqual, a.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                 .Order("spent_on", Constants.Ordering.Descending)
                 .Order("id", Constants.Ordering.Descending)
-                .Range(spese.Count, spese.Count + RighePerBlocco - 1)
-                .Get(default, Constants.CountType.Exact);
-
-            spese.AddRange(risposta.Models);
-            if (risposta.Models.Count < RighePerBlocco) return spese;
-        }
+                .Range(inizio, fine)
+                .Get(default, Constants.CountType.Exact)).Models);
     }
 
     /// <summary>L'unico percorso di lettura delle spese (divieto §5 del design delle ricorrenti).
