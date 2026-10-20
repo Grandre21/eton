@@ -130,7 +130,8 @@ FUORI SCOPE:
 - ui-critic UC3, resto (per la 2.1-bis): `margin-bottom: 0` per `.interruttore` dentro `.campi-spesa`.
 - ui-critic UC4 (per la 2.1-bis): il totale nelle testate dei gruppi a 11 px come l'etichetta (`.testa-registro .dato { font-size: inherit; }`).
 
-GATE: mcp__synapse__build root=G:\Sviluppo\wt-Eton\04-rate → succeeded — 0 errors, 4 warnings | mcp__synapse__test root=G:\Sviluppo\wt-Eton\04-rate → 0 failed, 407 passed, 0 skipped | live-testing → ESITO: verde (terzo lancio, sulla build finale 01a476a)
+GATE: mcp__synapse__test → 0 failed, 407 passed, 0 skipped (rilanciato dal capo su main dopo il merge, 20 ott: la riga dell'unità, con tre comandi su una riga, era stata respinta da verifica-fatto)
+GATE dell'unità, come scritto: build root=G:\Sviluppo\wt-Eton\04-rate → succeeded — 0 errors, 4 warnings; test → 0 failed, 407 passed; live-testing → ESITO: verde (terzo lancio, sulla build finale 01a476a)
 
 SCOSTAMENTI:
 - **Prove nel browser fermate e riprese.** Alle ~15:37 il capo (coordinatore-Eton, messaggio fra sessioni): «FERMATI con le

@@ -72,6 +72,19 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 - **2026-10-20 utente (chat)** — migrazione applicata: «fatto : colonne_nuove,vincoli_nuovi,trigger_nuovo,spese_kind_insert,spese_kind_update,regole_kind_update,regole_piano_update,movimenti_non_spesa
   4,6,1,true,false,false,true,0». Vale come **ratifica** delle due aggiunte allo schema della 03 (BH1, BH2) e di
   `new.kind := old.kind` nel trigger delle regole, elencate all'utente prima dell'applicazione.
+- **2026-10-20 utente (chat)** — «ferma un attimo le prove nel browser»: mandato «fermati» all'unità 04 per
+  `live-testing` e `ui-critic`; il resto dell'unità prosegue. Nessuna prova nel browser riparte (né nella 04, né
+  nella 05, né la misura finale) finché l'utente non lo dice.
+- **2026-10-20 utente (chat, popup)** — sulle prove della 04: «Riprendi adesso». Il blocco qui sopra è tolto per
+  la 04; per la 05 e la misura finale vale la stessa risposta, salvo nuovo «ferma».
+- **2026-10-20 — Sei decisioni dell'unità 04, da ratificare** (raccomandazione dell'unità: tenerle tutte; la 04
+  non si pubblica prima): (1) un piano conta «partito» anche se la prima rata è dovuta ma non ancora scritta
+  (`MaterializedThrough` non nullo **o** `StartsOn <= oggi`); (2) prima della prima rata niente «Termina», solo
+  Elimina; (3) nel gruppo «A rate», «rata k/N» è la **prossima** rata e il residuo la comprende; (4) dopo «Segna»
+  con «a rate» l'interruttore si spegne e la data torna a oggi; (5) descrizione di un piano al massimo 187
+  caratteri, perché con « · rata 60/60» non superi i 200 del database; (6) con «a rate» acceso il modulo del
+  Registro va in una colonna. Più due proposte `FUORI SCOPE` per l'utente (BE3 componente unico «Numero di
+  rate», BE4 un overload di `Prossima`) e tre di `ui-critic` per la 2.1-bis.
 - **2026-10-20 — Decisione del capo, da ratificare** (domanda dell'unità 03, rilievi fondati di `bug-hunter`
   confermati dal `checker`): due vincoli in più rispetto alla spec §3. (BH2) il check sul piano diventa
   `plan_total >= amount * installments`, perché con il solo `plan_total >= amount` l'ultima rata può venire 0 e
@@ -89,7 +102,7 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 | **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | **PARZIALE** — fusa su `main` il 20 ott e pubblicata dopo la ratifica delle sue quattro decisioni (due ritocchi passati alla 04); gate dell'unità verdi (398 test), `live-testing` verde; manca `ui-critic` (servono regole di prova lasciate a schermo in produzione, negato dal classificatore all'unità) |
 | **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità, worktree da `origin/main` **senza** la 02 (file disgiunti) | 02 (solo ordine) | **FATTO** — fusa su `main` in locale il 20 ott con la 02; migrazione `supabase/migrations/20261020000000_rate_entrate.sql`, provata sul Supabase locale (collaudo: 11 errori attesi su 11); SQL per l'utente nel resoconto; verifica: `mcp__synapse__test` -> `0 failed, 398 passed` |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | **PARZIALE** — applicata dall'utente il 20 ott; la query di controllo l'ha lanciata lui e ha incollato in chat `4,6,1,true,false,false,true,0`, identico all'atteso. Resta `PARZIALE` solo per la forma: nessun agente interroga il database. **04 e 05 sbloccate** |
-| **04-rate** | punto 1 | sessione-unità | GATE | PIANIFICATA |
+| **04-rate** | punto 1, più «Periodiche» e la quota al centesimo (ratificati 20 ott) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\04-rate` | GATE | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); prove nel browser verdi dopo la ripresa, pulizia fatta (tre piani di prova eliminati, server spento); verifica: `mcp__synapse__test` -> `0 failed, 407 passed` |
 | **05-entrate** | punto 4 | sessione-unità | 04 | PIANIFICATA |
 
 ## RAZIONALE
@@ -100,8 +113,10 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 
 ## PROSSIMA AZIONE
 
-**04-rate** lanciata da `origin/main`; al rientro audit, fusione, push; poi la 05, poi la misura `ui-critic`
-della pagina Ricorrenti dalla sessione interattiva (autorizzata), poi la chiusura.
+**05-entrate** lanciata da `main` **locale** (che ha la 04 non pubblicata: `git worktree add` dal ramo locale,
+non da `origin/main`). In parallelo `tech-advisor` sulle sei decisioni della 04. Al rientro della 05: un popup
+con le ratifiche di 04 e 05, poi push; poi la misura `ui-critic` della pagina Ricorrenti dalla sessione
+interattiva (autorizzata), poi la chiusura.
 
 controllo contesto 2026-10-20 14:15: nulla
 
