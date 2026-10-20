@@ -117,7 +117,7 @@ else
     @if (riepilogoSpese is not null)
     {
         <a class="striscia-spese" href="expenses">
-            @if (riepilogoSpese.Totale == 0m)
+            @if (riepilogoSpese.Totale == 0m && riepilogoSpese.Entrate == 0m)
             {
                 <text>Nessuna spesa questo mese</text>
             }
@@ -128,6 +128,7 @@ else
                    sulla riga .totale-mese, dove il commento spiega perché e dichiara la confidenza
                    media riposta in questo trucco — v. lì per il dettaglio. *@
                 <span class="totale dato valore-cambia" @key="riepilogoSpese.Totale">@Denaro.Testo(riepilogoSpese.Totale)&#160;€</span>
+                <span>entrate <span class="dato">@CalcoliSpese.ConSegno(riepilogoSpese.Entrate)&#160;€</span> · saldo <span class="dato">@CalcoliSpese.ConSegno(riepilogoSpese.Saldo)&#160;€</span></span>
                 @* "Per categoria:" davanti ai valori, e non una micro-etichetta a sé come "Questo
                    mese": .cime ha margin-left:auto (v. app.css, regola .striscia-spese .cime), e
                    un'etichetta separata finirebbe spinta in fondo alla riga, staccata proprio dai

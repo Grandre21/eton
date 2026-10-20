@@ -13,6 +13,7 @@
         }
     </Azione>
     <Aiuto>
+        <p>Le entrate ricorrenti, come lo stipendio, stanno in un gruppo a sé: non entrano nei totali delle spese né nella quota da mettere da parte.</p>
         <p>Una spesa ricorrente si segna da sola nel registro, nel mese in cui è dovuta, quando chi la paga apre Eton: fino ad allora gli altri membri la vedono come «prevista».</p>
         <p>Per fermarla la si termina, e le spese già segnate restano. Eliminarla si può solo finché non ne ha segnata nessuna.</p>
     </Aiuto>
@@ -62,7 +63,7 @@ else
         <div class="vuoto">
             <span class="icona-vuoto"><Icona Nome="spese" /></span>
             <p>Ancora nessuna spesa ricorrente qui.</p>
-            <p class="spiega">L'affitto, una bolletta, un abbonamento: la dichiari una volta, e compare da sola nel registro delle spese nel mese in cui è dovuta.</p>
+            <p class="spiega">L'affitto, una bolletta, un abbonamento, lo stipendio: la dichiari una volta, e compare da sola nel registro nel mese in cui è dovuta.</p>
             <a class="btn primario" href="expenses/recurring/new">Nuova ricorrente</a>
         </div>
     }
@@ -75,7 +76,7 @@ else
                     <span>@Titolo(g.Gruppo)</span>
                     @if (g.TotaleMensile is { } totale)
                     {
-                        <span class="totale dato">@Denaro.Testo(totale)&#160;€ al mese</span>
+                        <span class="totale dato">@(g.Gruppo == GruppoRicorrenti.Entrate ? "+" : "")@Denaro.Testo(totale)&#160;€ al mese</span>
                     }
                 </div>
                 <ul class="registro elenco-ricorrenti">
@@ -103,7 +104,7 @@ else
                                         }
                                     }
                                 </span>
-                                <span class="importo dato">@Denaro.Testo(r.Amount)&#160;€</span>
+                                <span class="importo dato">@(r.Kind == TipoMovimento.Entrata ? "+" : "")@Denaro.Testo(r.Amount)&#160;€</span>
                             </a>
                         </li>
                     }

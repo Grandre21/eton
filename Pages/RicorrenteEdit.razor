@@ -59,6 +59,21 @@ else
         <p class="spiega">Il piano è partito: si possono cambiare solo descrizione e categoria, oppure terminarlo se l'hai estinto prima.</p>
     }
 
+    @if (Nuova)
+    {
+        <fieldset class="scelta-categoria">
+            <legend class="etichetta-campo">Tipo</legend>
+            @foreach (var t in new[] { TipoMovimento.Spesa, TipoMovimento.Entrata })
+            {
+                <button type="button" class="pastiglia @(t == tipo ? "accesa" : "")"
+                        aria-pressed="@(t == tipo)" @onclick="() => ScegliTipo(t)" disabled="@occupato">@TipoMovimento.Testo(t)</button>
+            }
+        </fieldset>
+    }
+    else
+    {
+        <div class="campo campo-lettura"><span class="etichetta-campo">Tipo</span><p>@TipoMovimento.Testo(tipo)</p></div>
+    }
     <div class="campi-spesa campi-ricorrente">
         @if (Piano)
         {
@@ -188,12 +203,12 @@ else
        v. Pages/SpesaEdit.razor:129-148 per il perché di entrambe le scelte. *@
     <fieldset class="scelta-categoria">
         <legend class="etichetta-campo">Categoria</legend>
-        @foreach (var c in CategorieSpesa.Elenco)
+        @foreach (var c in CategorieSpesa.Di(tipo))
         {
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
                     aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
         }
-        @if (!CategorieSpesa.Conosciuta(categoria, TipoMovimento.Spesa))
+        @if (!CategorieSpesa.Conosciuta(categoria, tipo))
         {
             <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
         }
@@ -293,6 +308,13 @@ else
     private int rate = 2;
     private string descrizione = "";
     private string categoria = CategorieSpesa.Elenco[0];
+    private string tipo = TipoMovimento.Spesa;
+
+    private void ScegliTipo(string scelto)
+    {
+        tipo = scelto;
+        if (!CategorieSpesa.Conosciuta(categoria, tipo)) categoria = CategorieSpesa.Di(tipo)[0];
+    }
     private int ogniMesi = 1;
     private int giorno = DateTime.Today.Day;
 
@@ -320,7 +342,8 @@ else
 
     private string TitoloSchermata => !string.IsNullOrWhiteSpace(descrizione)
         ? descrizione
-        : (Nuova ? "Nuova spesa ricorrente" : "Spesa ricorrente");
+        : (Nuova ? (tipo == TipoMovimento.Entrata ? "Nuova entrata ricorrente" : "Nuova spesa ricorrente")
+                 : (tipo == TipoMovimento.Entrata ? "Entrata ricorrente" : "Spesa ricorrente"));
 
     private bool Valido => DatiDaSalvare() is not null;
 
@@ -330,7 +353,7 @@ else
     // allontanano da quel default, gli stessi valori che OnParametersSetAsync assegna in creazione.
     protected override bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
-          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today
+          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today || tipo != TipoMovimento.Spesa
         : regola is not null && (Piano
             ? totaleTesto != Denaro.TestoDigitabile(regola.PlanTotal ?? 0) || rate != regola.Installments
               || descrizione != regola.Description || categoria != regola.Category || inizio?.Date != regola.StartsOn.Date
@@ -363,6 +386,7 @@ else
             if (Nuova)
             {
                 regola = null;
+                tipo = TipoMovimento.Spesa;
                 importoTesto = "";
                 totaleTesto = "";
                 rate = 2;
@@ -390,6 +414,7 @@ else
                 rate = regola.Installments ?? 2;
                 descrizione = regola.Description;
                 categoria = regola.Category;
+                tipo = regola.Kind;
                 ogniMesi = regola.EveryMonths;
                 giorno = regola.DayOfMonth;
                 inizio = regola.StartsOn;
@@ -452,7 +477,7 @@ else
             return;
         }
 
-        var creata = await Repository.CreaAsync(attivo.Id, pagante, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value));
+        var creata = await Repository.CreaAsync(attivo.Id, pagante, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value, Kind: tipo));
 
         // replace: true ed Esci, non NavigateTo: qui la guardia va disarmata, la creazione è
         // riuscita (v. Shared/PaginaEditor.Esci) e /expenses/recurring/new non è un posto in cui
