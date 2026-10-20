@@ -393,6 +393,8 @@ else
                 await Ricorrenti.CreaAsync(attivo.Id, pagante, CalcoliRicorrenti.DatiPiano(importo, numeroRate, nuovaDescrizione, nuovaCategoria, nuovaData!.Value));
                 avvisoPiano = $"Piano a rate creato: {numeroRate} rate da {Denaro.Testo(CalcoliRicorrenti.ImportoRata(importo, numeroRate))} €.";
                 aRate = false;
+                // La data era quella della prima rata, non di una spesa, e la spesa successiva è quasi sempre di oggi.
+                nuovaData = DateTime.Today;
             }
             else
             {
@@ -402,7 +404,7 @@ else
 
             // Importo e descrizione si svuotano, data e categoria restano: chi segna tre spese al
             // supermercato le segna nello stesso giorno e spesso nella stessa categoria, e
-            // riazzerarle costringerebbe a rimetterle ogni volta.
+            // riazzerarle costringerebbe a rimetterle ogni volta; tranne la data dopo un piano a rate, v. sopra.
             nuovoImporto = "";
             nuovaDescrizione = "";
             rimettiFuocoImporto = true;
