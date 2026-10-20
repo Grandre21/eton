@@ -1,200 +1,121 @@
-# Chiusura del goal «2.1 e 2.2» (22 settembre → 12 ottobre 2026)
+handoff/CHIUSURA.md — lo scrive la sessione di chiusura
+CHIUSURA: 7 unità — FATTO 7 · PARZIALE 0 · BLOCKED 0
+COPERTURA: 12 clausole — coperte 12 · scoperte 0 · rinviate 0
+CONTRATTI: 10 su 10 convergenti (checker, VERDETTI: convergenti 10 · divergenti 0 · non verificabili 0) —
+           C1 gruppi delle ricorrenti (02→04→05) · C2 quota da accantonare · C3 colonne, privilegi e trigger della
+           migrazione contro modelli e scritture del client · C4 vincoli del piano a rate contro ImportoRata/DatiPiano/
+           Occorrenza · C5 187 + « · rata 60/60» = 200 · C6 DatiRegola con Kind · C7 Occorrenza copia Kind e suffisso ·
+           C8 «a rate» spento con Entrata · C9 overload Prossima · C10 doppioni della 01 ancora sul percorso di lettura
+COMBINATO: 3 rilievi del bug-hunter finale — 3 corretti · 0 rimandati al capo
+           (BH1 sul diff combinato, BH2 e BH3 trovati dai rilanci sulla correzione: stessa famiglia, chiusi da una
+           correzione sola, commit 674c12e)
+GATE: mcp__synapse__build root=G:\Sviluppo\Eton\.claude\worktrees\chiusura-2-3 → build: succeeded — 0 errors, 0 warnings
+GATE: mcp__synapse__test root=G:\Sviluppo\Eton\.claude\worktrees\chiusura-2-3 → test: 0 failed, 417 passed, 0 skipped (sullo stato finale, 674c12e)
+FUORI SCOPE: (rilievi fondati che nessuna unità ha risolto, tutti già portati all'utente nelle ratifiche del 20 ott)
+           - 2.1-bis, grafica: i 5 rilievi di ui-critic della misura finale (righe delle ricorrenti a 390 px, totale del
+             gruppo a 10,45 px, allineamento di «prossima:», colore delle entrate, otto dimensioni di `.dato`); UC3 e UC4
+             della 04; UC2 (stile), UC3 «+» nella cella Importo, UC4 pastiglie della 05; filtro categorie della tabella
+             che mischia le due liste.
+           - BE1 della 02 (TIPO progetto): la chiave di ordinamento «senza accenti e maiuscole» in tre copie.
+           - BE1 della 03 (TIPO progetto): i claims JWT ricopiati in tutti gli script `supabase/verifica-rls-*.sql`.
+           - BE3 della 04: componente unico «Numero di rate» (rinviato alla 2.1-bis).
+           - 05: `CambiaCategoriaAsync` non controlla il tipo, e il database non vincola la categoria al tipo.
+           - Nuovo, dal threat-hunter finale (non è un rilievo, nessun danno a terzi): il database non ha un tetto al
+             numero di rate (il client si ferma a 60). Chi scrive dall'API un piano con più di 60 rate e una
+             descrizione di 200 caratteri rende non materializzabili le proprie rate. Si chiude con un check
+             `installments <= 60` in una migrazione futura: tocca lo schema, quindi è dell'utente.
+           - Vincolo operativo della 03, ancora valido: aggiornare la PWA su tutti i dispositivi prima di creare il
+             primo piano a rate.
+ARCHIVIATO: storico/handoff/01-doppioni, 02-gruppi-quota, 03-migrazione, 04-rate, 05-entrate, 06-ritocchi,
+           07-testi, misura-finale; il rapporto del goal precedente handoff/CHIUSURA.md (12 ott) →
+           storico/handoff/2026-10-12-CHIUSURA.md (su istruzione del capo nel prompt di apertura)
+BUDGET: 01 3 → n.d. · 02 6 → n.d. · 03 4 → n.d. · 04 8 → n.d. · 05 12 → n.d. · 06 3 → n.d. · 07 3 → n.d. (M tok_eq;
+        `costo_unita_Mtok_eq` è vuoto: «nessuna unita della PARTIZIONE con transcript di worktree»)
+MISURE: {"ts":"2026-10-20T20:01:42.5754932+02:00","progetto":"G:\\Sviluppo\\Eton","da":"","sessioni":26,"chiusure":2,"unita_fatto":25,"combinato":{"rilievi":4,"corretti":2},"fuga_interna":0.16,"fuga_interna_ciclo":0.2,"costo_unita_Mtok_eq":{},"fuga_esterna":0,"verdetti":{"fondati":73,"infondati":1},"fondati_per_agente":{"backend-expert":{"fondati":5,"infondati":1,"fuori_scope":4},"bug-hunter":{"fondati":7,"infondati":0,"fuori_scope":0},"conformity":{"fondati":10,"infondati":1,"fuori_scope":0},"ui-critic":{"fondati":4,"infondati":0,"fuori_scope":5}},"resa":{"backend-expert":{"lanci":21,"rilievi":56,"tok_eq":2226392,"rilievi_per_100k":2.515},"bug-hunter":{"lanci":38,"rilievi":40,"tok_eq":11567074,"rilievi_per_100k":0.346},"checker":{"lanci":61,"tok_eq":6324729},"conformity":{"lanci":23,"rilievi":39,"tok_eq":3998120,"rilievi_per_100k":0.975},"coverage":{"lanci":3,"tok_eq":378886},"doc-checker":{"lanci":6,"tok_eq":936729},"general-purpose":{"lanci":1,"tok_eq":248052},"implementer":{"lanci":28,"tok_eq":7825180},"live-testing":{"lanci":18,"tok_eq":12333418},"scout":{"lanci":2,"tok_eq":291393},"tech-advisor":{"lanci":15,"tok_eq":1461371},"threat-hunter":{"lanci":36,"rilievi":2,"tok_eq":3446885,"rilievi_per_100k":0.058},"ui-critic":{"lanci":9,"rilievi":25,"tok_eq":4283358,"rilievi_per_100k":0.584}},"lanci_codex":36,"limiti":["risalito dal worktree G:\\Sviluppo\\Eton\\.claude\\worktrees\\chiusura-2-3 al repo G:\\Sviluppo\\Eton","2 lanci registrati prima dei campi token: esclusi dalla resa","nessuna unita della PARTIZIONE con transcript di worktree: costo_unita vuoto","lanci_codex: comandi Bash/PowerShell con codex exec in posizione di comando, deduplicati per tool_use; non vede Codex lanciato da uno script o da un\u0027altra sessione"]}
+        (nota della chiusura: risalito al checkout principale, lo script ha letto il rapporto del 12 ottobre ancora lì;
+        `combinato` 4/2 è quello del ciclo precedente, questo ciclo ha 3 rilievi e 3 corretti. Da rilanciare dopo il
+        merge, quando questo `CHIUSURA.md` sarà su `main`.)
 
-> **Nota del capo, 12 ottobre, dopo la fusione.** (1) Le sei spese di prova (FUORI SCOPE, punto 1) sono state
-> **eliminate** dalla sessione interattiva con l'autorizzazione dell'utente in chat, prima che questo rapporto
-> rientrasse («5 spese eliminate.» + «1 spesa eliminata.»): 2.2-E e 2.2-F sono quindi **FATTO**, e le loro
-> cartelle sono state archiviate in `storico/handoff/` dal capo. (2) R1 (righe ripetute nella lettura
-> paginata) **non è corretto**: rinviato come primo candidato del prossimo goal, decisione del capo da
-> ratificare (`PIANO.md`, DECISIONI).
+## Riconciliazione piano ↔ resoconti
 
-Sessione di chiusura del 12 ottobre 2026, in background, nel worktree `.claude/worktrees/chiusura-2.1-2.2`,
-branch `worktree-chiusura-2.1-2.2`. **Non pushata su `main`** (pubblicherebbe in produzione): integra il capo.
+La colonna di stato di `PIANO.md` e gli `ESITO` dei resoconti divergono in due righe, e qui si riconciliano:
 
-```
-CHIUSURA: 12 unità — FATTO 10 · PARZIALE 2 · BLOCKED 0
-          FATTO: S (spec 2.2), R (piano 2.1 corretto), 01, 02, 03, P, 2.2-A, 2.2-B, 2.2-C, 2.2-D
-          PARZIALE: 2.2-E e 2.2-F — ESITO dei loro resoconti; il codice è fatto, verificato e pubblicato,
-                    manca solo la pulizia delle spese di prova in produzione (v. FUORI SCOPE, punto 1)
-          + la riga «GATE migrazione», che non è un'unità: PARZIALE solo per la forma (query di controllo
-            eseguita dall'utente, nessun agente interroga il database)
-          DIVERGENZA PIANO ↔ resoconti: in PARTIZIONE di PIANO.md le righe 2.2-E e 2.2-F dicono
-          «FATTO per il codice», mentre i due resoconti dicono «ESITO: PARZIALE». Nessun'altra divergenza
-          (le altre otto unità con resoconto: FATTO = FATTO; S e R non hanno resoconto, sono in chat e in docs/).
+- **02-gruppi-quota**: resoconto `PARZIALE` (manca `ui-critic`, negato dai permessi), piano `PARZIALE` «finché la
+  chiusura non lo riconcilia». Il passo mancante l'ha fatto il coordinatore nella misura finale del 20 ott
+  (`storico/handoff/misura-finale/esito.md`, `ui-critic RILIEVI: 5`, dati di prova eliminati), con i 5 rilievi
+  passati alla 2.1-bis su ratifica dell'utente. → **FATTO**.
+- **07-testi**: resoconto `PARZIALE` (prova nel browser rinviata al capo), piano `FATTO`. La prova c'è: il
+  `live-testing` lanciato dal coordinatore nella sessione `bf92fb39-470a-4f03-879d-8a9d47914a17`, transcript
+  `subagents/agent-a6bb2962ee38b3903.jsonl`, riga 259: «SCENARI: 5/5 … Salva/Crea/Elimina/Termina mai premuti».
+  Non c'è un file d'esito su disco: la prova sta solo nel transcript. → **FATTO**.
 
-COPERTURA: 15 clausole — coperte 12 · scoperte 0 · rinviate 3
-           (riga di `coverage`, ricopiata; obiettivo verbatim più le precisazioni dell'utente del 22 set
-            fissate nella spec 2.2)
-           rinviate, tutte per decisione dell'utente del 22 settembre («Sì, dividi così»):
-           - «incrocio categorie × mesi» → fase 2.3
-           - «formule scritte dall'utente» → fase 4 (il gancio c'è: `ColonnaGriglia.Valore` è una Func)
-           - «implementerei anche la possibilità di connettere una propria ai a eton in generale che possa
-             leggere i propri dati soltanto, cosi da avere il tuo companion sempre pronto» → fase nuova dopo
-             la fase 3, con le due condizioni scritte in DECISIONI
+Le righe `S — progetto 2.3` e `GATE migrazione` del piano non sono unità e restano `PARZIALE` per la sola forma
+(un documento approvato in chat, una query lanciata dall'utente): non entrano nel conteggio.
 
-CONTRATTI: 10 verificati sul codice dal `checker` — convergenti 10 · divergenti 0 · non verificabili 0
-           C1  CalcoliRicorrenti (01) → ExpenseRepository, Fondi, Ricorrenti (02, 03): convergente
-           C2  migrazione 20260922000000_ricorrenti.sql → Models/RecurringExpense.cs, Models/Expense.cs
-               (nomi colonna e flag ignore* contro i grant): convergente
-           C3  OccorrenzaRicorrente = le 9 colonne del grant INSERT di expenses; OnConflict
-               "recurring_id,recurring_period" = vincolo expenses_recurring_period_uq; periodo = primo del
-               mese = check della migrazione: convergente
-           C4  DatiRegola e firme di RecurringExpenseRepository (02+03) → RicorrenteEdit.razor:388, :398:
-               convergente
-           C5  percorso unico ElencaConPrevisteAsync (02, paginato dalla E) → Spese, Home, SpeseTabella,
-               TabellaSpese.Righe; ElencaAsync privato; il ciclo a blocchi termina: convergente
-           C6  EsitoMassa (2.2-A) → CambiaCategoriaAsync / EliminaTutteAsync (2.2-B) → SpeseTabella (C):
-               convergente
-           C7  parametri di Griglia<T> e tipi di TastieraGriglia (B, + 3 ancore di C) → SpeseTabella: convergente
-           C8  le nove ancore data-tutorial (C) = le nove Ancora dei PassoTutorial (D); selettore di tutorial.js
-               e attributo data-tutorial-evidenziato = regola di app.css: convergente
-           C9  NavigazioneSpese.Attiva e rotte = @page di Spese, Ricorrenti, SpeseTabella: convergente
-           C10 Tutorial.razor ↔ tutorial.js e Griglia.razor ↔ griglia.js (funzioni esportate): convergente
+## Tracciato della chiusura
 
-COMBINATO: 2 rilievi del bug-hunter finale — 1 corretto · 1 rimandato al capo
-           (+ 1 rilievo nato sulla correzione stessa, corretto; v. ADJUDICA)
+    review: combinato — 19bfee4..70f2bae, 26 files changed, 1584 insertions(+), 233 deletions(-)
+      bug-hunter      RILIEVI: 1
+      threat-hunter   RILIEVI: 0
+      checker         VERDETTI: fondati 1 · infondati 0 · fuori scope 0 · non verificabili 0
+    review: correzione 1 — avvisoPiano in PrimaDiRicaricare
+      autore          codex exec 0.161.0 — 1 file changed, 5 insertions(+), 1 deletion(-)
+      bug-hunter      RILIEVI: 1
+      threat-hunter   RILIEVI: 0
+      checker         VERDETTI: risolti 1 · non risolti 0 · non verificabili 0
+      checker         VERDETTI: fondati 1 · infondati 0 · fuori scope 0 · non verificabili 0
+      coverage        COPERTURA: 12 clausole — coperte 12 · scoperte 0 · rinviate 0
+    review: correzione 2 — avvisoPiano dopo Carica in Segna
+      autore          codex exec 0.161.0 — 1 file changed, 8 insertions(+), 1 deletion(-)
+      bug-hunter      RILIEVI: 1
+      threat-hunter   RILIEVI: 0
+      checker         VERDETTI: risolti 1 · non risolti 0 · non verificabili 0
+    review: correzione 3 — un solo controllo in Leggi, le due toppe tolte
+      autore          codex exec 0.161.0 — 1 file changed, 4 insertions(+)
+      bug-hunter      RILIEVI: 0
+      threat-hunter   RILIEVI: 0
+      conformity      non lanciato — 1 file changed, 4 insertions(+)
+      backend-expert  non lanciato — 1 file changed, 4 insertions(+)
+                      · 0 create mode · 0 dichiarazioni/endpoint
+      checker         VERDETTI: risolti 3 · non risolti 0 · non verificabili 0
+      live-testing    non lanciato — la prova chiede di creare un piano a rate in produzione, vietato dal mandato
+                      («Nessun dato in produzione: niente prove nel browser che scrivono»)
+      ui-critic       non lanciato — tabella §7 riga 1 — 1 file changed, 4 insertions(+) (solo dentro `@code`)
 
-GATE: sullo stato finale del worktree, dopo le correzioni:
-      mcp__synapse__build root=G:/Sviluppo/Eton/.claude/worktrees/chiusura-2.1-2.2 → succeeded — 0 errors, 0 warnings
-      mcp__synapse__test root=G:/Sviluppo/Eton/.claude/worktrees/chiusura-2.1-2.2 → 0 failed, 390 passed, 0 skipped
-      (identico prima delle correzioni: 0/0, 390 passed)
+Note al tracciato:
+- Le righe `autore` delle correzioni 1 e 2 sono `git diff HEAD --stat` di quel momento, prese dal diff mostrato
+  (5+/1−, poi 8+/1− cumulato); la correzione 3 ha annullato le prime due, e la sua riga è il diff finale.
+- `coverage` è stato lanciato dopo la correzione 1, non dopo l'ultima: le correzioni 2 e 3 chiudono lo stesso
+  difetto, non aggiungono né tolgono clausole.
+- Il terzo rilievo (BH3: cambio di spazio durante Riprova o cambio di mese) non ha avuto un'istruttoria a sé:
+  l'ho riconosciuto fondato sul codice (stessa guardia `ScartaCambioSpazio`, già istruita per BH2), e il checker
+  della correzione 3 l'ha verificato risolto insieme agli altri due.
+- Codex: nessun file `-o` comparso, nessuna scrittura con PowerShell o interpreti inline nei tre log (checker).
+  Brief e ritorni in `handoff/chiusura/`.
 
-FUORI SCOPE: v. sezione omonima più sotto (aggregata dai resoconti e dalla chiusura)
+## Adjudica
 
-ARCHIVIATO: storico/handoff/01-calcolo-e-schema, 02-regole-e-lettura, 03-pagine-ricorrenti, P-piano-tabella,
-            04-tabella-calcoli, 05-tabella-griglia, 06-tabella-pagina, 07-tabella-tutorial (git mv, path
-            d'origine conservato)
-            NON archiviati: handoff/08-correttiva-lettura e handoff/09-registro-fuoco (ESITO PARZIALE);
-            handoff/2026-09-20-CHIUSURA.md (l'utente non l'ha letto); i residui del goal precedente
-            (configurazione-da-applicare.md, collaudo/, 01-punto-interrogativo/, server.md); PIANO.md.
+- bug-hunter BH1 (combinato): fondato → corretto — l'avviso «Piano a rate creato» restava dopo un cambio di spazio,
+  e «Vai alle ricorrenti» apriva quelle di un altro spazio — `avvisoPiano = $"Piano a rate creato: …";`
+  verificato: risolto — Pages/Spese.razor:497 «if (attivo.Id != spazioDelPiano) avvisoPiano = null;»
+- bug-hunter BH2 (correzione 1): fondato → corretto — lo stesso, con il cambio di spazio arrivato durante «Segna»
+  e scartato da `ScartaCambioSpazio` — `protected override bool ScartaCambioSpazio() => rileggoMese;`
+  verificato: risolto — Pages/Spese.razor:497 e :423 «spazioDelPiano = attivo.Id;»
+- bug-hunter BH3 (correzione 2): fondato → corretto — lo stesso, durante Riprova e le frecce del mese —
+  `rileggoMese = true;` poi `await Carica();` (Pages/Spese.razor:561, :584, :599)
+  verificato: risolto — Pages/Spese.razor:497
+- Scelta mia, **da ratificare**: cambiando mese nello stesso spazio l'avviso resta (il piano non è legato a un
+  mese). Raccomandazione: tenerlo. Si annulla togliendo la condizione.
+- threat-hunter combinato: 0 rilievi; la nota sul tetto di 60 rate è in FUORI SCOPE. Ho aperto io due vecchi file
+  di `storico/` dove il threat-hunter vedeva «pattern tipo segreto»: nessun token, chiave o password (Grep su JWT,
+  `sk-`, `service_role`, `password=`, `secret=`, `apikey=`).
+- Infondati: nessuno, quindi nessun campione da riverificare.
 
-BUDGET: atteso (dai mandati) → reale da `costo_unita_Mtok_eq`: per tutte le unità «n/d» — MISURE restituisce
-        `costo_unita_Mtok_eq: {}` («nessuna unita della PARTIZIONE con transcript di worktree»)
-        01 bassa-media → n/d · 02 media-alta → n/d · 03 media → n/d · P media → n/d · 2.2-A media → n/d ·
-        2.2-B alta → n/d · 2.2-C alta → n/d · 2.2-D media → n/d · 2.2-E bassa-media → n/d · 2.2-F bassa → n/d
-        (S e R senza mandato: fatte in chat)
+## Cosa resta all'utente
 
-MISURE: {"ts":"2026-10-12T22:21:21.2273664+02:00","progetto":"G:\\Sviluppo\\Eton","da":"","chiusure":1,"unita_fatto":15,"combinato":{"rilievi":2,"corretti":1},"fuga_interna":0.133,"fuga_interna_ciclo":null,"costo_unita_Mtok_eq":{},"fuga_esterna":0,"verdetti":{"fondati":50,"infondati":0},"resa":{"backend-expert":{"lanci":14,"rilievi":37,"tok_eq":1586081,"rilievi_per_100k":2.333},"bug-hunter":{"lanci":21,"rilievi":29,"tok_eq":6265438,"rilievi_per_100k":0.463},"checker":{"lanci":39,"tok_eq":3973039},"conformity":{"lanci":15,"rilievi":22,"tok_eq":3152969,"rilievi_per_100k":0.698},"coverage":{"lanci":2,"tok_eq":242057},"doc-checker":{"lanci":6,"tok_eq":936729},"general-purpose":{"lanci":1,"tok_eq":248052},"implementer":{"lanci":28,"tok_eq":7825180},"live-testing":{"lanci":9,"tok_eq":7075377},"tech-advisor":{"lanci":9,"tok_eq":811410},"threat-hunter":{"lanci":20,"rilievi":2,"tok_eq":1688049,"rilievi_per_100k":0.118},"ui-critic":{"lanci":6,"rilievi":11,"tok_eq":1408146,"rilievi_per_100k":0.781}},"limiti":["risalito dal worktree G:\\Sviluppo\\Eton\\.claude\\worktrees\\chiusura-2.1-2.2 al repo G:\\Sviluppo\\Eton","2 lanci registrati prima dei campi token: esclusi dalla resa","nessuna unita della PARTIZIONE con transcript di worktree: costo_unita vuoto"]}
-```
-
-## Rimandato al capo (tocca un contratto fra unità)
-
-**R1 — la lettura paginata può restituire due volte la stessa spesa, e la tabella usa l'Id come chiave
-unica.** `bug-hunter` finale, severità bassa, TIPO contratto; `checker`: **fondato**.
-
-- Produttore (2.2-E): `Services/ExpenseRepository.cs:100` `.Range(spese.Count, spese.Count + RighePerBlocco - 1)`
-  e `:103` `spese.AddRange(risposta.Models);` — nessuna deduplica. Il commento `:43-45` accetta il caso
-  («Una spesa inserita o eliminata da un altro membro fra due blocchi può spostare di una riga l'offset,
-  ripetendo o saltando una riga in quella sola lettura; […] si accetta: la lettura successiva è di nuovo
-  esatta»), ma lo pesa come un totale sbagliato per una lettura.
-- Consumatori (2.2-A, 2.2-B/C): `Services/TabellaSpese.cs:17-18` `Chiave` = `Spesa.Id.ToString()` per le
-  registrate → `Shared/Griglia.razor:78` `<tr @key="chiave"`. Due fratelli con la stessa `@key`: secondo il
-  `checker` (e il `bug-hunter`) Blazor lancia un'eccezione nel render — **a memoria, non verificato sulla
-  fonte**: prima di correggere, è un caso per `doc-checker`.
-- Scenario: spazio condiviso con più di 1000 spese nel periodo («Quest'anno» in tabella); un altro membro
-  segna una spesa fra la lettura del blocco 1 e quella del blocco 2 → la riga 1000 compare due volte →
-  totali e CSV contano due volte quella spesa, e alla prima rilettura/riordino la griglia può andare in errore.
-  Il caso «riga saltata» (eliminazione concorrente) resta comunque, e nessuna deduplica lo recupera.
-- Proposta del revisore: `DistinctBy(e => e.Id)` alla fine del ciclo di `ElencaAsync`. **Non applicata**:
-  cambia la garanzia che il produttore (E) dà ai consumatori (A/C) — il confine della chiusura.
-
-## ADJUDICA della chiusura
-
-```
-review: chiusura — filtro «Pagante» stantio nella tabella
-  autore          codex exec 0.161.0 — 1 file changed, 7 insertions(+)
-  bug-hunter      RILIEVI: 1
-  threat-hunter   RILIEVI: 0
-  conformity      non lanciato — 1 file changed, 7 insertions(+)
-  backend-expert  non lanciato — 1 file changed, 7 insertions(+)
-                  · 0 create mode · 0 dichiarazioni/endpoint
-  checker         VERDETTI: fondati 1 · infondati 0 · fuori scope 0 · non verificabili 0
-  checker         VERDETTI: risolti 1 · non risolti 0 · non verificabili 0
-  checker         VERDETTI: risolti 2 · non risolti 0 · non verificabili 0
-  live-testing    non lanciato — lo scenario richiede due spazi condivisi con membri diversi, cioè dati
-                  scritti in produzione da un secondo account: v. DA PROVARE ALL'UTENTE
-  ui-critic       non lanciato — tabella §7 riga 1 — 1 file changed, 7 insertions(+)
-  coverage        COPERTURA: 15 clausole — coperte 12 · scoperte 0 · rinviate 3
-```
-
-(Il primo `checker` è l'istruttoria dei 2 rilievi del `bug-hunter` sul combinato: `VERDETTI: fondati 2 ·
-infondati 0 · fuori scope 0 · non verificabili 0`, uno corretto qui e uno rimandato. La voce
-`bug-hunter RILIEVI: 1` è quella lanciata sulla correzione; il primo `checker` sopra la istruisce. Il secondo
-`risolti 1` è la verifica della prima versione del fix; `risolti 2` verifica la versione finale su entrambi i
-rilievi. Il `bug-hunter` combinato è nella riga COMBINATO.)
-
-- **R2** (`bug-hunter` combinato, bassa) — passando da uno spazio condiviso con filtro «Pagante» = X a uno
-  spazio condiviso in cui X non è membro (o aprendo `?pagante=<guid non membro>`), il filtro restava e la
-  tabella si svuotava senza un'opzione corrispondente nel menù: **fondato → corretto** in
-  `Pages/SpeseTabella.razor`, metodo `Leggi`:
-  `if (!membriNonLetti && vista.Filtri.Pagante is not null && !membri.Any(m => m.UtenteId == vista.Filtri.Pagante))`
-  verificato: risolto — Pages/SpeseTabella.razor:356-361 (il blocco precede `Ricalcola()`; vale per cambio di
-  spazio e per l'apertura da URL; non scatta con `membriNonLetti`).
-- **R3** (`bug-hunter` sulla correzione, bassa) — la prima versione del fix chiamava `ScriviUrl()`
-  (`NavigateTo` singleton) dopo due await di rete: se l'utente aveva già lasciato la pagina, veniva riportato
-  su `/expenses/table`. **Fondato → corretto** togliendo la navigazione: il blocco riassegna solo `vista`, e
-  l'URL si riallinea alla prossima scelta dell'utente (`Aggiorna`/`Rileggi` riscrivono l'URL dalla vista
-  corretta; un link vecchio riaperto viene ripulito di nuovo in `Leggi`).
-  verificato: risolto — Pages/SpeseTabella.razor:354-359, nessuna `ScriviUrl`/`NavigateTo` nel blocco.
-- Campione sugli infondati: nessun infondato in questa chiusura. Il rilievo R1 (dati e concorrenza) l'ho
-  riaperto io sul percorso `ElencaAsync` → `Fondi` → `TabellaSpese.Righe` attraverso le citazioni del
-  `checker`; la parte su Blazor resta a memoria.
-
-## FUORI SCOPE (aggregato)
-
-1. **Spese di prova in produzione, ancora da eliminare** (unità 2.2-E e 2.2-F, motivo dell'ESITO PARZIALE):
-   «PROVA COLLAUDO R1», «R2», «R3» (12/10/2026, 1,00 € l'una, spazio «Personale») e le tre vecchie
-   «COLLAUDO GIRO B» (19/09/2026, 1.284,50 €), «COLLAUDO 4 SET» (04/09/2026, 1.284,50 €), «PROVA AGENTE»
-   (20/08/2026, 12,50 €). PIANO.md dice che il capo l'ha riaffidata a un agente dalla sessione interattiva:
-   **l'esito non risulta su disco**. Questa sessione non le ha toccate (in background un'autorizzazione che
-   arriva da un file non vale, e non le ha create lei). Da verificare in tabella, filtro «Quest'anno».
-2. **Navigazione dopo un await, senza guardia di smontaggio** (dal `checker` della chiusura): stesso difetto di
-   R3, preesistente, in `Pages/SpeseTabella.razor:326` (ramo spazio personale di `Leggi`, `ScriviUrl()` dopo
-   `AssicuraCaricatoAsync`, finestra stretta) e in `Pages/SpaceDetail.razor:331`, `:368`
-   (`NavigateTo("spaces")` dopo `RicaricaAsync`). Il progetto ha già il rimedio in `Shared/PaginaEditor.cs`
-   (`smontata`, `Esci`), ma `Shared/PaginaRegistro.cs` non ha l'equivalente.
-3. Dalla 2.2-E: nessun tetto alla lettura a blocchi (deciso dall'utente: nessun limite); `max_rows` di
-   produzione da leggere in Dashboard («Max rows»); «Riprova» dallo stato «spazi non letti» mostra per un
-   istante «Serve uno spazio…» (Spese e SpeseTabella); `Disabilitato` di `ErroreRiprova` inerte; ordine fra
-   spese della stessa data diverso fra registro e tabella.
-4. Dalla 2.2-D (per la 2.1-bis): clic su «Tutorial» prima del caricamento del modulo JS; contrasto della
-   pastiglia «nuovo» 4,45:1; riquadro che non segue lo scorrimento; pulsante lontano dal «?»; `localStorage`
-   dal componente e non da un servizio.
-5. Dalla 2.2-C (per la 2.1-bis): densità (controlli 48px, righe 38px, barra 275px); bordi dei controlli
-   1,21:1; transizioni di 160ms; colonna Importo che si allarga in modifica; casella «tutte» senza stato
-   intermedio; fuoco su `body` dopo «Ricarica la sua»; `"griglia-numero dato"` ripetuta; Ctrl/Alt+Spazio.
-6. Dalla 2.2-B: Option da solo su Mac; tetto della riga di richiesta del gateway Supabase non documentato;
-   terza copia della guardia sulle date (`DataMinima`/`DataMassima` in Griglia).
-7. Dalla 2.2-A: normalizzazione del testo duplicata (`TabellaSpese.Normalizza` / `CalcoliGriglia.Confronta`);
-   fase 3: proteggere le etichette d'intestazione del CSV e decidere la griglia su valori di tipo sbagliato.
-8. Dal piano P: commento falso in `Shared/TestataPagina.razor:8-10` («il progetto non ha un file .js
-   proprio»); guardia sulla data in tre copie.
-9. Dalla 03: `.sotto-nav` ricopia `.schede-testo`; manca `Oggetto.Ricorrente` in `Permessi`; helper
-   `Mostra`/`Dati` e `Bloccato` per tutti gli editor (decisioni di progetto).
-10. Dalla 02: classificazione a zero righe in sei copie (helper generico proposto); `PerIlDatabase` in una
-    classe propria; previsione che ricompare se un'occorrenza spostata a mano fuori dal mese coincide con un
-    watermark rimasto indietro (due guasti in sequenza).
-11. Dalla 01: forma degli script `supabase/verifica-rls-*.sql` (auto-verifica con `\if`, query su
-    `pg_attribute`, variabili psql) — decisioni di progetto.
-12. Commento in `Services/CalcoliSpese.cs:42` con `<see cref="ExpenseRepository.ElencaAsync"/>` verso un
-    metodo ora privato (solo documentazione).
-
-## DA PROVARE ALL'UTENTE (raccolte; nessuna è stata provata da un agente)
-
-1. **Correzione della chiusura** (serve uno spazio condiviso): in `/expenses/table`, in uno spazio condiviso,
-   scegli «Pagato da» = un membro; poi dal selettore passa a un altro spazio condiviso in cui quella persona non
-   c'è. Atteso: la tabella mostra le spese del nuovo spazio e il menù «Pagato da» dice «Tutti». Se la tabella
-   resta vuota con «Nessuna spesa … con questi filtri», il fix non regge.
-2. Dalla 2.2-C: guardia d'uscita con una cella in modifica; righe di un altro membro; spese ricorrenti
-   «prevista»/«in arrivo» (dettaglio in `storico/handoff/06-tabella-pagina/resoconto.md`, DA PROVARE).
-3. Dalla 2.2-D: pulsante «Tutorial» che sparisce restringendo la finestra sotto l'avviso, e ricompare
-   allargandola (`storico/handoff/07-tabella-tutorial/resoconto.md`).
-4. Dalla 03 (7 ott): guardia d'uscita nell'editor di una spesa ricorrente (dialogo nativo).
-
-## SCOSTAMENTI e note della chiusura
-
-- Autore del diff di correzione: Codex 0.161.0 (`codex exec -s workspace-write`, poi `resume --last` per R3),
-  come da DECISIONI del 12 ottobre. Build e test li ho fatti io con synapse; Codex non ha compilato.
-- Nessuna spesa scritta in produzione da questa sessione; nessun browser aperto.
-- Nessun lavoro nuovo arrivato durante la sessione.
-- `handoff/PIANO.md` non è stato modificato.
-- Commit sul branch `worktree-chiusura-2.1-2.2`, **non pushato** (il branch è locale al repo; `main` intatto).
+- **Pubblicare la correzione**: è nel branch `worktree-chiusura-2-3`, non su `main`. `main` pubblica in produzione
+  a ogni push; l'integrazione è del capo.
+- **La prova nel browser della correzione non c'è**: per vederla serve creare un piano a rate in uno spazio e poi
+  cambiare spazio, cioè scrivere in produzione. Va fatta dall'utente o autorizzata.
+- La ratifica qui sopra (l'avviso resta cambiando mese).
+- Il tetto di 60 rate nel database (FUORI SCOPE), se lo si vuole.
