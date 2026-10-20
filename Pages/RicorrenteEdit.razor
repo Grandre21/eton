@@ -44,14 +44,14 @@ else
         @* Qui il conflitto è frequente e atteso, non un caso raro: ogni materializzazione alza
            version. Si mostra sempre, non si sopprime. SovrascriviAbilitato in più su Valido &&
            PuoIntervenire: v. Pages/SpesaEdit.razor:41-53 per il perché di entrambe le condizioni. *@
-        <SchedaConflitto Premessa="Mentre la modificavi, questa spesa ricorrente è cambiata." Occupato="@occupato" SovrascriviAbilitato="@(Valido && PuoIntervenire)"
+        <SchedaConflitto Premessa="@($"Mentre la modificavi, questa {NomeTipo} ricorrente è cambiata.")" Occupato="@occupato" SovrascriviAbilitato="@(Valido && PuoIntervenire)"
                          OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
     }
 
     @* Stessa regola di Services/Permessi.cs (la RLS di recurring_expenses ha la forma di expenses), ma senza un Oggetto dedicato lì: quando se ne aggiunge uno, questa frase va spostata in Permessi.Spiegazione. *@
     @if (!PuoIntervenire)
     {
-        <p class="spiega">Questa spesa ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
+        <p class="spiega">Questa @NomeTipo ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
     }
 
     @if (Bloccato)
@@ -131,7 +131,9 @@ else
             {
                 <p class="errore-campo">@erroreImporto</p>
             }
-            <p class="spiega">L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.</p>
+            <p class="spiega">@(tipo == TipoMovimento.Entrata
+                ? "L'importo è quello atteso: se arriva diverso, lo correggi sull'entrata del mese."
+                : "L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.")</p>
         }
 
         <label class="campo">
@@ -259,7 +261,7 @@ else
                 var attiva = Piano
                     ? CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today) is not null
                     : regola!.EndsOn is null;
-                <h2>Fermare questa spesa ricorrente</h2>
+                <h2>Fermare questa @NomeTipo ricorrente</h2>
                 @if (attiva)
                 {
                     <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
@@ -285,7 +287,7 @@ else
             @* Durante un conflitto 'regola' è la versione letta all'apertura e 'conflitto' quella fresca dal server: il watermark si legge dalla più recente. *@
             @if ((conflitto ?? regola)?.MaterializedThrough is null)
             {
-                <p class="testo-tenue">Non ha ancora segnato nessuna spesa, quindi si può anche eliminare.</p>
+                <p class="testo-tenue">Non ha ancora segnato nessuna @NomeTipo, quindi si può anche eliminare.</p>
                 <div class="azioni">
                     <ConfermaAzione Chiave="@Id" Occupato="@(occupato || conflitto is not null)" OnConferma="Elimina" />
                 </div>
@@ -334,12 +336,15 @@ else
     private bool Piano => !Nuova && regola?.Installments is not null;
     private bool Bloccato => Piano && CalcoliRicorrenti.PianoPartito(conflitto ?? regola!, DateTime.Today);
 
+    // «spesa» o «entrata», per i testi della pagina che nominano il tipo della regola.
+    private string NomeTipo => TipoMovimento.Testo(tipo).ToLowerInvariant();
+
     private string TitoloSchermata
     {
         get
         {
             if (!string.IsNullOrWhiteSpace(descrizione)) return descrizione;
-            return Nuova ? $"Nuova {TipoMovimento.Testo(tipo).ToLowerInvariant()} ricorrente" : $"{TipoMovimento.Testo(tipo)} ricorrente";
+            return Nuova ? $"Nuova {NomeTipo} ricorrente" : $"{TipoMovimento.Testo(tipo)} ricorrente";
         }
     }
 

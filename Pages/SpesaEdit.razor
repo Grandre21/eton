@@ -62,8 +62,11 @@ else
     }
 
     <div class="campi-spesa">
-        <div class="campo campo-lettura"><span class="etichetta-campo">Tipo</span><p>@TipoMovimento.Testo(Tipo)</p></div>
-        <p class="spiega">Il tipo non si cambia: per farne una spesa o un'entrata, eliminala e segnala di nuovo.</p>
+        <div class="campo campo-lettura">
+            <span class="etichetta-campo">Tipo</span>
+            <p>@TipoMovimento.Testo(Tipo)</p>
+            <p class="spiega">Il tipo non si cambia: per farne una spesa o un'entrata, eliminala e segnala di nuovo.</p>
+        </div>
         @{
             RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
         }
