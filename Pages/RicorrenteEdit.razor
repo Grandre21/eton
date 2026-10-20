@@ -11,8 +11,16 @@
 
 <TestataPagina Titolo="@TitoloSchermata">
     <Aiuto>
-        <p>La spesa ricorrente segna da sola una spesa nel mese in cui è dovuta, quando chi la paga apre Eton.</p>
-        <p>Se qualcun altro salva questa spesa ricorrente mentre la modifichi, o se nel frattempo Eton ci segna una spesa del mese, il salvataggio si ferma e ti fa scegliere fra ricaricare la versione più recente e sovrascrivere con la tua.</p>
+        @if (TipoNoto)
+        {
+            <p>@(tipo == TipoMovimento.Entrata ? "L'entrata" : "La spesa") ricorrente segna da sola @UnNomeTipo nel mese in cui è dovuta, quando @Titolare apre Eton.</p>
+            <p>Se qualcun altro salva questa @NomeTipo ricorrente mentre la modifichi, o se nel frattempo Eton ci segna @UnNomeTipo del mese, il salvataggio si ferma e ti fa scegliere fra ricaricare la versione più recente e sovrascrivere con la tua.</p>
+        }
+        else
+        {
+            <p>Una ricorrente si segna da sola nel mese in cui è dovuta, quando chi la paga o la riceve apre Eton.</p>
+            <p>Se qualcun altro salva questa ricorrente mentre la modifichi, o se nel frattempo Eton ci segna il movimento del mese, il salvataggio si ferma e ti fa scegliere fra ricaricare la versione più recente e sovrascrivere con la tua.</p>
+        }
         <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
     </Aiuto>
 </TestataPagina>
@@ -24,7 +32,7 @@
 else if (sparita)
 {
     <div class="vuoto">
-        <p>Questa spesa ricorrente non c'è più: l'ha cancellata qualcuno, oppure non fai più parte dello spazio.</p>
+        <p>Questa ricorrente non c'è più: l'ha cancellata qualcuno, oppure non fai più parte dello spazio.</p>
         <a class="btn" href="expenses/recurring">Torna alle ricorrenti</a>
     </div>
 }
@@ -51,7 +59,7 @@ else
     @* Stessa regola di Services/Permessi.cs (la RLS di recurring_expenses ha la forma di expenses), ma senza un Oggetto dedicato lì: quando se ne aggiunge uno, questa frase va spostata in Permessi.Spiegazione. *@
     @if (!PuoIntervenire)
     {
-        <p class="spiega">Questa @NomeTipo ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
+        <p class="spiega">Questa @NomeTipo ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo @Titolare, o chi possiede lo spazio.</p>
     }
 
     @if (Bloccato)
@@ -342,10 +350,23 @@ else
     // «spese» o «entrate», per i testi che parlano dei movimenti già segnati.
     private string NomeTipoPlurale => tipo == TipoMovimento.Entrata ? "entrate" : "spese";
 
+    // «una spesa» o «un'entrata», per i testi che nominano un movimento da segnare.
+    private string UnNomeTipo => tipo == TipoMovimento.Entrata ? "un'entrata" : "una spesa";
+
+    // «la spesa» o «l'entrata», per i testi che nominano la regola con l'articolo.
+    private string LaNomeTipo => tipo == TipoMovimento.Entrata ? "l'entrata" : "la spesa";
+
+    // «chi la paga» o «chi la riceve»: la persona a cui la ricorrente appartiene.
+    private string Titolare => tipo == TipoMovimento.Entrata ? "chi la riceve" : "chi la paga";
+
+    // Finché la regola non è caricata (caricamento, errore in apertura, regola sparita), tipo è ancora il default Spesa.
+    private bool TipoNoto => Nuova || regola is not null;
+
     private string TitoloSchermata
     {
         get
         {
+            if (!Nuova && !TipoNoto) return "Ricorrente";
             if (!string.IsNullOrWhiteSpace(descrizione)) return descrizione;
             return Nuova ? $"Nuova {NomeTipo} ricorrente" : $"{TipoMovimento.Testo(tipo)} ricorrente";
         }
@@ -439,7 +460,7 @@ else
             // Il testo dell'eccezione NON va all'utente, solo in console: v. il commento nel catch
             // di Pages/NoteEdit.razor:230-235. Vale per tutti i catch qui sotto.
             Console.Error.WriteLine($"[Ricorrenti] Apertura non riuscita: {ex.Message}");
-            errore = "Non è stato possibile aprire questa spesa ricorrente: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
+            errore = "Non è stato possibile aprire questa ricorrente: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
         caricato = true;
@@ -479,7 +500,7 @@ else
         var attivo = await Spazi.AssicuraCaricatoAsync();
         if (attivo is null)
         {
-            errore = "Serve uno spazio attivo per creare una spesa ricorrente.";
+            errore = $"Serve uno spazio attivo per creare {UnNomeTipo} ricorrente.";
             return;
         }
 
@@ -541,7 +562,7 @@ else
             case EsitoSalvataggio.Rifiutata:
                 // v. il commento sul caso Rifiutata in Pages/NoteEdit.razor:313-320: con
                 // PuoIntervenire attivo, arrivare qui vuol dire che quel pre-controllo è stantio.
-                errore = "Non hai più il permesso di modificare questa spesa ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                errore = $"Non hai più il permesso di modificare questa {NomeTipo} ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                 break;
 
             case EsitoSalvataggio.Sparita:
@@ -610,7 +631,7 @@ else
                     // Solo 'regola', non i campi del modulo: possono contenere modifiche non
                     // salvate che Termina non deve scartare.
                     regola = esito.Aggiornata;
-                    avviso = "Terminata: da domani non segna più spese.";
+                    avviso = $"Terminata: da domani non segna più {NomeTipoPlurale}.";
                     break;
 
                 case EsitoSalvataggio.Conflitto:
@@ -618,7 +639,7 @@ else
                     break;
 
                 case EsitoSalvataggio.Rifiutata:
-                    errore = "Non hai più il permesso di terminare questa spesa ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                    errore = $"Non hai più il permesso di terminare questa {NomeTipo} ricorrente: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
                     break;
 
                 case EsitoSalvataggio.Sparita:
@@ -629,7 +650,7 @@ else
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[Ricorrenti] Terminazione non riuscita: {ex.Message}");
-            errore = "Non è stato possibile terminare la spesa ricorrente: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+            errore = $"Non è stato possibile terminare {LaNomeTipo} ricorrente: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally
         {
@@ -647,7 +668,7 @@ else
                 Esci("expenses/recurring");
                 return;
             }
-            errore = "Non è stato possibile eliminare la spesa ricorrente: può cancellarla solo chi la paga, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminata: ricarica la pagina per vedere com'è adesso.";
+            errore = $"Non è stato possibile eliminare {LaNomeTipo} ricorrente: può cancellarla solo {Titolare}, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminata: ricarica la pagina per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
@@ -655,7 +676,7 @@ else
             // RecurringExpenseRepository.EliminaAsync. Una regola che ha già generato occorrenze
             // non si elimina, si termina.
             Console.Error.WriteLine($"[Ricorrenti] Eliminazione non riuscita: {ex.Message}");
-            errore = "Non è stato possibile eliminare la spesa ricorrente: se nel frattempo ha segnato delle spese si può solo terminare, altrimenti il database non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+            errore = $"Non è stato possibile eliminare {LaNomeTipo} ricorrente: se nel frattempo ha segnato delle {NomeTipoPlurale} si può solo terminare, altrimenti il database non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally
         {
