@@ -1,3 +1,4 @@
+using Eton.Models;
 using Eton.Services;
 
 namespace Eton.Tests;
@@ -84,5 +85,52 @@ public class ExpenseRepositoryTests
         Assert.Equal(2026, risultato.Year);
         Assert.Equal(1, risultato.Month);
         Assert.Equal(5, risultato.Day);
+    }
+
+    // Da qui i test della lettura a blocchi (LeggiABlocchiAsync).
+    // Un inserimento fra due blocchi può ripetere una spesa: deve vincere la prima letta.
+    [Fact]
+    public async Task Una_spesa_ripetuta_fra_due_blocchi_torna_una_volta_sola()
+    {
+        var primo = Enumerable.Range(0, ExpenseRepository.RighePerBlocco)
+            .Select(_ => new Expense { Id = Guid.NewGuid() }).ToList();
+        var ripetuta = new Expense { Id = primo[^1].Id };
+        var nuove = new[] { new Expense { Id = Guid.NewGuid() }, new Expense { Id = Guid.NewGuid() } };
+        var chiamate = new List<(int, int)>();
+
+        var risultato = await ExpenseRepository.LeggiABlocchiAsync((da, a) =>
+        {
+            chiamate.Add((da, a));
+            IReadOnlyList<Expense> righe = da == 0 ? primo : new[] { ripetuta, nuove[0], nuove[1] };
+            return Task.FromResult(righe);
+        });
+
+        Assert.Equal(ExpenseRepository.RighePerBlocco + 2, risultato.Count);
+        Assert.Equal(risultato.Count, risultato.Select(e => e.Id).Distinct().Count());
+        Assert.Equal(primo.Concat(nuove).Select(e => e.Id), risultato.Select(e => e.Id));
+        Assert.Same(primo[^1], risultato[primo.Count - 1]);
+        Assert.Equal(new[] { (0, primo.Count - 1), (primo.Count, primo.Count * 2 - 1) }, chiamate);
+    }
+
+    // Un blocco corto deve chiudere subito la lettura senza alterare righe e ordine.
+    [Fact]
+    public async Task Sotto_un_blocco_la_lettura_resta_quella_di_prima()
+    {
+        IReadOnlyList<Expense> spese = new[]
+        {
+            new Expense { Id = Guid.NewGuid() },
+            new Expense { Id = Guid.NewGuid() },
+            new Expense { Id = Guid.NewGuid() }
+        };
+        var chiamate = new List<(int, int)>();
+
+        var risultato = await ExpenseRepository.LeggiABlocchiAsync((da, a) =>
+        {
+            chiamate.Add((da, a));
+            return Task.FromResult(spese);
+        });
+
+        Assert.Equal(spese, risultato);
+        Assert.Equal((0, ExpenseRepository.RighePerBlocco - 1), Assert.Single(chiamate));
     }
 }
