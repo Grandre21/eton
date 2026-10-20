@@ -52,6 +52,11 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 - **2026-10-20 — Decisione dell'unità 01, da ratificare**: il test della lettura a blocchi passa da un metodo
   estratto `internal static` (`LeggiABlocchiAsync`) invece che da un finto client Supabase. Raccomandazione
   dell'unità: tenerlo, è l'unica astrazione e ha un solo chiamante. Si annulla con un revert locale.
+- **2026-10-20 — Quattro decisioni dell'unità 02, da ratificare** (raccomandazione dell'unità: tenerle tutte;
+  la 02 non si pubblica prima della ratifica): (1) la riga «metti da parte» non compare con quota 0; (2) tolto
+  il conteggio «N spese ricorrenti» in testa, sostituito dalle testate dei gruppi; (3) il gruppo si chiama
+  «Ogni N mesi» come nella spec, «Periodiche» da valutare in 2.1-bis; (4) la quota è l'arrotondamento della
+  somma esatta, e può differire di 1 centesimo dalla somma dei totali di gruppo.
 
 ## PARTIZIONE
 
@@ -59,8 +64,8 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 |---|---|---|---|---|
 | **S — progetto 2.3** | spec dei punti 0-4, approvata in chat | `docs/superpowers/specs/2026-10-20-rate-entrate-design.md` | — | **PARZIALE** — approvata dall'utente in chat il 20 ott («Approvo, vai»); è un documento, non c'è un comando che lo verifichi |
 | **01-doppioni** | punto 0 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-doppioni`, mandato in `handoff/01-doppioni/` | S | **FATTO** — fusa su `main` il 20 ott, 0 rilievi aperti, una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 392 passed` |
-| **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | PIANIFICATA |
-| **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità | 02 | PIANIFICATA |
+| **02-gruppi-quota** | punti 2 e 3, senza schema | sessione-unità, mandato in `handoff/02-gruppi-quota/` | 01 (solo ordine) | **PARZIALE** — fusa su `main` **solo in locale** il 20 ott (non pubblicata: quattro decisioni da ratificare, DECISIONI); gate dell'unità verdi (398 test), `live-testing` verde; manca `ui-critic` (servono regole di prova lasciate a schermo in produzione, negato dal classificatore all'unità) |
+| **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità, worktree da `origin/main` **senza** la 02 (file disgiunti) | 02 (solo ordine) | **IN CORSO** — job `8e5fe2f0`, rete armata |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | PIANIFICATA |
 | **04-rate** | punto 1 | sessione-unità | GATE | PIANIFICATA |
 | **05-entrate** | punto 4 | sessione-unità | 04 | PIANIFICATA |
@@ -73,7 +78,10 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 
 ## PROSSIMA AZIONE
 
-Lanciare **02-gruppi-quota** nel suo worktree e armare la rete. Poi 03, gate dell'utente, 04, 05.
+Aspettare il resoconto della **03** e il parere di `tech-advisor` sulle ratifiche (D1-D6), sulla misura
+`ui-critic` mancante della 02 e sul FUORI SCOPE BE1 della 02 (chiave di ordinamento in tre copie); poi **un solo
+popup** all'utente: ratifiche + SQL della migrazione. Ratificate: push di `main` (01 già pubblicata, 02 solo
+locale). Dopo «applicata»: 04, poi 05. ⚠️ `main` locale è avanti a `origin/main` con la 02.
 
 controllo contesto 2026-10-20 14:15: nulla
 
