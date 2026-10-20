@@ -1,0 +1,434 @@
+# Piano — spese ricorrenti (2.1) e vista tabellare (2.2)
+
+Scritto il **22 settembre 2026**. Sostituisce il piano del 20 settembre, il cui goal è chiuso e
+archiviato in `storico/handoff/2026-09-20-PIANO-tutto-cio-che-rimane.md`; il suo rapporto è ancora
+in `handoff/CHIUSURA.md` e **non si archivia finché l'utente non l'ha letto**.
+Autosufficiente: chi riprende non ha bisogno della conversazione da cui nasce.
+
+## OBIETTIVO
+
+> «vorrei fare sia la 2.1 che la 2.2 o almeno fare totalmente la loro progettazione»
+> — utente, 22 settembre 2026
+
+**La glossa.** Le fasi sono quelle di `docs/superpowers/specs/2026-09-10-modello-prodotto-design.md`
+§4: **2.1** spese ricorrenti (design e piano da sei task già approvati il 3 settembre), **2.2** vista
+tabellare delle spese (da progettare). Il minimo dichiarato dall'utente è la **progettazione totale di
+entrambe**: per la 2.1 esiste già e va solo corretta; per la 2.2 vuol dire **spec e piano**. Il massimo
+è entrambe implementate.
+
+⚠️ **Tutto in una sessione non ci sta**, e lo si sa adesso: sei task della 2.1 più la 2.2, con in mezzo
+un passo che solo l'utente può fare (la migrazione in produzione). Il gate della migrazione è il
+confine naturale fra un capo e il successivo.
+
+## DECISIONI
+
+- **2026-09-22 utente (chat)** — alla domanda su come trattare la 2.2, con la posizione di
+  `tech-advisor` nel popup, ha scelto: **«2.2 completa ora (consigliata)»**. Conseguenze:
+  1. **La fase 2.1-bis (UI/UX, direzione SLY) si sposta DOPO la 2.2**, restando prima della fase 3.
+     Revoca la collocazione del 19 settembre («fra 2.1 e 2.2»), che era a confidenza media e portava
+     scritto l'obbligo di essere riconfermata. Motivo di `tech-advisor`: la tabellare è la schermata
+     più densa dell'app, e un sistema visivo disegnato senza averla davanti si rifà quando arriva;
+     restilizzarla dopo costa ore, aspettare costa settimane.
+  2. La 2.2 si implementa con **resa visiva minima sui token esistenti, dichiarata provvisoria**.
+  3. Ordine: **spec 2.2 → 2.1 implementata → piano e implementazione 2.2 → (goal futuro) 2.1-bis.**
+     La spec 2.2 va **prima** del task 5 della 2.1, che altrimenti dovrebbe decidere alla cieca la
+     sotto-navigazione «Registro · Tabella · Ricorrenti».
+
+- **2026-09-22 utente (chat)** — cosa vuole dalla tabella, scelte tutte e quattro le voci proposte:
+  trovare e ordinare (periodo libero, filtri, ordinamento per colonna), modificare nella riga, azioni
+  su più righe, totali della selezione ed esportazione CSV. E in più, verbatim: *«vorrei anche avere
+  una gestione piu tabellare in stile excel con delle funzioncine, magari solo lato desktop, mentre
+  lato mobile segno solo le mie spese quando le faccio tieni sempre a mente l'obbiettivo del
+  progetto»*.
+
+- **2026-09-22 utente (chat)** — le «funzioncine»: scelte tutte e quattro — riepilogo sotto le
+  colonne, raggruppamento con subtotali, incrocio categorie × mesi (è la 2.3), formule scritte
+  dall'utente (è la fase 4). E un'idea nuova, verbatim: *«implementerei anche la possibilità di
+  connettere una propria ai a eton in generale che possa leggere i propri dati soltanto, cosi da avere
+  il tuo companion sempre pronto»*. **Non ancora collocata**: la scomposizione passa da `tech-advisor`.
+
+- **2026-09-22 utente (chat)** — divisione: **«Sì, dividi così (consigliata)»**. Nella 2.2 anche il
+  riepilogo sotto le colonne e il raggruppamento a una dimensione con subtotali; l'incrocio
+  categorie × mesi resta alla **2.3**; le formule alla **fase 4** (la 2.2 prevede colonne calcolate
+  come gancio); il **companion AI è una fase nuova dopo la fase 3**, con due condizioni: server OAuth
+  2.1 di Supabase fuori beta (oggi la issue supabase/auth#2820 blocca i connettori MCP reali) e una
+  regola sugli spazi condivisi (l'AI di un membro leggerebbe le spese degli altri).
+
+- **2026-09-22 utente (chat)** — tastiera: **«Anche le frecce, come Excel»**, **contro** la
+  raccomandazione di `tech-advisor` (Tab/Invio/Esc soltanto, frecce rinviate). Quindi nella 2.2:
+  navigazione fra celle con le frecce, che richiede interop JS per il fuoco e una gestione per cella.
+  Sotto i 640px la tabella non si rende: avviso con link al registro (proposta non contestata).
+
+- **2026-09-22 utente (chat)** — approvate in chat le quattro sezioni del progetto 2.2 (struttura;
+  cosa si vede; modifica; test e rischi), compresa l'esclusione della «riga nuova». Poi, verbatim:
+  *«aggiungi anche i tasti per i tutorial guidati e gli helpbutton nella fase 4»*; chiarito col popup:
+  **«Nella tabella (2.2)»** — la tabella ha il suo «?» e un pulsante «Tutorial» che la presenta passo
+  passo. Il tutorial non esiste nell'app: si costruisce generico, riusabile dalla 2.1-bis.
+
+- **2026-09-22 utente (chat)** — sulle tre decisioni tecniche del capo (tipo di sola scrittura
+  `OccorrenzaRicorrente`, `ElencaAsync` privato, record `DatiRegola`): «dalle per buone». Tutte e tre
+  **ratificate 2026-09-22**. Poi: «chiudiamo la sessione per oggi».
+- **2026-09-22 — L'unità 02 ha trovato che il contratto di scrittura del piano non funzionava.** Un
+  `Upsert<Expense>` in `Supabase.Postgrest` 4.4.0 scarta anche le colonne `ignoreOnUpdate`, quindi
+  avrebbe omesso `space_id`, `paid_by`, `recurring_id` e `recurring_period` → 23502 in produzione al
+  primo «apri Spese» di chi ha una regola, e `PrivilegiInsertTests` non l'avrebbe visto (controlla le
+  colonne in più, non quelle mancanti). Rimedio: un tipo di sola scrittura `OccorrenzaRicorrente`
+  senza flag `ignore*`, con un test che lo fissa. **Accettato dal capo — ratificata 2026-09-22**
+  (riga «dalle per buone» qui sopra; trascritta il 2026-10-01), come
+  `ElencaAsync` reso `private` (il divieto del §5 ora lo impone il compilatore).
+- **2026-09-22 — Deciso dal capo — ratificata 2026-09-22 (riga «dalle per buone» qui sopra;
+  trascritta il 2026-10-01): il record `DatiRegola` entra nell'unità 03.**
+  `CreaAsync`/`SalvaAsync` delle regole prendono otto argomenti posizionali, e `ogniMesi`/`giorno`
+  scambiati compilano. L'unità 03 scrive il primo chiamante, quindi è l'ultimo momento in cui cambiare
+  la firma costa poco. Si annulla con un revert locale.
+- **2026-09-22 — Decisione tecnica del capo — ratificata 2026-10-07** (popup «Ratifica, con D6
+  corretta», più sotto; spostata da APERTO il 2026-10-01, dove
+  il popup di apertura non l'avrebbe mai mostrata): con `Supabase.Postgrest` 4.4.0 il DELETE filtrato
+  con `Operator.In` non restituisce le righe (`Task`), quindi la spec 2.2 §5.4 fa DELETE + rilettura
+  degli stessi id. Verifica di `doc-checker` e dettaglio in APERTO, «Verificato da `doc-checker` il 22
+  set». Non cambia niente di visibile all'utente.
+- **2026-10-07 utente (chat)** — nel popup con le sette decisioni (D0 qui sopra + le sei di `SCOSTAMENTI`
+  del resoconto 03) e la posizione di `tech-advisor`: **«Ratifica, con D6 corretta (consigliata)»**.
+  Tutte **ratificate 2026-10-07**. D6 si corregge: l'avviso «una data passata segnerà le spese dei mesi
+  trascorsi» compare anche in modifica quando la regola non ha mai materializzato (watermark nullo).
+- **2026-10-07 utente (chat)** — sul piano della 2.2, popup con sette punti e la posizione di
+  `tech-advisor`: **«Tutti come nel piano (consigliata)»**. Quindi, tutte **ratificate 2026-10-07**: CSV con
+  apostrofo davanti a `= + - @` (costo accettato: in Excel l'apostrofo si vede); tasto su cella data/menù
+  entra senza sostituire; filtri nell'URL con `replace: true`; tutorial che non parte da solo, pastiglia
+  «nuovo» fino alla prima apertura; «ultimi 3 mesi» comprende il mese in corso; voce «Tabella» nascosta
+  sotto i `40rem` (regola in `Shared/NavigazioneSpese.razor.css`, aggiunta al piano, task 5 step 8);
+  azione di massa su righe di altri membri provata solo dai test puri.
+- **2026-10-07 — Decisione dell'unità 2.2-A, ratificata 2026-10-07**: in una cella della griglia un valore
+  `Numero` si mostra con al più due decimali, come nelle collezioni (`ValoriElemento.Testo`), mentre nel
+  campo in modifica e nel CSV resta il valore pieno, perché lì la stringa si rilegge e arrotondarla
+  riscriverebbe il dato. La tabella delle spese non ha colonne `Numero`: oggi non si vede, conta dalla
+  fase 3. Si annulla con un revert locale.
+- **2026-10-12 utente (chat)** — popup con la posizione di `tech-advisor` (tenerle tutte, nessun dissenso):
+  **«Ratifica tutte (consigliata)»**; le quattro decisioni della 2.2-C qui sotto sono **ratificate
+  2026-10-12**. Sul troncamento a 1000 righe: **«Correggi dopo la 2.2-D (consigliata)»** → unità correttiva
+  **2.2-E** dopo la D (paginazione della lettura in `ExpenseRepository` + difetto del registro + i due minori:
+  `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV). Sul difetto del registro
+  («l'hai mai visto?»): **«Non ci ho fatto caso»** → la 2.2-E lo riproduce a mano prima di correggerlo e, se
+  non si riproduce, lo chiude come artefatto della prova automatica.
+- **2026-10-07 — Quattro decisioni dell'unità 2.2-C, ratificate 2026-10-12** (tutte visibili all'utente; la
+  raccomandazione dell'unità è tenerle; passate da `tech-advisor` il 12 ott):
+  1. `Shared/Griglia.razor` toccata oltre «solo per difetti»: tre parametri opzionali `AncoraIntestazioni`,
+     `AncoraSelezione`, `AncoraRiepilogo` (servono le ancore del tutorial), «1 riga» al singolare, date
+     allineate a destra, `line-height` delle righe;
+  2. la barra delle azioni di massa **c'è sempre** (forma neutra senza selezione), non solo con una
+     selezione: comparendo spostava la tabella di 82px sotto il cursore;
+  3. «Sovrascrivi con la mia» in un conflitto riapplica **la sola cella** modificata sulla versione del
+     server, non la riga intera come l'editor singolo;
+  4. sotto i `40rem` la voce «Tabella» **si vede quando è quella attiva** (altrimenti la barra non avrebbe
+     nessuna voce attiva); resta nascosta a chi arriva da Registro o Ricorrenti.
+- **2026-10-19 utente (chat, popup)** — prossima fase: «Prima i dati (Consigliata)» (rate, entrate e bilancio,
+  ricorrenti divise mensili/annuali con quota da accantonare; poi la 2.1-bis). Dati sul dispositivo con il DB
+  come backup zippato: «Lasciamo perdere» — né local-first né l'alternativa leggera (coda di soli INSERT,
+  esportazione JSON). Le due decisioni del capo del 12 ott: «Ratifico entrambe (Consigliata)».
+- **2026-10-12 — Decisione del capo, ratificata 2026-10-19**: il rilievo R1 della chiusura (la lettura paginata può
+  restituire due volte la stessa spesa se un altro membro scrive fra due blocchi, solo oltre 1000 spese nel
+  periodo; doppio conteggio nei totali e, secondo `bug-hunter`, un errore di Blazor per `@key` duplicata) **non
+  si corregge in questo goal**: è il primo candidato del prossimo. Raccomandazione: `DistinctBy(e => e.Id)` in
+  fondo al ciclo di lettura, previa verifica di `doc-checker` su `@key` duplicata. Si annulla aprendo una
+  piccola unità.
+- **2026-10-12 utente (chat)** — «Rinomina e chiudi»: il rapporto del 20 settembre, non ancora letto, è
+  rinominato `handoff/2026-09-20-CHIUSURA.md` e **resta in `handoff/`** (non archiviato finché l'utente non
+  l'ha letto); si apre la sessione di chiusura di questo goal.
+- **2026-10-12 utente (chat)** — popup con le posizioni di `tech-advisor`: **«Ratifica e pubblica
+  (consigliata)»** → le tre decisioni della 2.2-D e la decisione del capo sulla E senza D sono **ratificate
+  2026-10-12**, ed è il via libera a fondere D poi E su `main` e pubblicare. Spese di prova (le 3 «PROVA
+  COLLAUDO R1/R2/R3» e le 3 vecchie «COLLAUDO GIRO B», «COLLAUDO 4 SET», «PROVA AGENTE»): **«Autorizzo un
+  agente»** — tutte e sei e solo quelle, dalla tabella; se i permessi lo bloccano, tocca all'utente. Tetto
+  alla lettura: **«Nessun limite (consigliata)»**; l'utente legge «Max rows» in Dashboard quando può. Fuoco
+  dopo «Segna»: **«Correggi ora (consigliata)»** → unità **2.2-F**, Codex autore, dopo la pubblicazione di D ed E.
+- **2026-10-12 — Tre decisioni dell'unità 2.2-D, ratificate 2026-10-12** (raccomandazione dell'unità: tenerle;
+  **passate da `tech-advisor` il 12 ott: ratificare tutte e tre, nessun dissenso**; diff pubblicabile una
+  volta ratificate; integrare la D **prima** della E; la decisione del capo sulla E senza D regge, nessun
+  rischio di fusione). Capo: la D **non si integra** finché non sono ratificate, come
+  la 2.2-C; la (3) è visibile all'utente.
+  1. il contorno dell'elemento evidenziato è l'attributo `data-tutorial-evidenziato`, non la classe del
+     piano: Blazor riscrive `class` sulle ancore dinamiche e lo cancellava;
+  2. il riquadro del tutorial sta nel top layer (`popover="manual"`), non previsto dal piano: senza,
+     l'animazione d'ingresso della pagina lo spostava di 280px e copriva le zone indicate;
+  3. il pulsante «Tutorial» è nascosto sotto i `40rem` insieme alla tabella, e due frasi «se assente» (cella
+     modificabile, riga di sola lettura) citano il gruppo chiuso invece della causa del piano, che era falsa.
+- **2026-10-12 — Decisione del capo, ratificata 2026-10-19**: la 2.2-E parte da `origin/main` **senza** la 2.2-D
+  (unità in sequenza, ma file disgiunti: la D non è integrabile prima della ratifica). Si annulla
+  non aprendo la E. Raccomandazione: tenerla, l'alternativa era fermare tutto fino al rientro.
+- **2026-10-12 utente (chat)** — «ricordati di sfruttare copdex finche puoi» (Codex). Quindi vale anche
+  per Eton la deroga a tempo scritta per Synapse in `~/.claude/TODO-synapse-codex.md`, «Regola per il
+  mandato»: **autore del diff Codex 0.161.0 al posto di `implementer`, fino al 2026-11-08**; lanci
+  `codex exec -s workspace-write -C <worktree> - < <scratchpad>/brief.md -o <scratchpad>/resoconto.md`,
+  fix con `codex exec -C <worktree> -s workspace-write -o <out> resume --last - < fix.md`; mai
+  `--dangerously-bypass-*`, `--add-dir`, `danger-full-access`; §3-§6 del protocollo inalterati; prima
+  riga del tracciato `autore  codex exec 0.161.0 — <stat>`; seconda ripetizione fallita → `BLOCKED`,
+  non `implementer`. Codex è senza rete nella sandbox: se `dotnet restore` nel worktree fallisce per
+  rete, l'unità lo dichiara e ripiega su `implementer` per quel brief (scostamento, non `BLOCKED`).
+- **2026-10-07 utente (chat)** — «appena rientra ferma il lavoro per oggi, riprenderemo da una nuova
+  sessione piu avanti»: al rientro della 2.2-C si processa il resoconto e ci si ferma; la 2.2-D la apre
+  la sessione nuova.
+- **2026-10-07 utente (chat)** — sulle tre decisioni da ratificare delle unità 2.2-A e 2.2-B (le due righe
+  qui sotto), con la posizione di `tech-advisor`: **«Ratifica tutte e tre (consigliata)»**. Tutte e tre
+  **ratificate 2026-10-07**; Shift+clic resta come Gmail.
+- **2026-10-07 — Due decisioni dell'unità 2.2-B, ratificate 2026-10-07**: (1) `ModificaCella<T>`, `EsitoCella`,
+  `RispostaCella` stanno in `Services/TastieraGriglia.cs` e non nel componente (un `.razor` li
+  anniderebbe in `Griglia<T>`); (2) Shift+clic sulle caselle applica all'intervallo il **nuovo** stato
+  della riga cliccata, come Gmail (deseleziona se era selezionata).
+- **2026-09-22 — Seconda violazione dichiarata**: un `implementer` dell'unità 02 ha compilato una volta,
+  contro il divieto; nessun altro processo era attivo, la build ufficiale è stata rifatta. Stessa
+  classe dello script Python dell'unità 01: il divieto nei brief non basta da solo.
+- **2026-09-22 utente (chat)** — migrazione `20260922000000_ricorrenti.sql` applicata in produzione:
+  «ok fatto». Vale anche come **ratifica** delle sei aggiunte allo schema qui sotto, che gli erano state
+  elencate prima di applicarla con l'avvertenza che applicarla valeva come approvazione.
+- **2026-09-22 — Sei aggiunte allo schema della 2.1, fatte dall'unità 01, ratificate** (le vede
+  l'utente quando applica la migrazione): `recurring_period` è **il primo del mese** del periodo, con
+  un check che lo impone; check che `recurring_id` e `recurring_period` siano entrambi nulli o entrambi
+  pieni; check di formato su `materialized_through`; check d'intervallo sulle date (2000-2999, contro
+  l'overflow nel client di un altro membro); **la policy `expenses_insert` ricreata più stretta** — una
+  spesa si aggancia solo a una regola dello stesso spazio e dello stesso pagante (verificato dal capo:
+  la vecchia era `is_space_member(space_id) and paid_by = auth.uid()`, la nuova è la stessa più una
+  condizione, e nessun'altra migrazione la ridefinisce); `materialized_through` concessa anche in
+  INSERT. Tutte restrittive o neutre.
+- **2026-09-22 — Una violazione dichiarata dall'unità 01**: un `implementer` ha scritto ed eseguito uno
+  script Python temporaneo nel worktree, non richiesto, poi rimosso. L'unità gliel'ha vietato nel giro
+  successivo. Da riportare all'utente; nessun effetto sul codice consegnato.
+
+- **2026-09-22 — Il confine fra modello e resa nella 2.2** (posizione di `tech-advisor`, adottata):
+  ciò che un test xUnit o un lettore di schermo può osservare è modello/comportamento e va nella spec
+  adesso; ciò che cambia solo una variabile o una regola in `app.css` è resa e va alla 2.1-bis. **Tre
+  voci della zona grigia vanno nella spec, non rinviate**, perché decidono quale markup esiste:
+  `<table>` semantica contro griglia di `<div>`; la strategia sotto ~600px (scorrimento orizzontale o
+  collasso a schede); la densità delle righe, visto che oggi il pavimento di tocco è 48px e la riga
+  di registro 66px (il pavimento vale solo su `pointer: coarse`?).
+
+- **2026-09-22 — Il piano 2.1 del 3 settembre regge nell'impianto ma va corretto in sette punti**,
+  verificati da `tech-advisor` sul codice di oggi (105 commit dopo). Vanno **dentro i mandati**:
+  1. la premessa «deve funzionare offline come PWA» è caduta il 10 settembre — un brief che la ricopia
+     vieta una cosa falsa;
+  2. i test oggi sono **310**, non 267: il gate diventa 310 → 319;
+  3. il piano rimanda a una sezione `CONTRATTO` di `handoff/PIANO.md` che non esiste più: il contratto
+     vive in `Shared/PaginaEditor.cs` (`Cambiata`, `Esci`);
+  4. conteggi di righe e un rimando a `Spese.razor` slittati di una decina di righe — cosmetici;
+  5. **buco**: la tabella dei file non elenca `Models/Expense.cs`, ma il task 4 scrive `recurring_id`
+     e `recurring_period` su `expenses`, quindi `Expense` acquista due colonne `ignoreOnUpdate` — ed è
+     ciò che fa scattare `PrivilegiInsertTests`. Va nel perimetro del task 4;
+  6. **buco**: il task 4 prescrive `Upsert` + `IgnoreDuplicates` e basta. Senza
+     `OnConflict = "recurring_id,recurring_period"` PostgREST risolve sulla chiave primaria, e con
+     `id` generato dal client la corsa fra due schede produce un **23505** invece di un duplicato
+     ignorato. Verificato sull'xmldoc di `Supabase.Postgrest` 4.4.0;
+  7. il nome della migrazione va datato al giorno in cui si scrive, non al 4 settembre.
+
+- **2026-09-22 — Sequenza di pubblicazione** (`main` pubblica in produzione a ogni push, e nessun passo
+  applica migrazioni). La migrazione è additiva e retrocompatibile col client già pubblicato, quindi
+  «schema nuovo + codice vecchio» è sicuro per qualunque durata; l'inverso no. Ordine:
+  task 1 → `main`; task 2 → `main` con il SQL integrale nel resoconto, e **si chiede subito all'utente
+  di applicarlo**; **GATE: l'utente scrive in chat «applicata», e la conferma si trascrive qui con la
+  data**; task 3; task 4 **solo dopo il gate** (senza schema ogni «Segna» fallisce); task 5-6.
+  Un difetto dopo il task 4 si cura con `git revert` su `main`; lo schema non si toglie mai.
+
+## PARTIZIONE
+
+| Unità | Cosa | Dove | Dipende da | Stato |
+|---|---|---|---|---|
+| **S — spec 2.2** | spec della vista tabellare, modello e comportamento + le tre voci grigie | in chat con l'utente, `brainstorming`; scritta in `docs/superpowers/specs/2026-09-22-spese-tabella-design.md` | — | **FATTO** — approvata in chat il 22 set («ok procediamo a fare la fase 1»); verifica: `git -C /g/Sviluppo/Eton branch -r --contains 73e44b4` -> `origin/main` |
+| **R — piano 2.1 corretto** | i sette punti applicati al piano del 3 settembre, più la sotto-navigazione decisa dalla S | documento | S | **FATTO** — più un **ottavo** punto: `SpeseDelPeriodo` restituisce anche `InArrivo` (le future, fuori dai totali), perché la 2.2 le mostra; verifica: `grep -c 'corretto 22 set' /g/Sviluppo/Eton/docs/superpowers/plans/2026-09-03-spese-ricorrenti.md` -> `15` |
+| **01 calcolo-e-schema** | task 1 e 2: `Services/CalcoliRicorrenti.cs`, i suoi test, la migrazione e lo script RLS — **scritti, non applicati** | sessione-unità | R | **FATTO** — integrata con `8d0c1db`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   319` |
+| **GATE migrazione** | l'utente applica `supabase/migrations/20260922000000_ricorrenti.sql` in produzione e scrive in chat «applicata»; si trascrive qui con la data | utente | 01 | **PARZIALE** — applicata secondo l'utente («ok fatto», chat, 22 set); **la query di controllo l'ha eseguita l'utente e ha incollato l'esito in chat: `recurring_id`, `recurring_period` — 2 righe su 2 attese.** Resta `PARZIALE` solo per la forma: la regola dei `FATTO` vuole un comando lanciato in sessione, e nessun agente interroga il database. **L'integrazione della 02 su `main` è sbloccata** |
+| **02 regole-e-lettura** | task 3 e 4: modello e repository delle regole, `Models/Expense.cs`, materializzazione, percorso unico con `InArrivo`, `Pages/Spese.razor` e `Pages/Home.razor` passano al percorso unico | sessione-unità | GATE | **FATTO** — integrata su `main`; verifica: `dotnet test Eton.sln --no-build` -> `Superati:   328` |
+| **03 pagine-ricorrenti** | task 5 e 6: elenco, editor, sotto-navigazione condivisa (entra anche in `Pages/Spese.razor`, dopo la 02), prova nel browser | sessione-unità | 02 | **FATTO** — fusa e pubblicata su `main` il 7 ott, con le sei decisioni ratificate e D6 corretta (avviso data passata anche in modifica a watermark nullo; watermark letto da `conflitto ?? regola`; Elimina bloccato in conflitto come Termina — rilievo `bug-hunter` fondato, `checker`: risolto); **collaudato il 7 ott**: `live-testing` verde 8/8 (regola di prova creata, modificata, terminata ed eliminata), `ui-critic` 4 rilievi → 2 corretti (editor a una colonna con aiuti ed errori attaccati al campo; rimisurato: 0 rilievi), 2 `TIPO: progetto` rinviati alla 2.1-bis (APERTO); verifica: `mcp__synapse__test` -> `0 failed, 335 passed` |
+| **P — piano 2.2** | piano da task, dopo che la 2.1 è rientrata | sessione-unità, mandato in `handoff/P-piano-tabella/` | S, 2.1 | **FATTO** — `docs/superpowers/plans/2026-10-07-spese-tabella.md`, sei task in quattro unità, nessuna migrazione; 4 decisioni da ratificare e 4 domande (resoconto); verifica: `git -C /g/Sviluppo/Eton diff --stat HEAD~1 HEAD` -> `2 files changed, 1620 insertions(+)` |
+| **2.2-A** | task 1 e 2 del piano: tipi puri della griglia e della tabella spese (`ColonnaGriglia<T>`, `CalcoliGriglia`, `RigaSpesa`, `TabellaSpese`, `EsitoMassa`…) e i loro test | sessione-unità, mandato in `handoff/04-tabella-calcoli/` | P + risposte (date il 7 ott) | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto; una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 380 passed` |
+| **2.2-B** | task 3 e 4: azioni di massa in `ExpenseRepository`, componente `Shared/Griglia.razor` con tastiera e `griglia.js`, esportazione CSV | sessione-unità, mandato in `handoff/05-tabella-griglia/` | A | **FATTO** — integrata e pubblicata il 7 ott; contratti reali nel resoconto (da ricopiare in C); due decisioni da ratificare; `live-testing`/`ui-critic` rinviati a C per mandato; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
+| **2.2-C** | task 5: `Pages/SpeseTabella.razor`, filtri nell'URL, accensione della voce «Tabella» (+ `Shared/NavigazioneSpese.razor.css` nuovo, decisione del 7 ott) | sessione-unità, mandato in `handoff/06-tabella-pagina/` | B | **FATTO** — quattro decisioni ratificate il 12 ott, fusa su `main` il 12 ott (`git merge --no-ff worktree-unita-2.2-C`) e pubblicata; verifica: `mcp__synapse__test` -> `0 failed, 389 passed` |
+| **2.2-D** | task 6: tutorial generico e «?» della tabella; **autore del diff Codex** (DECISIONI, 12 ott) | sessione-unità, mandato in `handoff/07-tabella-tutorial/` | C | **FATTO** — Codex autore; tre decisioni ratificate il 12 ott; fusa e pubblicata il 12 ott; verifica: `mcp__synapse__test` -> `0 failed, 390 passed` (dopo D+E) |
+| **2.2-E** | correttiva: lettura delle spese paginata in `ExpenseRepository` (oltre 1000 righe), difetto del registro da **riprodurre a mano prima** di correggere, `ErroreRiprova` senza `Disabilitato` nel registro, Tab/CR iniziali nel CSV; `doc-checker` sull'API di paginazione di `Supabase.Postgrest` 4.4.0 | sessione-unità, mandato in `handoff/08-correttiva-lettura/`; worktree da `origin/main` **senza** la D (file disgiunti) | D (solo come ordine; nessun file in comune) | **FATTO** — pulizia completata dal capo il 12 ott (sei spese eliminate su autorizzazione in chat), cartella archiviata; codice fuso e pubblicata il 12 ott col via libera dell'utente; verifica: `mcp__synapse__build` -> `0 errors, 0 warnings`, `mcp__synapse__test` -> `0 failed, 390 passed`; la pulizia delle spese di prova passa alla 2.2-F. Storia: codice fatto (resoconto: build 0/0, 390 test, review adjudicata, collaudo verde; registro **non riprodotto** con tasti reali → chiuso come artefatto). `PARZIALE` perché restano in produzione 3 spese «PROVA COLLAUDO R1/R2/R3» (12/10/2026, 1,00 € l'una, spazio «Personale»): l'eliminazione multipla dell'agente è stata negata dai permessi. **Non integrata**: il `git merge` del capo su `main` è stato negato dal classificatore il 12 ott («Modify Shared Resources»), non aggirato. Commit `186832a`, branch `worktree-unita-2.2-E`, resoconto in `.claude/worktrees/unita-2.2-E/handoff/08-correttiva-lettura/resoconto.md` |
+| **2.2-F** | fuoco sul campo importo dopo «Segna» (registro) + eliminazione delle sei spese di prova autorizzata dall'utente; Codex autore | sessione-unità, mandato in `handoff/09-registro-fuoco/` | E | **FATTO** — pulizia completata dal capo il 12 ott, cartella archiviata; Codex autore, 0 rilievi, `live-testing` verde 7/7; fusa e pubblicata il 12 ott; verifica: `mcp__synapse__test` -> `0 failed, 390 passed`. La pulizia **non** l'ha fatta (correttamente: in background un'autorizzazione che arriva da un file non vale — difetto del mandato del capo); riaffidata da questa sessione a un agente sulla produzione |
+
+La partizione delle unità di codice si decide **dopo** R, con un `Explore` di ricognizione: oggi i file
+che la 2.2 tocca non sono noti, e la collisione probabile è `Pages/Spese.razor`, che la 2.1 e la 2.2
+vogliono entrambe.
+
+## RAZIONALE
+
+La spec della 2.2 viene prima di tutto perché è l'unico passo che richiede l'utente in conversazione,
+ed è anche quello che sblocca una decisione rimasta aperta nel piano della 2.1 (la sotto-navigazione).
+Il resto è lavoro autonomo in sessioni-unità, separato in due metà dal gate della migrazione.
+
+## PROSSIMA AZIONE
+
+PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova
+
+**12 ottobre, notte — goal chiuso.** Rapporto in `handoff/CHIUSURA.md` (fuso su `main` con la correzione del
+filtro «Pagante»); tutte le unità `FATTO` e archiviate in `storico/handoff/`. I paragrafi qui sotto sono storia.
+
+**12 ottobre, notte — pulizia fatta.** Un agente lanciato da questa sessione (autorizzazione in chat) ha
+eliminato dalla tabella in produzione le sei spese di prova, e solo quelle («5 spese eliminate.» + «1 spesa
+eliminata.»); verificate assenti con i filtri su «Quest'anno».
+
+**12 ottobre, notte — sessione di chiusura aperta.** Rapporto atteso in `handoff/CHIUSURA.md`. Al rientro:
+leggerlo; scrivere `PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova`; messaggio di passaggio.
+
+**12 ottobre, notte — 2.2-F fusa e pubblicata (390 test) (superato).** Tutte le unità di codice del goal sono
+`FATTO`. Restano: l'esito dell'agente che elimina le sei spese di prova da questa sessione (autorizzazione in
+chat); la conferma dell'utente a rinominare `handoff/CHIUSURA.md` del 20 set (non ancora letto: non si
+archivia, ma la chiusura di questo goal lo sovrascriverebbe); poi la **sessione di chiusura**.
+⚠️ Lezione: un'autorizzazione dell'utente su dati di produzione **non si passa a un'unità `--bg`** attraverso
+il mandato: l'unità la rifiuta per regola. Si esegue dalla sessione interattiva.
+
+**12 ottobre, notte — dopo le risposte dell'utente (superato).** D ed E fuse e pubblicate (390 test), sessioni e
+worktree rimossi. **In corso: 2.2-F** (mandato `handoff/09-registro-fuoco/`). Al rientro: audit, fusione,
+push; poi archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data (`git mv` in
+`storico/handoff/2026-09-20-CHIUSURA.md`, l'utente non l'ha letto: si sposta, non si cancella) e aprire la
+**sessione di chiusura** del goal. Restano per l'utente: leggere «Max rows» in Dashboard; le prove `DA
+PROVARE ALL'UTENTE` di C e D; eventuali spese di prova che la F non riesce a eliminare.
+
+**12 ottobre, notte — tutto fermo sull'utente (superato dal paragrafo qui sopra).** D ed E rientrate, nessuna integrata. Al rientro, **primo
+popup**: (1) ratifica delle tre decisioni della D (con la posizione di `tech-advisor`: tenerle) e della
+decisione del capo sulla E senza D; (2) via libera a fondere D poi E su `main` e pubblicare (il merge della E
+è stato negato dal classificatore: serve il sì dell'utente in chat, o che lo esegua lui); (3) le 3 spese
+«PROVA COLLAUDO R1/R2/R3» da 1 € create dalla E e le 3 vecchie di collaudo (APERTO): le elimina lui dalla
+tabella, o autorizza un agente; (4) tetto alla lettura a blocchi (T1 della E: un membro ostile con 100.000
+spese costringe gli altri a 100 letture): tetto nel client, quota nel database, o niente — prima a
+`tech-advisor`; (5) fuoco che dopo «Segna» va su `body` nel registro (chi digita subito perde i tasti):
+correggerlo ora o alla 2.1-bis. **`tech-advisor` (12 ott)**: T1 → nessun tetto (il danno di un membro ostile
+è altrove, e un tetto rimette il troncamento); il residuo `max_rows` lo chiude l'utente leggendo «Max rows»
+nella Dashboard Supabase (Project Settings → API, percorso a memoria); facoltativo un tetto ai *giri* contro
+un ciclo infinito. F → correggerlo **ora** in un'unità piccola a sé (perdita di input nel percorso più usato;
+il fuoco va rimesso dopo il render, quando il campo non è più `disabled`). Poi build/test (atteso 390), push, `claude rm` di `8af5150e` e `4a32bf37`,
+archiviazione di `handoff/CHIUSURA.md` del 20 set con prefisso di data, sessione di chiusura.
+
+**12 ottobre, sera — aggiornamento (superato dal paragrafo qui sopra).** La 2.2-D è rientrata `FATTO` ma resta nel suo branch fino alla
+ratifica delle sue tre decisioni (DECISIONI). **In corso: la 2.2-E** (mandato `handoff/08-correttiva-lettura/`,
+Codex autore), da `origin/main` senza la D. Al rientro della E: audit, fusione e push della **sola E**.
+Al rientro dell'utente, **primo popup**: le tre decisioni della D (passate prima da `tech-advisor`), la
+decisione del capo sulla E senza D, e le tre spese di collaudo vecchie (APERTO). Ratificate: fondere la D,
+build/test, push; poi archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data e aprire la
+sessione di chiusura.
+
+**12 ottobre — l'utente è lontano dal PC per un po', tutte le domande poste e risposte.** Fatto: ratifica
+delle quattro decisioni della 2.2-C, fusione su `main` (389 test), push. **In corso: la 2.2-D** (mandato
+`handoff/07-tabella-tutorial/`, autore del diff Codex), sessione `--bg` **`8af5150e`**, con attesa armata; worktree e branch della 2.2-C
+già rimossi. Al rientro: audit del
+resoconto, fusione, push; poi mandato e apertura della **2.2-E** (correttiva, riga di PARTIZIONE); poi
+archiviare `handoff/CHIUSURA.md` del 20 set con prefisso di data (l'utente non l'ha ancora letto: si
+sposta, non si cancella) e aprire la **sessione di chiusura** del goal. Domande nuove che maturano: in
+`APERTO`, poste tutte insieme al rientro dell'utente. Le prove `DA PROVARE ALL'UTENTE` della 2.2-C si
+spiegano in chat al suo rientro (la pagina è pubblicata dal 12 ott).
+
+**Per la sessione nuova (scritto la sera del 7 ottobre, l'utente ha fermato il lavoro) — punti 1-3 fatti il 12 ott.**
+1. **Primo popup**: le quattro decisioni «da ratificare» della 2.2-C (DECISIONI), ciascuna col suo
+   contesto, **dopo** averle passate a `tech-advisor`.
+2. Ratificate: fondere `worktree-unita-2.2-C` su `main` (`git merge --no-ff`), `mcp__synapse__build` +
+   `mcp__synapse__test` (atteso 389), push, poi `claude rm c87d1ac0` per worktree e sessione.
+3. Mandato e apertura della **2.2-D** (task 6, tutorial): le nove ancore `data-tutorial` reali stanno nel
+   resoconto della 2.2-C, `CONTRATTI`; `wwwroot/css/app.css` è suo.
+4. Da portare all'utente, dal `FUORI SCOPE` della 2.2-C: **troncamento a 1000 righe** della lettura delle
+   spese (`ExpenseRepository` senza paginazione, PostgREST `max_rows`): con «Quest'anno» o un intervallo
+   lungo oltre 1000 spese, totali e CSV perdono in silenzio le più vecchie — tocca anche registro e Home,
+   decisione sua; e un difetto del **registro** osservato dal vivo: digitando l'importo della spesa
+   successiva mentre la precedente si salva, l'importo si azzera e il «Segna» seguente non salva.
+5. Le prove per l'utente della 2.2-C (sezione `DA PROVARE ALL'UTENTE` del resoconto) si spiegano in chat
+   **dopo** l'integrazione, quando la pagina è pubblicata.
+
+**7 ottobre — stato attuale.** L'unità 03 è rientrata `FATTO` ed è fusa in `main` **solo in locale**
+(`e32c7c1`, 335 test verdi). Fatti il 7 ott: (1) ratifica delle sette decisioni; (2) correzione D6 e push di `main`. (3) collaudo della 2.1 nel browser — **la 2.1 è chiusa**, salvo la guardia d'uscita da provare
+all'utente (APERTO). (4) worktree e branch dell'unità 03 rimossi (utente, chat 7 ott: «Sì, toglilo»). (5) unità P
+integrata, sessione rimossa; domande del piano risposte e ratificate. Unità **2.2-A** e **2.2-B** integrate e pubblicate, tre decisioni ratificate. **In corso**: unità
+**2.2-C** (mandato `handoff/06-tabella-pagina/`), sessione `--bg` **`c87d1ac0`**, attesa armata
+su `claude agents --json`. La 2.2-C avvia e ferma **da sé** il server dal proprio worktree (PID in
+`handoff/06-tabella-pagina/server.md`) e fa `live-testing` + `ui-critic` con spese di prova
+`PROVA COLLAUDO` che elimina a fine prova. Al rientro: resoconto **dentro il worktree**; verificare porta
+5000 libera e **nessuna spesa `PROVA COLLAUDO` residua** (lo dice il resoconto); integrazione; poi
+mandato di 2.2-D (tutorial). Sequenza: A → B → C → D, mai in parallelo.
+
+**Ripresa del 23 settembre in poi (sessione nuova) — superata dal paragrafo qui sopra.** L'utente ha chiuso la sessione del 22 mentre
+l'unità **03** lavorava in background (sessione `321bb5c3`, lasciata finire: non pusha su `main`, quindi
+non tocca la produzione). **Primo gesto del capo nuovo**: `claude agents --json` e `git worktree list`
+per trovarla — il worktree **non** porta necessariamente il nome dell'unità (la 02 si chiamava
+`unita-02-regole-e-lettura`). Se ha finito, il resoconto sta **dentro il worktree**, in
+`handoff/03-pagine-ricorrenti/resoconto.md`; poi `claude stop` e `claude rm` sulla sessione dopo
+l'integrazione. Se è `waiting`, leggere cosa aspetta con `claude logs 321bb5c3`.
+⚠️ Una sessione `--bg` non notifica il capo quando finisce: la 02 è rimasta ferma e non vista per
+un'ora. Dopo aver aperto un'unità, **armare subito un'attesa in background** su `claude agents --json`.
+Al rientro della 03: audit, integrazione, poi il
+**collaudo della 2.1 nel browser** lo fa il capo (server avviato da lui, PID in `handoff/server.md`).
+⚠️ L'app di sviluppo punta a Supabase di **produzione**: il collaudo crea una regola che parte il mese
+prossimo (nessuna occorrenza generata, quindi eliminabile) e la elimina a fine prova.
+Dopo il collaudo: la 2.1 è chiusa, e si passa al **piano della 2.2** (unità P).
+Se un utente segnala «colonna sconosciuta»: `NOTIFY pgrst, 'reload schema';` dall'SQL editor.
+
+**Perché tre unità e non sei**: i task 1 e 2 sono piccoli e stanno entrambi prima del gate; il 3 da solo
+non produce niente di osservabile ed è la base del 4; il 5 e il 6 sono due pagine della stessa area. Il
+task 4 è il più delicato, e resta nell'unità 02 con il solo task 3 accanto.
+
+## APERTO
+
+- **Domanda per l'utente (dalla 2.2-D)**: nella tabella, in «Quest'anno», ci sono tre spese rimaste da
+  collaudi vecchi, non create da questo goal: «COLLAUDO GIRO B» (19/09/2026, 1.284,50), «COLLAUDO 4 SET»
+  (04/09/2026, 1.284,50), «PROVA AGENTE» (20/08/2026, 12,50). Falsano i totali dell'anno. Eliminarle è
+  un'azione su dati di produzione non creati in sessione: **si chiede**.
+
+- **Per la 2.1-bis, dalla 2.2-D** (`tech-advisor`, 12 ott): un clic su «Tutorial» prima che il modulo JS sia
+  caricato lascia il riquadro invisibile fino al clic successivo; irrobustimento: in `OnAfterRenderAsync`
+  chiamare `mostra` ogni volta che il tutorial è aperto e il modulo è caricato. Più i `FUORI SCOPE` del
+  resoconto 07 (contrasto della pastiglia «nuovo» 4,45:1; riquadro che non segue lo scorrimento; pulsante
+  lontano dal «?»).
+- **Per la 2.1-bis, dalla 2.2-C** (`FUORI SCOPE` del suo resoconto): densità (controlli 48px sopra righe
+  38px, barra strumenti 275px); bordi dei controlli a 1,21:1, sotto il 3:1 WCAG, in tutti i moduli;
+  transizioni di 160ms; colonna Importo che si allarga in modifica; casella «tutte» senza stato
+  intermedio; fuoco su `body` dopo «Ricarica la sua».
+
+- **Da provare all'utente (7 ott)**: nell'editor di una spesa ricorrente, cambiare un campo e poi
+  premere un link interno → deve comparire la domanda «vuoi uscire senza salvare?». Un agente non può
+  provarla (dialogo nativo).
+- **Per la 2.1-bis, da `ui-critic` del 7 ott (`TIPO: progetto`)**: (a) i link della sotto-navigazione
+  «Registro · Ricorrenti» e i pulsanti `.schede-testo` delle note sono alti 40px, sotto il pavimento di
+  44-48 — da decidere una volta per entrambi; (b) nello stato vuoto delle pagine-elenco (Ricorrenti,
+  Note, Collezioni) compaiono due pulsanti primari identici, e a 390px il titolo «Spese ricorrenti» va a
+  capo per far posto a quello in testata. Più i `FUORI SCOPE` del resoconto 03 (`.sotto-nav` che ricopia
+  `.schede-testo`; `Oggetto.Ricorrente` mancante in `Permessi`; helper `Mostra`/`Dati` e `Bloccato` per
+  tutti gli editor — decisioni di progetto dell'utente).
+- **Osservazioni del collaudo, non difetti**: terminare una ricorrente che parte nel futuro scrive
+  `ends_on` < `starts_on` (innocuo, e lì «Elimina» è offerto); una ricorrente terminata resta
+  modificabile nei campi (ratificata D2: non si riattiva, `SalvaAsync` non scrive `ends_on`).
+
+- **Il rapporto del 20 settembre non è ancora stato letto dall'utente**: dal 12 ottobre sta in
+  `handoff/2026-09-20-CHIUSURA.md` (rinominato su suo sì) e **non si archivia** finché non l'ha letto. La
+  sessione di chiusura non lo sposta.
+- Restano vivi dal goal precedente e **non sono di questo goal**: `handoff/configurazione-da-applicare.md`
+  (gesto dell'utente, clausola 37), `handoff/collaudo/`, `handoff/01-punto-interrogativo/` (`PARZIALE`),
+  `handoff/server.md`.
+- **Dubbio mio**: la migrazione della 2.1 è il primo SQL di produzione di questo goal, e per la memoria
+  del progetto l'SQL di produzione si ferma sempre all'utente. Il gate lo rispetta per costruzione; resta
+  da scrivere nel mandato del task 2 che l'unità **non** lo applica.
+- **Verificato da `doc-checker` il 22 set** (spec 2.2 §5.4): `Operator.In` in `Supabase.Postgrest`
+  4.4.0 filtra UPDATE e DELETE su un elenco di id in una sola istruzione (`PATCH …?id=in.(…)`); il
+  criterio documentato è `List<object>` (i Guid si passano con `.Cast<object>().ToList()`, il
+  `ToString()` lo fa la libreria). Mai usato finora nel codice di Eton. **Le righe restituite**: UPDATE sì
+  (`ModeledResponse<T>`), **DELETE filtrato no** (restituisce `Task`) — la spec 2.2 §5.4 è corretta di
+  conseguenza (DELETE + rilettura degli stessi id). La decisione da ratificare sta in DECISIONI
+  (spostata il 2026-10-01).
+- **Verificato da `doc-checker` il 22 set — la cache dello schema**: Supabase installa un event trigger
+  (`pgrst_ddl_watch`) che ricarica la cache su `CREATE TABLE`, `ALTER TABLE`, `CREATE TRIGGER`,
+  `CREATE FUNCTION` e simili, quindi la migrazione della 2.1 la ricarica da sola. `GRANT` e
+  `CREATE POLICY` non la fanno scattare, ma non serve: la cache non contiene privilegi, che PostgreSQL
+  controlla a ogni richiesta. Se dopo la migrazione un inserimento dà ancora «colonna sconosciuta»
+  (PGRST204), il rimedio documentato da Supabase è `NOTIFY pgrst, 'reload schema';` dall'SQL editor.
+  **Va nei passi per l'utente al gate, come ripiego.** Il punto qui sotto è quindi chiuso.
+- `tech-advisor` ha dato **a memoria** (non verificato) che su Supabase hosted la cache dello schema si
+  ricarica da sola dopo un DDL, e che altrimenti serve `notify pgrst, 'reload schema';`. Da far
+  verificare a `doc-checker` prima del gate.
+
+## FATTI OPERATIVI CHE COSTANO CARI SE DIMENTICATI
+
+⚠️⚠️ **`main` PUBBLICA IN PRODUZIONE A OGNI PUSH** (`.github/workflows/deploy.yml`, GitHub Pages, nessun
+gate).
+
+⚠️⚠️ **IL WORKTREE DI UN'UNITÀ NASCE DA `origin/main`**: prima di aprirla si committa **e si pusha**.
+
+- Il server lo avvia e lo ferma il capo, annotando porta e PID in `handoff/server.md`. Su Windows la
+  morte del padre non uccide i figli. Riavviarlo prima di ogni prova nel browser.
+- Gli implementer non compilano: `obj/` non ha lock fra processi. Compila il capo, a fine giro.
+- Il browser giusto ha `deviceId d3148d48-d283-4d4a-a07a-95a77fa72150`: solo quello vede `localhost`.
+- I dialoghi nativi bloccano il plugin del browser: ciò che passa da un `confirm()` va girato all'utente.
+- Una catena di comandi viene valutata dal classificatore per il suo elemento peggiore: spezzarla.
