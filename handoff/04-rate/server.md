@@ -14,7 +14,10 @@ PID padre 4844, PID figlio 26416 — fermati dopo la correzione della colonna, p
 
 ## Riavviato sulla build della correzione della colonna del modulo
 
-**PID padre 21688**, **PID figlio 30732** (ascolta sulla 5000).
+PID padre 21688, PID figlio 30732.
+
+> ⛔ **FERMO** — fermato a fine unità (prova finale verde): prima il figlio 30732, poi il padre 21688; porta 5000
+> verificata libera. Nessun server dell'unità resta acceso.
 
 Avviato dalla sessione-unità il 20 ottobre 2026, dal worktree `G:\Sviluppo\wt-Eton\04-rate`
 (ramo `unita-04-rate`, commit 3274a7f), dopo build 0 errori e test 407/0.
