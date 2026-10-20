@@ -107,6 +107,11 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
   sei (Consigliata)»; lavoro 5 «Tieni, correggo le 5 frasi (Consigliata)» → le sei della 04 e le sei della 05
   **ratificate 2026-10-20**; push di 04+05, poi un'unità piccola **06-ritocchi**: le cinque frasi «spese»
   nell'editor di un'entrata ricorrente (`Pages/RicorrenteEdit.razor`) e BE4 della 04 (overload di `Prossima`).
+- **2026-10-20 — Decisione dell'unità 06, da ratificare**: il plurale «spese/entrate» dei cinque testi sta in
+  una proprietà locale di `Pages/RicorrenteEdit.razor` (`NomeTipoPlurale`), non in `TipoMovimento` (Models
+  fuori perimetro). Raccomandazione: tenerla lì finché una seconda pagina non ne ha bisogno. La 06 non si
+  pubblica prima. Fuori scope segnalati: altri testi «spesa ricorrente» per le entrate (righe 14-15, 27, 610 e i
+  messaggi d'errore).
 
 ## PARTIZIONE
 
@@ -119,7 +124,7 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | **PARZIALE** — applicata dall'utente il 20 ott; la query di controllo l'ha lanciata lui e ha incollato in chat `4,6,1,true,false,false,true,0`, identico all'atteso. Resta `PARZIALE` solo per la forma: nessun agente interroga il database. **04 e 05 sbloccate** |
 | **04-rate** | punto 1, più «Periodiche» e la quota al centesimo (ratificati 20 ott) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\04-rate` | GATE | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); prove nel browser verdi dopo la ripresa, pulizia fatta (tre piani di prova eliminati, server spento); verifica: `mcp__synapse__test` -> `0 failed, 407 passed` |
 | **05-entrate** | punto 4 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\05-entrate` da `main` locale | 04 | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); `live-testing` verde 8/8, `ui-critic` 5 rilievi (3 corretti, 2 alla 2.1-bis), dati di prova eliminati, server spento; verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
-| **06-ritocchi** | cinque frasi «spese» nell'editor di un'entrata ricorrente; BE4 della 04 (overload di `Prossima`) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\06-ritocchi` da `main` pushato | 05 | **IN CORSO** — mandato in `handoff/06-ritocchi/` |
+| **06-ritocchi** | cinque frasi «spese» nell'editor di un'entrata ricorrente; BE4 della 04 (overload di `Prossima`) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\06-ritocchi` da `main` pushato | 05 | **FATTO** — fusa su `main` in locale il 20 ott, 0 rilievi dai quattro revisori, `live-testing` verde senza dati in produzione; una decisione da ratificare (DECISIONI); verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
 
 ## RAZIONALE
 
@@ -130,7 +135,7 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 ## PROSSIMA AZIONE
 
 04 e 05 fuse in `main` locale (417 test). `tech-advisor` sulle sei decisioni della 05; poi un popup con le
-push di 04+05 (ratificate); poi l'unità 06-ritocchi (cinque frasi + BE4); poi la misura `ui-critic` della pagina Ricorrenti dalla sessione
+04+05 pubblicate; 06 fusa in locale, non pubblicata fino alla ratifica della sua decisione. In corso la misura `ui-critic` della pagina Ricorrenti dalla sessione
 interattiva (autorizzata), poi la chiusura.
 
 controllo contesto 2026-10-20 14:15: nulla
