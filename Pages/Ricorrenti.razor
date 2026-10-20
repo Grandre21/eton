@@ -96,6 +96,11 @@ else
                                     else
                                     {
                                         <span>prossima: <span class="dato">@Testi.DataSola(prossima.Value)</span></span>
+                                        @if (CalcoliRicorrenti.Stato(r, oggi) is { } piano)
+                                        {
+                                            <span>rata <span class="dato">@piano.Prossima/@piano.Rate</span></span>
+                                            <span>residuo <span class="dato">@Denaro.Testo(piano.Residuo)&#160;€</span></span>
+                                        }
                                     }
                                 </span>
                                 <span class="importo dato">@Denaro.Testo(r.Amount)&#160;€</span>
@@ -119,8 +124,9 @@ else
     private static string Titolo(GruppoRicorrenti g) => g switch
     {
         GruppoRicorrenti.Mensili => "Mensili",
+        GruppoRicorrenti.ARate => "A rate",
         GruppoRicorrenti.Annuali => "Annuali",
-        GruppoRicorrenti.OgniNMesi => "Ogni N mesi",
+        GruppoRicorrenti.OgniNMesi => "Periodiche",
         GruppoRicorrenti.Terminate => "Terminate",
         _ => throw new ArgumentOutOfRangeException(nameof(g))
     };

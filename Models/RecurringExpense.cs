@@ -33,6 +33,10 @@ public class RecurringExpense : BaseModel
     // (v. CalcoliRicorrenti.Dovuti).
     [Column("materialized_through")] public string? MaterializedThrough { get; set; }
 
+    // Solo per i piani a rate, entrambe nulle per le altre regole (check del database).
+    [Column("installments")] public int?     Installments { get; set; }
+    [Column("plan_total")]   public decimal? PlanTotal    { get; set; }
+
     // Mai scritte dal client: v. Expense.Version.
     [Column("version",    ignoreOnInsert: true, ignoreOnUpdate: true)] public int      Version   { get; set; }
     [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)] public DateTime CreatedAt { get; set; }

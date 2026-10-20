@@ -7,8 +7,8 @@ namespace Eton.Services;
 /// <summary>I dati di una regola ricorrente per <see cref="RecurringExpenseRepository.CreaAsync"/> e
 /// <see cref="RecurringExpenseRepository.SalvaAsync"/>: due interi adiacenti come
 /// <c>ogniMesi</c> e <c>giorno</c> scambiati compilano lo stesso se sono argomenti posizionali,
-/// con i nomi no.</summary>
-public sealed record DatiRegola(decimal Importo, string Descrizione, string Categoria, int OgniMesi, int Giorno, DateTime Inizio);
+/// con i nomi no. Rate e TotalePiano valorizzati = piano a rate (v. <see cref="CalcoliRicorrenti.DatiPiano"/>).</summary>
+public sealed record DatiRegola(decimal Importo, string Descrizione, string Categoria, int OgniMesi, int Giorno, DateTime Inizio, int? Rate = null, decimal? TotalePiano = null);
 
 /// <summary>
 /// Accesso alle regole di spesa ricorrente. Come <see cref="ExpenseRepository"/>: ogni metodo
@@ -60,7 +60,9 @@ public class RecurringExpenseRepository
             EveryMonths          = dati.OgniMesi,
             DayOfMonth           = dati.Giorno,
             StartsOn             = ExpenseRepository.PerIlDatabase(dati.Inizio),
-            EndsOn               = null,
+            EndsOn               = dati.Rate is int n ? ExpenseRepository.PerIlDatabase(CalcoliRicorrenti.FinePiano(dati.Inizio, n)) : null,
+            Installments         = dati.Rate,
+            PlanTotal            = dati.TotalePiano,
             MaterializedThrough  = null
         });
 
@@ -78,15 +80,22 @@ public class RecurringExpenseRepository
     public async Task<RisultatoSalvataggio<RecurringExpense>> SalvaAsync(Guid regolaId, int versioneLetta, DatiRegola dati)
     {
         var client = await _supabase.GetClientAsync();
-        var risposta = await client.From<RecurringExpense>()
+        var query = client.From<RecurringExpense>()
             .Where(r => r.Id == regolaId && r.Version == versioneLetta)
             .Set(r => r.Amount, dati.Importo)
             .Set(r => r.Description, dati.Descrizione.Trim())
             .Set(r => r.Category, dati.Categoria.Trim())
             .Set(r => r.EveryMonths, dati.OgniMesi)
             .Set(r => r.DayOfMonth, dati.Giorno)
-            .Set(r => r.StartsOn, ExpenseRepository.PerIlDatabase(dati.Inizio))
-            .Update();
+            .Set(r => r.StartsOn, ExpenseRepository.PerIlDatabase(dati.Inizio));
+
+        // Senza Rate non si tocca ends_on, altrimenti salvare una regola terminata la riaprirebbe.
+        if (dati.Rate is int n)
+            query = query.Set(r => r.Installments!, n)
+                .Set(r => r.PlanTotal!, dati.TotalePiano!.Value)
+                .Set(r => r.EndsOn!, ExpenseRepository.PerIlDatabase(CalcoliRicorrenti.FinePiano(dati.Inizio, n)));
+
+        var risposta = await query.Update();
 
         return await Esito(risposta, regolaId, versioneLetta);
     }

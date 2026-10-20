@@ -54,78 +54,123 @@ else
         <p class="spiega">Questa spesa ricorrente l'ha dichiarata qualcun altro: può modificarla, terminarla o cancellarla solo chi la paga, o chi possiede lo spazio.</p>
     }
 
+    @if (Bloccato)
+    {
+        <p class="spiega">Il piano è partito: si possono cambiare solo descrizione e categoria, oppure terminarlo se l'hai estinto prima.</p>
+    }
+
     <div class="campi-spesa campi-ricorrente">
-        @{
-            RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
-        }
-        @* v. Pages/SpesaEdit.razor:68-81 per il perché delle due rese (Denaro.Testo in lettura,
-           Denaro.TestoDigitabile nel campo modificabile) e per il perché di .campo-lettura. *@
-        @if (PuoIntervenire)
+        @if (Piano)
         {
             <label class="campo">
-                @etichettaImporto
+                <span class="etichetta-campo">Totale del piano</span>
                 <input class="importo-spesa dato" type="text" inputmode="decimal"
-                       placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+                       placeholder="0,00" @bind="totaleTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire || Bloccato)" />
             </label>
+            @if (Testi.MessaggioImporto(Denaro.Verifica(totaleTesto, out _)) is string erroreTotale)
+            {
+                <p class="errore-campo">@erroreTotale</p>
+            }
+            <label class="campo">
+                <span class="etichetta-campo">Numero di rate</span>
+                <select @bind="rate" disabled="@(occupato || !PuoIntervenire || Bloccato)">
+                    @for (var n = 2; n <= 60; n++)
+                    {
+                        <option value="@n">@n</option>
+                    }
+                </select>
+            </label>
+            @if (Denaro.Prova(totaleTesto, out var totale))
+            {
+                @if (!CalcoliRicorrenti.RataValida(totale, rate))
+                {
+                    <p class="errore-campo">Diviso in @rate rate fa meno di un centesimo a rata.</p>
+                }
+                else
+                {
+                    <p class="spiega">@rate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, rate)) €, l'ultima prende i centesimi avanzati.</p>
+                }
+            }
         }
         else
         {
-            <div class="campo campo-lettura">
-                @etichettaImporto
-                <p class="importo-spesa dato">@Denaro.Testo(regola!.Amount)&#160;€</p>
-            </div>
+            RenderFragment etichettaImporto = @<span class="etichetta-campo">Importo</span>;
+            @* v. Pages/SpesaEdit.razor:68-81 per il perché delle due rese (Denaro.Testo in lettura,
+               Denaro.TestoDigitabile nel campo modificabile) e per il perché di .campo-lettura. *@
+            @if (PuoIntervenire)
+            {
+                <label class="campo">
+                    @etichettaImporto
+                    <input class="importo-spesa dato" type="text" inputmode="decimal"
+                           placeholder="0,00" @bind="importoTesto" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
+                </label>
+            }
+            else
+            {
+                <div class="campo campo-lettura">
+                    @etichettaImporto
+                    <p class="importo-spesa dato">@Denaro.Testo(regola!.Amount)&#160;€</p>
+                </div>
+            }
+            @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
+            {
+                <p class="errore-campo">@erroreImporto</p>
+            }
+            <p class="spiega">L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.</p>
         }
-        @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
-        {
-            <p class="errore-campo">@erroreImporto</p>
-        }
-        <p class="spiega">L'importo è quello atteso: se una bolletta arriva diversa, la correggi sulla spesa del mese.</p>
 
         <label class="campo">
             <span class="etichetta-campo">Descrizione</span>
-            <input class="descrizione-spesa" type="text" maxlength="200" placeholder="Per cosa?"
+            <input class="descrizione-spesa" type="text" maxlength="@(Piano ? CalcoliRicorrenti.DescrizioneMassimaPiano : 200)" placeholder="Per cosa?"
                    @bind="descrizione" @bind:event="oninput" disabled="@(occupato || !PuoIntervenire)" />
         </label>
+        @if (Piano && descrizione.Trim().Length > CalcoliRicorrenti.DescrizioneMassimaPiano)
+        {
+            <p class="errore-campo">Per un piano la descrizione sta in @CalcoliRicorrenti.DescrizioneMassimaPiano caratteri: il resto serve a «rata k/N».</p>
+        }
+
+        @if (!Piano)
+        {
+            <label class="campo">
+                <span class="etichetta-campo">Ogni quanto</span>
+                <select @bind="ogniMesi" disabled="@(occupato || !PuoIntervenire)">
+                    <option value="1">ogni mese</option>
+                    <option value="2">ogni 2 mesi</option>
+                    <option value="3">ogni 3 mesi</option>
+                    <option value="6">ogni 6 mesi</option>
+                    <option value="12">ogni anno</option>
+                    @* Il database ammette 1..12: un valore fuori da queste cinque tappe resta visibile
+                       con un'opzione in più, stesso principio della pastiglia extra sulla categoria
+                       più sotto (v. Pages/SpesaEdit.razor:140-148). *@
+                    @if (ogniMesi is not (1 or 2 or 3 or 6 or 12))
+                    {
+                        <option value="@ogniMesi">ogni @ogniMesi mesi</option>
+                    }
+                </select>
+            </label>
+
+            <label class="campo">
+                <span class="etichetta-campo">Giorno del mese</span>
+                @* Select e non type="number": nessuno stato invalido possibile, a differenza
+                   dell'importo qui sopra. *@
+                <select @bind="giorno" disabled="@(occupato || !PuoIntervenire)">
+                    @for (var g = 1; g <= 31; g++)
+                    {
+                        <option value="@g">@g</option>
+                    }
+                </select>
+            </label>
+            <p class="spiega">31 = ultimo giorno del mese.</p>
+        }
 
         <label class="campo">
-            <span class="etichetta-campo">Ogni quanto</span>
-            <select @bind="ogniMesi" disabled="@(occupato || !PuoIntervenire)">
-                <option value="1">ogni mese</option>
-                <option value="2">ogni 2 mesi</option>
-                <option value="3">ogni 3 mesi</option>
-                <option value="6">ogni 6 mesi</option>
-                <option value="12">ogni anno</option>
-                @* Il database ammette 1..12: un valore fuori da queste cinque tappe resta visibile
-                   con un'opzione in più, stesso principio della pastiglia extra sulla categoria
-                   più sotto (v. Pages/SpesaEdit.razor:140-148). *@
-                @if (ogniMesi is not (1 or 2 or 3 or 6 or 12))
-                {
-                    <option value="@ogniMesi">ogni @ogniMesi mesi</option>
-                }
-            </select>
-        </label>
-
-        <label class="campo">
-            <span class="etichetta-campo">Giorno del mese</span>
-            @* Select e non type="number": nessuno stato invalido possibile, a differenza
-               dell'importo qui sopra. *@
-            <select @bind="giorno" disabled="@(occupato || !PuoIntervenire)">
-                @for (var g = 1; g <= 31; g++)
-                {
-                    <option value="@g">@g</option>
-                }
-            </select>
-        </label>
-        <p class="spiega">31 = ultimo giorno del mese.</p>
-
-        <label class="campo">
-            <span class="etichetta-campo">Dal</span>
+            <span class="etichetta-campo">@(Piano ? "Prima rata" : "Dal")</span>
             @* min/max sono solo un aiuto per il browser, la guardia vera è DataRagionevole qui
                sotto: v. Pages/SpesaEdit.razor:113-126, 202-218 per il perché di entrambi e per
                DateTime? invece di DateTime. *@
             <input class="data-spesa dato" type="date" @bind="inizio"
                    min="@DataMinima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
-                   max="@DataMassima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" disabled="@(occupato || !PuoIntervenire)" />
+                   max="@DataMassima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" disabled="@(occupato || !PuoIntervenire || Bloccato)" />
         </label>
         @if (!DataRagionevole(inizio))
         {
@@ -193,17 +238,28 @@ else
     @if (!Nuova && PuoIntervenire)
     {
         <section class="scheda">
-            <h2>Fermare questa spesa ricorrente</h2>
-            @if (regola!.EndsOn is DateTime fine)
+            @if (!Piano || Bloccato)
             {
-                <p class="testo-tenue">Terminata il @Testi.DataSola(fine): dopo quella data non segna più spese. Le spese già segnate restano.</p>
-            }
-            else
-            {
-                <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
-                <div class="azioni">
-                    <ConfermaAzione Chiave="@Id" Etichetta="Termina" EtichettaConferma="Sì, termina" Occupato="@(occupato || conflitto is not null)" OnConferma="Termina" />
-                </div>
+                var r = conflitto ?? regola!;
+                var attiva = Piano
+                    ? CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today) is not null
+                    : regola!.EndsOn is null;
+                <h2>Fermare questa spesa ricorrente</h2>
+                @if (attiva)
+                {
+                    <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
+                    <div class="azioni">
+                        <ConfermaAzione Chiave="@Id" Etichetta="Termina" EtichettaConferma="Sì, termina" Occupato="@(occupato || conflitto is not null)" OnConferma="Termina" />
+                    </div>
+                }
+                else if (Piano)
+                {
+                    <p class="testo-tenue">Concluso il @Testi.DataSola(regola!.EndsOn!.Value): non segna più rate. Le spese già segnate restano.</p>
+                }
+                else
+                {
+                    <p class="testo-tenue">Terminata il @Testi.DataSola(regola!.EndsOn!.Value): dopo quella data non segna più spese. Le spese già segnate restano.</p>
+                }
             }
             @* MaterializedThrough nullo vuol dire nessuna spesa scritta: ExpenseRepository.MaterializzaAsync
                alza il watermark solo dopo un upsert riuscito, quindi la pagina lo sa senza interrogare
@@ -233,6 +289,8 @@ else
     private RecurringExpense? regola;      // l'ultima versione conosciuta del server: da qui esce la versione
     private RecurringExpense? conflitto;   // la versione altrui, quando il salvataggio si è scontrato
     private string importoTesto = "";
+    private string totaleTesto = "";
+    private int rate = 2;
     private string descrizione = "";
     private string categoria = CategorieSpesa.Elenco[0];
     private int ogniMesi = 1;
@@ -257,12 +315,14 @@ else
     private Guid? mioId;
 
     private bool Nuova => Id is null;
+    private bool Piano => !Nuova && regola?.Installments is not null;
+    private bool Bloccato => Piano && CalcoliRicorrenti.PianoPartito(conflitto ?? regola!, DateTime.Today);
 
     private string TitoloSchermata => !string.IsNullOrWhiteSpace(descrizione)
         ? descrizione
         : (Nuova ? "Nuova spesa ricorrente" : "Spesa ricorrente");
 
-    private bool Valido => Denaro.Prova(importoTesto, out _) && !string.IsNullOrWhiteSpace(descrizione) && DataRagionevole(inizio);
+    private bool Valido => DatiDaSalvare() is not null;
 
     // TestoDigitabile e non Testo nel confronto: v. Pages/SpesaEdit.razor:250-252, i due lati
     // devono passare dalla stessa funzione o la pagina nascerebbe già "modificata" sopra i mille euro.
@@ -271,7 +331,10 @@ else
     protected override bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
           || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today
-        : regola is not null && (importoTesto != Denaro.TestoDigitabile(regola.Amount) || descrizione != regola.Description
+        : regola is not null && (Piano
+            ? totaleTesto != Denaro.TestoDigitabile(regola.PlanTotal ?? 0) || rate != regola.Installments
+              || descrizione != regola.Description || categoria != regola.Category || inizio?.Date != regola.StartsOn.Date
+            : importoTesto != Denaro.TestoDigitabile(regola.Amount) || descrizione != regola.Description
                                   || categoria != regola.Category || ogniMesi != regola.EveryMonths || giorno != regola.DayOfMonth
                                   || inizio?.Date != regola.StartsOn.Date);
 
@@ -301,6 +364,8 @@ else
             {
                 regola = null;
                 importoTesto = "";
+                totaleTesto = "";
+                rate = 2;
                 descrizione = "";
                 categoria = CategorieSpesa.Elenco[0];
                 ogniMesi = 1;
@@ -321,6 +386,8 @@ else
             else
             {
                 importoTesto = Denaro.TestoDigitabile(regola.Amount);
+                totaleTesto = Denaro.TestoDigitabile(regola.PlanTotal ?? 0);
+                rate = regola.Installments ?? 2;
                 descrizione = regola.Description;
                 categoria = regola.Category;
                 ogniMesi = regola.EveryMonths;
@@ -346,18 +413,18 @@ else
         occupato = true; errore = avviso = null; conflitto = null;
         try
         {
-            // Le due guardie ripetono Valido: lo stato del modulo può essere cambiato fra il
+            // La guardia ripete Valido: lo stato del modulo può essere cambiato fra il
             // render del pulsante e questo clic, come in Pages/SpesaEdit.razor:342-343.
-            if (!Denaro.Prova(importoTesto, out var importo)) return;
-            if (!DataRagionevole(inizio)) return;
+            var dati = DatiDaSalvare();
+            if (dati is null) return;
 
             if (Nuova)
             {
-                await Crea(importo);
+                await Crea(dati.Importo);
                 return;
             }
 
-            await SalvaCon(regola!.Version, importo);
+            await SalvaCon(regola!.Version, dati);
         }
         catch (Exception ex)
         {
@@ -393,15 +460,35 @@ else
         Esci($"expenses/recurring/{creata.Id}", replace: true);
     }
 
-    private async Task SalvaCon(int versione, decimal importo)
+    // L'unica sede delle regole di validità: Valido ne è la proiezione, Salva e Sovrascrivi la usano per i dati.
+    private DatiRegola? DatiDaSalvare()
     {
-        var esito = await Repository.SalvaAsync(Id!.Value, versione, new DatiRegola(importo, descrizione, categoria, ogniMesi, giorno, inizio!.Value));
+        if (string.IsNullOrWhiteSpace(descrizione)) return null;
+        if (Piano && descrizione.Trim().Length > CalcoliRicorrenti.DescrizioneMassimaPiano) return null;
+        if (Bloccato)
+        {
+            // Senza Rate: il repository non tocca ends_on, e un piano terminato in anticipo resta terminato.
+            var r = conflitto ?? regola!;
+            return new DatiRegola(r.Amount, descrizione, categoria, r.EveryMonths, r.DayOfMonth, r.StartsOn);
+        }
+        if (!DataRagionevole(inizio)) return null;
+        if (!Piano)
+            return Denaro.Prova(importoTesto, out var i) ? new DatiRegola(i, descrizione, categoria, ogniMesi, giorno, inizio!.Value) : null;
+        return Denaro.Prova(totaleTesto, out var t) && CalcoliRicorrenti.RataValida(t, rate)
+            ? CalcoliRicorrenti.DatiPiano(t, rate, descrizione, categoria, inizio!.Value) : null;
+    }
+
+    private async Task SalvaCon(int versione, DatiRegola dati)
+    {
+        var esito = await Repository.SalvaAsync(Id!.Value, versione, dati);
 
         switch (esito.Esito)
         {
             case EsitoSalvataggio.Salvata:
                 regola = esito.Aggiornata;
                 importoTesto = Denaro.TestoDigitabile(regola!.Amount);
+                totaleTesto = Denaro.TestoDigitabile(regola.PlanTotal ?? 0);
+                rate = regola.Installments ?? 2;
                 descrizione = regola.Description;
                 categoria = regola.Category;
                 ogniMesi = regola.EveryMonths;
@@ -432,6 +519,8 @@ else
 
         regola = conflitto;
         importoTesto = Denaro.TestoDigitabile(conflitto.Amount);
+        totaleTesto = Denaro.TestoDigitabile(regola.PlanTotal ?? 0);
+        rate = regola.Installments ?? 2;
         descrizione = conflitto.Description;
         categoria = conflitto.Category;
         ogniMesi = conflitto.EveryMonths;
@@ -448,7 +537,8 @@ else
         occupato = true; errore = null;
         try
         {
-            if (!Denaro.Prova(importoTesto, out var importo) || !Valido)
+            var dati = DatiDaSalvare();
+            if (dati is null)
             {
                 errore = "Controlla importo, descrizione e data prima di sovrascrivere.";
                 return;
@@ -457,7 +547,7 @@ else
             // Si risalva con la versione DEL SERVER: v. Pages/NoteEdit.razor:346-350.
             var versione = conflitto.Version;
             conflitto = null;
-            await SalvaCon(versione, importo);
+            await SalvaCon(versione, dati);
         }
         catch (Exception ex)
         {

@@ -1,0 +1,1 @@
+BLOCKED: ogni piano ha già `EndsOn` valorizzato; mantenendo il blocco Termina com’è, anche un piano partito mostra «Terminata il…» e non offre il pulsante Termina. Posso adattare quel controllo per consentire l’estinzione anticipata dei piani attivi? Ho aggiunto i test ed eseguito la verifica iniziale, fallita in compilazione prima del fix; nessuna modifica funzionale applicata.

@@ -1,0 +1,1 @@
+BLOCKED: quale percorso devo usare per il file `-o` del resoconto?

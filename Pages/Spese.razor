@@ -4,6 +4,7 @@
 @inject ExpenseRepository Repository
 @inject SpaceRepository SpaziRepository
 @inject AuthStateService AuthState
+@inject RecurringExpenseRepository Ricorrenti
 
 <PageTitle>Spese — Eton</PageTitle>
 
@@ -60,7 +61,7 @@ else
     <section class="modulo-spesa">
         <div class="campi-spesa">
             <label class="campo">
-                <span class="etichetta-campo">Importo</span>
+                <span class="etichetta-campo">@(aRate ? "Totale" : "Importo")</span>
                 <input class="importo-spesa dato" type="text" inputmode="decimal" autofocus
                        placeholder="0,00" @bind="nuovoImporto" @bind:event="oninput" disabled="@occupato" @ref="campoImporto" />
             </label>
@@ -71,12 +72,16 @@ else
 
             <label class="campo">
                 <span class="etichetta-campo">Descrizione</span>
-                <input class="descrizione-spesa" type="text" maxlength="200" placeholder="Per cosa?"
+                <input class="descrizione-spesa" type="text" maxlength="@(aRate ? CalcoliRicorrenti.DescrizioneMassimaPiano : 200)" placeholder="Per cosa?"
                        @bind="nuovaDescrizione" @bind:event="oninput" disabled="@occupato" />
             </label>
+            @if (aRate && nuovaDescrizione.Trim().Length > CalcoliRicorrenti.DescrizioneMassimaPiano)
+            {
+                <p class="errore-campo">Per un piano la descrizione sta in @CalcoliRicorrenti.DescrizioneMassimaPiano caratteri: il resto serve a «rata k/N».</p>
+            }
 
             <label class="campo">
-                <span class="etichetta-campo">Quando</span>
+                <span class="etichetta-campo">@(aRate ? "Prima rata" : "Quando")</span>
                 @* min/max sono solo un aiuto del browser: né Blazor né il browser li fanno rispettare
                    in tutti i percorsi (si può digitare a mano nei segmenti dell'anno). La guardia vera
                    è DataRagionevole, in @code. *@
@@ -90,6 +95,36 @@ else
             else if (!DataRagionevole)
             {
                 <p class="errore-campo">L'anno non è verosimile: dev'essere fra il 2000 e l'anno prossimo.</p>
+            }
+            <label class="interruttore">
+                <input type="checkbox" @bind="aRate" disabled="@occupato" />
+                <span class="testi">
+                    <span class="titolo">A rate</span>
+                    <span class="spiega">Diventa un piano fra le ricorrenti: una rata al mese dalla data qui sopra, e l'ultima prende i centesimi avanzati.</span>
+                </span>
+            </label>
+            @if (aRate)
+            {
+                <label class="campo">
+                    <span class="etichetta-campo">Numero di rate</span>
+                    <select @bind="numeroRate" disabled="@occupato">
+                        @for (var n = 2; n <= 60; n++)
+                        {
+                            <option value="@n">@n</option>
+                        }
+                    </select>
+                </label>
+                @if (Denaro.Prova(nuovoImporto, out var totale))
+                {
+                    @if (!CalcoliRicorrenti.RataValida(totale, numeroRate))
+                    {
+                        <p class="errore-campo">Diviso in @numeroRate rate fa meno di un centesimo a rata.</p>
+                    }
+                    else
+                    {
+                        <p class="spiega">@numeroRate rate da @Denaro.Testo(CalcoliRicorrenti.ImportoRata(totale, numeroRate)) €</p>
+                    }
+                }
             }
         </div>
 
@@ -105,6 +140,10 @@ else
         <div class="azioni">
             <button class="btn primario @(occupato ? "occupato" : "")" @onclick="Segna" disabled="@(occupato || !ModuloValido || rileggoMese)">Segna</button>
         </div>
+        @if (avvisoPiano is not null)
+        {
+            <div class="avviso" role="status">@avvisoPiano <a href="expenses/recurring">Vai alle ricorrenti</a></div>
+        }
     </section>
 
     @if (datiNonLetti)
@@ -244,6 +283,9 @@ else
     private Guid? mioId;
 
     private string nuovoImporto = "";
+    private bool aRate;
+    private int numeroRate = 3;
+    private string? avvisoPiano;
     // Il fuoco si rimette dopo il render, non in Segna(): durante il salvataggio il campo
     // è disabilitato e FocusAsync non fa nulla. Senza, il fuoco finisce su body e i tasti
     // della spesa successiva si perdono.
@@ -269,7 +311,9 @@ else
     // arbitrario apposta.
     private bool DataRagionevole => nuovaData is { } d && d.Year >= 2000 && d.Year <= DateTime.Today.Year + 1;
 
-    private bool ModuloValido => Denaro.Prova(nuovoImporto, out _) && !string.IsNullOrWhiteSpace(nuovaDescrizione) && DataRagionevole;
+    private bool ModuloValido => Denaro.Prova(nuovoImporto, out var importo) && !string.IsNullOrWhiteSpace(nuovaDescrizione) && DataRagionevole
+        && (!aRate || CalcoliRicorrenti.RataValida(importo, numeroRate))
+        && (!aRate || nuovaDescrizione.Trim().Length <= CalcoliRicorrenti.DescrizioneMassimaPiano);
 
     // L'id dell'ultima spesa creata da Segna() in questa sessione della pagina, per darle il lampo
     // verde di riga-nuova nel registro qui sotto. Azzerato in Riprova, MesePrecedente,
@@ -319,11 +363,14 @@ else
         // righe invece di ragionare su due flag sovrapposti.
         rileggoMese = true;
         errore = null;
+        avvisoPiano = null;
         try
         {
             if (!Denaro.Prova(nuovoImporto, out var importo)) return;
             if (string.IsNullOrWhiteSpace(nuovaDescrizione)) return;
             if (!DataRagionevole) return;
+            if (aRate && !CalcoliRicorrenti.RataValida(importo, numeroRate)) return;
+            if (aRate && nuovaDescrizione.Trim().Length > CalcoliRicorrenti.DescrizioneMassimaPiano) return;
 
             var attivo = await Spazi.AssicuraCaricatoAsync();
             if (attivo is null)
@@ -340,8 +387,18 @@ else
 
             // DataRagionevole, appena sopra, ha già garantito che nuovaData non è null: CreaAsync
             // vuole un DateTime non annullabile.
-            var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
-            ultimaSpesaCreataId = creata.Id;
+            // Con «a rate» non nasce una spesa ma una regola, e la prima rata la scrive la rilettura del mese.
+            if (aRate)
+            {
+                await Ricorrenti.CreaAsync(attivo.Id, pagante, CalcoliRicorrenti.DatiPiano(importo, numeroRate, nuovaDescrizione, nuovaCategoria, nuovaData!.Value));
+                avvisoPiano = $"Piano a rate creato: {numeroRate} rate da {Denaro.Testo(CalcoliRicorrenti.ImportoRata(importo, numeroRate))} €.";
+                aRate = false;
+            }
+            else
+            {
+                var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+                ultimaSpesaCreataId = creata.Id;
+            }
 
             // Importo e descrizione si svuotano, data e categoria restano: chi segna tre spese al
             // supermercato le segna nello stesso giorno e spesso nella stessa categoria, e

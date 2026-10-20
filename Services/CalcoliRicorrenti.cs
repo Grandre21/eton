@@ -16,8 +16,11 @@ public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<
     IReadOnlyList<Expense> InArrivo);
 
 /// <summary>I gruppi della pagina Ricorrenti. L'ordine di dichiarazione è l'ordine in pagina: i gruppi
-/// futuri (Entrate prima di Mensili, A rate dopo) si inseriscono al loro posto.</summary>
-public enum GruppoRicorrenti { Mensili, Annuali, OgniNMesi, Terminate }
+/// futuri (Entrate prima di Mensili) si inseriscono al loro posto; A rate segue Mensili.</summary>
+public enum GruppoRicorrenti { Mensili, ARate, Annuali, OgniNMesi, Terminate }
+
+/// <summary>Lo stato di un piano a rate attivo: il numero della prossima rata, il numero di rate e quanto resta da pagare, prossima compresa.</summary>
+public sealed record StatoPiano(int Prossima, int Rate, decimal Residuo);
 
 /// <summary>Un gruppo di regole ordinate con la relativa quota mensile.
 /// <c>TotaleMensile</c> è null per le Terminate, che stanno fuori dai totali.</summary>
@@ -139,19 +142,64 @@ public static class CalcoliRicorrenti
 
     /// <summary>L'occorrenza di una regola in un periodo, così come esiste — prevista o scritta. Una sola
     /// sede, perché una riga prevista e la stessa riga materializzata non devono poter divergere; il
-    /// periodo è il primo giorno del mese (check expenses_recurring_period_primo_del_mese).</summary>
-    public static Expense Occorrenza(RecurringExpense r, PeriodoDovuto d) => new()
+    /// periodo è il primo giorno del mese (check expenses_recurring_period_primo_del_mese).
+    /// Per un piano aggiunge il numero di rata e assegna all'ultima i centesimi avanzati.</summary>
+    public static Expense Occorrenza(RecurringExpense r, PeriodoDovuto d)
     {
-        Id              = Guid.NewGuid(),
-        SpaceId         = r.SpaceId,
-        PaidBy          = r.PaidBy,
-        Amount          = r.Amount,
-        Description     = r.Description,
-        Category        = r.Category,
-        SpentOn         = d.Data,
-        RecurringId     = r.Id,
-        RecurringPeriod = new DateTime(d.Data.Year, d.Data.Month, 1)
-    };
+        var descrizione = r.Description;
+        var importo = r.Amount;
+        if (r.Installments is int n)
+        {
+            var k = NumeroRata(r, d.Data);
+            descrizione = $"{r.Description} · rata {k}/{n}";
+            importo = k == n ? r.PlanTotal!.Value - r.Amount * (n - 1) : r.Amount;
+        }
+        return new Expense
+        {
+            Id              = Guid.NewGuid(),
+            SpaceId         = r.SpaceId,
+            PaidBy          = r.PaidBy,
+            Amount          = importo,
+            Description     = descrizione,
+            Category        = r.Category,
+            SpentOn         = d.Data,
+            RecurringId     = r.Id,
+            RecurringPeriod = new DateTime(d.Data.Year, d.Data.Month, 1)
+        };
+    }
+
+    /// <summary>L'importo di ogni rata, arrotondato per difetto a due decimali.</summary>
+    public static decimal ImportoRata(decimal totale, int rate) => Math.Floor(totale * 100 / rate) / 100;
+
+    /// <summary>La descrizione più lunga di un piano: 200 (check di expenses.description) meno il suffisso più lungo, « · rata 60/60».</summary>
+    public const int DescrizioneMassimaPiano = 187;
+
+    /// <summary>Un piano si accetta se ogni rata vale almeno un centesimo.</summary>
+    public static bool RataValida(decimal totale, int rate) => ImportoRata(totale, rate) >= 0.01m;
+
+    /// <summary>La data dell'ultima rata. AddMonths taglia all'ultimo giorno del mese, come Math.Min in Dovuti.</summary>
+    public static DateTime FinePiano(DateTime inizio, int rate) => inizio.Date.AddMonths(rate - 1);
+
+    /// <summary>L'unico punto che traduce totale e numero di rate in una regola, usato dal Registro e dall'editor.</summary>
+    public static DatiRegola DatiPiano(decimal totale, int rate, string descrizione, string categoria, DateTime inizio)
+        => new(ImportoRata(totale, rate), descrizione, categoria, OgniMesi: 1, Giorno: inizio.Day, inizio, Rate: rate, TotalePiano: totale);
+
+    /// <summary>Il numero della rata nel mese della data, a partire dal mese della prima.</summary>
+    public static int NumeroRata(RecurringExpense r, DateTime data) => (data.Year * 12 + data.Month) - (r.StartsOn.Year * 12 + r.StartsOn.Month) + 1;
+
+    /// <summary>La prossima rata e il residuo, prossima compresa; la rata di oggi conta come già pagata.</summary>
+    public static StatoPiano? Stato(RecurringExpense r, DateTime oggi)
+    {
+        if (r.Installments is null || Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is not DateTime prossima)
+            return null;
+        var k = NumeroRata(r, prossima);
+        var residuo = r.PlanTotal!.Value - r.Amount * (k - 1);
+        return new StatoPiano(k, r.Installments.Value, residuo);
+    }
+
+    /// <summary>Partito = almeno una rata segnata, oppure la data della prima è già arrivata.
+    /// Una rata dovuta ma non ancora scritta conta come partita: il passato non si riscrive.</summary>
+    public static bool PianoPartito(RecurringExpense r, DateTime oggi) => r.MaterializedThrough is not null || r.StartsOn.Date <= oggi.Date;
 
     /// <summary>Fonde le spese vere con le occorrenze dovute delle regole ricorrenti nell'intervallo
     /// <c>[da, a]</c>: il criterio è il §5 del design delle ricorrenti — il totale è ciò che
@@ -196,6 +244,8 @@ public static class CalcoliRicorrenti
         if (Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is null)
             return GruppoRicorrenti.Terminate;
 
+        if (r.Installments is not null) return GruppoRicorrenti.ARate;
+
         return r.EveryMonths switch
         {
             1 => GruppoRicorrenti.Mensili,
@@ -218,10 +268,9 @@ public static class CalcoliRicorrenti
         return gruppi;
     }
 
-    /// <summary>La quota mensile da accantonare per le regole annuali e periodiche attive.</summary>
+    /// <summary>Somma i totali di gruppo già arrotondati di annuali e periodiche: la quota torna al centesimo con le testate dei gruppi.</summary>
     public static decimal QuotaDaAccantonare(IReadOnlyList<RecurringExpense> regole, DateTime oggi)
-        => Arrotonda(regole.Where(r => Gruppo(r, oggi) is GruppoRicorrenti.Annuali or GruppoRicorrenti.OgniNMesi)
-            .Sum(QuotaMensile));
+        => Raggruppa(regole, oggi).Where(g => g.Gruppo is GruppoRicorrenti.Annuali or GruppoRicorrenti.OgniNMesi).Sum(g => g.TotaleMensile!.Value);
 
     private static decimal QuotaMensile(RecurringExpense r) => r.Amount / r.EveryMonths;
     private static decimal Arrotonda(decimal importo) => Math.Round(importo, 2, MidpointRounding.AwayFromZero);

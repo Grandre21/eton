@@ -70,6 +70,13 @@ public class GruppiRicorrentiTests
         Assert.Equal(0m, CalcoliRicorrenti.QuotaDaAccantonare([Regola(importo: 500)], Oggi));
     }
 
+    [Fact]
+    public void Quota_somma_i_totali_di_gruppo_arrotondati()
+    {
+        Assert.Equal(41.66m, CalcoliRicorrenti.QuotaDaAccantonare([
+            Regola(importo: 100, mesi: 12), Regola(importo: 100, mesi: 3)], Oggi));
+    }
+
     private static RecurringExpense Regola(decimal importo = 10, int mesi = 1,
         string descrizione = "Regola", DateTime? fine = null, DateTime? inizio = null, Guid? id = null) => new()
     {
