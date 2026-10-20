@@ -85,6 +85,10 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
   caratteri, perché con « · rata 60/60» non superi i 200 del database; (6) con «a rate» acceso il modulo del
   Registro va in una colonna. Più due proposte `FUORI SCOPE` per l'utente (BE3 componente unico «Numero di
   rate», BE4 un overload di `Prossima`) e tre di `ui-critic` per la 2.1-bis.
+  **`tech-advisor` (20 ott)**: tenerle tutte e sei, nessun dissenso. BE4 **sì in questo goal, dopo la 05**
+  (refactor puro di cinque chiamate, un brief piccolo; ora collide con i file della 05); BE3 rinviato alla
+  2.1-bis. Unico rischio residuo: se «rata 2/3» si legge come «ne ho pagate 2», si cambia l'etichetta
+  («prossima: 2/3»), non il calcolo.
 - **2026-10-20 — Decisione del capo, da ratificare** (domanda dell'unità 03, rilievi fondati di `bug-hunter`
   confermati dal `checker`): due vincoli in più rispetto alla spec §3. (BH2) il check sul piano diventa
   `plan_total >= amount * installments`, perché con il solo `plan_total >= amount` l'ultima rata può venire 0 e
@@ -92,6 +96,13 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
   regola quando `recurring_id` è valorizzato, perché una PWA vecchia materializzerebbe come spesa, per sempre,
   l'occorrenza di un'entrata ricorrente. Vincolo operativo che resta: aggiornare la PWA su tutti i dispositivi
   prima di creare il primo piano a rate. Entrambi restrittivi; la ratifica coincide con l'applicazione.
+- **2026-10-20 — Sei decisioni dell'unità 05, da ratificare** (raccomandazione dell'unità: tenerle tutte; la 05
+  non si pubblica prima): (1) in tabella la categoria di un'entrata si cambia solo dal dettaglio, e il cambio di
+  massa solo su selezioni di un solo tipo; (2) dopo «Segna» il modulo resta sul tipo scelto; (3) conteggi in
+  «movimento/movimenti»; (4) entrate e saldo sempre visibili, anche a zero; (5) le occorrenze materializzate non
+  mandano `kind`, lo copia il trigger della 03; (6) `PerMese` tiene tre filtri spesa/entrata (BE2 non unificato).
+  Rinvii alla 2.1-bis: «+» nella cella Importo, stile delle pastiglie, testi secondari «spese» nell'editor di
+  un'entrata ricorrente, controllo del tipo in `CambiaCategoriaAsync`.
 
 ## PARTIZIONE
 
@@ -103,7 +114,7 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 | **03-migrazione** | la migrazione del §3, scritta e **non applicata** | sessione-unità, worktree da `origin/main` **senza** la 02 (file disgiunti) | 02 (solo ordine) | **FATTO** — fusa su `main` in locale il 20 ott con la 02; migrazione `supabase/migrations/20261020000000_rate_entrate.sql`, provata sul Supabase locale (collaudo: 11 errori attesi su 11); SQL per l'utente nel resoconto; verifica: `mcp__synapse__test` -> `0 failed, 398 passed` |
 | **GATE migrazione** | l'utente applica la migrazione dall'SQL editor e incolla l'esito della query di controllo | utente | 03 | **PARZIALE** — applicata dall'utente il 20 ott; la query di controllo l'ha lanciata lui e ha incollato in chat `4,6,1,true,false,false,true,0`, identico all'atteso. Resta `PARZIALE` solo per la forma: nessun agente interroga il database. **04 e 05 sbloccate** |
 | **04-rate** | punto 1, più «Periodiche» e la quota al centesimo (ratificati 20 ott) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\04-rate` | GATE | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); prove nel browser verdi dopo la ripresa, pulizia fatta (tre piani di prova eliminati, server spento); verifica: `mcp__synapse__test` -> `0 failed, 407 passed` |
-| **05-entrate** | punto 4 | sessione-unità | 04 | PIANIFICATA |
+| **05-entrate** | punto 4 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\05-entrate` da `main` locale | 04 | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); `live-testing` verde 8/8, `ui-critic` 5 rilievi (3 corretti, 2 alla 2.1-bis), dati di prova eliminati, server spento; verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
 
 ## RAZIONALE
 
@@ -113,9 +124,8 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 
 ## PROSSIMA AZIONE
 
-**05-entrate** lanciata da `main` **locale** (che ha la 04 non pubblicata: `git worktree add` dal ramo locale,
-non da `origin/main`). In parallelo `tech-advisor` sulle sei decisioni della 04. Al rientro della 05: un popup
-con le ratifiche di 04 e 05, poi push; poi la misura `ui-critic` della pagina Ricorrenti dalla sessione
+04 e 05 fuse in `main` locale (417 test). `tech-advisor` sulle sei decisioni della 05; poi un popup con le
+ratifiche di 04 e 05, poi push; poi il micro-brief BE4 (overload di `Prossima`); poi la misura `ui-critic` della pagina Ricorrenti dalla sessione
 interattiva (autorizzata), poi la chiusura.
 
 controllo contesto 2026-10-20 14:15: nulla
