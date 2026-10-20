@@ -197,7 +197,7 @@ else
            se il watermark è nullo, quindi spostare «Dal» nel passato riempie i mesi trascorsi. *@
         @if (Nuova || (PuoIntervenire && (conflitto ?? regola)?.MaterializedThrough is null))
         {
-            <p class="spiega">Se la data è già passata, le spese dei mesi trascorsi si segnano da sole: controlla che sia quella giusta.</p>
+            <p class="spiega">Se la data è già passata, le @NomeTipoPlurale dei mesi trascorsi si segnano da sole: controlla che sia quella giusta.</p>
         }
     </div>
 
@@ -242,7 +242,7 @@ else
 
     @if (!Nuova)
     {
-        <p class="spiega">Le spese già segnate non cambiano.</p>
+        <p class="spiega">Le @NomeTipoPlurale già segnate non cambiano.</p>
     }
 
     <div class="azioni">
@@ -259,12 +259,12 @@ else
             {
                 var r = conflitto ?? regola!;
                 var attiva = Piano
-                    ? CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today) is not null
+                    ? CalcoliRicorrenti.Prossima(r, DateTime.Today) is not null
                     : regola!.EndsOn is null;
                 <h2>Fermare questa @NomeTipo ricorrente</h2>
                 @if (attiva)
                 {
-                    <p class="testo-tenue">Terminandola, da domani non segna più spese. Le spese già segnate restano.</p>
+                    <p class="testo-tenue">Terminandola, da domani non segna più @NomeTipoPlurale. Le @NomeTipoPlurale già segnate restano.</p>
                     <div class="azioni">
                         <ConfermaAzione Chiave="@Id" Etichetta="Termina" EtichettaConferma="Sì, termina" Occupato="@(occupato || conflitto is not null)" OnConferma="Termina" />
                     </div>
@@ -275,7 +275,7 @@ else
                 }
                 else
                 {
-                    <p class="testo-tenue">Terminata il @Testi.DataSola(regola!.EndsOn!.Value): dopo quella data non segna più spese. Le spese già segnate restano.</p>
+                    <p class="testo-tenue">Terminata il @Testi.DataSola(regola!.EndsOn!.Value): dopo quella data non segna più @NomeTipoPlurale. Le @NomeTipoPlurale già segnate restano.</p>
                 }
             }
             @* MaterializedThrough nullo vuol dire nessuna spesa scritta: ExpenseRepository.MaterializzaAsync
@@ -294,7 +294,7 @@ else
             }
             else
             {
-                <p class="testo-tenue">Non si può eliminare: ha già segnato delle spese, e cancellarla toglierebbe loro la provenienza. Terminarla basta a fermarla.</p>
+                <p class="testo-tenue">Non si può eliminare: ha già segnato delle @NomeTipoPlurale, e cancellarla toglierebbe loro la provenienza. Terminarla basta a fermarla.</p>
             }
         </section>
     }
@@ -338,6 +338,9 @@ else
 
     // «spesa» o «entrata», per i testi della pagina che nominano il tipo della regola.
     private string NomeTipo => TipoMovimento.Testo(tipo).ToLowerInvariant();
+
+    // «spese» o «entrate», per i testi che parlano dei movimenti già segnati.
+    private string NomeTipoPlurale => tipo == TipoMovimento.Entrata ? "entrate" : "spese";
 
     private string TitoloSchermata
     {

@@ -82,8 +82,8 @@ else
                 <ul class="registro elenco-ricorrenti">
                     @foreach (var r in g.Regole)
                     {
-                        // null = regola terminata (v. Prossima in @code)
-                        var prossima = Prossima(r);
+                        // null = regola terminata; 'oggi' è lo stesso giorno dei gruppi
+                        var prossima = CalcoliRicorrenti.Prossima(r, oggi);
                         <li>
                             <a class="riga riga-spesa @(prossima is null ? "riga-terminata" : null)" href="expenses/recurring/@r.Id">
                                 <span class="descrizione">@r.Description</span>
@@ -151,9 +151,4 @@ else
             SegnalaNonLetti(ex);
         }
     }
-
-    // Null quando la regola è terminata: una regola con ends_on futuro ha ancora una prossima
-    // occorrenza, e fino ad allora non è terminata. Usa lo stesso giorno dei gruppi.
-    private DateTime? Prossima(RecurringExpense r)
-        => CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi);
 }
