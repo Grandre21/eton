@@ -1,5 +1,14 @@
 namespace Eton.Services;
 
+/// <summary>I due tipi di movimento, con i valori della colonna <c>kind</c> (check del database).</summary>
+public static class TipoMovimento
+{
+    public const string Spesa = "expense", Entrata = "income";
+
+    /// <summary>«Spesa» o «Entrata», per la colonna e il filtro della tabella e per gli editor.</summary>
+    public static string Testo(string tipo) => tipo == Entrata ? "Entrata" : "Spesa";
+}
+
 /// <summary>
 /// L'elenco chiuso delle categorie di spesa, offerto dall'interfaccia a pastiglie.
 /// <para>
@@ -13,14 +22,18 @@ namespace Eton.Services;
 /// </summary>
 public static class CategorieSpesa
 {
+    // Le categorie delle spese, offerte dall'interfaccia a pastiglie.
     public static readonly IReadOnlyList<string> Elenco =
     [
         "Spesa", "Casa", "Trasporti", "Ristoranti", "Salute", "Svago", "Abbigliamento",
         "Istruzione", "Regali", "Altro",
     ];
 
-    /// <summary>True se <paramref name="categoria"/> è una di quelle di <see cref="Elenco"/>, a
-    /// parità esatta: l'interfaccia mostra sempre uno di questi valori, mai una variante di
-    /// maiuscole o spazi. Serve a non mostrare come «sconosciuta» una categoria che invece c'è.</summary>
-    public static bool Conosciuta(string? categoria) => categoria is not null && Elenco.Contains(categoria, StringComparer.Ordinal);
+    public static readonly IReadOnlyList<string> Entrate = ["Stipendio", "Rimborso", "Regalo", "Vendita", "Altro"];
+    public static readonly IReadOnlyList<string> Tutte = [.. Elenco, .. Entrate.Where(c => !Elenco.Contains(c))];
+
+    public static IReadOnlyList<string> Di(string tipo) => tipo == TipoMovimento.Entrata ? Entrate : Elenco;
+
+    /// <summary>Una categoria si accetta se appartiene all'elenco del proprio tipo, a parità esatta.</summary>
+    public static bool Conosciuta(string? categoria, string tipo) => categoria is not null && Di(tipo).Contains(categoria, StringComparer.Ordinal);
 }

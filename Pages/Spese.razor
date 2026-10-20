@@ -399,7 +399,7 @@ else
             }
             else
             {
-                var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value);
+                var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value, TipoMovimento.Spesa);
                 ultimaSpesaCreataId = creata.Id;
             }
 

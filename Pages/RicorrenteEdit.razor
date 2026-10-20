@@ -193,7 +193,7 @@ else
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
                     aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
         }
-        @if (!CategorieSpesa.Conosciuta(categoria))
+        @if (!CategorieSpesa.Conosciuta(categoria, TipoMovimento.Spesa))
         {
             <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
         }

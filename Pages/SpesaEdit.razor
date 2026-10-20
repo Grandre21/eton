@@ -142,7 +142,7 @@ else
            pastiglia in più, sempre accesa: senza, nessuna pastiglia risulterebbe accesa e chi
            guarda non vedrebbe quale categoria è impostata. Stesso trattamento riservato da
            CampoInput.razor a un'opzione rimossa da un elenco a scelta. *@
-        @if (!CategorieSpesa.Conosciuta(categoria))
+        @if (!CategorieSpesa.Conosciuta(categoria, TipoMovimento.Spesa))
         {
             <button type="button" class="pastiglia accesa" aria-pressed="true" disabled="@(occupato || !PuoIntervenire)">@categoria</button>
         }

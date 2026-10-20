@@ -5,18 +5,49 @@ namespace Eton.Tests;
 
 public class TabellaSpeseTests
 {
+    [Fact]
+    public void Il_filtro_per_tipo_e_l_url()
+    {
+        RigaSpesa[] righe = [Reg(Spesa()), Reg(Spesa(categoria: "Stipendio", tipo: "income"))];
+        Assert.Equal("income", Assert.Single(TabellaSpese.Filtra(righe, FiltriSpese.Nessuno with { Tipo = "income" })).Spesa.Kind);
+        Assert.Equal("expense", Assert.Single(TabellaSpese.Filtra(righe, FiltriSpese.Nessuno with { Tipo = "expense" })).Spesa.Kind);
+        Assert.Equal(2, TabellaSpese.Filtra(righe, FiltriSpese.Nessuno).Count);
+        var vista = VistaTabella.DaQuery("?cat=Stipendio&stato=registrata&tipo=entrata&ord=tipo");
+        Assert.Equal("income", vista.Filtri.Tipo);
+        Assert.True(vista.Filtri.Categorie.SetEquals(["Stipendio"]));
+        Assert.Equal("?cat=Stipendio&stato=registrata&tipo=entrata&ord=tipo", vista.InQuery());
+        var riletta = VistaTabella.DaQuery(vista.InQuery());
+        Assert.Equal(vista.Filtri.Tipo, riletta.Filtri.Tipo);
+        Assert.True(riletta.Filtri.Categorie.SetEquals(vista.Filtri.Categorie));
+        Assert.Equal(vista.OrdinaPer, riletta.OrdinaPer);
+        Assert.Equal("expense", VistaTabella.DaQuery("?tipo=spesa").Filtri.Tipo);
+        Assert.Null(VistaTabella.DaQuery("?tipo=boh").Filtri.Tipo);
+    }
+
+    [Fact]
+    public void La_categoria_di_un_entrata_viene_dal_suo_elenco()
+    {
+        var s = Spesa(categoria: "Stipendio", tipo: "income");
+        var esito = TabellaSpese.Applica(s, TabellaSpese.Colonne.Categoria, "Rimborso", Oggi);
+        Assert.Null(esito.Errore);
+        Assert.Equal("Rimborso", esito.Nuova!.Category);
+        Assert.Equal("income", esito.Nuova.Kind);
+        Assert.Equal("Scegli una categoria dall'elenco.", TabellaSpese.Applica(s, TabellaSpese.Colonne.Categoria, "Casa", Oggi).Errore);
+    }
+
     private static readonly Guid Io = Guid.NewGuid();
     private static readonly Guid Altro = Guid.NewGuid();
     private static readonly Guid SpazioId = Guid.NewGuid();
     private static readonly DateTime Oggi = new(2026, 10, 7);
 
     private static Expense Spesa(decimal importo = 10m, string descrizione = "Pane", string categoria = "Spesa",
-        int giorno = 5, Guid? pagante = null, Guid? regola = null) => new()
+        int giorno = 5, Guid? pagante = null, Guid? regola = null, string tipo = "expense") => new()
     {
         Id = Guid.NewGuid(),
         SpaceId = SpazioId,
         PaidBy = pagante ?? Io,
         Amount = importo,
+        Kind = tipo,
         Description = descrizione,
         Category = categoria,
         SpentOn = new DateTime(2026, 9, giorno),

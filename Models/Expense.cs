@@ -1,3 +1,4 @@
+using Eton.Services;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -36,6 +37,10 @@ public class Expense : BaseModel
     // ignoreOnUpdate (v. OccorrenzaRicorrente in ExpenseRepository.cs).
     [Column("recurring_id",     ignoreOnUpdate: true)] public Guid?     RecurringId     { get; set; }
     [Column("recurring_period", ignoreOnUpdate: true)] public DateTime? RecurringPeriod { get; set; }
+
+    // Il tipo, 'expense' o 'income': concesso solo in INSERT come recurring_id, e il trigger di
+    // aggiornamento lo rimette com'era. Su un'occorrenza lo copia dalla regola il trigger di insert.
+    [Column("kind", ignoreOnUpdate: true)] public string Kind { get; set; } = TipoMovimento.Spesa;
 
     [Column("amount")]      public decimal Amount      { get; set; }
     [Column("description")] public string  Description { get; set; } = "";

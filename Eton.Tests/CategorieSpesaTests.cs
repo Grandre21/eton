@@ -5,6 +5,19 @@ namespace Eton.Tests;
 public class CategorieSpesaTests
 {
     [Fact]
+    public void Una_categoria_vale_solo_per_il_suo_tipo()
+    {
+        Assert.True(CategorieSpesa.Conosciuta("Stipendio", "income"));
+        Assert.False(CategorieSpesa.Conosciuta("Stipendio", "expense"));
+        Assert.True(CategorieSpesa.Conosciuta("Casa", "expense"));
+        Assert.False(CategorieSpesa.Conosciuta("Casa", "income"));
+        Assert.True(CategorieSpesa.Conosciuta("Altro", "expense"));
+        Assert.True(CategorieSpesa.Conosciuta("Altro", "income"));
+        Assert.Equal(["Stipendio", "Rimborso", "Regalo", "Vendita", "Altro"], CategorieSpesa.Entrate);
+        Assert.Equal(CategorieSpesa.Tutte.Count, CategorieSpesa.Tutte.Distinct().Count());
+    }
+
+    [Fact]
     public void L_elenco_non_e_vuoto()
         => Assert.NotEmpty(CategorieSpesa.Elenco);
 
@@ -18,11 +31,11 @@ public class CategorieSpesaTests
 
     [Fact]
     public void Una_categoria_dell_elenco_e_conosciuta()
-        => Assert.True(CategorieSpesa.Conosciuta("Casa"));
+        => Assert.True(CategorieSpesa.Conosciuta("Casa", TipoMovimento.Spesa));
 
     [Fact]
     public void Una_categoria_fuori_dall_elenco_non_e_conosciuta()
-        => Assert.False(CategorieSpesa.Conosciuta("Animali"));
+        => Assert.False(CategorieSpesa.Conosciuta("Animali", TipoMovimento.Spesa));
 
     [Theory]
     [InlineData(null)]
@@ -35,5 +48,5 @@ public class CategorieSpesaTests
         // digita nessuno, le sceglie da un elenco chiuso mostrato dall'interfaccia a pastiglie.
         // Una variante di maiuscole quindi non è un utente distratto ma un dato arrivato da
         // un'altra strada, e vale la pena che si veda come "sconosciuta" invece di passare.
-        => Assert.False(CategorieSpesa.Conosciuta(categoria));
+        => Assert.False(CategorieSpesa.Conosciuta(categoria, TipoMovimento.Spesa));
 }

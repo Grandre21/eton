@@ -15,6 +15,23 @@ namespace Eton.Tests;
 // colonna inviata in INSERT sia sempre inclusa nell'insieme concesso.
 public class PrivilegiInsertTests
 {
+    [Fact]
+    public void Il_tipo_si_scrive_solo_in_creazione()
+    {
+        foreach (var tipo in new[] { typeof(Expense), typeof(RecurringExpense) })
+        {
+            var proprieta = tipo.GetProperty(nameof(Expense.Kind));
+            Assert.NotNull(proprieta);
+            var colonna = proprieta.GetCustomAttribute<ColumnAttribute>();
+            Assert.NotNull(colonna);
+            Assert.Equal("kind", colonna.ColumnName);
+            Assert.False(colonna.IgnoreOnInsert);
+            Assert.True(colonna.IgnoreOnUpdate);
+        }
+        Assert.Contains("kind", Concesso["expenses"]);
+        Assert.Contains("kind", Concesso["recurring_expenses"]);
+    }
+
     private const string Tutte = "*";
 
     private const string PatternTabella =

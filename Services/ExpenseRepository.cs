@@ -217,7 +217,7 @@ public class ExpenseRepository
     /// sceglie per il modello — che nessuno ci ha promesso di mantenere.
     /// </para>
     /// </summary>
-    public async Task<Expense> CreaAsync(Guid spazioId, Guid pagante, decimal importo, string descrizione, string categoria, DateTime data)
+    public async Task<Expense> CreaAsync(Guid spazioId, Guid pagante, decimal importo, string descrizione, string categoria, DateTime data, string tipo)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<Expense>().Insert(new Expense
@@ -226,6 +226,7 @@ public class ExpenseRepository
             SpaceId     = spazioId,
             PaidBy      = pagante,
             Amount      = importo,
+            Kind        = tipo,
             Description = descrizione.Trim(),
             Category    = categoria.Trim(),
             SpentOn     = PerIlDatabase(data)
@@ -420,7 +421,8 @@ public class ExpenseRepository
 /// un <c>Upsert&lt;Expense&gt;</c> ometterebbe space_id, paid_by, recurring_id e recurring_period
 /// (23502). Le colonne sono quelle del grant INSERT di expenses, e <c>PrivilegiInsertTests</c> lo
 /// verifica; nessun flag ignore, e <c>FusioneRicorrentiTests</c> lo fissa. Non si legge mai con
-/// questo tipo.</summary>
+/// questo tipo.
+/// kind manca di proposito: lo copia dalla regola il trigger expenses_before_insert.</summary>
 [Table("expenses")]
 internal sealed class OccorrenzaRicorrente : BaseModel
 {
