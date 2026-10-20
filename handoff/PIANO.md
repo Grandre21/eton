@@ -117,6 +117,9 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
   un'entrata ricorrente, solo testi, zero CSS) e i cinque rilievi di `ui-critic` della misura finale
   (`handoff/misura-finale/esito.md`) alla 2.1-bis; rami remoti «Sì, cancellale (Consigliata)» → cancellati
   `unita-01`…`unita-06`, tutti già contenuti in `main`.
+- **2026-10-20 utente (chat, popup)** — lavoro 7: «Tieni, ho ricollegato Chrome (Consigliata)» → le due scelte
+  della 07 (per un'entrata «chi la riceve» invece di «chi la paga»; testi neutri a regola non caricata)
+  **ratificate 2026-10-20**; pubblicazione dopo la prova nel browser fatta dal coordinatore.
 
 ## PARTIZIONE
 
@@ -130,7 +133,7 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 | **04-rate** | punto 1, più «Periodiche» e la quota al centesimo (ratificati 20 ott) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\04-rate` | GATE | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); prove nel browser verdi dopo la ripresa, pulizia fatta (tre piani di prova eliminati, server spento); verifica: `mcp__synapse__test` -> `0 failed, 407 passed` |
 | **05-entrate** | punto 4 | sessione-unità, worktree `G:\Sviluppo\wt-Eton\05-entrate` da `main` locale | 04 | **FATTO** — fusa su `main` **in locale** il 20 ott, non pubblicata fino alla ratifica delle sue sei decisioni (DECISIONI); `live-testing` verde 8/8, `ui-critic` 5 rilievi (3 corretti, 2 alla 2.1-bis), dati di prova eliminati, server spento; verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
 | **06-ritocchi** | cinque frasi «spese» nell'editor di un'entrata ricorrente; BE4 della 04 (overload di `Prossima`) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\06-ritocchi` da `main` pushato | 05 | **FATTO** — fusa su `main` in locale il 20 ott, 0 rilievi dai quattro revisori, `live-testing` verde senza dati in produzione; una decisione, ratificata il 20 ott; verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
-| **07-testi** | le scritte «spesa» rimaste sull'editor di un'entrata ricorrente (solo testi) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\07-testi` da `main` pushato | 06 | **IN CORSO** |
+| **07-testi** | le scritte «spesa» rimaste sull'editor di un'entrata ricorrente (solo testi) | sessione-unità, worktree `G:\Sviluppo\wt-Eton\07-testi` da `main` pushato | 06 | **FATTO** — fusa su `main` e pubblicata il 20 ott; 3 rilievi fondati dei revisori corretti e verificati; prova nel browser fatta dal coordinatore (l'unità non aveva Chrome collegato): `live-testing` verde 5/5, nessun dato scritto, server spento; verifica: `mcp__synapse__test` -> `0 failed, 417 passed` |
 
 ## RAZIONALE
 
