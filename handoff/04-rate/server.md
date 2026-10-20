@@ -5,7 +5,16 @@
 
 ## Riavviato il 20 ottobre 2026 per riprendere il §7 (risposta del capo: «sì, riprendi adesso»)
 
-Stesso comando, stesso commit di lavoro. **PID padre 24836**, **PID figlio 21592** (ascolta sulla 5000).
+Stesso comando, stesso commit di lavoro. PID padre 24836, PID figlio 21592 — fermati dopo la correzione della data,
+porta verificata libera.
+
+## Riavviato sulla build della correzione della data (commit 0200873)
+
+PID padre 4844, PID figlio 26416 — fermati dopo la correzione della colonna, porta verificata libera.
+
+## Riavviato sulla build della correzione della colonna del modulo
+
+**PID padre 21688**, **PID figlio 30732** (ascolta sulla 5000).
 
 Avviato dalla sessione-unità il 20 ottobre 2026, dal worktree `G:\Sviluppo\wt-Eton\04-rate`
 (ramo `unita-04-rate`, commit 3274a7f), dopo build 0 errori e test 407/0.

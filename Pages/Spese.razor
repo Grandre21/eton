@@ -59,7 +59,8 @@ else
        spesa è esattamente ciò che fa abbandonare l'abitudine dopo una settimana. Il markup dei
        campi ricalca Pages/SpesaEdit.razor: gli stili sono scritti contro quelle classi. *@
     <section class="modulo-spesa">
-        <div class="campi-spesa">
+        @* Con «a rate» il modulo ha più figli dei tre della griglia, e prende la colonna unica dell'editor delle ricorrenti (app.css, .campi-ricorrente). *@
+        <div class="campi-spesa @(aRate ? "campi-ricorrente" : null)">
             <label class="campo">
                 <span class="etichetta-campo">@(aRate ? "Totale" : "Importo")</span>
                 <input class="importo-spesa dato" type="text" inputmode="decimal" autofocus
