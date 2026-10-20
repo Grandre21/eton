@@ -304,6 +304,8 @@ else
     private bool aRate;
     private int numeroRate = 3;
     private string? avvisoPiano;
+    // Lo spazio in cui il piano dell'avviso è nato: Leggi toglie l'avviso appena a schermo c'è un altro spazio.
+    private Guid? spazioDelPiano;
     // Il fuoco si rimette dopo il render, non in Segna(): durante il salvataggio il campo
     // è disabilitato e FocusAsync non fa nulla. Senza, il fuoco finisce su body e i tasti
     // della spesa successiva si perdono.
@@ -418,6 +420,7 @@ else
             {
                 await Ricorrenti.CreaAsync(attivo.Id, pagante, CalcoliRicorrenti.DatiPiano(importo, numeroRate, nuovaDescrizione, nuovaCategoria, nuovaData!.Value));
                 avvisoPiano = $"Piano a rate creato: {numeroRate} rate da {Denaro.Testo(CalcoliRicorrenti.ImportoRata(importo, numeroRate))} €.";
+                spazioDelPiano = attivo.Id;
                 aRate = false;
                 // La data era quella della prima rata, non di una spesa, e la spesa successiva è quasi sempre di oggi.
                 nuovaData = DateTime.Today;
@@ -491,6 +494,7 @@ else
 
     protected override async Task Leggi(Space attivo)
     {
+        if (attivo.Id != spazioDelPiano) avvisoPiano = null;
         riepilogo = new RiepilogoMese(0, [], 0, null);
         speseDelMese = [];
         previste = new HashSet<Guid>();
