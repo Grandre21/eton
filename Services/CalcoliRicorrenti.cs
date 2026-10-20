@@ -15,6 +15,15 @@ public sealed record PeriodoDovuto(string Periodo, DateTime Data);
 public sealed record SpeseDelPeriodo(IReadOnlyList<Expense> Righe, IReadOnlySet<Guid> Previste,
     IReadOnlyList<Expense> InArrivo);
 
+/// <summary>I gruppi della pagina Ricorrenti. L'ordine di dichiarazione è l'ordine in pagina: i gruppi
+/// futuri (Entrate prima di Mensili, A rate dopo) si inseriscono al loro posto.</summary>
+public enum GruppoRicorrenti { Mensili, Annuali, OgniNMesi, Terminate }
+
+/// <summary>Un gruppo di regole ordinate con la relativa quota mensile.
+/// <c>TotaleMensile</c> è null per le Terminate, che stanno fuori dai totali.</summary>
+public sealed record GruppoDiRicorrenti(GruppoRicorrenti Gruppo, IReadOnlyList<RecurringExpense> Regole,
+    decimal? TotaleMensile);
+
 /// <summary>
 /// Calcoli puri sulle regole ricorrenti: quali occorrenze sono dovute in una finestra di date e
 /// quando cade la prossima. Nessun accesso a rete o a stato, solo aritmetica su date già in memoria.
@@ -180,4 +189,40 @@ public static class CalcoliRicorrenti
 
         return new SpeseDelPeriodo(righe, previste, inArrivoOrdinato);
     }
+
+    /// <summary>Il gruppo della regola, secondo la prossima occorrenza e la cadenza.</summary>
+    public static GruppoRicorrenti Gruppo(RecurringExpense r, DateTime oggi)
+    {
+        if (Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi) is null)
+            return GruppoRicorrenti.Terminate;
+
+        return r.EveryMonths switch
+        {
+            1 => GruppoRicorrenti.Mensili,
+            12 => GruppoRicorrenti.Annuali,
+            _ => GruppoRicorrenti.OgniNMesi
+        };
+    }
+
+    /// <summary>Raggruppa e ordina le regole con i totali mensili, incluse quelle future.</summary>
+    public static IReadOnlyList<GruppoDiRicorrenti> Raggruppa(IReadOnlyList<RecurringExpense> regole, DateTime oggi)
+    {
+        var gruppi = new List<GruppoDiRicorrenti>();
+        foreach (var g in regole.GroupBy(r => Gruppo(r, oggi)).OrderBy(g => g.Key))
+        {
+            var ordinate = g.OrderBy(r => SchemaCampi.RiduciAccenti(r.Description).ToUpperInvariant(), StringComparer.Ordinal)
+                .ThenBy(r => r.Id).ToList();
+            decimal? totale = g.Key == GruppoRicorrenti.Terminate ? null : Arrotonda(g.Sum(QuotaMensile));
+            gruppi.Add(new GruppoDiRicorrenti(g.Key, ordinate, totale));
+        }
+        return gruppi;
+    }
+
+    /// <summary>La quota mensile da accantonare per le regole annuali e periodiche attive.</summary>
+    public static decimal QuotaDaAccantonare(IReadOnlyList<RecurringExpense> regole, DateTime oggi)
+        => Arrotonda(regole.Where(r => Gruppo(r, oggi) is GruppoRicorrenti.Annuali or GruppoRicorrenti.OgniNMesi)
+            .Sum(QuotaMensile));
+
+    private static decimal QuotaMensile(RecurringExpense r) => r.Amount / r.EveryMonths;
+    private static decimal Arrotonda(decimal importo) => Math.Round(importo, 2, MidpointRounding.AwayFromZero);
 }

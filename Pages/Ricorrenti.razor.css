@@ -1,0 +1,6 @@
+.gruppo-ricorrenti + .gruppo-ricorrenti { margin-top: var(--s6); }
+/* Il totale sta sopra la colonna degli importi; maiuscolo e spaziatura larga della testata lo
+   renderebbero illeggibile come cifra. */
+.totale { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.quota { margin: 0 0 var(--s6); color: var(--testo-tenue); }
+.quota strong { color: var(--testo); font-weight: 600; }

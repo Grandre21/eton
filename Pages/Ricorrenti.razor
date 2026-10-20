@@ -44,6 +44,12 @@ else
 
     <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
 
+    @* quota resta 0 finché la lettura non riesce, e senza annuali o periodiche *@
+    @if (quota > 0)
+    {
+        <p class="quota">Per annuali e periodiche, metti da parte <strong class="dato">@Denaro.Testo(quota)&#160;€</strong> al mese</p>
+    }
+
     @if (datiNonLetti)
     {
         <div class="vuoto">
@@ -62,49 +68,75 @@ else
     }
     else
     {
-        <div class="testa-registro">
-            <span>@Testi.Conteggio(regole.Count, "spesa ricorrente", "spese ricorrenti")</span>
-        </div>
-        <ul class="registro elenco-ricorrenti">
-            @foreach (var r in regole)
-            {
-                // null = regola terminata (v. Prossima in @code)
-                var prossima = Prossima(r);
-                <li>
-                    <a class="riga riga-spesa @(prossima is null ? "riga-terminata" : null)" href="expenses/recurring/@r.Id">
-                        <span class="descrizione">@r.Description</span>
-                        <span class="meta">
-                            <span class="pastiglia">@r.Category</span>
-                            <span>@CalcoliRicorrenti.Cadenza(r.EveryMonths, r.DayOfMonth, r.StartsOn)</span>
-                            @if (prossima is null)
-                            {
-                                <span class="pastiglia">terminata</span>
-                            }
-                            else
-                            {
-                                <span>prossima: <span class="dato">@Testi.DataSola(prossima.Value)</span></span>
-                            }
-                        </span>
-                        <span class="importo dato">@Denaro.Testo(r.Amount)&#160;€</span>
-                    </a>
-                </li>
-            }
-        </ul>
+        @foreach (var g in gruppi)
+        {
+            <section class="gruppo-ricorrenti">
+                <div class="testa-registro">
+                    <span>@Titolo(g.Gruppo)</span>
+                    @if (g.TotaleMensile is { } totale)
+                    {
+                        <span class="totale dato">@Denaro.Testo(totale)&#160;€ al mese</span>
+                    }
+                </div>
+                <ul class="registro elenco-ricorrenti">
+                    @foreach (var r in g.Regole)
+                    {
+                        // null = regola terminata (v. Prossima in @code)
+                        var prossima = Prossima(r);
+                        <li>
+                            <a class="riga riga-spesa @(prossima is null ? "riga-terminata" : null)" href="expenses/recurring/@r.Id">
+                                <span class="descrizione">@r.Description</span>
+                                <span class="meta">
+                                    <span class="pastiglia">@r.Category</span>
+                                    <span>@CalcoliRicorrenti.Cadenza(r.EveryMonths, r.DayOfMonth, r.StartsOn)</span>
+                                    @if (prossima is null)
+                                    {
+                                        <span class="pastiglia">terminata</span>
+                                    }
+                                    else
+                                    {
+                                        <span>prossima: <span class="dato">@Testi.DataSola(prossima.Value)</span></span>
+                                    }
+                                </span>
+                                <span class="importo dato">@Denaro.Testo(r.Amount)&#160;€</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
     }
 }
 
 @code {
     private IReadOnlyList<RecurringExpense> regole = [];
+    private IReadOnlyList<GruppoDiRicorrenti> gruppi = [];
+    private decimal quota;
+    private DateTime oggi = DateTime.Today;
 
     protected override string NomePlurale => "le spese ricorrenti";
 
+    private static string Titolo(GruppoRicorrenti g) => g switch
+    {
+        GruppoRicorrenti.Mensili => "Mensili",
+        GruppoRicorrenti.Annuali => "Annuali",
+        GruppoRicorrenti.OgniNMesi => "Ogni N mesi",
+        GruppoRicorrenti.Terminate => "Terminate",
+        _ => throw new ArgumentOutOfRangeException(nameof(g))
+    };
+
     protected override async Task Leggi(Space attivo)
     {
+        oggi = DateTime.Today;
         regole = [];
+        gruppi = [];
+        quota = 0;
 
         try
         {
             regole = await Repository.ElencaAsync(attivo.Id);
+            gruppi = CalcoliRicorrenti.Raggruppa(regole, oggi);
+            quota = CalcoliRicorrenti.QuotaDaAccantonare(regole, oggi);
         }
         catch (Exception ex)
         {
@@ -113,7 +145,7 @@ else
     }
 
     // Null quando la regola è terminata: una regola con ends_on futuro ha ancora una prossima
-    // occorrenza, e fino ad allora non è terminata.
+    // occorrenza, e fino ad allora non è terminata. Usa lo stesso giorno dei gruppi.
     private DateTime? Prossima(RecurringExpense r)
-        => CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, DateTime.Today);
+        => CalcoliRicorrenti.Prossima(r.StartsOn, r.EndsOn, r.EveryMonths, r.DayOfMonth, oggi);
 }
