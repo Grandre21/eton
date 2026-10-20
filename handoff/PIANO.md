@@ -120,6 +120,11 @@ migliorata»; segnala-un-bug, collezioni importabili, amministrazione.
 - **2026-10-20 utente (chat, popup)** — lavoro 7: «Tieni, ho ricollegato Chrome (Consigliata)» → le due scelte
   della 07 (per un'entrata «chi la riceve» invece di «chi la paga»; testi neutri a regola non caricata)
   **ratificate 2026-10-20**; pubblicazione dopo la prova nel browser fatta dal coordinatore.
+- **2026-10-20 utente (chat, popup)** — sulla chiusura: «Tieni, fai la prova poi pubblica (Consigliata)» → la
+  scelta della chiusura (l'avviso «Piano a rate creato» resta cambiando mese nello stesso spazio) **ratificata
+  2026-10-20**; autorizzato UN piano «PROVA COLLAUDO» nello spazio «COLLAUDO GIRO B TEST», una volta, da
+  eliminare subito, per provare la correzione 674c12e. Ramo remoto della chiusura: «Sì, dopo la pubblicazione
+  (Consigliata)».
 
 ## PARTIZIONE
 
@@ -142,6 +147,8 @@ forse 1), `Models/Expense.cs` (4, e la costruzione delle occorrenze in `CalcoliR
 `Pages/SpesaEdit.razor` (1 e 4). Le unità vanno in sequenza, e il contesto di ciascuna lo decide la spec.
 
 ## PROSSIMA AZIONE
+
+**GOAL CHIUSO** il 20 ott 2026: rapporto in `handoff/CHIUSURA.md` (7 unità FATTO, copertura 12/12, 10 contratti convergenti, correzione della chiusura provata e pubblicata). Residui per la 2.1-bis e le migrazioni future nel suo FUORI SCOPE.
 
 04 e 05 fuse in `main` locale (417 test). `tech-advisor` sulle sei decisioni della 05; poi un popup con le
 04+05 pubblicate; 06 fusa in locale, non pubblicata fino alla ratifica della sua decisione. In corso la misura `ui-critic` della pagina Ricorrenti dalla sessione

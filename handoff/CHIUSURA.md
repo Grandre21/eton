@@ -104,7 +104,7 @@ Note al tracciato:
 - bug-hunter BH3 (correzione 2): fondato → corretto — lo stesso, durante Riprova e le frecce del mese —
   `rileggoMese = true;` poi `await Carica();` (Pages/Spese.razor:561, :584, :599)
   verificato: risolto — Pages/Spese.razor:497
-- Scelta mia, **da ratificare**: cambiando mese nello stesso spazio l'avviso resta (il piano non è legato a un
+- Scelta mia, **ratificata 2026-10-20** (utente, popup: «Tieni, fai la prova poi pubblica»): cambiando mese nello stesso spazio l'avviso resta (il piano non è legato a un
   mese). Raccomandazione: tenerlo. Si annulla togliendo la condizione.
 - threat-hunter combinato: 0 rilievi; la nota sul tetto di 60 rate è in FUORI SCOPE. Ho aperto io due vecchi file
   di `storico/` dove il threat-hunter vedeva «pattern tipo segreto»: nessun token, chiave o password (Grep su JWT,
@@ -119,3 +119,13 @@ Note al tracciato:
   cambiare spazio, cioè scrivere in produzione. Va fatta dall'utente o autorizzata.
 - La ratifica qui sopra (l'avviso resta cambiando mese).
 - Il tetto di 60 rate nel database (FUORI SCOPE), se lo si vuole.
+
+## Dopo la chiusura (coordinatore, 20 ott)
+
+- Ratifica dell'utente: la scelta sull'avviso è **ratificata 2026-10-20**.
+- Prova nel browser della correzione 674c12e, autorizzata dall'utente (un piano di prova, una volta): `live-testing`
+  ESITO: verde, 6/6. L'avviso resta cambiando mese e sparisce cambiando spazio, e non resta nessun «Vai alle
+  ricorrenti». Il piano «PROVA COLLAUDO avviso» (`0e6856a5-2103-45e9-a6e9-8d1342b86a45`) è stato creato ed eliminato
+  nello spazio «COLLAUDO GIRO B TEST»; dopo la ricarica Ricorrenti è vuota e il Registro segna 0,00 € come prima.
+  Spazio riportato a «Personale», server di sviluppo spento.
+- Pubblicato su `main`; ramo remoto `worktree-chiusura-2-3` cancellato su sì dell'utente.
