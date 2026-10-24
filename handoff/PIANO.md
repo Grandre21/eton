@@ -55,6 +55,9 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
   confermare.
 - 2026-10-24 «Registra una spesa» apre il Registro con la categoria passata nell'indirizzo (oggi il modulo non
   riceve parametri) — **da ratificare**. Raccomandazione: confermare, è il modo già usato dalla tabella.
+- 2026-10-24 risposta alla domanda della 01: autore del budget `created_by` (non `paid_by`); modifica ed
+  eliminazione all'autore o al proprietario dello spazio, come le ricorrenti — **da ratificare**.
+  Raccomandazione: confermare, è la copia delle regole già in produzione.
 - 2026-10-24 la 03 porta in un posto solo anche la copia di ricerca della chiave (in `TabellaSpese`), se la sua
   semantica è identica — **da ratificare**. Raccomandazione: confermare.
 
