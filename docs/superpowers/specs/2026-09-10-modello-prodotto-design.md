@@ -254,6 +254,7 @@ decomposizione: serve eseguirla.
 | 2.1 | **Spese ricorrenti** | Design e piano da **sei task** già scritti e approvati (`2026-09-03-spese-ricorrenti-design.md`, `plans/2026-09-03-spese-ricorrenti.md`). Pronto a partire |
 | 2.2 | **Vista tabellare** | Da progettare — è il cuore della direzione «puntuale, non da app scema» |
 | 2.3 | **Analisi** | Da progettare — dal 19 ottobre 2026 comprende rate, entrate e bilancio (v. §6, «Richieste del 19 ottobre») |
+| 2.4 | **Budget mensili e residui dati** | Aggiunta il 24 ottobre 2026, prima della 2.1-bis (v. §6, «Richiesta e piano del 24 ottobre») |
 
 **Perché le ricorrenti vengono per prime, e non la tabella che l'utente ha nominato.** Il
 motivo è scritto al §2 di quel design ed è tecnico, non di preferenza: le ricorrenti sono
@@ -569,6 +570,34 @@ l'ha scelto l'utente: 2026-10-19 utente (chat, popup): «Prima i dati (Consiglia
 | Importare una collezione privata in uno spazio condiviso | **3** (template) | È una copia, non uno spostamento: `space_id` non ha GRANT UPDATE |
 | Tasto «segnala un bug» per utenti scelti e casella delle segnalazioni | anticipabile, senza server | Flag sul profilo + tabella `bug_reports` |
 | Area di amministrazione: utenti, blocco, log | **fase nuova, non prima della 5** | Il blocco passa dall'Auth Admin API: serve una Edge Function, la service key mai nel client. `profiles` non ha un ruolo: tabella `admins` senza GRANT ad `authenticated` e `is_admin()` security definer; l'admin **non** entra nelle policy di spese e note |
+
+### Richiesta e piano del 24 ottobre 2026 — chiudere ciò che è aperto
+
+L'utente, a fase 2.3 chiusa, verbatim: *«Sarebbe utile prevedere delle spese ricorrenti in un mese, tipo
+prevedo di spendere 50 euro per uscite, ma non sono soldi ancora usciti quindi vorrei che siano previsti ma
+poi ogni volta che spendo vado lì e dico quanto ho speso, così mi dice il rimanente del budget che ho previsto
+di spendere»*, e subito dopo: *«poi crei tu un piano per chiudere tutto ciò che c'è di aperto»*.
+
+**Il budget mensile per categoria** — posizioni di `tech-advisor` del 24 ott, verificate sul codice:
+
+| | Deciso | Da chi |
+|---|---|---|
+| Ancoraggio | Il budget vale per **una categoria esistente**; il residuo è *budget − spese della categoria nel mese*, da qualunque punto siano registrate. Tabella sua (`category_budgets`: spazio, categoria, importo, da/a, `version`, RLS come le ricorrenti), **non** un tipo di `recurring_expenses`: le regole ricorrenti generano occorrenze, un budget mai | tech-advisor, da ratificare |
+| «Dico quanto ho speso» | Scrive una **spesa vera** con la categoria precompilata: compare in registro, tabella, CSV e bilancio. Le occorrenze ricorrenti della stessa categoria consumano il budget | tech-advisor, da ratificare |
+| Fine mese | Il residuo **si azzera**; lo sforamento si mostra come «sforato di X», senza bloccare | 2026-10-24 utente (chat, popup): «Si azzera (Consigliata)» |
+| Bilancio | Il bilancio resta com'è; sotto, una **riga a sé** «Da spendere nei budget: X» con una barra per categoria. Nessun saldo previsto di fine mese (sarebbe una funzione nuova) | 2026-10-24 utente (chat, popup): «Riga a sé (Consigliata)» |
+
+**La sequenza per chiudere ciò che è aperto.** Ordine scelto dall'utente: 2026-10-24 utente (chat, popup):
+«Budget prima (Consigliata)».
+
+| | Goal | Contenuto | Chi |
+|---|---|---|---|
+| 1 | **Fase 2.4 — budget e residui dati** | Il budget qui sopra con resa minima; dai residui della 2.3: tetto `installments <= 60` nel database, `CambiaCategoriaAsync` che controlla il tipo (nel client: il database resta senza vincolo categoria↔tipo, come scelto in `Services/CategorieSpesa.cs` — da ratificare), test dedicati a `RecurringExpenseRepository`, la chiave d'ordinamento «senza accenti e maiuscole» in un posto solo, i claims JWT degli script `supabase/verifica-rls-*.sql` in un posto solo. **Una sola migrazione**, applicata a mano dall'utente | capo + unità; l'utente per la migrazione |
+| 2 | **Fase 2.1-bis — il mandato UI/UX** | Come descritta al §4, più: le schermate del budget; il debito visivo misurato (§4, «Il debito visivo»); i rilievi grafici rimandati dalla 2.3 (rapporto `storico/handoff/2026-10-20-CHIUSURA-rate-entrate.md`, `FUORI SCOPE`) compreso il componente unico «Numero di rate»; le richieste grafiche del 19 ottobre qui sopra; dal goal del 20 settembre la clausola 1 (superfici come scala), la 25 (pulsante in due forme), la 23b, e il collaudo delle 28, 29, 30 e 35 (barra gialla a rete bloccata, banner sul sito pubblicato, importo in sola lettura con un secondo account, dialogo nativo su «Elimina» di una spesa) | capo + unità, `brainstorming → spec → piano` |
+| — | **Configurazione di Claude** (fuori da Eton) | In `~/.claude`: 42 commit da pubblicare, 21 segnalazioni aperte, la clausola 37 del 20 settembre mai applicata (`storico/handoff/2026-09-20-configurazione-da-applicare.md`) | l'utente, quando vuole, in una sessione aperta lì |
+
+Dopo la 2.1-bis si riprende la sequenza del §4 dalla fase 3. Vincolo operativo ancora valido dalla 2.3:
+aggiornare la PWA su tutti i dispositivi prima di creare il primo piano a rate.
 
 ---
 
