@@ -22,35 +22,48 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
   `storico/handoff/` (commit di questa sessione).
 - 2026-10-24 budget legato a una categoria esistente, in una tabella sua (non un tipo di regola ricorrente);
   «dico quanto ho speso» scrive una spesa vera con categoria precompilata; le ricorrenti della stessa categoria
-  consumano il budget. Posizione di tech-advisor verificata sul codice — **da ratificare**. Raccomandazione:
-  confermare, è l'unica forma senza doppia scrittura.
+  consumano il budget. Posizione di tech-advisor verificata sul codice — **ratificata 2026-10-24**.
 - 2026-10-24 il vincolo categoria↔tipo resta nel client (`CambiaCategoriaAsync` controlla il tipo), il database
-  resta senza check, come scelto in `Services/CategorieSpesa.cs` — **da ratificare**. Raccomandazione:
-  confermare; un check SQL rovescerebbe «una categoria nuova è una riga di C#».
+  resta senza check, come scelto in `Services/CategorieSpesa.cs` — **ratificata 2026-10-24**.
+- 2026-10-24 utente (chat, popup, ratifiche): «Confermo (Consigliata)» a entrambe.
+- 2026-10-24 utente (chat): «Non posso aprire una nuova sessione, fai partire qui il lavoro, sono dal cellulare
+  quindi ti seguo a distanza» — questa sessione fa da coordinatore della 2.4.
+- 2026-10-24 utente (chat, popup, spec): «Approvo, vai» — spec `docs/superpowers/specs/2026-10-24-budget-design.md`.
 
 ## PARTIZIONE
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
-| **S — spec 2.4** | spec del budget (le decisioni qui sopra, la tabella, la resa minima, i casi limite: categoria cambiata, spesa spostata di mese, budget chiuso) e dei residui | `docs/superpowers/specs/2026-10-24-budget-design.md`, approvata in chat | — | PIANIFICATA |
-| **scout** | ricognizione per la partizione delle unità, sul mandato dell'indice di `architettura-sessioni.md` | subagent `scout` | S | PIANIFICATA |
-| **01-migrazione** | `category_budgets` con RLS + check `installments <= 60`, in una migrazione sola, scritta e provata sul Supabase locale, **non applicata** | sessione-unità | scout | PIANIFICATA |
+| **S — spec 2.4** | spec del budget (le decisioni qui sopra, la tabella, la resa minima, i casi limite: categoria cambiata, spesa spostata di mese, budget chiuso) e dei residui | `docs/superpowers/specs/2026-10-24-budget-design.md`, approvata in chat | — | **PARZIALE** — approvata dall'utente in chat il 24 ott («Approvo, vai»); è un documento, nessun comando lo verifica |
+| **scout** | ricognizione per la partizione delle unità, sul mandato dell'indice di `architettura-sessioni.md` | subagent `scout` | S | **PARZIALE** — mappa ricevuta il 24 ott (tre gruppi, file contesi `ExpenseRepository.cs` e `CalcoliRicorrenti.cs`); è una ricognizione, nessun comando la verifica |
+| **01-migrazione** | `category_budgets` con RLS + check `installments <= 60`, in una migrazione sola, scritta e provata sul Supabase locale, **non applicata** | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-migrazione`, mandato in `handoff/01-migrazione/` | scout | IN CORSO |
 | **GATE migrazione** | l'utente applica la migrazione dall'editor SQL e incolla l'esito della query di controllo | utente | 01 | PIANIFICATA |
 | **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità | GATE | PIANIFICATA |
 | **03-residui** | `CambiaCategoriaAsync` col tipo, test di `RecurringExpenseRepository`, chiave d'ordinamento in un posto, claims JWT degli script RLS in un posto | sessione-unità | 02 (solo ordine, file probabilmente contesi) | PIANIFICATA |
 
-La divisione 02/03 è provvisoria: la decide lo scout (regola 2 del capo).
-
 ## RAZIONALE
 
 Una migrazione sola perché in produzione le applica a mano l'utente: il tetto alle rate viaggia con la tabella
-nuova. I residui senza schema stanno in un'unità propria dopo il budget perché `ExpenseRepository` e i calcoli
-delle spese sono probabilmente toccati da entrambe; lo conferma o lo smentisce lo scout.
+nuova. Lo scout (24 ott) conferma tre gruppi disgiunti salvo due file: `Services/ExpenseRepository.cs` (la 02
+lo legge e chiama `CreaAsync`, la 03 cambia `CambiaCategoriaAsync`) e `Services/CalcoliRicorrenti.cs` (la 02
+ne legge le occorrenze del mese, la 03 vi sposta la chiave d'ordinamento): contesa di file, non di firma, quindi
+02 e 03 in sequenza e la 03 da `main` dopo la 02. Nessuna interfaccia nuova fra le due.
+
+Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratificare** a fine goal):
+- 2026-10-24 la riga «Da spendere nei budget» va solo sotto il riepilogo del mese del Registro, non nel bilancio
+  della tabella, che vale per un periodo filtrato e non per un mese — **da ratificare**. Raccomandazione:
+  confermare.
+- 2026-10-24 «Registra una spesa» apre il Registro con la categoria passata nell'indirizzo (oggi il modulo non
+  riceve parametri) — **da ratificare**. Raccomandazione: confermare, è il modo già usato dalla tabella.
+- 2026-10-24 la 03 porta in un posto solo anche la copia di ricerca della chiave (in `TabellaSpese`), se la sua
+  semantica è identica — **da ratificare**. Raccomandazione: confermare.
 
 ## PROSSIMA AZIONE
 
-Aprire una sessione nuova (`coordinatore` nella cartella del progetto): mostrare nel primo popup le due righe
-**da ratificare** di `DECISIONI`, poi scrivere la spec S e farla approvare in chat.
+01-migrazione lanciata; scrivere intanto il mandato della 02. Al resoconto della 01: merge, poi l'SQL all'utente
+(GATE migrazione).
+
+controllo contesto 2026-10-24 (avvio): nulla
 
 ## APERTO
 
