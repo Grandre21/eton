@@ -37,7 +37,10 @@ CONTRATTI:
   indirizzo di «Registra una spesa»: il Registro (`/expenses`) con la categoria nell'indirizzo; nome del
   parametro a scelta dell'unità, una categoria sconosciuta o di entrata si ignora.
   Cambiare l'importo vale per tutti i mesi (nessuno storico, spec §2); chiudere imposta `ends_on` al mese
-  successivo; se le ricorrenti hanno «Elimina», il budget lo ha uguale.
+  corrente (è l'ultimo mese in cui vale, schema della 1); se le ricorrenti hanno «Elimina», il budget lo ha
+  uguale. Nessuna sovrapposizione (rilievo BH1 della 1, il database non la impedisce): un budget nuovo su una
+  categoria il cui ultimo budget vale ancora nel mese corrente parte dal mese dopo; la pagina lo dice.
+  `version` non si scrive mai dal client: è solo filtro, la incrementa il trigger (schema della 1).
 
 STATO: unità 1 (migrazione) — resoconto in `handoff/01-migrazione/resoconto.md`, applicata dall'utente
 (GATE in `handoff/PIANO.md`). Scelte del capo da ratificare che ti riguardano: in `handoff/PIANO.md`, RAZIONALE.
