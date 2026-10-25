@@ -38,8 +38,8 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
 | **scout** | ricognizione per la partizione delle unità, sul mandato dell'indice di `architettura-sessioni.md` | subagent `scout` | S | **PARZIALE** — mappa ricevuta il 24 ott (tre gruppi, file contesi `ExpenseRepository.cs` e `CalcoliRicorrenti.cs`); è una ricognizione, nessun comando la verifica |
 | **01-migrazione** | `category_budgets` con RLS + check `installments <= 60`, in una migrazione sola, scritta e provata sul Supabase locale, **non applicata** | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-migrazione`, mandato in `handoff/01-migrazione/` | scout | **FATTO** — fusa su `main` il 24 ott (merge 7876feb), provata sul Supabase locale (14 errori attesi su 14), BH1 (sovrapposizione di periodi) passato come regola al mandato della 02, tre scelte da ratificare nel resoconto; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 417 passed, 0 skipped` |
 | **GATE migrazione** | l'utente applica la migrazione dall'editor SQL e incolla l'esito della query di controllo | utente | 01 | **SUPERATO** — 2026-10-25 l'utente ha incollato in chat l'esito della query di controllo: `tabella_esiste=true, rls_attiva=true, policy=4, indice_aperto=true, trigger_versione=true, tetto_rate=true, max_rate=0` (atteso) |
-| **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità, worktree `G:\Sviluppo\wt-Eton\02-budget`, ramo `unita-02-budget` | GATE | IN CORSO — lanciata il 25 ott |
-| **03-residui** | `CambiaCategoriaAsync` col tipo, test di `RecurringExpenseRepository`, chiave d'ordinamento in un posto, claims JWT degli script RLS in un posto | sessione-unità | 02 (solo ordine, file probabilmente contesi) | PIANIFICATA |
+| **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità, worktree `G:\Sviluppo\wt-Eton\02-budget`, ramo `unita-02-budget` | GATE | **PARZIALE** — fusa su `main` il 25 ott; GATE dell'unità verdi (build 0 errori, test 0 failed / 432 passed); 6 rilievi fondati tutti corretti; **manca la prova nel browser (§7) e ui-critic**: live-testing sui dati di produzione rifiutato dal classificatore della modalità auto in `--bg`; passi della prova in `handoff/02-budget/resoconto.md`, FUORI SCOPE; cinque scelte da ratificare nel resoconto |
+| **03-residui** | `CambiaCategoriaAsync` col tipo, test di `RecurringExpenseRepository`, chiave d'ordinamento in un posto, claims JWT degli script RLS in un posto | sessione-unità, worktree `G:\Sviluppo\wt-Eton\03-residui`, ramo `unita-03-residui` | 02 (solo ordine, file probabilmente contesi) | IN CORSO — lanciata il 25 ott |
 
 ## RAZIONALE
 
@@ -63,9 +63,11 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
 
 ## PROSSIMA AZIONE
 
-Attendere il messaggio di fine della 02 (o l'uscita della sua rete); poi controlli (b) e (c), merge, processo
-del resoconto, `claude stop`, e lancio della 03 da `main` aggiornato. Le tre righe DA RATIFICARE della 01 vanno
-nel popup di fine goal insieme a quelle del capo.
+Attendere il messaggio di fine della 03 (o l'uscita della sua rete). In parallelo: chiedere all'utente il sì per
+la prova nel browser della 02 sui dati di produzione, eseguita da questa sessione interattiva (memoria «le
+autorizzazioni non passano alle unità `--bg`»), poi ui-critic. Le righe DA RATIFICARE della 01, della 02 e del
+capo vanno nel popup di fine goal. Rilievi fuori scope della 02 per la 2.1-bis: commento di
+`Shared/PaginaRegistro.cs` (C1), ripetizioni BE2/BE3, «In arrivo» che lampeggia al cambio mese.
 
 controllo contesto 2026-10-24 (avvio): nulla
 
