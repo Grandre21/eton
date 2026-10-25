@@ -50,15 +50,6 @@ else
             <button class="btn" @onclick="Riprova" disabled="@rileggoMese">Riprova</button>
         </div>
     }
-    else if (senzaBudget)
-    {
-        <div class="vuoto">
-            <span class="icona-vuoto"><Icona Nome="spese" /></span>
-            <p>Ancora nessun budget qui.</p>
-            <p class="spiega">Decidi quanto spendere in un mese per una categoria, e qui vedi quanto ti resta.</p>
-            <a class="btn primario" href="expenses/budgets/new">Nuovo budget</a>
-        </div>
-    }
     else
     {
         <section class="scheda riepilogo-mese">
@@ -73,6 +64,15 @@ else
             {
                 <Scheletro Righe="2" />
             }
+            else if (senzaBudget)
+            {
+                <div class="vuoto">
+                    <span class="icona-vuoto"><Icona Nome="spese" /></span>
+                    <p>Ancora nessun budget qui.</p>
+                    <p class="spiega">Decidi quanto spendere in un mese per una categoria, e qui vedi quanto ti resta.</p>
+                    <a class="btn primario" href="expenses/budgets/new">Nuovo budget</a>
+                </div>
+            }
             else if (stati.Count == 0)
             {
                 <p class="testo-tenue">Nessun budget in questo mese.</p>
@@ -85,11 +85,13 @@ else
                         var categoria = s.Budget.Category;
                         <li>
                             <span class="nome-categoria">@categoria</span>
-                            <span class="totale-categoria dato">@Denaro.Testo(s.Speso) / @Denaro.Testo(s.Budget.Amount)&#160;€</span>
                             <span class="barra"><span class="riempimento" style="width: @(s.Quota)%"></span></span>
                             <span class="quota dato">@(s.Residuo >= 0 ? "restano" : "sforato di") @Denaro.Testo(Math.Abs(s.Residuo))&#160;€</span>
-                            <a class="btn compatto" href="@($"expenses?categoria={Uri.EscapeDataString(categoria)}")">Registra una spesa</a>
-                            <a class="btn compatto" href="expenses/budgets/@s.Budget.Id">Modifica</a>
+                            <span class="totale-categoria dato">@Denaro.Testo(s.Speso) / @Denaro.Testo(s.Budget.Amount)&#160;€</span>
+                            <div class="azioni">
+                                <a class="btn compatto" href="@($"expenses?categoria={Uri.EscapeDataString(categoria)}")">Registra una spesa</a>
+                                <a class="btn compatto" href="expenses/budgets/@s.Budget.Id">Modifica</a>
+                            </div>
                         </li>
                     }
                 </ul>

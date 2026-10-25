@@ -2097,6 +2097,11 @@ li:last-child > .riga { border-bottom: none; }
 .barre-categorie .quota { grid-area: quota; text-align: right; font-size: var(--t-sm); color: var(--secondario); }
 .barre-categorie .totale-categoria { grid-area: totale; text-align: right; font-size: var(--t-sm); color: var(--secondario); }
 
+/* La riga di un budget porta in più le sue azioni (Pages/Budget.razor): vanno su una
+   riga propria a tutta larghezza, sia nella griglia stretta del <li> sia in quella larga
+   del genitore, così le quattro colonne restano quelle del Registro. */
+.barre-categorie > li > .azioni { grid-column: 1 / -1; }
+
 .barra {
     position: relative;
     height: 8px;

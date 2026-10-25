@@ -155,9 +155,10 @@ else
     private bool PuoIntervenire => Nuova || (budget is not null && Permessi.PuoIntervenire(mioId, budget.CreatedBy, budget.SpaceId, Spazi.Elenco));
     private bool Valido => Denaro.Prova(importoTesto, out _) && (!Nuova || disponibili.Contains(categoria, StringComparer.Ordinal));
 
-    // Stessa conversione del campo, così sopra mille euro il modulo non nasce già modificato.
+    // In creazione conta solo l'importo scritto: una categoria scelta senza importo non è lavoro che si perde.
+    // Per un budget esistente, stessa conversione del campo, così sopra mille euro il modulo non nasce già modificato.
     protected override bool Cambiata => Nuova
-        ? !string.IsNullOrWhiteSpace(importoTesto) || categoria != (disponibili.FirstOrDefault() ?? "")
+        ? !string.IsNullOrWhiteSpace(importoTesto)
         : budget is not null && importoTesto != Denaro.TestoDigitabile(budget.Amount);
 
     // Blazor riusa l'editor: la generazione scarta risposte di un precedente cambio di rotta,
