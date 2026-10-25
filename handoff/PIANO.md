@@ -40,6 +40,7 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
 | **GATE migrazione** | l'utente applica la migrazione dall'editor SQL e incolla l'esito della query di controllo | utente | 01 | **SUPERATO** — 2026-10-25 l'utente ha incollato in chat l'esito della query di controllo: `tabella_esiste=true, rls_attiva=true, policy=4, indice_aperto=true, trigger_versione=true, tetto_rate=true, max_rate=0` (atteso) |
 | **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità, worktree `G:\Sviluppo\wt-Eton\02-budget`, ramo `unita-02-budget` | GATE | **PARZIALE** — fusa su `main` il 25 ott; GATE dell'unità verdi (build 0 errori, test 0 failed / 432 passed); 6 rilievi fondati tutti corretti; **manca la prova nel browser (§7) e ui-critic**: live-testing sui dati di produzione rifiutato dal classificatore della modalità auto in `--bg`; passi della prova in `handoff/02-budget/resoconto.md`, FUORI SCOPE; cinque scelte da ratificare nel resoconto |
 | **03-residui** | `CambiaCategoriaAsync` col tipo, test di `RecurringExpenseRepository`, chiave d'ordinamento in un posto, claims JWT degli script RLS in un posto | sessione-unità, worktree `G:\Sviluppo\wt-Eton\03-residui`, ramo `unita-03-residui` | 02 (solo ordine, file probabilmente contesi) | IN CORSO — lanciata il 25 ott |
+| **04-correzioni-budget** | i difetti della prova nel browser della 02 (`handoff/02-budget/prova-capo.md`): barra invisibile, guardia d'uscita su «Nuovo budget» senza importo, mese e frecce con zero budget; poi i passi 9-10 della prova, rifatti da questa sessione | sessione-unità, dopo la 03 | 03 (file della 02 su `main`) | PIANIFICATA |
 
 ## RAZIONALE
 
@@ -58,6 +59,10 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
 - 2026-10-24 risposta alla domanda della 01: autore del budget `created_by` (non `paid_by`); modifica ed
   eliminazione all'autore o al proprietario dello spazio, come le ricorrenti — **da ratificare**.
   Raccomandazione: confermare, è la copia delle regole già in produzione.
+- 2026-10-25 risposta alla domanda della 03: il perimetro si allarga a `Services/RecurringExpenseRepository.cs`,
+  solo per estrarre due punti statici `internal` (costruzione della regola nuova, decisione dell'esito con la
+  rilettura come delegate) che rendono testabili senza database scritture e concorrenza; nessuna firma pubblica
+  cambia — **da ratificare**. Raccomandazione: confermare, senza non si prova la concorrenza.
 - 2026-10-24 la 03 porta in un posto solo anche la copia di ricerca della chiave (in `TabellaSpese`), se la sua
   semantica è identica — **da ratificare**. Raccomandazione: confermare.
 
