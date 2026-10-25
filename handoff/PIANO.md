@@ -68,7 +68,8 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
 
 ## PROSSIMA AZIONE
 
-04 fusa. Rifare da questa sessione la
+2026-10-25 utente (chat, popup): «Sì, quando sono al PC (Consigliata)» — la prova parte quando l'utente scrive
+di aver chiuso la finestra nativa bloccata su Chrome e lanciato le due query di pulizia. 04 fusa. Rifare da questa sessione la
 prova nel browser del budget (passi della 02 più i `PASSI PER IL CAPO` della 04) sui dati di produzione, con
 un sì nuovo dell'utente (quello del 25 ott valeva per la prima prova), poi ui-critic. Pulizia della prima
 prova: SQL dato all'utente in chat il 25 ott, esito da ricevere. Le righe DA RATIFICARE della 01, della 02 e del
