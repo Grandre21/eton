@@ -1,6 +1,5 @@
 using Eton.Models;
 using Supabase.Postgrest;
-using Supabase.Postgrest.Responses;
 
 namespace Eton.Services;
 
@@ -49,7 +48,15 @@ public class RecurringExpenseRepository
     public async Task<RecurringExpense> CreaAsync(Guid spazioId, Guid pagante, DatiRegola dati)
     {
         var client = await _supabase.GetClientAsync();
-        var risposta = await client.From<RecurringExpense>().Insert(new RecurringExpense
+        var risposta = await client.From<RecurringExpense>().Insert(NuovaRegola(spazioId, pagante, dati));
+
+        return risposta.Models.FirstOrDefault()
+               ?? throw new InvalidOperationException("Il database non ha restituito la regola ricorrente appena creata.");
+    }
+
+    // Separata da CreaAsync per provare senza database come i dati diventano riga: date a mezzanotte UTC, fine del piano, testi senza spazi.
+    internal static RecurringExpense NuovaRegola(Guid spazioId, Guid pagante, DatiRegola dati) =>
+        new RecurringExpense
         {
             Id                   = Guid.NewGuid(),
             SpaceId              = spazioId,
@@ -65,11 +72,7 @@ public class RecurringExpenseRepository
             Installments         = dati.Rate,
             PlanTotal            = dati.TotalePiano,
             MaterializedThrough  = null
-        });
-
-        return risposta.Models.FirstOrDefault()
-               ?? throw new InvalidOperationException("Il database non ha restituito la regola ricorrente appena creata.");
-    }
+        };
 
     /// <summary>
     /// Salva, ma solo se nessuno ha scritto dopo di te: <paramref name="versioneLetta"/> entra
@@ -98,7 +101,7 @@ public class RecurringExpenseRepository
 
         var risposta = await query.Update();
 
-        return await Esito(risposta, regolaId, versioneLetta);
+        return await Esito(risposta.Models, versioneLetta, () => LeggiAsync(regolaId));
     }
 
     /// <summary>Termina una regola fissandone la fine, senza toccare nient'altro: esiste come
@@ -112,21 +115,21 @@ public class RecurringExpenseRepository
             .Set(r => r.EndsOn!, ExpenseRepository.PerIlDatabase(fine))
             .Update();
 
-        return await Esito(risposta, regolaId, versioneLetta);
+        return await Esito(risposta.Models, versioneLetta, () => LeggiAsync(regolaId));
     }
 
     /// <summary>
     /// La distinzione a zero righe fra Sparita, Conflitto e Rifiutata: identica in
     /// <see cref="SalvaAsync"/> e <see cref="TerminaAsync"/>, estratta qui per non copiarla due
     /// volte. Stessa finestra di imprecisione fra Conflitto e Rifiutata descritta in
-    /// <see cref="ExpenseRepository.SalvaAsync"/>: v. lì.
+    /// <see cref="ExpenseRepository.SalvaAsync"/>: v. lì. Il delegate serve ai test senza database.
     /// </summary>
-    private async Task<RisultatoSalvataggio<RecurringExpense>> Esito(ModeledResponse<RecurringExpense> risposta, Guid regolaId, int versioneLetta)
+    internal static async Task<RisultatoSalvataggio<RecurringExpense>> Esito(IReadOnlyList<RecurringExpense> toccate, int versioneLetta, Func<Task<RecurringExpense?>> rileggi)
     {
-        if (risposta.Models.Count > 0)
-            return new RisultatoSalvataggio<RecurringExpense>(EsitoSalvataggio.Salvata, risposta.Models[0]);
+        if (toccate.Count > 0)
+            return new RisultatoSalvataggio<RecurringExpense>(EsitoSalvataggio.Salvata, toccate[0]);
 
-        var attuale = await LeggiAsync(regolaId);
+        var attuale = await rileggi();
 
         if (attuale is null)
             return new RisultatoSalvataggio<RecurringExpense>(EsitoSalvataggio.Sparita, null);

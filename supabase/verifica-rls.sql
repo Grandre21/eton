@@ -27,6 +27,10 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+
 \echo '=== 1. Dove sta pgcrypto ==='
 select extname, extnamespace::regnamespace as schema from pg_extension where extname = 'pgcrypto';
 
@@ -57,7 +61,7 @@ from profiles p join spaces s on s.owner_id = p.id order by p.display_name;
 \echo '=== 6. ALICE: vede solo il proprio spazio personale (atteso: 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select count(*) as spazi_visti_da_alice from spaces;
 select count(*) as profili_visti_da_alice from profiles;
 
@@ -69,7 +73,7 @@ commit;
 \echo '=== 7. BRUNO: non vede lo spazio di Alice (atteso: 1) ne il suo profilo (atteso: 1, solo il proprio) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select count(*) as spazi_visti_da_bruno from spaces;
 select count(*) as profili_visti_da_bruno from profiles;
 
@@ -84,13 +88,13 @@ select invite_code as codice from spaces where name = 'Svapo con gli amici' \gse
 \echo '=== 9. BRUNO entra col codice: ora vede 2 spazi e 2 profili ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') is not null as entrato;
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select count(*) as spazi_visti_da_bruno_dopo from spaces;
 select count(*) as profili_visti_da_bruno_dopo from profiles;
 
@@ -106,14 +110,14 @@ commit;
 \echo '=== 10. ALICE prova ad azzerare is_personal sul proprio spazio personale (atteso: ERRORE di permesso) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update spaces set is_personal = false where name = 'Personale' and owner_id = '11111111-1111-1111-1111-111111111111';
 commit;
 
 \echo '=== 11. ALICE prova a cancellare il proprio spazio personale (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 with cancellati as (delete from spaces where is_personal returning 1)
 select count(*) as spazi_personali_cancellati from cancellati;
 
@@ -134,7 +138,7 @@ commit;
 \echo '=== 12. BRUNO prova a espellere Alice (atteso: 0 righe) e poi esce lui (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 with espulsi as (
     delete from space_members
     where user_id = '11111111-1111-1111-1111-111111111111'
@@ -152,7 +156,7 @@ commit;
 \echo '=== 13. Dopo l uscita di Bruno: non vede piu lo spazio ne il profilo di Alice (atteso: 1 e 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select count(*) as spazi_visti_da_bruno_finale from spaces;
 select count(*) as profili_visti_da_bruno_finale from profiles;
 commit;

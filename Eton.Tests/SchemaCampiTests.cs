@@ -5,6 +5,14 @@ namespace Eton.Tests;
 
 public class SchemaCampiTests
 {
+    [Fact]
+    public void ChiaveConfronto_ignora_accenti_e_maiuscole_ma_conserva_gli_spazi()
+    {
+        Assert.Equal(SchemaCampi.ChiaveConfronto("Èrba"), SchemaCampi.ChiaveConfronto("erba"));
+        Assert.Equal("CITTA", SchemaCampi.ChiaveConfronto("Città"));
+        Assert.Equal(" ERBA ", SchemaCampi.ChiaveConfronto(" Èrba "));
+    }
+
     // ---------- ChiaveDa ----------
 
     [Theory]

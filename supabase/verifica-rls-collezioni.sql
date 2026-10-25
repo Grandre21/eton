@@ -29,6 +29,10 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1. Privilegi di UPDATE per colonna su collections (atteso: t, t, t, t, f, f, f) ==='
 \echo '=== space_id conta quanto owner_id e version: se fosse scrivibile, una collezione si   ==='
@@ -100,7 +104,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Musica') as condiviso \gset
 commit;
 
@@ -111,7 +115,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -121,7 +125,7 @@ select :'entrato' as bruno_entrato_in;
 \echo '=== 5. ALICE crea una collezione nello spazio condiviso, con dei fields veri (atteso: 1 riga, version 1, blind f) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, icon, fields, rating_max, blind)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Vinili', 'disco',
         '[{"name":"artista","type":"text"},{"name":"anno","type":"number"}]'::jsonb, 10, false)
@@ -135,7 +139,7 @@ select id as collezione from public.collections where name = 'Vinili' \gset
 \echo '=== anche se authenticated NON ha il privilegio di colonna su version (atteso: 1 riga, version 2) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set name = 'Vinili anni 70' where id = :'collezione'
 returning id, version, name;
 commit;
@@ -144,7 +148,7 @@ commit;
 \echo '=== 7. Concorrenza ottimistica: UPDATE con la versione VECCHIA non tocca nulla (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set name = 'Sovrascrittura cieca' where id = :'collezione' and version = 1
 returning id, version;
 commit;
@@ -152,7 +156,7 @@ commit;
 \echo '--- ...e con la versione GIUSTA invece passa (atteso: 1 riga, version 3) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set name = 'Vinili anni Settanta' where id = :'collezione' and version = 2
 returning id, version;
 commit;
@@ -161,7 +165,7 @@ commit;
 \echo '=== 8. Alice NON puo scrivere version a mano (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set version = 99 where id = :'collezione';
 rollback;
 
@@ -169,7 +173,7 @@ rollback;
 \echo '=== 9. Alice NON puo spostare la collezione nel proprio spazio personale (atteso: ERRORE permission denied) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections
    set space_id = (select id from public.spaces
                     where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal)
@@ -183,7 +187,7 @@ rollback;
 \echo '=== a fermarlo e SOLO il vincolo: la prova che questa garanzia regge da sola.            ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 select :'collezione', id, '11111111-1111-1111-1111-111111111111', 'Incoerente'
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -194,21 +198,21 @@ rollback;
 \echo '--- legge (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, name, version from public.collections where space_id = :'condiviso';
 commit;
 
 \echo '--- non la modifica (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.collections set name = 'Manomessa da Bruno' where id = :'collezione' returning id;
 commit;
 
 \echo '--- ne la cancella (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 delete from public.collections where id = :'collezione' returning id;
 commit;
 
@@ -217,7 +221,7 @@ commit;
 \echo '--- (scaffold) Alice aggiunge un proprio elemento, servira ai test 14, 15 e 16 ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name, data)
 values (:'collezione', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Disco di Alice', '{"artista":"Pink Floyd"}'::jsonb)
 returning id, name;
@@ -228,7 +232,7 @@ select id as elemento_alice from public.collection_items where name = 'Disco di 
 \echo '--- BRUNO aggiunge un proprio elemento (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.collection_items (collection_id, space_id, added_by, name, data)
 values (:'collezione', :'condiviso', '22222222-2222-2222-2222-222222222222', 'Disco di Bruno', '{"artista":"Vari"}'::jsonb)
 returning id, name;
@@ -239,7 +243,7 @@ select id as elemento_bruno from public.collection_items where name = 'Disco di 
 \echo '--- ...ma NON puo firmarlo come Alice (atteso: ERRORE violates row-level security) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Falso');
 rollback;
@@ -248,7 +252,7 @@ rollback;
 \echo '=== 13. ALICE, proprietaria dello spazio, cancella il disco di Bruno (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.collection_items where id = :'elemento_bruno' returning id, name;
 commit;
 
@@ -257,7 +261,7 @@ commit;
 \echo '=== Come per space_id sulle collezioni: spostarlo cambia CHI HA IL DIRITTO DI LEGGERLO.  ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collection_items set collection_id = gen_random_uuid() where id = :'elemento_alice';
 rollback;
 
@@ -266,13 +270,13 @@ rollback;
 \echo '--- (scaffold) Alice crea uno spazio privato, con una sua collezione e un suo elemento dentro ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Privatissimo') as segreto \gset
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, blind)
 values (:'segreto', '11111111-1111-1111-1111-111111111111', 'Segreta', false)
 returning id, name;
@@ -282,7 +286,7 @@ select id as collezione_segreta from public.collections where name = 'Segreta' \
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione_segreta', :'segreto', '11111111-1111-1111-1111-111111111111', 'Segreto')
 returning id, name;
@@ -291,21 +295,21 @@ commit;
 \echo '--- Bruno cerca le collezioni dello spazio segreto (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, name from public.collections where space_id = :'segreto';
 commit;
 
 \echo '--- Bruno cerca gli elementi dello spazio segreto (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, name from public.collection_items where space_id = :'segreto';
 commit;
 
 \echo '--- Bruno conta TUTTE le collezioni e TUTTI gli elementi che riesce a vedere (atteso: 1 e 1) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select count(*) as collezioni_visibili_a_bruno from public.collections;
 select count(*) as elementi_visibili_a_bruno   from public.collection_items;
 commit;
@@ -316,7 +320,7 @@ select count(*) as elementi_prima from public.collection_items where collection_
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.collections where id = :'collezione';
 commit;
 
@@ -331,7 +335,7 @@ select count(*) as elementi_nel_segreto_prima   from public.collection_items whe
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.spaces where id = :'segreto';
 commit;
 
@@ -343,7 +347,7 @@ select count(*) as elementi_nel_segreto_dopo   from public.collection_items wher
 \echo '--- fields NON e un array (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, fields, blind)
 select id, '11111111-1111-1111-1111-111111111111', 'Forma sbagliata', '{"non":"un array"}'::jsonb, false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -352,7 +356,7 @@ rollback;
 \echo '--- fields con piu di 40 elementi (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, fields, blind)
 select id, '11111111-1111-1111-1111-111111111111', 'Troppi campi',
        (select jsonb_agg(jsonb_build_object('name', 'campo' || n)) from generate_series(1,41) as n), false
@@ -362,7 +366,7 @@ rollback;
 \echo '--- (scaffold) Alice crea una collezione nel proprio spazio personale, per il test su data ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, blind)
 select id, '11111111-1111-1111-1111-111111111111', 'Bozza', false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal
@@ -374,7 +378,7 @@ select id as collezione_personale from public.collections where name = 'Bozza' \
 \echo '--- data NON e un oggetto (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name, data)
 values (:'collezione_personale',
         (select id from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal),
@@ -385,7 +389,7 @@ rollback;
 \echo '=== 19. rating_max fuori da (5,10) e respinto (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, rating_max, blind)
 select id, '11111111-1111-1111-1111-111111111111', 'Voto strano', 7, false
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;

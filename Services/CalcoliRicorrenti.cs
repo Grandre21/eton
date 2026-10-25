@@ -266,7 +266,7 @@ public static class CalcoliRicorrenti
         var gruppi = new List<GruppoDiRicorrenti>();
         foreach (var g in regole.GroupBy(r => Gruppo(r, oggi)).OrderBy(g => g.Key))
         {
-            var ordinate = g.OrderBy(r => SchemaCampi.RiduciAccenti(r.Description).ToUpperInvariant(), StringComparer.Ordinal)
+            var ordinate = g.OrderBy(r => SchemaCampi.ChiaveConfronto(r.Description), StringComparer.Ordinal)
                 .ThenBy(r => r.Id).ToList();
             decimal? totale = g.Key == GruppoRicorrenti.Terminate ? null : Arrotonda(g.Sum(QuotaMensile));
             gruppi.Add(new GruppoDiRicorrenti(g.Key, ordinate, totale));
