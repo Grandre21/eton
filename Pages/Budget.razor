@@ -1,0 +1,174 @@
+@page "/expenses/budgets"
+@using Eton.Models
+@inherits PaginaRegistro
+@inject BudgetRepository Repository
+@inject ExpenseRepository Spese
+
+<PageTitle>Budget — Eton</PageTitle>
+<TestataPagina Titolo="Budget">
+    <Azione>
+        @if (Spazi.Attivo is not null)
+        {
+            <a class="btn primario compatto" href="expenses/budgets/new">Nuovo budget</a>
+        }
+    </Azione>
+    <Aiuto>
+        <p>Il budget vale ogni mese e riparte pieno: il residuo non si riporta.</p>
+        <p>Ogni spesa della categoria lo consuma, da qualunque pagina la segni.</p>
+        <p>Le entrate non lo toccano.</p>
+    </Aiuto>
+</TestataPagina>
+<NavigazioneSpese Attiva="expenses/budgets" />
+
+@if (!caricato)
+{
+    <Scheletro Righe="4" />
+}
+else if (Spazi.Attivo is null && errore is not null)
+{
+    <ErroreRiprova Messaggio="@errore" OnRiprova="Riprova" Disabilitato="@rileggoMese" />
+}
+else if (Spazi.Attivo is null)
+{
+    <div class="vuoto">
+        <p>Serve uno spazio prima di poter creare un budget.</p>
+        <a class="btn primario" href="spaces">Vai agli spazi</a>
+    </div>
+}
+else
+{
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    <p class="sottotitolo">In <strong>@Spazi.Attivo.Name</strong></p>
+    <p class="spiega">Le spese ricorrenti della categoria contano nel budget: un affitto in «Casa» lo consuma dal primo giorno.</p>
+    @if (datiNonLetti)
+    {
+        <div class="vuoto">
+            <p>Non sono riuscito a leggere i budget di questo spazio.</p>
+            <button class="btn" @onclick="Riprova" disabled="@rileggoMese">Riprova</button>
+        </div>
+    }
+    else if (senzaBudget)
+    {
+        <div class="vuoto">
+            <span class="icona-vuoto"><Icona Nome="spese" /></span>
+            <p>Ancora nessun budget qui.</p>
+            <p class="spiega">Decidi quanto spendere in un mese per una categoria, e qui vedi quanto ti resta.</p>
+            <a class="btn primario" href="expenses/budgets/new">Nuovo budget</a>
+        </div>
+    }
+    else
+    {
+        <section class="scheda riepilogo-mese">
+            <div class="testa-registro">
+                <span>@CalcoliSpese.NomeMese(mese) <span class="dato">@anno</span></span>
+                <div class="navigazione-mese">
+                    <button type="button" class="btn compatto" @onclick="MesePrecedente" disabled="@rileggoMese" aria-label="Mese precedente">‹</button>
+                    <button type="button" class="btn compatto" @onclick="MeseSuccessivo" disabled="@(!PuoAndareAvanti || rileggoMese)" aria-label="Mese successivo">›</button>
+                </div>
+            </div>
+            @if (rileggoMese)
+            {
+                <Scheletro Righe="2" />
+            }
+            else if (stati.Count == 0)
+            {
+                <p class="testo-tenue">Nessun budget in questo mese.</p>
+            }
+            else
+            {
+                <ul class="barre-categorie">
+                    @foreach (var s in stati)
+                    {
+                        var categoria = s.Budget.Category;
+                        <li>
+                            <span class="nome-categoria">@categoria</span>
+                            <span class="totale-categoria dato">@Denaro.Testo(s.Speso) / @Denaro.Testo(s.Budget.Amount)&#160;€</span>
+                            <span class="barra"><span class="riempimento" style="width: @(s.Quota)%"></span></span>
+                            <span class="quota dato">@(s.Residuo >= 0 ? "restano" : "sforato di") @Denaro.Testo(Math.Abs(s.Residuo))&#160;€</span>
+                            <a class="btn compatto" href="@($"expenses?categoria={Uri.EscapeDataString(categoria)}")">Registra una spesa</a>
+                            <a class="btn compatto" href="expenses/budgets/@s.Budget.Id">Modifica</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+        @if (budget.Any(b => b.StartsOn.Date > CalcoliBudget.PrimoDelMese(DateTime.Today)))
+        {
+            <section class="scheda">
+                <div class="testa-registro"><span>In arrivo</span></div>
+                <ul class="registro">
+                    @foreach (var b in budget.Where(b => b.StartsOn.Date > CalcoliBudget.PrimoDelMese(DateTime.Today)))
+                    {
+                        <li>
+                            <a class="riga riga-spesa" href="expenses/budgets/@b.Id">
+                                <span class="descrizione">@b.Category</span>
+                                <span class="meta">da @CalcoliSpese.NomeMese(b.StartsOn.Month) <span class="dato">@b.StartsOn.Year</span></span>
+                                <span class="importo dato">@Denaro.Testo(b.Amount)&#160;€</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    }
+}
+
+@code {
+    private IReadOnlyList<CategoryBudget> budget = [];
+    private IReadOnlyList<StatoBudget> stati = [];
+    private int anno = DateTime.Today.Year, mese = DateTime.Today.Month;
+    private bool rileggoMese;
+    private bool senzaBudget;
+    protected override string NomePlurale => "i budget";
+    private bool PuoAndareAvanti => anno != DateTime.Now.Year || mese != DateTime.Now.Month;
+
+    // Stessa esclusione delle letture di Spese.razor: la guardia precede il primo await.
+    protected override bool ScartaCambioSpazio() => rileggoMese;
+
+    protected override async Task Leggi(Space attivo)
+    {
+        budget = [];
+        stati = [];
+        try
+        {
+            budget = await Repository.ElencaAsync(attivo.Id);
+            senzaBudget = budget.Count == 0;
+            var primo = new DateTime(anno, mese, 1);
+            var ultimo = new DateTime(anno, mese, DateTime.DaysInMonth(anno, mese));
+            var periodo = await Spese.ElencaConPrevisteAsync(attivo.Id, primo, ultimo);
+            var riepilogo = CalcoliSpese.PerMese(periodo.Righe, anno, mese);
+            stati = CalcoliBudget.DelMese(budget, riepilogo, anno, mese);
+        }
+        catch (Exception ex)
+        {
+            SegnalaNonLetti(ex);
+        }
+    }
+
+    // Si conserva la pagina durante la rilettura, come in Spese.razor.
+    protected override async Task Riprova()
+    {
+        rileggoMese = true;
+        try { await Carica(); }
+        finally { rileggoMese = false; }
+    }
+
+    private async Task MesePrecedente()
+    {
+        if (mese == 1) { anno--; mese = 12; } else { mese--; }
+        rileggoMese = true;
+        try { await Carica(); }
+        finally { rileggoMese = false; }
+    }
+
+    private async Task MeseSuccessivo()
+    {
+        if (mese == 12) { anno++; mese = 1; } else { mese++; }
+        rileggoMese = true;
+        try { await Carica(); }
+        finally { rileggoMese = false; }
+    }
+}

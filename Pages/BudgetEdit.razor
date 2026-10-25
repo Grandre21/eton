@@ -1,0 +1,355 @@
+@page "/expenses/budgets/new"
+@page "/expenses/budgets/{Id:guid}"
+@using Eton.Models
+@inherits PaginaEditor
+@inject BudgetRepository Repository
+@inject SpaceStateService Spazi
+@inject AuthStateService AuthState
+
+<PageTitle>@(Nuova ? "Nuovo budget" : "Budget") — Eton</PageTitle>
+<TestataPagina Titolo="@(Nuova ? "Nuovo budget" : "Budget")">
+    <Aiuto>
+        <p>Il budget riparte pieno ogni mese: il residuo non si riporta.</p>
+        <p>Se qualcun altro lo cambia mentre lo modifichi, puoi ricaricare la versione più recente o sovrascrivere con la tua.</p>
+        <p>Uscendo con modifiche non salvate arriva una domanda: il lavoro in corso non si perde per sbaglio.</p>
+    </Aiuto>
+</TestataPagina>
+
+@if (!caricato)
+{
+    <p class="avvio">Caricamento…</p>
+}
+else if (sparita)
+{
+    <div class="vuoto">
+        <p>Questo budget non c'è più: l'ha cancellato qualcuno, oppure non fai più parte dello spazio.</p>
+        <a class="btn" href="expenses/budgets">Torna ai budget</a>
+    </div>
+}
+else if (aperturaFallita || (budget is null && !Nuova))
+{
+    <div class="vuoto">
+        <div class="errore" role="alert">@errore</div>
+        <a class="btn" href="expenses/budgets">Torna ai budget</a>
+    </div>
+}
+else
+{
+    <NavigationLock ConfirmExternalNavigation="@Cambiata" OnBeforeInternalNavigation="GuardaUscita" />
+    @if (conflitto is not null)
+    {
+        @* Sovrascrivi riscrive l'importo, non ripete la chiusura. *@
+        <SchedaConflitto Premessa="@(conflittoDaChiusura ? "Mentre lo chiudevi, questo budget è cambiato: ricarica la versione più recente e poi chiudilo di nuovo." : "Mentre lo modificavi, questo budget è cambiato.")" Occupato="@occupato"
+                         SovrascriviAbilitato="@(Valido && PuoIntervenire && !conflittoDaChiusura)" OnRicarica="Ricarica" OnSovrascrivi="Sovrascrivi" />
+    }
+    @* Stessa regola di Services/Permessi.cs (la RLS di category_budgets è autore o proprietario), senza un Oggetto dedicato lì: quando se ne aggiunge uno, la frase va spostata in Permessi.Spiegazione. *@
+    @if (!PuoIntervenire)
+    {
+        <p class="spiega">Questo budget l'ha creato qualcun altro: può cambiarlo, chiuderlo o eliminarlo solo chi l'ha creato, o chi possiede lo spazio.</p>
+    }
+    @if (Nuova)
+    {
+        <fieldset class="scelta-categoria">
+            <legend class="etichetta-campo">Categoria</legend>
+            @foreach (var c in disponibili)
+            {
+                <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")" aria-pressed="@(c == categoria)"
+                        @onclick="() => categoria = c" disabled="@occupato">@c</button>
+            }
+        </fieldset>
+        @if (disponibili.Count == 0)
+        {
+            <p class="spiega">Ogni categoria ha già un budget.</p>
+        }
+        else
+        {
+            var inizio = CalcoliBudget.InizioDiUnNuovo(budgetDelloSpazio, categoria, DateTime.Today);
+            <p class="spiega">Vale da @CalcoliSpese.NomeMese(inizio.Month) <span class="dato">@inizio.Year</span>, ogni mese.</p>
+            @if (inizio > CalcoliBudget.PrimoDelMese(DateTime.Today))
+            {
+                <p class="spiega">Il budget precedente di @categoria vale ancora questo mese.</p>
+            }
+        }
+    }
+    else
+    {
+        <div class="campo campo-lettura"><span class="etichetta-campo">Categoria</span><p>@budget!.Category</p></div>
+        <p class="spiega">Vale da @CalcoliSpese.NomeMese(budget!.StartsOn.Month) <span class="dato">@budget.StartsOn.Year</span></p>
+        @if (budget.EndsOn is { } fine)
+        {
+            <p class="spiega">Ultimo mese: @CalcoliSpese.NomeMese(fine.Month) <span class="dato">@fine.Year</span></p>
+        }
+    }
+    @if (PuoIntervenire)
+    {
+        <label class="campo">
+            <span class="etichetta-campo">Importo</span>
+            <input class="importo-spesa dato" type="text" inputmode="decimal" placeholder="0,00"
+                   @bind="importoTesto" @bind:event="oninput" disabled="@occupato" />
+        </label>
+    }
+    else
+    {
+        <div class="campo campo-lettura">
+            <span class="etichetta-campo">Importo</span>
+            <p class="importo-spesa dato">@Denaro.Testo(budget!.Amount)&#160;€</p>
+        </div>
+    }
+    @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
+    {
+        <p class="errore-campo">@erroreImporto</p>
+    }
+    @if (!Nuova)
+    {
+        <p class="spiega">Cambiare l'importo vale anche per i mesi passati: lo storico degli importi non si tiene.</p>
+    }
+    @if (errore is not null)
+    {
+        <div class="errore" role="alert">@errore</div>
+    }
+    @if (avviso is not null)
+    {
+        <div class="avviso" role="status">@avviso</div>
+    }
+    @if (!occupato && PuoIntervenire && conflitto is null && (Nuova ? !Valido : !Cambiata && Valido))
+    {
+        <p class="testo-tenue">@(Nuova ? "Scrivi l'importo e scegli una categoria disponibile per poterlo salvare." : "Non c'è niente di nuovo da salvare.")</p>
+    }
+    <div class="azioni">
+        @if (PuoIntervenire)
+        {
+            <button class="btn primario" @onclick="Salva" disabled="@(occupato || !Cambiata || conflitto is not null || !Valido)">@(occupato ? "Salvo…" : "Salva")</button>
+        }
+        <a class="btn" href="@(occupato ? null : "expenses/budgets")">Torna ai budget</a>
+    </div>
+    @if (!Nuova && PuoIntervenire)
+    {
+        <section class="scheda">
+            @if (CalcoliBudget.SiPuoChiudere(budget!, DateTime.Today))
+            {
+                <p class="testo-tenue">Chiudendolo vale fino alla fine di questo mese, poi non più.</p>
+                <div class="azioni">
+                    <ConfermaAzione Chiave="@Id" Etichetta="Chiudi" EtichettaConferma="Sì, chiudi" Occupato="@(occupato || conflitto is not null)" OnConferma="Chiudi" />
+                </div>
+            }
+            <p class="testo-tenue">Eliminandolo sparisce anche dai mesi passati.</p>
+            <div class="azioni">
+                <ConfermaAzione Chiave="@Id" Etichetta="Elimina" EtichettaConferma="Sì, elimina" Occupato="@(occupato || conflitto is not null)" OnConferma="Elimina" />
+            </div>
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    private CategoryBudget? budget, conflitto;
+    private IReadOnlyList<CategoryBudget> budgetDelloSpazio = [];
+    private IReadOnlyList<string> disponibili = [];
+    private string categoria = "", importoTesto = "";
+    private bool caricato, occupato, sparita, aperturaFallita;
+    private bool conflittoDaChiusura;
+    private string? errore, avviso;
+    private int generazione;
+    private Guid? mioId;
+    private bool Nuova => Id is null;
+    private bool PuoIntervenire => Nuova || (budget is not null && Permessi.PuoIntervenire(mioId, budget.CreatedBy, budget.SpaceId, Spazi.Elenco));
+    private bool Valido => Denaro.Prova(importoTesto, out _) && (!Nuova || disponibili.Contains(categoria, StringComparer.Ordinal));
+
+    // Stessa conversione del campo, così sopra mille euro il modulo non nasce già modificato.
+    protected override bool Cambiata => Nuova
+        ? !string.IsNullOrWhiteSpace(importoTesto) || categoria != (disponibili.FirstOrDefault() ?? "")
+        : budget is not null && importoTesto != Denaro.TestoDigitabile(budget.Amount);
+
+    // Blazor riusa l'editor: la generazione scarta risposte di un precedente cambio di rotta,
+    // come in RicorrenteEdit.razor. Anche il fallimento della lista in creazione blocca l'editor.
+    protected override async Task OnParametersSetAsync()
+    {
+        var mia = ++generazione;
+        caricato = false;
+        errore = avviso = null;
+        conflitto = budget = null;
+        conflittoDaChiusura = false;
+        sparita = aperturaFallita = false;
+        mioId = null;
+        try
+        {
+            var attivo = await Spazi.AssicuraCaricatoAsync();
+            var utente = await AuthState.GetUserIdAsync();
+            if (mia != generazione) return;
+            if (Guid.TryParse(utente, out var io)) mioId = io;
+            if (Nuova)
+            {
+                if (attivo is null)
+                {
+                    aperturaFallita = true;
+                    errore = "Serve uno spazio attivo per creare un budget.";
+                }
+                else
+                {
+                    var letti = await Repository.ElencaAsync(attivo.Id);
+                    if (mia != generazione) return;
+                    budgetDelloSpazio = letti;
+                    disponibili = CalcoliBudget.CategorieDisponibili(letti);
+                    categoria = disponibili.FirstOrDefault() ?? "";
+                    importoTesto = "";
+                }
+            }
+            else
+            {
+                var letto = await Repository.LeggiAsync(Id!.Value);
+                if (mia != generazione) return;
+                budget = letto;
+                if (budget is null) sparita = true;
+                else
+                {
+                    categoria = budget.Category;
+                    importoTesto = Denaro.TestoDigitabile(budget.Amount);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (mia != generazione) return;
+            aperturaFallita = true;
+            // Il dettaglio tecnico resta in console, come negli altri editor.
+            Console.Error.WriteLine($"[Budget] Apertura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile aprire questo budget: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
+        }
+        caricato = true;
+    }
+
+    private async Task Salva()
+    {
+        conflittoDaChiusura = false;
+        occupato = true; errore = avviso = null; conflitto = null;
+        try
+        {
+            if (!PuoIntervenire || !Valido || !Denaro.Prova(importoTesto, out var importo)) return;
+            if (Nuova)
+            {
+                var attivo = await Spazi.AssicuraCaricatoAsync();
+                if (attivo is null) { errore = "Serve uno spazio attivo per creare un budget."; return; }
+                if (!Guid.TryParse(await AuthState.GetUserIdAsync(), out var autore))
+                { errore = "La sessione non è più valida: esci e rientra."; return; }
+                var inizio = CalcoliBudget.InizioDiUnNuovo(budgetDelloSpazio, categoria, DateTime.Today);
+                await Repository.CreaAsync(attivo.Id, autore, categoria, importo, inizio);
+                // Disarma la guardia e non lascia /new nella cronologia, come RicorrenteEdit.
+                Esci("expenses/budgets", replace: true);
+                return;
+            }
+            await SalvaCon(budget!.Version, importo);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Budget] Salvataggio non riuscito: {ex.Message}");
+            errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
+        }
+        finally { occupato = false; }
+    }
+
+    private async Task SalvaCon(int versione, decimal importo)
+    {
+        var esito = await Repository.SalvaImportoAsync(Id!.Value, versione, importo);
+        switch (esito.Esito)
+        {
+            case EsitoSalvataggio.Salvata:
+                budget = esito.Aggiornata;
+                importoTesto = Denaro.TestoDigitabile(budget!.Amount);
+                avviso = "Salvato.";
+                break;
+            case EsitoSalvataggio.Conflitto:
+                conflitto = esito.Aggiornata;
+                break;
+            case EsitoSalvataggio.Rifiutata:
+                errore = "Non hai più il permesso di modificare questo budget: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                break;
+            case EsitoSalvataggio.Sparita:
+                sparita = true;
+                break;
+        }
+    }
+
+    private void Ricarica()
+    {
+        conflittoDaChiusura = false;
+        if (conflitto is null) return;
+        budget = conflitto;
+        importoTesto = Denaro.TestoDigitabile(budget.Amount);
+        categoria = budget.Category;
+        conflitto = null;
+        avviso = "Caricata la versione più recente.";
+    }
+
+    private async Task Sovrascrivi()
+    {
+        conflittoDaChiusura = false;
+        if (conflitto is null || !PuoIntervenire) return;
+        occupato = true; errore = null;
+        try
+        {
+            if (!Valido || !Denaro.Prova(importoTesto, out var importo))
+            { errore = "Controlla l'importo prima di sovrascrivere."; return; }
+            // La versione è quella del server: un nuovo cambio darà un nuovo conflitto.
+            var versione = conflitto.Version;
+            conflitto = null;
+            await SalvaCon(versione, importo);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Budget] Sovrascrittura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
+        }
+        finally { occupato = false; }
+    }
+
+    private async Task Chiudi()
+    {
+        if (!PuoIntervenire || budget is null || !CalcoliBudget.SiPuoChiudere(budget, DateTime.Today)) return;
+        occupato = true; errore = avviso = null;
+        try
+        {
+            var esito = await Repository.ChiudiAsync(Id!.Value, budget.Version, DateTime.Today);
+            switch (esito.Esito)
+            {
+                case EsitoSalvataggio.Salvata:
+                    // Non si tocca l'importo del modulo: può contenere modifiche non salvate.
+                    budget = esito.Aggiornata;
+                    avviso = "Chiuso: vale fino alla fine di questo mese.";
+                    break;
+                case EsitoSalvataggio.Conflitto:
+                    conflitto = esito.Aggiornata;
+                    conflittoDaChiusura = true;
+                    break;
+                case EsitoSalvataggio.Rifiutata:
+                    errore = "Non hai più il permesso di chiudere questo budget: può essere cambiato qualcosa nello spazio. Ricarica la pagina.";
+                    break;
+                case EsitoSalvataggio.Sparita:
+                    sparita = true;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Budget] Chiusura non riuscita: {ex.Message}");
+            errore = "Non è stato possibile chiudere il budget: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+        }
+        finally { occupato = false; }
+    }
+
+    private async Task Elimina()
+    {
+        if (!PuoIntervenire) return;
+        occupato = true; errore = null;
+        try
+        {
+            if (await Repository.EliminaAsync(Id!.Value)) { Esci("expenses/budgets"); return; }
+            errore = "Non è stato possibile eliminare il budget: può eliminarlo solo chi l'ha creato, o chi possiede lo spazio. Può anche darsi che qualcun altro l'abbia già eliminato: ricarica la pagina per vedere com'è adesso.";
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Budget] Eliminazione non riuscita: {ex.Message}");
+            errore = "Non è stato possibile eliminare il budget: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
+        }
+        finally { occupato = false; }
+    }
+}

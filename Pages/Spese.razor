@@ -5,11 +5,14 @@
 @inject SpaceRepository SpaziRepository
 @inject AuthStateService AuthState
 @inject RecurringExpenseRepository Ricorrenti
+@inject BudgetRepository Budget
+@inject NavigationManager Navigation
 
 <PageTitle>Spese — Eton</PageTitle>
 
 <TestataPagina Titolo="Spese">
     <Aiuto>
+        <p>Sotto il saldo, «Da spendere nei budget» somma quanto resta nei budget del mese; non entra nel saldo.</p>
         <p>Un'entrata — lo stipendio, un rimborso — si segna scegliendo «Entrata». Non entra nel totale delle spese né nelle categorie: conta nelle entrate e nel saldo del mese.</p>
         <p>Il riepilogo conta solo il mese che stai guardando: cambiando mese cambiano il totale e le categorie.</p>
         <p>Ogni spesa resta legata a chi l'ha pagata, e questo non cambia più dopo averla segnata.</p>
@@ -197,6 +200,10 @@ else
                .NET 10: se si rivela sbagliato va corretto qui, non spacciato per funzionante. *@
             <p class="totale-mese dato valore-cambia" @key="riepilogo.Totale">@Denaro.Testo(riepilogo.Totale)&#160;€</p>
             <p class="testo-tenue">Entrate <span class="dato">@CalcoliSpese.ConSegno(riepilogo.Entrate)&#160;€</span> · Saldo <span class="dato">@CalcoliSpese.ConSegno(riepilogo.Saldo)&#160;€</span></p>
+            @if (daSpendere is { } x)
+            {
+                <p class="testo-tenue">Da spendere nei budget <span class="dato">@Denaro.Testo(x)&#160;€</span> · <a href="expenses/budgets">Vedi i budget</a></p>
+            }
             <p class="confronto-mese testo-tenue">@TestoConfronto()</p>
 
             <ul class="barre-categorie">
@@ -315,6 +322,12 @@ else
     private string nuovaCategoria = CategorieSpesa.Elenco[0];
     private string nuovoTipo = TipoMovimento.Spesa;
 
+    // arrivo dal budget: /expenses?categoria=X
+    [SupplyParameterFromQuery(Name = "categoria")] public string? Categoria { get; set; }
+    private string? ultimaCategoria;
+    private bool daBudget;
+    private decimal? daSpendere;
+
     private void ScegliTipo(string tipo)
     {
         nuovoTipo = tipo;
@@ -361,6 +374,19 @@ else
     {
         if (Guid.TryParse(await AuthState.GetUserIdAsync(), out var id)) mioId = id;
         await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        // La pagina si riusa anche passando da /expenses?categoria=X a /expenses: conta il cambio di valore.
+        if (Categoria == ultimaCategoria) return;
+        ultimaCategoria = Categoria;
+        daBudget = CategorieSpesa.Conosciuta(Categoria, TipoMovimento.Spesa);
+        if (!daBudget) return;
+        nuovoTipo = TipoMovimento.Spesa;
+        aRate = false;
+        nuovaCategoria = Categoria!;
+        nuovaData = DateTime.Today;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -429,6 +455,11 @@ else
             {
                 var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value, nuovoTipo);
                 ultimaSpesaCreataId = creata.Id;
+                if (daBudget)
+                {
+                    Navigation.NavigateTo("expenses/budgets");
+                    return;
+                }
             }
 
             // Importo e descrizione si svuotano, data, categoria e tipo restano: chi segna tre spese al
@@ -494,6 +525,7 @@ else
 
     protected override async Task Leggi(Space attivo)
     {
+        daSpendere = null;
         if (attivo.Id != spazioDelPiano) avvisoPiano = null;
         riepilogo = new RiepilogoMese(0, [], 0, null);
         speseDelMese = [];
@@ -525,6 +557,18 @@ else
         {
             SegnalaNonLetti(ex);
             return;
+        }
+
+        // Come i nomi dei paganti: un errore dei budget non nasconde spese già lette.
+        try
+        {
+            var budget = await Budget.ElencaAsync(attivo.Id);
+            var stati = CalcoliBudget.DelMese(budget, riepilogo, anno, mese);
+            daSpendere = stati.Count == 0 ? null : CalcoliBudget.DaSpendere(stati);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Spese] Budget non disponibili: {ex.Message}");
         }
 
         // Letti sempre, non solo negli spazi condivisi: chi ha pagato si nasconde riga per riga in

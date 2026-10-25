@@ -18,7 +18,7 @@
 </nav>
 
 @code {
-    /// <summary>La rotta della pagina corrente: "expenses", "expenses/table" oppure "expenses/recurring".</summary>
+    /// <summary>La rotta della pagina corrente: "expenses", "expenses/table", "expenses/recurring" oppure "expenses/budgets".</summary>
     [Parameter, EditorRequired] public string Attiva { get; set; } = "";
 
     private sealed record Voce(string Etichetta, string Rotta, bool SoloLargo);
@@ -29,5 +29,6 @@
         // La tabella è pensata per uno schermo largo: sotto i 40rem la voce non si mostra; la rotta resta raggiungibile e lì mostra un avviso col link al registro (decisione dell'utente del 7 ottobre 2026).
         new("Tabella", "expenses/table", true),
         new("Ricorrenti", "expenses/recurring", false),
+        new("Budget", "expenses/budgets", false),
     ];
 }
