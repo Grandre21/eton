@@ -68,6 +68,8 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
 
 ## PROSSIMA AZIONE
 
+2026-10-25 utente (chat): «sto spegnendo il pc, le prove le facciamo domani» — sessione del capo finita qui;
+nessuna unità, rete o server acceso. Domani una sessione `coordinatore` nuova riparte da questo paragrafo.
 2026-10-25 utente (chat, popup): «Sì, quando sono al PC (Consigliata)» — la prova parte quando l'utente scrive
 di aver chiuso la finestra nativa bloccata su Chrome e lanciato le due query di pulizia. 04 fusa. Rifare da questa sessione la
 prova nel browser del budget (passi della 02 più i `PASSI PER IL CAPO` della 04) sui dati di produzione, con
