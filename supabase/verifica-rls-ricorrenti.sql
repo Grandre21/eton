@@ -33,6 +33,11 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+\set claims_carla '{"sub":"44444444-4444-4444-4444-444444444444","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1a. Privilegi di UPDATE per colonna su recurring_expenses ==='
 \echo '=== (atteso: t,t,t,t,t,t,t,t,f,f,f,f,f) ==='
@@ -97,7 +102,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Spese ricorrenti condivise') as condiviso \gset
 commit;
 
@@ -108,7 +113,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -118,7 +123,7 @@ select :'entrato' as bruno_entrato_in;
 \echo '=== 4. ALICE crea una regola ricorrente nello spazio condiviso (atteso: 1 riga, version 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.recurring_expenses
     (id, space_id, paid_by, amount, description, category, every_months, day_of_month, starts_on, ends_on, materialized_through)
 values ('55555555-5555-5555-5555-555555555555', :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -130,14 +135,14 @@ commit;
 \echo '=== 5. BRUNO, membro, vede la regola di Alice (atteso: 1 riga); CARLA, estranea, no (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, description from public.recurring_expenses where id = '55555555-5555-5555-5555-555555555555';
 commit;
 
 \echo '--- Carla cerca la regola per id (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"44444444-4444-4444-4444-444444444444","role":"authenticated"}';
+set local request.jwt.claims = :'claims_carla';
 select id, description from public.recurring_expenses where id = '55555555-5555-5555-5555-555555555555';
 commit;
 
@@ -145,7 +150,7 @@ commit;
 \echo '=== 6. ALICE corregge amount e avanza materialized_through a 2026-09 (atteso: 1 riga, version 2) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.recurring_expenses
    set amount = 20.00, materialized_through = '2026-09'
  where id = '55555555-5555-5555-5555-555555555555'
@@ -156,7 +161,7 @@ commit;
 \echo '=== 7. ALICE NON puo scrivere version a mano (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.recurring_expenses set version = 99 where id = '55555555-5555-5555-5555-555555555555';
 rollback;
 
@@ -165,7 +170,7 @@ rollback;
 \echo '=== Alice (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.recurring_expenses set amount = 1.00 where id = '55555555-5555-5555-5555-555555555555' returning id;
 commit;
 
@@ -174,7 +179,7 @@ commit;
 \echo '=== (atteso: ERRORE violates row-level security) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.recurring_expenses
     (id, space_id, paid_by, amount, description, category, every_months, day_of_month, starts_on, ends_on, materialized_through)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111', 5.00, 'Intestata ad Alice', 'Svago', 1, 1, '2026-01-01', null, null);
@@ -185,7 +190,7 @@ rollback;
 \echo '=== (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.recurring_expenses
     (id, space_id, paid_by, amount, description, category, every_months, day_of_month, starts_on, ends_on, materialized_through)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111', 5.00, 'Formato sbagliato', 'Altro', 1, 1, '2026-01-01', null, '2026-9');
@@ -196,7 +201,7 @@ rollback;
 \echo '=== (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.recurring_expenses
     (id, space_id, paid_by, amount, description, category, every_months, day_of_month, starts_on, ends_on, materialized_through)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111', 5.00, 'Data estrema', 'Altro', 1, 1, '9999-12-01', null, null);
@@ -206,7 +211,7 @@ rollback;
 \echo '=== 11. ALICE materializza la spesa di settembre dalla regola (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values ('66666666-6666-6666-6666-666666666666', :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -220,7 +225,7 @@ commit;
 \echo '=== (atteso: 0 righe, nessun errore) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values ('77777777-7777-7777-7777-777777777777', :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -235,7 +240,7 @@ commit;
 \echo '=== (atteso: ERRORE duplicate key, vincolo expenses_recurring_period_uq) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values ('77777777-7777-7777-7777-777777777777', :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -248,7 +253,7 @@ rollback;
 \echo '=== (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -260,7 +265,7 @@ rollback;
 \echo '=== 15. recurring_id senza recurring_period (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -273,7 +278,7 @@ rollback;
 \echo '=== (atteso: ERRORE violates row-level security) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.expenses
     (id, space_id, paid_by, amount, description, category, spent_on, recurring_id, recurring_period)
 values (gen_random_uuid(), :'condiviso', '22222222-2222-2222-2222-222222222222',
@@ -285,7 +290,7 @@ rollback;
 \echo '=== 17. ALICE NON riscrive recurring_id con un update (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set recurring_id = null where id = '66666666-6666-6666-6666-666666666666';
 rollback;
 
@@ -302,7 +307,7 @@ select recurring_id, recurring_period from public.expenses where id = '66666666-
 \echo '=== (atteso: ERRORE foreign key, 23503) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.recurring_expenses where id = '55555555-5555-5555-5555-555555555555';
 rollback;
 
@@ -311,7 +316,7 @@ rollback;
 \echo '=== (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.recurring_expenses
     (id, space_id, paid_by, amount, description, category, every_months, day_of_month, starts_on, ends_on, materialized_through)
 values (gen_random_uuid(), :'condiviso', '11111111-1111-1111-1111-111111111111',
@@ -328,7 +333,7 @@ select count(*) as spese_nel_condiviso_prima from public.expenses where space_id
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.spaces where id = :'condiviso';
 commit;
 

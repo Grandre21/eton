@@ -239,7 +239,7 @@ public static class TabellaSpese
             .ToList();
     }
 
-    private static string Normalizza(string testo) => SchemaCampi.RiduciAccenti(testo.Trim()).ToUpperInvariant();
+    private static string Normalizza(string testo) => SchemaCampi.ChiaveConfronto(testo.Trim());
 
     /// <summary>Solo una riga registrata, e solo se <see cref="Permessi.PuoIntervenire"/> lo consente:
     /// la regola sta in <c>Permessi</c> e non si riscrive.</summary>

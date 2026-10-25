@@ -28,6 +28,11 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+\set claims_carla '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1. Impianto: Alice e Bruno in uno spazio condiviso, con una collezione normale e una ==='
 \echo '=== cieca, un elemento in ciascuna. Carla esiste solo nel proprio spazio personale, e non ==='
@@ -39,7 +44,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Vaping al buio') as condiviso \gset
 commit;
 
@@ -47,7 +52,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -56,7 +61,7 @@ select :'entrato' as bruno_entrato_in;
 \echo '--- (scaffold) Alice crea la collezione normale, dichiarando blind false in creazione (atteso: 1 riga, blind f) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, blind)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Liquidi', false)
 returning id, name, blind;
@@ -67,7 +72,7 @@ select id as collezione_normale from public.collections where name = 'Liquidi' \
 \echo '--- (scaffold) Alice crea la collezione cieca, gia blind in creazione (atteso: 1 riga, blind t) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name, blind)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Segreti', true)
 returning id, name, blind;
@@ -80,19 +85,19 @@ select id as collezione_cieca from public.collections where name = 'Segreti' \gs
 \echo '--- come lo hanno trovato -- cieco -- per le sezioni successive (atteso: 1 riga blind f, poi 1 riga blind t) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set blind = false where id = :'collezione_cieca' returning id, blind;
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.collections set blind = true where id = :'collezione_cieca' returning id, blind;
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione_normale', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Mela Rossa')
 returning id, name;
@@ -102,7 +107,7 @@ select id as elemento_normale from public.collection_items where name = 'Mela Ro
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione_cieca', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Mela Nera')
 returning id, name;
@@ -116,7 +121,7 @@ select id as elemento_cieco from public.collection_items where name = 'Mela Nera
 \echo '--- (scaffold) Alice vota l elemento normale (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating, comment)
 values (:'elemento_normale', :'condiviso', '11111111-1111-1111-1111-111111111111', 8, 'Ottimo')
 returning id, rating;
@@ -127,7 +132,7 @@ select id as recensione_alice_normale from public.reviews where item_id = :'elem
 \echo '--- Bruno, che non ha votato, legge comunque la recensione di Alice (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, rating, comment from public.reviews where item_id = :'elemento_normale';
 commit;
 
@@ -137,7 +142,7 @@ commit;
 \echo '--- (scaffold) Alice vota l elemento cieco (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating, comment)
 values (:'elemento_cieco', :'condiviso', '11111111-1111-1111-1111-111111111111', 9, 'Top segreto')
 returning id, rating;
@@ -148,7 +153,7 @@ select id as recensione_alice_cieca from public.reviews where item_id = :'elemen
 \echo '--- Bruno cerca la recensione di Alice, riga intera (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, rating, comment from public.reviews where item_id = :'elemento_cieco';
 commit;
 
@@ -157,7 +162,7 @@ commit;
 \echo '--- prima di aver votato.                                                                ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select rating, comment from public.reviews where item_id = :'elemento_cieco';
 commit;
 
@@ -166,7 +171,7 @@ commit;
 \echo '=== riga): Alice rilegge la propria recensione sull elemento cieco.                      ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select id, rating, comment from public.reviews where id = :'recensione_alice_cieca';
 commit;
 
@@ -175,7 +180,7 @@ commit;
 \echo '=== vedere (atteso: elemento_cieco con voters = 1, chiamata fatta da Bruno stesso).      ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select * from public.review_counts(:'condiviso') order by item_id;
 commit;
 
@@ -184,7 +189,7 @@ commit;
 \echo '=== righe: la propria e quella di Alice, entrambe con rating e comment visibili).         ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.reviews (item_id, space_id, user_id, rating, comment)
 values (:'elemento_cieco', :'condiviso', '22222222-2222-2222-2222-222222222222', 7, 'Anche a me piace')
 returning id, rating;
@@ -194,7 +199,7 @@ select id as recensione_bruno_cieca from public.reviews where item_id = :'elemen
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, rating, comment from public.reviews where item_id = :'elemento_cieco' order by created_at;
 commit;
 
@@ -203,7 +208,7 @@ commit;
 \echo '=== ma non dello spazio condiviso (atteso: 0 righe).                                      ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}';
+set local request.jwt.claims = :'claims_carla';
 select * from public.review_counts(:'condiviso');
 commit;
 
@@ -227,7 +232,7 @@ select has_column_privilege('authenticated','public.collections','blind','UPDATE
 \echo '--- accendere blind sulla collezione di Alice (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.collections set blind = true where id = :'collezione_normale' returning id, blind;
 commit;
 

@@ -24,6 +24,10 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1a. Privilegi di UPDATE per colonna su expenses (atteso: t,t,t,t,f,f,f,f,f) ==='
 \echo '=== paid_by e space_id contano quanto version: se fossero scrivibili, una spesa si    ==='
@@ -70,7 +74,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Spese condivise') as condiviso \gset
 commit;
 
@@ -81,7 +85,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -91,7 +95,7 @@ select :'entrato' as bruno_entrato_in;
 \echo '=== 4. ALICE registra una spesa nello spazio condiviso (atteso: 1 riga, version 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 42.50, 'Spesa di Alice', 'Casa')
 returning id, version, amount;
@@ -104,7 +108,7 @@ select id as spesa_alice from public.expenses where description = 'Spesa di Alic
 \echo '=== anche se authenticated NON ha il privilegio di colonna su version (atteso: 1 riga, version 2) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set amount = 45.00 where id = :'spesa_alice'
 returning id, version, amount;
 commit;
@@ -113,7 +117,7 @@ commit;
 \echo '=== 6. Concorrenza ottimistica: UPDATE con la versione VECCHIA non tocca nulla (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set amount = 50.00 where id = :'spesa_alice' and version = 1
 returning id, version;
 commit;
@@ -121,7 +125,7 @@ commit;
 \echo '--- ...e con la versione GIUSTA invece passa (atteso: 1 riga, version 3) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set amount = 50.00 where id = :'spesa_alice' and version = 2
 returning id, version;
 commit;
@@ -130,7 +134,7 @@ commit;
 \echo '=== 7. Alice NON puo scrivere version a mano (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set version = 99 where id = :'spesa_alice';
 rollback;
 
@@ -138,7 +142,7 @@ rollback;
 \echo '=== 8. Alice NON puo intestare la spesa a un altro cambiando paid_by (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set paid_by = '22222222-2222-2222-2222-222222222222' where id = :'spesa_alice';
 rollback;
 
@@ -148,7 +152,7 @@ rollback;
 \echo '=== cambia CHI PUO LEGGERLA, quindi sarebbe una fuga di dati e non un dispetto.           ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses
    set space_id = (select id from public.spaces
                     where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal)
@@ -159,7 +163,7 @@ rollback;
 \echo '=== 10. BRUNO registra una PROPRIA spesa nello stesso spazio (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 values (:'condiviso', '22222222-2222-2222-2222-222222222222', 10.00, 'Spesa di Bruno', 'Trasporti')
 returning id, version, amount;
@@ -172,7 +176,7 @@ select id as spesa_bruno from public.expenses where description = 'Spesa di Brun
 \echo '=== (atteso: ERRORE violates row-level security) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 5.00, 'Intestata ad Alice', 'Svago');
 rollback;
@@ -181,7 +185,7 @@ rollback;
 \echo '=== 12. BRUNO, membro ma NON proprietario, NON modifica la spesa di ALICE (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.expenses set amount = 1.00 where id = :'spesa_alice' returning id;
 commit;
 
@@ -189,7 +193,7 @@ commit;
 \echo '=== 13. ALICE, proprietaria dello spazio, PUO modificare la spesa di BRUNO (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.expenses set amount = 12.00 where id = :'spesa_bruno' returning id, amount;
 commit;
 
@@ -197,7 +201,7 @@ commit;
 \echo '=== 14. Una spesa nello spazio PERSONALE di Alice: Bruno non la vede, nemmeno conoscendo il suo id ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 select id, '11111111-1111-1111-1111-111111111111', 8.00, 'Spesa personale di Alice', 'Salute'
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal
@@ -209,7 +213,7 @@ select id as spesa_segreta from public.expenses where description = 'Spesa perso
 \echo '--- Bruno cerca la spesa segreta per id (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, description from public.expenses where id = :'spesa_segreta';
 commit;
 
@@ -217,7 +221,7 @@ commit;
 \echo '=== 15. amount <= 0 viene rifiutato (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 0, 'Importo nullo', 'Altro');
 rollback;
@@ -226,7 +230,7 @@ rollback;
 \echo '=== 16. Una description di soli spazi viene rifiutata (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (space_id, paid_by, amount, description, category)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 3.00, '   ', 'Altro');
 rollback;
@@ -235,7 +239,7 @@ rollback;
 \echo '=== 17. Inserimento con id scelto dal client funziona (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (id, space_id, paid_by, amount, description, category)
 values ('33333333-3333-3333-3333-333333333333', :'condiviso', '11111111-1111-1111-1111-111111111111', 7.00, 'Ritentativo innocuo', 'Ristoranti')
 returning id;
@@ -248,7 +252,7 @@ commit;
 \echo '=== che va e viene: lo stesso uuid, rimandato due volte, produce una riga sola.        ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.expenses (id, space_id, paid_by, amount, description, category)
 values ('33333333-3333-3333-3333-333333333333', :'condiviso', '11111111-1111-1111-1111-111111111111', 7.00, 'Ritentativo innocuo', 'Ristoranti');
 rollback;
@@ -259,7 +263,7 @@ select count(*) as spese_nel_condiviso_prima from public.expenses where space_id
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.spaces where id = :'condiviso';
 commit;
 

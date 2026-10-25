@@ -19,6 +19,10 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1. Impianto: Alice e Bruno in uno spazio condiviso, con una collezione e un elemento ==='
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
@@ -27,7 +31,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Vaping') as condiviso \gset
 commit;
 
@@ -36,7 +40,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -44,7 +48,7 @@ select :'entrato' as bruno_entrato_in;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Liquidi')
 returning id, name;
@@ -54,7 +58,7 @@ select id as collezione from public.collections where name = 'Liquidi' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Mela Rossa')
 returning id, name;
@@ -66,7 +70,7 @@ select id as elemento from public.collection_items where name = 'Mela Rossa' \gs
 \echo '=== 2. Alice vota il proprio elemento (atteso: 1 riga, version 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating, comment)
 values (:'elemento', :'condiviso', '11111111-1111-1111-1111-111111111111', 8.5, 'Buono')
 returning id, version, rating;
@@ -78,7 +82,7 @@ select id as recensione_alice from public.reviews where user_id = '11111111-1111
 \echo '=== 3. Alice non puo votare due volte lo stesso elemento (atteso: ERRORE violates unique constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento', :'condiviso', '11111111-1111-1111-1111-111111111111', 5);
 rollback;
@@ -87,7 +91,7 @@ rollback;
 \echo '=== 4. Alice non puo firmare una recensione come Bruno (atteso: ERRORE violates row-level security) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento', :'condiviso', '22222222-2222-2222-2222-222222222222', 3);
 rollback;
@@ -96,7 +100,7 @@ rollback;
 \echo '=== 5. Bruno, membro dello spazio, legge la recensione di Alice (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, rating, comment from public.reviews where id = :'recensione_alice';
 commit;
 
@@ -104,7 +108,7 @@ commit;
 \echo '=== 6. Bruno NON modifica la recensione di Alice (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.reviews set rating = 1 where id = :'recensione_alice' returning id;
 commit;
 
@@ -112,7 +116,7 @@ commit;
 \echo '=== 7. Bruno NON cancella la recensione di Alice (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 delete from public.reviews where id = :'recensione_alice' returning id;
 commit;
 
@@ -125,7 +129,7 @@ commit;
 \echo '--- (scaffold) Bruno recensisce lo stesso elemento (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.reviews (item_id, space_id, user_id, rating, comment)
 values (:'elemento', :'condiviso', '22222222-2222-2222-2222-222222222222', 6, 'Nella media')
 returning id, rating;
@@ -136,14 +140,14 @@ select id as recensione_bruno from public.reviews where user_id = '22222222-2222
 \echo '--- Alice non la modifica (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set rating = 1 where id = :'recensione_bruno' returning id;
 commit;
 
 \echo '--- ne la cancella (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.reviews where id = :'recensione_bruno' returning id;
 commit;
 
@@ -151,7 +155,7 @@ commit;
 \echo '=== 9. Alice NON puo scrivere version a mano (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set version = 99 where id = :'recensione_alice';
 rollback;
 
@@ -159,7 +163,7 @@ rollback;
 \echo '=== 10. Una recensione non si sposta su un altro elemento (atteso: ERRORE permission denied) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set item_id = gen_random_uuid() where id = :'recensione_alice';
 rollback;
 
@@ -170,7 +174,7 @@ rollback;
 \echo '=== a fermarlo e SOLO il vincolo: la prova che questa garanzia regge da sola.           ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 
 -- Alice toglie prima la propria recensione su questo elemento, dentro la stessa transazione.
 -- Senza, il test misurerebbe il vincolo sbagliato: Alice ha gia recensito :'elemento' nella
@@ -191,7 +195,7 @@ rollback;
 \echo '--- rating = 0, lo zero non e un voto (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento', :'condiviso', '11111111-1111-1111-1111-111111111111', 0);
 rollback;
@@ -199,7 +203,7 @@ rollback;
 \echo '--- rating = 10.5, sopra il massimo (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento', :'condiviso', '11111111-1111-1111-1111-111111111111', 10.5);
 rollback;
@@ -207,7 +211,7 @@ rollback;
 \echo '--- rating = -1, negativo (atteso: ERRORE) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento', :'condiviso', '11111111-1111-1111-1111-111111111111', -1);
 rollback;
@@ -218,7 +222,7 @@ rollback;
 \echo '--- (scaffold) un secondo elemento, per non scontrarsi col vincolo unique (item_id, user_id) gia usato da Alice ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Mela Verde')
 returning id, name;
@@ -229,7 +233,7 @@ select id as elemento_due from public.collection_items where name = 'Mela Verde'
 \echo '--- rating e comment entrambi vuoti (atteso: ERRORE violates check constraint reviews_non_vuota) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id)
 values (:'elemento_due', :'condiviso', '11111111-1111-1111-1111-111111111111');
 rollback;
@@ -237,7 +241,7 @@ rollback;
 \echo '--- comment di soli spazi, senza voto (atteso: ERRORE violates check constraint reviews_non_vuota) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, comment)
 values (:'elemento_due', :'condiviso', '11111111-1111-1111-1111-111111111111', '   ');
 rollback;
@@ -248,7 +252,7 @@ rollback;
 \echo '--- di essere respinta (atteso: ERRORE violates check constraint reviews_non_vuota) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, comment)
 values (:'elemento_due', :'condiviso', '11111111-1111-1111-1111-111111111111', E'\t');
 rollback;
@@ -256,7 +260,7 @@ rollback;
 \echo '--- solo commento, senza voto (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, comment)
 values (:'elemento_due', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Solo un commento')
 returning id, rating, comment;
@@ -265,7 +269,7 @@ commit;
 \echo '--- solo voto, senza commento (atteso: 1 riga) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento_due', :'condiviso', '22222222-2222-2222-2222-222222222222', 9)
 returning id, rating, comment;
@@ -276,13 +280,13 @@ commit;
 \echo '--- (scaffold) Alice crea uno spazio privato, con una collezione, un elemento e un voto ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Privatissimo') as segreto \gset
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collections (space_id, owner_id, name)
 values (:'segreto', '11111111-1111-1111-1111-111111111111', 'Segreta')
 returning id, name;
@@ -292,7 +296,7 @@ select id as collezione_segreta from public.collections where name = 'Segreta' \
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione_segreta', :'segreto', '11111111-1111-1111-1111-111111111111', 'Segreto')
 returning id, name;
@@ -302,7 +306,7 @@ select id as elemento_segreto from public.collection_items where name = 'Segreto
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento_segreto', :'segreto', '11111111-1111-1111-1111-111111111111', 10)
 returning id, rating;
@@ -311,7 +315,7 @@ commit;
 \echo '--- Bruno cerca le recensioni dello spazio segreto (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, rating from public.reviews where space_id = :'segreto';
 commit;
 
@@ -320,7 +324,7 @@ commit;
 \echo '--- (scaffold) un elemento nuovo con una sola recensione, nello spazio condiviso ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.collection_items (collection_id, space_id, added_by, name)
 values (:'collezione', :'condiviso', '11111111-1111-1111-1111-111111111111', 'Effimero')
 returning id, name;
@@ -330,7 +334,7 @@ select id as elemento_effimero from public.collection_items where name = 'Effime
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.reviews (item_id, space_id, user_id, rating)
 values (:'elemento_effimero', :'condiviso', '11111111-1111-1111-1111-111111111111', 5)
 returning id, rating;
@@ -340,7 +344,7 @@ select count(*) as recensioni_prima from public.reviews where item_id = :'elemen
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.collection_items where id = :'elemento_effimero';
 commit;
 
@@ -357,7 +361,7 @@ select count(*) as recensioni_nel_segreto_prima from public.reviews where space_
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.spaces where id = :'segreto';
 commit;
 
@@ -403,7 +407,7 @@ select has_table_privilege('anon','public.reviews','SELECT') as sel,
 \echo '=== authenticated a cui fosse tolta ogni scrittura li passerebbe comunque tutti quanti.   ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set rating = 9, comment = 'Rivisto' where id = :'recensione_alice'
 returning id, version, rating, comment;
 commit;
@@ -412,7 +416,7 @@ commit;
 \echo '=== 21. Concorrenza ottimistica: UPDATE con la versione VECCHIA non tocca nulla (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set rating = 1 where id = :'recensione_alice' and version = 1
 returning id, version;
 commit;
@@ -420,7 +424,7 @@ commit;
 \echo '--- ...e con la versione GIUSTA invece passa (atteso: 1 riga, version 3) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.reviews set rating = 7 where id = :'recensione_alice' and version = 2
 returning id, version;
 commit;

@@ -342,8 +342,15 @@ public class ExpenseRepository
     // vuoto produce zero blocchi e quindi zero richieste: niente `in.()` vuoto, che filtrerebbe male.
     private const int IdPerRichiesta = 100;
 
+    // Helper perché questa è la regola che i test provano senza database.
+    internal static IReadOnlyList<string> TipiAmmessi(string categoria) =>
+        new[] { TipoMovimento.Spesa, TipoMovimento.Entrata }
+            .Where(tipo => CategorieSpesa.Conosciuta(categoria, tipo)).ToList();
+
     /// <summary>
     /// Cambia la categoria a più spese con un UPDATE per blocco di <see cref="IdPerRichiesta"/> id.
+    /// Il filtro su kind impedisce di dare una categoria di spesa a un'entrata o il contrario
+    /// (spec 2.4 §5.1): quelle righe tornano fra le rifiutate.
     /// Non è atomica nemmeno fra i blocchi: se una richiesta fallisce a metà l'eccezione risale e i
     /// blocchi già passati restano applicati (accettato: senza blocchi una selezione grande non
     /// funzionerebbe affatto; l'eccezione la gestisce la pagina). Vince l'ultima scrittura, senza
@@ -354,15 +361,22 @@ public class ExpenseRepository
     /// </summary>
     public async Task<EsitoMassa> CambiaCategoriaAsync(IReadOnlyCollection<Guid> ids, string categoria)
     {
+        var valore = categoria.Trim();
+        var tipi = TipiAmmessi(valore);
         var richieste = ids.ToHashSet();
         var client = await _supabase.GetClientAsync();
 
         var toccate = new HashSet<Guid>();
-        foreach (var blocco in richieste.Chunk(IdPerRichiesta))
+        // Categoria che nessun tipo ammette: nessun UPDATE (un `kind=in.()` vuoto filtrerebbe male), e la
+        // rilettura sotto smista tutta la selezione fra rifiutate e sparite.
+        IReadOnlyCollection<Guid> daAggiornare = tipi.Count > 0 ? richieste : [];
+        var kindAmmessi = tipi.Cast<object>().ToList();
+        foreach (var blocco in daAggiornare.Chunk(IdPerRichiesta))
         {
             var risposta = await client.From<Expense>()
                 .Filter("id", Constants.Operator.In, blocco.Cast<object>().ToList())
-                .Set(e => e.Category, categoria.Trim())
+                .Filter("kind", Constants.Operator.In, kindAmmessi)
+                .Set(e => e.Category, valore)
                 .Update();
             toccate.UnionWith(risposta.Models.Select(e => e.Id));
         }

@@ -183,6 +183,9 @@ public static class SchemaCampi
         return new string(risultato);
     }
 
+    // La chiave con cui ordinamenti e ricerca confrontano i testi, sempre con StringComparer.Ordinal/StringComparison.Ordinal.
+    internal static string ChiaveConfronto(string testo) => RiduciAccenti(testo).ToUpperInvariant();
+
     private static string Collassa(string testo)
     {
         var risultato = new StringBuilder(testo.Length);

@@ -133,4 +133,14 @@ public class ExpenseRepositoryTests
         Assert.Equal(spese, risultato);
         Assert.Equal((0, ExpenseRepository.RighePerBlocco - 1), Assert.Single(chiamate));
     }
+
+    [Fact]
+    public void TipiAmmessi_rispetta_la_categoria_e_il_confronto_esatto()
+    {
+        Assert.Equal([TipoMovimento.Spesa], ExpenseRepository.TipiAmmessi("Casa"));
+        Assert.Equal([TipoMovimento.Entrata], ExpenseRepository.TipiAmmessi("Stipendio"));
+        Assert.Equal([TipoMovimento.Spesa, TipoMovimento.Entrata], ExpenseRepository.TipiAmmessi("Altro"));
+        Assert.Empty(ExpenseRepository.TipiAmmessi("Inventata"));
+        Assert.Empty(ExpenseRepository.TipiAmmessi("casa"));
+    }
 }

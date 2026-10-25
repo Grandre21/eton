@@ -30,8 +30,8 @@ public static class CalcoliGriglia
         return tipo switch
         {
             TipoColonna.Testo or TipoColonna.Selezione => StringComparer.Ordinal.Compare(
-                SchemaCampi.RiduciAccenti(a.ToString()!).ToUpperInvariant(),
-                SchemaCampi.RiduciAccenti(b.ToString()!).ToUpperInvariant()),
+                SchemaCampi.ChiaveConfronto(a.ToString()!),
+                SchemaCampi.ChiaveConfronto(b.ToString()!)),
             TipoColonna.Numero or TipoColonna.Denaro => Convert.ToDecimal(a, CultureInfo.InvariantCulture)
                 .CompareTo(Convert.ToDecimal(b, CultureInfo.InvariantCulture)),
             _ => ((DateTime)a).CompareTo((DateTime)b)

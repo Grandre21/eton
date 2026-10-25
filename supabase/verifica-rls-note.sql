@@ -18,6 +18,10 @@
 \set ON_ERROR_STOP off
 \pset pager off
 
+-- I claims restano qui per riusare le identita anche eseguendo lo script da standard input.
+\set claims_alice '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}'
+\set claims_bruno '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}'
+
 \echo ''
 \echo '=== 1a. Privilegi di UPDATE per colonna su notes (atteso: t, t, f, f, f, f) ==='
 \echo '=== space_id conta quanto gli altri: se fosse scrivibile, una nota si potrebbe    ==='
@@ -54,7 +58,7 @@ values ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-00000000
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Liquidi') as condiviso \gset
 commit;
 
@@ -65,7 +69,7 @@ select invite_code as codice from public.spaces where id = :'condiviso' \gset
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select public.join_space(:'codice') as entrato \gset
 commit;
 
@@ -75,7 +79,7 @@ select :'entrato' as bruno_entrato_in;
 \echo '=== 4. ALICE scrive una nota nello spazio condiviso (atteso: 1 riga, version 1) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Prova', 'Testo **iniziale**')
 returning id, version, title;
@@ -88,7 +92,7 @@ select id as nota from public.notes where title = 'Prova' \gset
 \echo '=== anche se authenticated NON ha il privilegio di colonna su version (atteso: 1 riga, version 2) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set body = 'Testo riveduto' where id = :'nota'
 returning id, version, body;
 commit;
@@ -97,7 +101,7 @@ commit;
 \echo '=== 6. Concorrenza ottimistica: UPDATE con la versione VECCHIA non tocca nulla (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set body = 'Sovrascrittura cieca' where id = :'nota' and version = 1
 returning id, version;
 commit;
@@ -106,7 +110,7 @@ commit;
 \echo '=== 7. ...e con la versione GIUSTA invece passa (atteso: 1 riga, version 3) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set body = 'Terza stesura' where id = :'nota' and version = 2
 returning id, version;
 commit;
@@ -115,7 +119,7 @@ commit;
 \echo '=== 8. Alice NON puo scrivere version a mano (atteso: ERRORE permission denied for column) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set version = 99 where id = :'nota';
 rollback;
 
@@ -123,7 +127,7 @@ rollback;
 \echo '=== 9. Alice NON puo regalare la nota a Bruno cambiando owner_id (atteso: ERRORE permission denied) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set owner_id = '22222222-2222-2222-2222-222222222222' where id = :'nota';
 rollback;
 
@@ -131,7 +135,7 @@ rollback;
 \echo '=== 10. BRUNO, membro dello spazio, LEGGE la nota di Alice (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, title, version from public.notes where space_id = :'condiviso';
 commit;
 
@@ -139,7 +143,7 @@ commit;
 \echo '=== 11. BRUNO, membro ma NON proprietario dello spazio, NON modifica la nota di Alice (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 update public.notes set body = 'Manomessa da Bruno' where id = :'nota' returning id;
 commit;
 
@@ -147,7 +151,7 @@ commit;
 \echo '=== 12. ...ne la cancella (atteso: 0 righe) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 delete from public.notes where id = :'nota' returning id;
 commit;
 
@@ -159,7 +163,7 @@ select title, body, version from public.notes where id = :'nota';
 \echo '=== 14. BRUNO scrive una PROPRIA nota nello spazio condiviso (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.notes (space_id, owner_id, title, body)
 values (:'condiviso', '22222222-2222-2222-2222-222222222222', 'Nota di Bruno', 'Mia')
 returning id, title;
@@ -171,7 +175,7 @@ select id as nota_bruno from public.notes where title = 'Nota di Bruno' \gset
 \echo '=== 15. ...ma NON puo firmarla come Alice (atteso: ERRORE violates row-level security) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.notes (space_id, owner_id, title, body)
 values (:'condiviso', '11111111-1111-1111-1111-111111111111', 'Falsa', 'Firmata Alice');
 rollback;
@@ -180,7 +184,7 @@ rollback;
 \echo '=== 16. ALICE, proprietaria dello spazio, PUO cancellare la nota di Bruno (atteso: 1 riga) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.notes where id = :'nota_bruno' returning id, title;
 commit;
 
@@ -188,13 +192,13 @@ commit;
 \echo '=== 17. Uno spazio a cui Bruno NON appartiene: la nota di Alice li dentro e invisibile ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 select public.create_space('Privatissimo') as segreto \gset
 commit;
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 values (:'segreto', '11111111-1111-1111-1111-111111111111', 'Segreta', 'Non per Bruno');
 commit;
@@ -202,14 +206,14 @@ commit;
 \echo '--- Bruno cerca la nota segreta (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, title from public.notes where space_id = :'segreto';
 commit;
 
 \echo '--- Bruno conta TUTTE le note che riesce a vedere (atteso: 1, solo quella di Alice nel condiviso) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select count(*) as note_visibili_a_bruno from public.notes;
 commit;
 
@@ -217,7 +221,7 @@ commit;
 \echo '=== 18. Bruno NON puo scrivere note in uno spazio di cui non e membro (atteso: ERRORE violates RLS) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 insert into public.notes (space_id, owner_id, title, body)
 values (:'segreto', '22222222-2222-2222-2222-222222222222', 'Intrusione', 'Ciao');
 rollback;
@@ -226,7 +230,7 @@ rollback;
 \echo '=== 19. Nota nello spazio PERSONALE: la vede solo il suo proprietario ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 select id, '11111111-1111-1111-1111-111111111111', 'Personale di Alice', 'Solo mia'
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -235,7 +239,7 @@ commit;
 \echo '--- Bruno la cerca (atteso: 0 righe) ---'
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+set local request.jwt.claims = :'claims_bruno';
 select id, title from public.notes where title = 'Personale di Alice';
 commit;
 
@@ -245,7 +249,7 @@ select count(*) as note_nel_condiviso_prima from public.notes where space_id = :
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 delete from public.spaces where id = :'condiviso';
 commit;
 
@@ -255,7 +259,7 @@ select count(*) as note_nel_condiviso_dopo from public.notes where space_id = :'
 \echo '=== 21. Vincoli di lunghezza (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 select id, '11111111-1111-1111-1111-111111111111', repeat('x', 201), ''
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -267,7 +271,7 @@ rollback;
 \echo '=== cambia CHI PUO LEGGERLA, quindi sarebbe una fuga di dati e non un dispetto.           ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 update public.notes set space_id = (select id from public.spaces
                                      where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal)
  where title = 'Segreta';
@@ -277,7 +281,7 @@ rollback;
 \echo '=== 23. Alice NON puo falsificare version gia alla creazione (atteso: ERRORE permission denied) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body, version)
 select id, '11111111-1111-1111-1111-111111111111', 'Falsificata', '', 999
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -287,7 +291,7 @@ rollback;
 \echo '=== 24. Il limite di lunghezza del corpo (atteso: ERRORE violates check constraint) ==='
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 select id, '11111111-1111-1111-1111-111111111111', 'Troppo lunga', repeat('x', 100001)
 from public.spaces where owner_id = '11111111-1111-1111-1111-111111111111' and is_personal;
@@ -304,7 +308,7 @@ select length(repeat(chr(128512), 200))       as caratteri_attesi_200,
 
 begin;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local request.jwt.claims = :'claims_alice';
 insert into public.notes (space_id, owner_id, title, body)
 select id, '11111111-1111-1111-1111-111111111111', repeat(chr(128512), 200), ''
 from public.spaces
