@@ -33,6 +33,12 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
   chiedeva un sì nuovo per i dati di produzione): «Sì, partiamo» — seconda prova nel browser sui dati di
   produzione, da questa sessione interattiva. Esito della pulizia SQL del 25 ott non ricevuto: la prova verifica
   i resti della prima e li elimina dall'interfaccia se ci sono.
+- 2026-11-12 utente (chat, popup delle ratifiche di fine goal, con la posizione di tech-advisor dentro ogni
+  domanda): «Confermo tutte (Consigliata)» al database (01 ×3 e autore `created_by`), «Confermo tutte
+  (Consigliata)» alle pagine (02 ×5, riga solo sotto il Registro, categoria nell'indirizzo), «Confermo tutte
+  (Consigliata)» al codice interno e alle scelte del 12 nov (03 ×3, 04 ×1, capo ×2, regola dei 16 px, salto
+  di «Salva») — tutte le DA RATIFICARE della 2.4 sono **ratificate 2026-11-12**. «Correggi ora
+  (Consigliata)» a `aria-pressed`: unità piccola prima della chiusura del goal.
 
 ## PARTIZIONE
 
@@ -54,28 +60,28 @@ lo legge e chiama `CreaAsync`, la 03 cambia `CambiaCategoriaAsync`) e `Services/
 ne legge le occorrenze del mese, la 03 vi sposta la chiave d'ordinamento): contesa di file, non di firma, quindi
 02 e 03 in sequenza e la 03 da `main` dopo la 02. Nessuna interfaccia nuova fra le due.
 
-Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratificare** a fine goal):
+Scelte del capo per il mandato della 02 (annullabili con un revert, **ratificata 2026-11-12** a fine goal):
 - 2026-10-24 la riga «Da spendere nei budget» va solo sotto il riepilogo del mese del Registro, non nel bilancio
-  della tabella, che vale per un periodo filtrato e non per un mese — **da ratificare**. Raccomandazione:
+  della tabella, che vale per un periodo filtrato e non per un mese — **ratificata 2026-11-12**. Raccomandazione:
   confermare.
 - 2026-10-24 «Registra una spesa» apre il Registro con la categoria passata nell'indirizzo (oggi il modulo non
-  riceve parametri) — **da ratificare**. Raccomandazione: confermare, è il modo già usato dalla tabella.
+  riceve parametri) — **ratificata 2026-11-12**. Raccomandazione: confermare, è il modo già usato dalla tabella.
 - 2026-10-24 risposta alla domanda della 01: autore del budget `created_by` (non `paid_by`); modifica ed
-  eliminazione all'autore o al proprietario dello spazio, come le ricorrenti — **da ratificare**.
+  eliminazione all'autore o al proprietario dello spazio, come le ricorrenti — **ratificata 2026-11-12**.
   Raccomandazione: confermare, è la copia delle regole già in produzione.
 - 2026-10-25 risposta alla domanda della 03: il perimetro si allarga a `Services/RecurringExpenseRepository.cs`,
   solo per estrarre due punti statici `internal` (costruzione della regola nuova, decisione dell'esito con la
   rilettura come delegate) che rendono testabili senza database scritture e concorrenza; nessuna firma pubblica
-  cambia — **da ratificare**. Raccomandazione: confermare, senza non si prova la concorrenza.
+  cambia — **ratificata 2026-11-12**. Raccomandazione: confermare, senza non si prova la concorrenza.
 - 2026-10-24 la 03 porta in un posto solo anche la copia di ricerca della chiave (in `TabellaSpese`), se la sua
-  semantica è identica — **da ratificare**. Raccomandazione: confermare.
+  semantica è identica — **ratificata 2026-11-12**. Raccomandazione: confermare.
 - 2026-11-12 la regola `label.campo + .azioni, label.campo + .testo-tenue` (16 px fra un campo e le azioni o
   l'avviso) vale per ogni editor in flusso normale, non solo per il budget: cambia di 16 px anche la scheda
   delle recensioni (`Shared/RecensioniElemento.razor`) e i campi di un elemento (`Pages/ItemEdit.razor`, da 12
-  a 16) — **da ratificare**. Raccomandazione: confermare, un campo attaccato al suo pulsante è lo stesso
+  a 16) — **ratificata 2026-11-12**. Raccomandazione: confermare, un campo attaccato al suo pulsante è lo stesso
   difetto ovunque.
 - 2026-11-12 il salto di «Salva» quando compare l'avviso in «Nuovo budget» resta (ui-critic chiedeva la y
-  fissa): è il comportamento degli altri editor — **da ratificare**. Raccomandazione: confermare.
+  fissa): è il comportamento degli altri editor — **ratificata 2026-11-12**. Raccomandazione: confermare.
 
 ## PROSSIMA AZIONE
 
@@ -87,7 +93,10 @@ prova nel browser del budget (passi della 02 più i `PASSI PER IL CAPO` della 04
 un sì nuovo dell'utente (quello del 25 ott valeva per la prima prova), poi ui-critic. Pulizia della prima
 prova: SQL dato all'utente in chat il 25 ott, esito da ricevere. Le righe DA RATIFICARE della 01, della 02 e del
 capo vanno nel popup di fine goal. Rilievi fuori scope della 02 per la 2.1-bis: commento di
-`Shared/PaginaRegistro.cs` (C1), ripetizioni BE2/BE3, «In arrivo» che lampeggia al cambio mese.
+`Shared/PaginaRegistro.cs` (C1), ripetizioni BE2/BE3, «In arrivo» che lampeggia al cambio mese,
+«sforato di X» con un colore d'allarme (oggi lo stesso verde di «restano»), la y fissa di «Salva» in tutti gli
+editor insieme, e le tre scelte del PIANO-DESIGN segnalate da ui-critic il 12 nov (cifra e link di «Da spendere
+nei budget» in grigio, residuo non distinto dal totale, binario della barra a contrasto 1,21:1).
 
 2026-11-12 seconda prova: build verde, server acceso (PID 24440, `handoff/02-budget/prova-capo.md`); il lancio
 di live-testing è stato rifiutato dal classificatore della modalità auto anche nella sessione interattiva
@@ -101,11 +110,11 @@ controllo contesto 2026-10-24 (avvio): nulla
 
 ## APERTO
 
-- Le pastiglie di scelta (`aria-pressed="@(bool)"`) escono con `aria-pressed=""` se accese e senza attributo
-  se spente: chi usa un lettore di schermo non sa quale categoria è scelta. 9 punti in 6 file
-  (`Pages/BudgetEdit.razor:56`, `Pages/Spese.razor:71,152`, `Pages/SpesaEdit.razor:143`,
-  `Pages/RicorrenteEdit.razor:77,219`, `Pages/CollectionEdit.razor:105`, `Pages/SpeseTabella.razor:131,158`).
-  ui-critic 12 nov, TIPO progetto: decisione dell'utente.
+- `aria-pressed` delle pastiglie: **risolto 2026-11-12** su decisione dell'utente («Correggi ora»), 9 punti
+  in 6 file con la stringa `"true"/"false"`. review: bug-hunter `RILIEVI: 0`, threat-hunter `RILIEVI: 0`,
+  checker `nessuna istruttoria`, coverage `COPERTURA: 7 clausole — coperte 6 · scoperte 0 · rinviate 1` (la
+  rinviata è il commit e push, fatto subito dopo); verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` →
+  `test: 0 failed, 442 passed, 0 skipped`.
 
 - La guardia d'uscita dell'editor delle ricorrenti (`Pages/RicorrenteEdit.razor:388-389`) conta come modifica
   anche la sola scelta di una categoria: stesso difetto corretto nel budget dalla 04. Per la 2.1-bis o per

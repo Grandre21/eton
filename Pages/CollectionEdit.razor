@@ -102,7 +102,7 @@ else
         @foreach (var emoji in SchemaCampi.TavolozzaIcone)
         {
             <button type="button" class="pastiglia @(emoji == icona ? "accesa" : "")" style="font-size: var(--t-lg)"
-                    aria-pressed="@(emoji == icona)" @onclick="() => icona = emoji"
+                    aria-pressed="@(emoji == icona ? "true" : "false")" @onclick="() => icona = emoji"
                     disabled="@(occupato || !PuoIntervenire)">@emoji</button>
         }
     </fieldset>

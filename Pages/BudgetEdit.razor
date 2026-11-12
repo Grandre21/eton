@@ -53,7 +53,7 @@ else
             <legend class="etichetta-campo">Categoria</legend>
             @foreach (var c in disponibili)
             {
-                <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")" aria-pressed="@(c == categoria)"
+                <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")" aria-pressed="@(c == categoria ? "true" : "false")"
                         @onclick="() => categoria = c" disabled="@occupato">@c</button>
             }
         </fieldset>

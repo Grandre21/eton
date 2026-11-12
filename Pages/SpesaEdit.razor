@@ -140,7 +140,7 @@ else
         @foreach (var c in CategorieSpesa.Di(Tipo))
         {
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
-                    aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
+                    aria-pressed="@(c == categoria ? "true" : "false")" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
         }
         @* Categoria non in CategorieSpesa.Elenco — l'elenco è cambiato dopo che questa spesa è
            stata salvata, il suo stesso commento dichiara che cambierà ancora — mostrata come

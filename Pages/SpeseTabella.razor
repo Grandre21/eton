@@ -128,7 +128,7 @@
                     @foreach (var c in CategorieSpesa.Tutte)
                     {
                         var accesa = vista.Filtri.Categorie.Contains(c);
-                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@accesa" @onclick="() => AlternaCategoria(c)">@c</button>
+                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@(accesa ? "true" : "false")" @onclick="() => AlternaCategoria(c)">@c</button>
                     }
                 </div>
 
@@ -155,7 +155,7 @@
                     @foreach (var (stato, testo) in Stati)
                     {
                         var accesa = vista.Filtri.Stati.Contains(stato);
-                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@accesa" @onclick="() => AlternaStato(stato)">@testo</button>
+                        <button type="button" class="pastiglia @(accesa ? "accesa" : "")" aria-pressed="@(accesa ? "true" : "false")" @onclick="() => AlternaStato(stato)">@testo</button>
                     }
                 </div>
             </fieldset>

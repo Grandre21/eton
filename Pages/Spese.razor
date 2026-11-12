@@ -63,12 +63,13 @@ else
        spesa è esattamente ciò che fa abbandonare l'abitudine dopo una settimana. Il markup dei
        campi ricalca Pages/SpesaEdit.razor: gli stili sono scritti contro quelle classi. *@
     <section class="modulo-spesa">
+        @* aria-pressed vuole la stringa "true"/"false": un bool verrebbe reso come attributo vuoto o assente, e il lettore di schermo non direbbe quale pastiglia è scelta. *@
         <fieldset class="scelta-categoria">
             <legend class="etichetta-campo">Tipo</legend>
             @foreach (var tipo in new[] { TipoMovimento.Spesa, TipoMovimento.Entrata })
             {
                 <button type="button" class="pastiglia @(tipo == nuovoTipo ? "accesa" : "")"
-                        aria-pressed="@(tipo == nuovoTipo)" @onclick="() => ScegliTipo(tipo)" disabled="@occupato">@TipoMovimento.Testo(tipo)</button>
+                        aria-pressed="@(tipo == nuovoTipo ? "true" : "false")" @onclick="() => ScegliTipo(tipo)" disabled="@occupato">@TipoMovimento.Testo(tipo)</button>
             }
         </fieldset>
         @* Con «a rate» il modulo ha più figli dei tre della griglia, e prende la colonna unica dell'editor delle ricorrenti (app.css, .campi-ricorrente). *@
@@ -149,7 +150,7 @@ else
             @foreach (var c in CategorieSpesa.Di(nuovoTipo))
             {
                 <button type="button" class="pastiglia @(c == nuovaCategoria ? "accesa" : "")"
-                        aria-pressed="@(c == nuovaCategoria)" @onclick="() => nuovaCategoria = c" disabled="@occupato">@c</button>
+                        aria-pressed="@(c == nuovaCategoria ? "true" : "false")" @onclick="() => nuovaCategoria = c" disabled="@occupato">@c</button>
             }
         </fieldset>
 

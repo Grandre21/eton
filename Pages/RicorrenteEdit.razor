@@ -74,7 +74,7 @@ else
             @foreach (var t in new[] { TipoMovimento.Spesa, TipoMovimento.Entrata })
             {
                 <button type="button" class="pastiglia @(t == tipo ? "accesa" : "")"
-                        aria-pressed="@(t == tipo)" @onclick="() => ScegliTipo(t)" disabled="@occupato">@TipoMovimento.Testo(t)</button>
+                        aria-pressed="@(t == tipo ? "true" : "false")" @onclick="() => ScegliTipo(t)" disabled="@occupato">@TipoMovimento.Testo(t)</button>
             }
         </fieldset>
     }
@@ -216,7 +216,7 @@ else
         @foreach (var c in CategorieSpesa.Di(tipo))
         {
             <button type="button" class="pastiglia @(c == categoria ? "accesa" : "")"
-                    aria-pressed="@(c == categoria)" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
+                    aria-pressed="@(c == categoria ? "true" : "false")" @onclick="() => categoria = c" disabled="@(occupato || !PuoIntervenire)">@c</button>
         }
         @if (!CategorieSpesa.Conosciuta(categoria, tipo))
         {
