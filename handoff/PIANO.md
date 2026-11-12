@@ -29,6 +29,10 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
 - 2026-10-24 utente (chat): «Non posso aprire una nuova sessione, fai partire qui il lavoro, sono dal cellulare
   quindi ti seguo a distanza» — questa sessione fa da coordinatore della 2.4.
 - 2026-10-24 utente (chat, popup, spec): «Approvo, vai» — spec `docs/superpowers/specs/2026-10-24-budget-design.md`.
+- 2026-11-12 utente (chat, bottone alla domanda «Partiamo con la prova nel browser del budget?», dopo il recap che
+  chiedeva un sì nuovo per i dati di produzione): «Sì, partiamo» — seconda prova nel browser sui dati di
+  produzione, da questa sessione interattiva. Esito della pulizia SQL del 25 ott non ricevuto: la prova verifica
+  i resti della prima e li elimina dall'interfaccia se ci sono.
 
 ## PARTIZIONE
 
@@ -38,7 +42,7 @@ budget e i residui dati; la grafica è la 2.1-bis, goal successivo.
 | **scout** | ricognizione per la partizione delle unità, sul mandato dell'indice di `architettura-sessioni.md` | subagent `scout` | S | **PARZIALE** — mappa ricevuta il 24 ott (tre gruppi, file contesi `ExpenseRepository.cs` e `CalcoliRicorrenti.cs`); è una ricognizione, nessun comando la verifica |
 | **01-migrazione** | `category_budgets` con RLS + check `installments <= 60`, in una migrazione sola, scritta e provata sul Supabase locale, **non applicata** | sessione-unità, worktree `G:\Sviluppo\wt-Eton\01-migrazione`, mandato in `handoff/01-migrazione/` | scout | **FATTO** — fusa su `main` il 24 ott (merge 7876feb), provata sul Supabase locale (14 errori attesi su 14), BH1 (sovrapposizione di periodi) passato come regola al mandato della 02, tre scelte da ratificare nel resoconto; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 417 passed, 0 skipped` |
 | **GATE migrazione** | l'utente applica la migrazione dall'editor SQL e incolla l'esito della query di controllo | utente | 01 | **SUPERATO** — 2026-10-25 l'utente ha incollato in chat l'esito della query di controllo: `tabella_esiste=true, rls_attiva=true, policy=4, indice_aperto=true, trigger_versione=true, tetto_rate=true, max_rate=0` (atteso) |
-| **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità, worktree `G:\Sviluppo\wt-Eton\02-budget`, ramo `unita-02-budget` | GATE | **PARZIALE** — fusa su `main` il 25 ott; GATE dell'unità verdi (build 0 errori, test 0 failed / 432 passed); 6 rilievi fondati tutti corretti; **manca la prova nel browser (§7) e ui-critic**: live-testing sui dati di produzione rifiutato dal classificatore della modalità auto in `--bg`; passi della prova in `handoff/02-budget/resoconto.md`, FUORI SCOPE; cinque scelte da ratificare nel resoconto |
+| **02-budget** | modello, repository, calcolo del residuo, pagina minima dei budget, «registra una spesa» con categoria precompilata, riga nel bilancio | sessione-unità, worktree `G:\Sviluppo\wt-Eton\02-budget`, ramo `unita-02-budget` | GATE | **FATTO** — fusa su `main` il 25 ott; prova nel browser (§7) rifatta il 12 nov da questa sessione dopo la 04: tutti i passi funzionali ok, dati di prova e resti del 25 ott eliminati; ui-critic 5 rilievi, 4 corretti in `wwwroot/css/app.css` più 2 di bug-hunter sulle correzioni (checker: risolti 6), `aria-pressed` rinviato all'utente (TIPO progetto); esito e tracciato in `handoff/02-budget/prova-capo.md`; manca solo la seconda metà della guardia d'uscita, a mano dall'utente; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
 | **03-residui** | `CambiaCategoriaAsync` col tipo, test di `RecurringExpenseRepository`, chiave d'ordinamento in un posto, claims JWT degli script RLS in un posto | sessione-unità, worktree `G:\Sviluppo\wt-Eton\03-residui`, ramo `unita-03-residui` | 02 (solo ordine, file probabilmente contesi) | **FATTO** — fusa su `main` il 25 ott; script RLS provati sul Supabase locale prima/dopo con output identico; 5 rilievi fondati corretti, 2 test rossi confermati; tre scelte da ratificare nel resoconto, BE1 (un `Esito<T>` unico per sette repository) di progetto per l'utente; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
 | **04-correzioni-budget** | i difetti della prova nel browser della 02 (`handoff/02-budget/prova-capo.md`): barra invisibile, guardia d'uscita su «Nuovo budget» senza importo, mese e frecce con zero budget; poi i passi 9-10 della prova, rifatti da questa sessione | sessione-unità, worktree `G:\Sviluppo\wt-Eton\04-correzioni-budget`, ramo `unita-04-correzioni-budget`, mandato in `handoff/04-correzioni-budget/` | 03 (file della 02 su `main`) | **FATTO** (codice) — fusa su `main` il 25 ott; GATE dell'unità build 0 errori, test 442 passed; 1 rilievo fondato corretto; «In arrivo» facoltativo non fatto (codice nuovo); stesso difetto di guardia in `Pages/RicorrenteEdit.razor:388-389` fuori perimetro; la prova nel browser resta del capo (PROSSIMA AZIONE); verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
 
@@ -65,6 +69,13 @@ Scelte del capo per il mandato della 02 (annullabili con un revert, **da ratific
   cambia — **da ratificare**. Raccomandazione: confermare, senza non si prova la concorrenza.
 - 2026-10-24 la 03 porta in un posto solo anche la copia di ricerca della chiave (in `TabellaSpese`), se la sua
   semantica è identica — **da ratificare**. Raccomandazione: confermare.
+- 2026-11-12 la regola `label.campo + .azioni, label.campo + .testo-tenue` (16 px fra un campo e le azioni o
+  l'avviso) vale per ogni editor in flusso normale, non solo per il budget: cambia di 16 px anche la scheda
+  delle recensioni (`Shared/RecensioniElemento.razor`) e i campi di un elemento (`Pages/ItemEdit.razor`, da 12
+  a 16) — **da ratificare**. Raccomandazione: confermare, un campo attaccato al suo pulsante è lo stesso
+  difetto ovunque.
+- 2026-11-12 il salto di «Salva» quando compare l'avviso in «Nuovo budget» resta (ui-critic chiedeva la y
+  fissa): è il comportamento degli altri editor — **da ratificare**. Raccomandazione: confermare.
 
 ## PROSSIMA AZIONE
 
@@ -78,9 +89,23 @@ prova: SQL dato all'utente in chat il 25 ott, esito da ricevere. Le righe DA RAT
 capo vanno nel popup di fine goal. Rilievi fuori scope della 02 per la 2.1-bis: commento di
 `Shared/PaginaRegistro.cs` (C1), ripetizioni BE2/BE3, «In arrivo» che lampeggia al cambio mese.
 
+2026-11-12 seconda prova: build verde, server acceso (PID 24440, `handoff/02-budget/prova-capo.md`); il lancio
+di live-testing è stato rifiutato dal classificatore della modalità auto anche nella sessione interattiva
+(«judged this action dangerous», senza motivo). Nessun dato creato. Si aspetta la scelta dell'utente.
+2026-11-12 utente (chat): «Cambio modalità, riprova» — prova eseguita, ui-critic eseguito, correzioni CSS
+fatte e verificate, server fermato. Resta: la seconda metà della guardia d'uscita a mano dall'utente
+(«Nuovo budget» con importo scritto → «Torna ai budget» deve chiedere conferma); la decisione su
+`aria-pressed` (APERTO); le ratifiche di fine goal in un popup; poi la chiusura del goal 2.4.
+
 controllo contesto 2026-10-24 (avvio): nulla
 
 ## APERTO
+
+- Le pastiglie di scelta (`aria-pressed="@(bool)"`) escono con `aria-pressed=""` se accese e senza attributo
+  se spente: chi usa un lettore di schermo non sa quale categoria è scelta. 9 punti in 6 file
+  (`Pages/BudgetEdit.razor:56`, `Pages/Spese.razor:71,152`, `Pages/SpesaEdit.razor:143`,
+  `Pages/RicorrenteEdit.razor:77,219`, `Pages/CollectionEdit.razor:105`, `Pages/SpeseTabella.razor:131,158`).
+  ui-critic 12 nov, TIPO progetto: decisione dell'utente.
 
 - La guardia d'uscita dell'editor delle ricorrenti (`Pages/RicorrenteEdit.razor:388-389`) conta come modifica
   anche la sola scelta di una categoria: stesso difetto corretto nel budget dalla 04. Per la 2.1-bis o per

@@ -950,6 +950,13 @@ textarea { resize: vertical; line-height: inherit; }
    regge. */
 label.campo, .campo-lettura { flex-direction: column; align-items: stretch; gap: var(--s1); }
 
+/* Un campo seguito subito dalle azioni, o dall'avviso che spiega perché il pulsante è spento,
+   non deve toccarli. Vale per ogni editor in flusso normale: l'importo del budget
+   (Pages/BudgetEdit.razor), la recensione (Shared/RecensioniElemento.razor), i campi di un elemento
+   (Pages/ItemEdit.razor, dove .campo-dinamico porta già 12 px e il margine collassa a 16). Non tocca
+   gli editor che spaziano i campi con il gap di una griglia (.campi-spesa). */
+label.campo + .azioni, label.campo + .testo-tenue { margin-top: var(--s4); }
+
 /* margin-block e non margin-bottom: il margine serve anche SOPRA, perché il campo che precede i
    campi di una collezione (Pages/ItemEdit.razor, class="campo") non porta questa classe, e il primo
    dinamico gli stava attaccato a 0px mentre tutti gli altri erano a 12. Fra due dinamici i 12 sopra
@@ -2026,6 +2033,11 @@ li:last-child > .riga { border-bottom: none; }
    il verticale resta per staccarlo dal numero. */
 .riepilogo-mese .testa-registro { padding: 0 0 var(--s4); }
 
+/* Un contenitore ha un solo stacco di fondo, il suo padding: il margine proprio dell'ultimo
+   figlio (div.vuoto, p.testo-tenue) si sommerebbe e darebbe un doppio stacco. Lo scheletro si
+   nomina a parte perché il suo ultimo nodo è un testo per i lettori di schermo fuori flusso. */
+.riepilogo-mese > :last-child, .riepilogo-mese > .scheletro { margin-bottom: 0; }
+
 .navigazione-mese { display: flex; gap: var(--s2); margin-left: auto; }
 
 /* Le due frecce di mese (Pages/Spese.razor, aria-label="Mese precedente") sono .btn.compatto,
@@ -2101,6 +2113,11 @@ li:last-child > .riga { border-bottom: none; }
    riga propria a tutta larghezza, sia nella griglia stretta del <li> sia in quella larga
    del genitore, così le quattro colonne restano quelle del Registro. */
 .barre-categorie > li > .azioni { grid-column: 1 / -1; }
+
+/* Le azioni appartengono al budget che hanno sopra, e lo stacco verso il successivo deve
+   superare quello interno alla riga (prossimità). L'ultima riga no: il fondo della scheda dà
+   già lo stacco (stessa logica di .azioni:not(:last-child) più su). */
+.barre-categorie > li:not(:last-child) > .azioni { margin-bottom: var(--s4); }
 
 .barra {
     position: relative;
@@ -2386,6 +2403,9 @@ button.pastiglia {
         grid-template-columns: minmax(4.5rem, auto) 1fr auto auto;
         column-gap: var(--s3);
         row-gap: var(--s3);
+        /* L'align-items: center della versione stretta sta sul <li>, che qui è
+           display: contents e non lo trasmette: le celle le centra il genitore. */
+        align-items: center;
     }
 
     .barre-categorie > li { display: contents; }
