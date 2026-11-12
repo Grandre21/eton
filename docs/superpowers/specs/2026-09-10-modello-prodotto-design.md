@@ -599,6 +599,98 @@ di spendere»*, e subito dopo: *«poi crei tu un piano per chiudere tutto ciò c
 Dopo la 2.1-bis si riprende la sequenza del §4 dalla fase 3. Vincolo operativo ancora valido dalla 2.3:
 aggiornare la PWA su tutti i dispositivi prima di creare il primo piano a rate.
 
+### Richieste del 12 novembre 2026
+
+L'utente, a fase 2.4 provata e ratificata, verbatim:
+
+> aspe ti mando ancora della roba che mi ero segnato da fare : i budget non hanno una descrizione, ad esempio
+> io imposto un budget per le uscite del mese di 200 euro, devo poter segnare a cosa fa riferimento quel 200,
+> inoltre sarebbe utile selezionare dalle voci di spesa già registrate quali fanno parte di quel budget, visto
+> che avevo già segnato quali erano le spese del mese prima che creassimo il budget.
+>
+> il budget deve poter essere un budget che io mi fisso ogni mese come potenziale spesa, quindi ricorrente, ma
+> potrebbe essere un budget di spesa solo riferito ad un periodo di 1-x mesi.
+>
+> nella home sarebbe utile avere un cruscotto e non un report, tipo qualche grafico e delle notifiche che mi
+> dicano ad esempio che questo mese ho speso piu o meno del mese precedente, o che siamo all'ultima rata, etc..
+>
+> la maschera di inserimento delle spese sta sopra l'elenco, secondo me andrebbe invece implementato un drawer
+> o una modale per gli inserimenti, non c'è uno spinner o un loader che blocchi gli utenti dallo spam click.
+>
+> graficamente in generale siamo ancora parecchio anonimi, serve fare un design per avere un po di carattere.
+>
+> servirebbe un analisi critica dell'applicazione, mi serve capire se stiamo raggiungendo il nostro obbiettivo,
+> tenendo conto che vorrei guadagnarci qualcosa con questa applicazione in futuro.
+>
+> serve anche un analisi di sicurezza, e dobbiamo segnarci che prima di rilasciare l'applicazione al pubblico
+> (al momento è online ma non la conosce nessuno) vorrei chiudere il codice, al momento è aperto su github,
+> ovviamente cercando di risparmiare il piu possibile, non ho molti soldi da investirci.
+>
+> sarebbe anche utile un analisi di come migliorare le performance e quale potrebbe essere un ottimmizzazione
+> che mi permetta di salvare piu dati possibile senza spendere troppi soldi.
+>
+> insomma, vorrei portare eton ad essere un applicazone di registro, vorrei venisse usato un po di piu il tema
+> del neural connection anche nel gestionale e non solo sulla vetrina.
+>
+> mi piacerebbe anche implementare in futuro dei servizi ai di analisi o di inserimento, ma non diamo noi il
+> modello, lasciamo una sorta di login col proprio account (non conosco bene questa cosa, quindi non so che
+> problemi potrebbe portare, vorrei rimanere al 100% sicuro, gestiamo dati economici della gente non possiamo
+> avere problemi)
+>
+> potremmo anche pensare a funzionalità di connessione ai drive degli utenti, cosi che noi non ci appesantiamo
+> ma diamo da un unico ambiente la possibilità di usare le funzionalità che mettono a disposizione i vari
+> provider
+>
+> ad esempio stavo pensando che potremmo salvare le note anche nel keep di google, so che nel keep si possono
+> invitare dei collaboratori, magari possiamo sfruttare questo per registrare le note di eton su google keep e
+> viceversa o cose simili.
+>
+> sarebbe anche carino che le note contengano dei controlli, tipo i controlli sul carattere o le spunte, tipo se
+> mi scrivo questi appunti sarebbe carino poterle spuntare come completate o addirittura sarebbe carino che il
+> mio utente abbia una console dove mi scrivo le cose da migliorare e ricevo le segnalazioni degli utenti, e ho
+> anche un piccolo centro di controllo di gestione
+
+Collocazione proposta con `tech-advisor` il 12 nov (posizioni verificate sul codice e su doc lette quel
+giorno); le scelte dell'utente vanno nella tabella delle decisioni qui sotto quando arrivano.
+
+| Richiesta | Fase | Nota |
+|---|---|---|
+| Descrizione del budget | **2.5 — budget, seconda passata** (nuova, piccola, prima della 2.1-bis) | Oggi `category_budgets` ha solo categoria e importo (`supabase/migrations/20261024000000_budget.sql:18-19`); colonna di testo facoltativa, migrazione additiva |
+| «Selezionare le spese già registrate che fanno parte del budget» | **2.5**, forma da scegliere | Il caso citato funziona già: il residuo conta tutte le spese della categoria nel mese, anche quelle registrate prima del budget (`Services/CalcoliBudget.cs:24-31`), e la tabella sposta già più spese in una categoria (`Pages/SpeseTabella.razor:676`). Forme: A resta la categoria + descrizione + scorciatoia alla selezione in tabella; B legame esplicito spesa↔budget (rovescia la decisione del 24 ott, migrazione su `expenses`, ricorrenti da legare); C budget con nome su più categorie |
+| Budget ricorrente oppure «per 1-x mesi» | **2.5** | Lo schema copre già «stesso importo per N mesi» (`starts_on`/`ends_on`, `budget.sql:22-36`); manca l'interfaccia (`Pages/BudgetEdit.razor:235,312,318`) e la sovrapposizione va portata nel database (oggi solo client, `CalcoliBudget.cs:45`). Un importo unico sul periodo intero è semantica nuova (contro «si azzera») |
+| Cruscotto in home, grafici, avvisi (più/meno del mese scorso, ultima rata) | **2.1-bis** la schermata; i calcoli puri possono stare nella 2.5 | Oggi testo e due elenchi (`Pages/Home.razor:117-145,157`). Avvisi calcolati all'apertura, **non notifiche push** (vorrebbero un server) |
+| Inserimento in drawer o modale | **2.1-bis** (già dal 19 ott) | Nessun drawer né dialog |
+| «Nessun loader che blocchi lo spam click» | **2.1-bis**, resa | Il doppio clic è già bloccato: `occupato = true` prima di ogni attesa e pulsanti `disabled` (`Pages/Spese.razor:409,158`, `SpesaEdit.razor:345,183`, `BudgetEdit.razor:225,121`). Manca il segnale visibile (`wwwroot/css/app.css:846-860`). Vincolo per il drawer: l'id della spesa nasce a ogni chiamata (`Services/ExpenseRepository.cs:225`), il blocco del pulsante resta l'unica difesa dal doppione |
+| «Graficamente anonimi», neural connection nel gestionale | **2.1-bis** | Il grafo a nodi oggi è solo in vetrina (`Pages/Benvenuto.razor:138`, `Shared/GrafoSpazio.razor:14`); nessun conflitto con «non neon». Quanto spingerlo: preferenza dell'utente, da sciogliere con prove a confronto |
+| Analisi critica del prodotto rispetto al guadagno | **Sessione senza codice, prima di tutto** | Tensione da sciogliere: «applicazione di registro» contro il guadagno del §5, che sta nel marketplace di template e nei tool con dati esterni |
+| Analisi di sicurezza | **Sessione in sola lettura subito**, più un delta alla soglia del rilascio | L'app è online con dati economici veri; il confine resta la RLS (§3.1) |
+| Prestazioni e costo dei dati | **Soglia del rilascio pubblico**, come misura | Nessun allegato oggi (nessuna migrazione usa lo storage); il vincolo vero del piano gratuito è la pausa per inattività (§4, fase 6.2) |
+| Chiudere il codice spendendo poco | **Soglia del rilascio pubblico** (fase nuova, dopo la 2.1-bis); la chiusura in sé è anticipabile | Su GitHub Free un repository privato perde Pages: «Any published GitHub Pages site will be automatically unpublished» (docs.github.com, setting-repository-visibility, letta il 12 nov). Forme: G1 sorgente privato + repository pubblico con il solo pubblicato (costo zero, indirizzo `/eton/` invariato); G2 Cloudflare Pages gratuito (indirizzo nuovo salvo dominio proprio); G3 Netlify gratuito (circa 20 pubblicazioni al mese: troppo poche); G4 GitHub Pro (a pagamento). **Chiudere non nasconde il programma**: l'assembly di Eton arriva intero al browser (`Eton.csproj:29`), con indirizzo e chiave pubblica di Supabase; si nascondono documenti, migrazioni, script RLS, test e storia. Ciò che è stato pubblico può essere già stato copiato; non c'è un file di licenza |
+| AI «col proprio account, non diamo noi il modello» | **Resta la 3-bis** (companion in sola lettura); l'AI che inserisce si rinvia | Il «login col proprio account» non è disponibile per Eton: «Sign in with ChatGPT» è per partner scelti e vuole un backend (developers.openai.com/siwc); Anthropic non permette il login a Claude.ai in app terze (code.claude.com, legal-and-compliance); unica forma self-service OpenRouter, con la chiave nel browser. Lette il 12 nov |
+| Note su Google Keep nei due sensi | **§7, cosa non si fa** | L'API di Keep è per amministratori Google Workspace (delega a livello di dominio), non per account personali, e non ha un metodo di modifica (developers.google.com/workspace/keep/api, letta il 12 nov) |
+| Connessione ai drive degli utenti | **Fase nuova «allegati nel drive dell'utente», non prima della 5** | Fattibile da solo client con lo scopo `drive.file` (non sensibile); `drive` e `drive.readonly` sono ristretti e vogliono una valutazione di sicurezza annuale. Solo gesti interattivi, niente sincronizzazione in background; negli spazi condivisi il file nel mio Drive non lo vedono gli altri. OneDrive non verificato |
+| Note con controlli e caselle da spuntare | **2.1-bis** la barra dell'editor; la spunta cliccabile come piccolo lavoro a sé | Oggi Markdown con liste di attività (`Services/MarkdownRenderer.cs:23-30`), ma le caselle sono solo disegnate (`app.css:1777-1778`) e si scrive in un campo di testo nudo (`Pages/NoteEdit.razor:77`). La spunta riscrive il corpo: deve passare dal controllo di versione |
+| Console dell'amministratore: cose da migliorare, segnalazioni, controllo di gestione | Segnalazioni, casella e conteggi: **soglia del rilascio**. Blocco utenti e log: **fase nuova non prima della 5** (invariato dal 19 ott) | Nulla esiste oggi (`bug_reports`, `admins`, `is_admin`: zero occorrenze nelle migrazioni). «Dove mi scrivo le cose da migliorare» è una nota con le spunte nello spazio personale |
+
+**Decisioni dell'utente, 12 nov** (popup, con la posizione di `tech-advisor` dentro ogni domanda):
+
+| | Scelta | Da chi |
+|---|---|---|
+| Cosa fa parte di un budget | Resta la categoria intera; si aggiungono la descrizione e una scorciatoia dal budget alla selezione delle spese in tabella | 2026-11-12 utente (chat, popup): «Resta la categoria (Consigliata)» |
+| Periodo del budget | Stesso importo ogni mese per N mesi, poi il budget finisce da solo; il residuo riparte pieno ogni mese | 2026-11-12 utente (chat, popup): «Stesso importo per N mesi (Consigliata)» |
+| Ordine | Analisi critica del prodotto → analisi di sicurezza (anche in parallelo) → 2.5 → 2.1-bis → soglia del rilascio pubblico → fase 3 e seguenti; una sessione per punto | 2026-11-12 utente (chat, popup): «Ordine proposto (Consigliato)» |
+| Chiusura del codice | Il codice resta pubblico per ora; la forma (due repository, Cloudflare Pages, GitHub Pro) si sceglie alla soglia del rilascio | 2026-11-12 utente (chat, popup): «Decido al rilascio» |
+
+**Sequenza proposta da `tech-advisor`:** 1 analisi critica del prodotto (senza codice) → 2 analisi di
+sicurezza di base (sola lettura, può correre accanto alla 3) → 3 fase 2.5 → 4 fase 2.1-bis, senza altre
+inserzioni → 5 soglia del rilascio pubblico → poi fase 3 e seguenti, salvo ciò che il punto 1 riscrive.
+
+Scelte del coordinatore, annullabili (**da ratificare**): l'AI resta la 3-bis, nessuna forma nuova
+(raccomandazione: confermare; «100% sicuro» non esiste, e la sola lettura senza chiavi custodite da Eton è la
+forma più vicina); la console si riduce a segnalazioni e conteggi alla soglia del rilascio, e la lista «da
+migliorare» è una nota con le spunte (raccomandazione: confermare); Keep entra nel §7 (non è una scelta: l'API
+non lo consente agli account personali).
+
 ---
 
 ## 7. Cosa non si fa
