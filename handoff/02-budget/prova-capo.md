@@ -78,3 +78,9 @@ distinto dal totale, binario della barra a contrasto 1,21:1 → per la 2.1-bis.
   budget successivi. Li vedrà l'utente o la 2.1-bis.
 - GATE: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped`.
 - Server fermato il 12 nov (TaskStop bzq2lc3xv).
+- Riacceso il 12 nov per la prova a mano della guardia (utente): `main` 7241b6c, build verde, PID 24440 → nuovo
+  PID 25592, job bsl1yyixe. Fermato (TaskStop bsl1yyixe) dopo un bottone «Chiede conferma» che l'utente ha poi
+  detto cliccato per errore («ho sbagliato a cliccare, devo rifare le prove»): esito annullato, prova da rifare.
+- Riacceso per rifare la prova: PID 13920, job byqkertjj. Fermato a prova finita (TaskStop byqkertjj).
+- 2026-11-12 utente (chat), dopo aver rifatto la prova: «Chiede conferma» — su «Nuovo budget» con un importo
+  scritto, «Torna ai budget» apre la conferma del browser. Prova della 02 completa.
