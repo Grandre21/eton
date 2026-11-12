@@ -303,7 +303,7 @@ Portate in chat il 12 nov, con la posizione di `tech-advisor` dentro ogni domand
 | 2 | Inserire «due persone vere» dopo la 2.5 e prima della 2.1-bis | Sì | 2026-11-12 utente (chat, popup): «Sì, dopo la 2.5 (Consigliata)» |
 | 3 | Ricavo: solo donazione ora, annuale via Merchant of Record a soglia raggiunta, niente «a vita» | Sì | 2026-11-12 utente (chat, popup): «Proposta così (Consigliata)» |
 | 4 | Allegati: su Eton a pagamento oppure nel Drive dell'utente | **Entrambi** | 2026-11-12 utente (chat, popup): «possiamo fare entrambi, magari ci sono documenti che voglio salvarmi nel drive e altri che voglio condividere su eton, chiedi al tech advisor» |
-| 4a | Come convivono: Drive solo nello spazio personale, allegati Eton ovunque con quota gratuita; prima gli allegati Eton, poi il Drive dopo la soglia del rilascio | Posizione di `tech-advisor` (confidenza alta sulla forma, media sull'ordine) | Esecutore, **da ratificare** — raccomandazione: confermare; si ribalta se gli invitati allegano soprattutto nello spazio personale |
+| 4a | Come convivono: Drive solo nello spazio personale, allegati Eton ovunque con quota gratuita; prima gli allegati Eton, poi il Drive dopo la soglia del rilascio | Posizione di `tech-advisor` (confidenza alta sulla forma, media sull'ordine) | Esecutore; **ratificata 2026-11-12** — utente (chat): «Sì, confermo». Si riapre se gli invitati allegano soprattutto nello spazio personale |
 
 **Cosa resta da fare dopo queste scelte.** La revisione del §7 di questo documento va **riportata
 nella spec di prodotto** (§4, §5, §7 e la riga 671 del §6), in una sessione di documento: questa
