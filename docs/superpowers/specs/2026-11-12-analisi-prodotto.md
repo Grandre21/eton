@@ -6,7 +6,8 @@ Scritta il **12 novembre 2026**, punto 1 dell'ordine scelto dall'utente quel gio
 con WebSearch il 12 nov 2026, fonti al §9.
 
 **Cos'è.** Un'analisi e una **proposta** di revisione dei §4-§5 della spec di prodotto. **Non è
-applicata**: la spec resta com'è finché l'utente non sceglie (domande al §8). Nessun codice toccato.
+applicata** alla spec; l'utente ha scelto il 12 nov sulle quattro domande del §8. Nessun codice
+toccato.
 
 **La domanda.** L'utente, 12 nov, verbatim: *«servirebbe un analisi critica dell'applicazione, mi serve
 capire se stiamo raggiungendo il nostro obbiettivo, tenendo conto che vorrei guadagnarci qualcosa con
@@ -211,9 +212,29 @@ Criterio del §5, che resta valido: **si paga ciò che consuma, non ciò che cos
 | **Numero di spazi condivisi creati** oltre uno o due | **Esportazione**: è la garanzia di fiducia («i tuoi dati escono quando vuoi») |
 | Eventualmente: storico molto lungo, se mai pesasse | **Importazione**: è l'imbuto d'ingresso |
 
-Conflitto da sciogliere (rilevato da `tech-advisor`): la richiesta del 12 nov **«allegati nel Drive
-dell'utente»** (spec, riga 671) regala proprio l'unica cosa vendibile. O gli allegati stanno su Eton e
-sono a pagamento, o stanno nel Drive e sono gratis: non entrambi.
+**Allegati su Eton e Drive dell'utente convivono** (decisione dell'utente, §8, e seconda posizione di
+`tech-advisor`, che ha ritirato il suo primo «non entrambi»): *ciò che è solo tuo sta nel tuo Drive,
+ciò che è dello spazio sta in Eton*. La divisione si spiega da sola perché è tecnica — un file nel mio
+Drive gli altri membri non lo vedono (spec, riga 671).
+
+- **Drive solo nello spazio personale; allegati Eton ovunque**, con una piccola quota gratuita per
+  utente e il pagamento oltre. Si impone nel database: `spaces.is_personal` e `space_is_personal()`
+  esistono già (`supabase/migrations/20260811000000_initial_schema.sql:28,87`); una sola tabella di
+  allegati con il tipo (Eton o Drive).
+- **Forma minima del Drive**: scopo `drive.file` (non sensibile, solo verifica di base;
+  developers.google.com/workspace/drive/api/guides/api-specific-auth, letta da `tech-advisor` il
+  12 nov), selettore di Google aperto da un gesto dell'utente; Eton salva solo identificativo, nome e
+  link. Nessun file passa da Eton, nessun token conservato.
+- **Ordine: prima gli allegati su Eton, poi il Drive**, dopo la soglia del rilascio. La quota degli
+  allegati prende il posto del «tetto che misura» della fase 5: se nessuno la raggiunge, non c'è
+  niente da vendere. Il Drive prima insegnerebbe che gli allegati sono gratis e altrove, e la
+  schermata di consenso pubblicata vuole un'informativa (a memoria).
+- **Il ricavo da allegati sarà piccolo**: resta una scappatoia non chiudibile (condividere da Drive e
+  incollare il link in una nota), da accettare. Il numero di spazi condivisi diventa l'elemento a
+  pagamento più importante.
+- **Due costi da mettere nel brief degli allegati**: il piano gratuito ha 1 GB di file in tutto,
+  quindi gli scontrini si riducono nel browser prima del caricamento; e **i file non entrano nei
+  backup del database** (supabase.com/docs/guides/platform/backups), quindi serve una copia a parte.
 
 ### Forma e momento
 
@@ -246,6 +267,7 @@ sono a pagamento, o stanno nel Drive e sono gratis: non entrambi.
 | Fase 6 decisioni prima del denaro | Si apre se il tetto della 5 viene raggiunto | Si apre quando la soglia dichiarata è raggiunta (proposta: un numero di spazi con due membri attivi, scelto dall'utente) |
 | Fase 7 abbonamento | Stripe; il limite della 5.2 dipende da `has_plan()` | Merchant of Record; `has_plan()` governa allegati e numero di spazi. La 7.4 cade |
 | Fase 8 catalogo e «porta la tua chiave» | | Facoltativa, come la 5 |
+| «Allegati nel drive dell'utente» (§6, riga 671) | Fase nuova, non prima della 5 | Due pezzi: **allegati su Eton** (con quota gratuita, dentro o subito dopo la soglia del rilascio) e poi **Drive nello spazio personale**, dopo la soglia (§6 di questo documento) |
 | Fase 9 marketplace vero | Condizionata ai creatori | **Al §7**, finché non esistono creatori |
 
 ### §5 — la linea gratis / a pagamento
@@ -256,6 +278,7 @@ sono a pagamento, o stanno nel Drive e sono gratis: non entrambi.
 | Note, collezioni, recensioni, template | **Spazi condivisi oltre il primo o il secondo** |
 | Membri illimitati in uno spazio; esportazione e importazione | |
 | Tool con dati esterni, se ce ne saranno, fino a un tetto | Il consumo oltre il tetto, come nel §5 di oggi |
+| Allegati Eton fino a una piccola quota; collegamento al proprio Drive nello spazio personale | |
 
 Resta il criterio di oggi — *la percezione, non il costo* — e resta il §3.1: ogni gate sta nel
 database, mai nell'interfaccia.
@@ -272,15 +295,19 @@ database, mai nell'interfaccia.
 
 ## 8. Decisioni per l'utente
 
-Portate in chat il 12 nov, con la posizione di `tech-advisor` dentro ogni domanda. Le risposte si
-trascrivono qui quando arrivano.
+Portate in chat il 12 nov, con la posizione di `tech-advisor` dentro ogni domanda.
 
-| | Domanda | Raccomandazione |
-|---|---|---|
-| 1 | Identità: registro, marketplace, o tutti e due | Registro; template come meccanismo; fase 9 al §7 |
-| 2 | Inserire «due persone vere» dopo la 2.5 e prima della 2.1-bis | Sì |
-| 3 | Ricavo: solo donazione ora, annuale via Merchant of Record a soglia raggiunta, niente «a vita» | Sì |
-| 4 | Allegati: su Eton a pagamento oppure nel Drive dell'utente gratis | Su Eton a pagamento; il Drive resta escluso o si limita a link |
+| | Domanda | Scelta | Da chi |
+|---|---|---|---|
+| 1 | Identità: registro, marketplace, o tutti e due | Registro; template come meccanismo; fase 9 al §7 | 2026-11-12 utente (chat, popup): «Registro (Consigliata)» |
+| 2 | Inserire «due persone vere» dopo la 2.5 e prima della 2.1-bis | Sì | 2026-11-12 utente (chat, popup): «Sì, dopo la 2.5 (Consigliata)» |
+| 3 | Ricavo: solo donazione ora, annuale via Merchant of Record a soglia raggiunta, niente «a vita» | Sì | 2026-11-12 utente (chat, popup): «Proposta così (Consigliata)» |
+| 4 | Allegati: su Eton a pagamento oppure nel Drive dell'utente | **Entrambi** | 2026-11-12 utente (chat, popup): «possiamo fare entrambi, magari ci sono documenti che voglio salvarmi nel drive e altri che voglio condividere su eton, chiedi al tech advisor» |
+| 4a | Come convivono: Drive solo nello spazio personale, allegati Eton ovunque con quota gratuita; prima gli allegati Eton, poi il Drive dopo la soglia del rilascio | Posizione di `tech-advisor` (confidenza alta sulla forma, media sull'ordine) | Esecutore, **da ratificare** — raccomandazione: confermare; si ribalta se gli invitati allegano soprattutto nello spazio personale |
+
+**Cosa resta da fare dopo queste scelte.** La revisione del §7 di questo documento va **riportata
+nella spec di prodotto** (§4, §5, §7 e la riga 671 del §6), in una sessione di documento: questa
+sessione non la applica, come da mandato.
 
 ---
 
