@@ -206,6 +206,10 @@ rende l'immagine diversa dal testo nel trattamento.
 
 ## 4. La sequenza
 
+⚠️ **Dal 12 novembre 2026 la sequenza in vigore è quella del §6, «Revisione del 12 novembre 2026»**: Eton
+è un registro, la fase 1 è assorbita dalla soglia del rilascio, le fasi 5 e 8 sono facoltative, la fase 9
+è al §7. Le fasi qui sotto restano come descrizione tecnica di ciascun pezzo.
+
 Ogni fase è **una sessione**. Le stime sono ordini di grandezza, non impegni.
 
 ### Fase 0 — Chiudere il ciclo aperto · *giorni*
@@ -439,6 +443,10 @@ prima, e `Pages/Spese.razor` e `Pages/Home.razor` — che il task 4 della 2.1 mo
 contendono più con loro.
 
 ## 5. La linea gratis / a pagamento
+
+⚠️ **Superata il 12 novembre 2026** dalla linea del §6, «Revisione del 12 novembre 2026»: il registro è
+gratis per intero, a pagamento vanno allegati e spazi condivisi oltre una soglia. Il testo qui sotto resta
+come storia; il criterio «la percezione, non il costo» e il gate nel database restano in vigore.
 
 Proposta, da confermare alla fase 6.4 sui numeri veri raccolti nella fase 5:
 
@@ -691,6 +699,52 @@ forma più vicina); la console si riduce a segnalazioni e conteggi alla soglia d
 migliorare» è una nota con le spunte (raccomandazione: confermare); Keep entra nel §7 (non è una scelta: l'API
 non lo consente agli account personali).
 
+### Revisione del 12 novembre 2026 — Eton è un registro
+
+Dall'analisi critica del prodotto (`docs/superpowers/specs/2026-11-12-analisi-prodotto.md`, §7 la proposta,
+§8 le decisioni). Scelte dell'utente, tutte del 12 nov (chat, popup): identità «Registro (Consigliata)»;
+«due persone vere» «Sì, dopo la 2.5 (Consigliata)»; ricavo «Proposta così (Consigliata)»; allegati
+«possiamo fare entrambi, magari ci sono documenti che voglio salvarmi nel drive e altri che voglio
+condividere su eton, chiedi al tech advisor», con la convivenza ratificata in chat: «Sì, confermo». Questa
+sezione riporta le scelte nella spec; il ragionamento e le fonti restano nel documento di analisi.
+
+**Identità.** Eton è un **registro personale e condiviso** (spese, note, collezioni). I template sono un
+meccanismo del registro, non il modello di ricavo; il marketplace con pagamenti fra utenti va al §7.
+
+**La sequenza in vigore** (sostituisce l'ordine del §4 dove diverge):
+
+| | Goal | Nota |
+|---|---|---|
+| 1 | Analisi critica del prodotto | Fatta il 12 nov |
+| 2 | Analisi di sicurezza di base | Fatta il 12 nov (`docs/superpowers/specs/2026-11-12-analisi-sicurezza.md`); i suoi rilievi vanno collocati prima di «due persone vere» |
+| 3 | **2.5** — budget, seconda passata | Descrizione, periodo di N mesi, scorciatoia alla selezione in tabella (decisioni qui sopra) |
+| 4 | **Due persone vere** (nuova) | Circa un giorno: backup pianificato in un posto privato o cifrato, un ripristino provato, informativa di una pagina e cancellazione dell'account (anche manuale), un canale per le segnalazioni; poi 2-4 persone conosciute invitate a mano, la prima come secondo membro di uno spazio condiviso dell'autore |
+| 5 | **2.1-bis** — grafica | Dopo gli invitati, così cruscotto e grafica si disegnano su ciò che usano davvero |
+| 6 | **Soglia del rilascio pubblico** | Come al riquadro qui sopra, più: importazione CSV delle spese, la vetrina statica (ex fase 1, dopo la grafica perché la mostra), la piattaforma di donazione, gli **allegati su Eton** con quota gratuita (dentro o subito dopo) |
+| 7 | Fase 3 — **strutture pronte del registro** | Stesso contenuto tecnico dei template |
+| 8 | Fase 3-bis, fase 4 | Invariate |
+| 9 | **Drive nello spazio personale** | Dopo la soglia del rilascio; solo nello spazio personale, mentre gli allegati Eton valgono ovunque |
+| — | Fasi 5 e 8 | **Facoltative**: solo se un dato esterno serve al registro (es. cambi valuta) |
+| — | Fase 6 | Si apre quando una soglia dichiarata è raggiunta (proposta: un numero di spazi con due membri attivi, da scegliere dall'utente) |
+| — | Fase 7 | Abbonamento annuale via Merchant of Record; `has_plan()` governa allegati e numero di spazi; la 7.4 cade |
+
+**La linea gratis / a pagamento in vigore** (sostituisce la tabella del §5):
+
+| Gratis | A pagamento (dalla fase 7) |
+|---|---|
+| Tutto il registro: spese, ricorrenti, rate, entrate, budget, tabella, cruscotto | Allegati e scontrini oltre la quota gratuita |
+| Note, collezioni, recensioni, strutture pronte | Spazi condivisi oltre il primo o il secondo |
+| Membri illimitati in uno spazio; esportazione e importazione | |
+| Tool con dati esterni, se ce ne saranno, fino a un tetto | Il consumo oltre il tetto |
+| Allegati Eton fino a una piccola quota; collegamento al proprio Drive nello spazio personale | |
+
+Ricavo: solo donazione fino alla soglia; poi annuale tramite Merchant of Record; niente pagamento «a vita».
+Restano il criterio del §5 (*la percezione, non il costo*) e il §3.1 (ogni gate nel database).
+
+**Allegati e Drive.** La riga «Connessione ai drive degli utenti» delle richieste del 12 novembre si
+divide in due: prima gli allegati su Eton (passo 6), poi il Drive nello spazio personale (passo 9). Si
+riapre se gli invitati allegano soprattutto nello spazio personale.
+
 ---
 
 ## 7. Cosa non si fa
@@ -704,6 +758,10 @@ non lo consente agli account personali).
 | **Dati sul dispositivo, con il database come copia compressa** | §3.6 e fondazione dell'11 agosto (online, concorrenza ottimistica). Spazi condivisi con due verità, storage del browser cancellabile, dati in chiaro fuori dalla RLS, un blob compresso annulla RLS per riga, vincoli e indici. Proposto e ritirato dall'utente il 19 ottobre 2026, alternativa leggera compresa (2026-10-19 utente (chat, popup): «Lasciamo perdere») |
 | **Kickstarter** | §3.4. È una prevendita, cioè attività commerciale |
 | **«Dona per sbloccare X»** | §3.4. Fa collassare la fase 1 dentro la fase 7 |
+| **Note su Google Keep nei due sensi** | L'API di Keep è per amministratori Google Workspace, non per account personali, e non ha un metodo di modifica (§6, richieste del 12 novembre) |
+| **Collegamento bancario** (PSD2) | Licenza AISP o aggregatore a pagamento per uso commerciale; un server che custodisce i consensi bancari di terzi, cioè la custodia già rifiutata al §3.3 (analisi del prodotto, 12 nov) |
+| **Marketplace con pagamenti fra utenti** (ex fase 9) | Intermediazione di pagamento e fiscalità di terzi; condizionato a creatori che non esistono (analisi del prodotto, 12 nov) |
+| **Pagamento «a vita»** | Costo ricorrente contro incasso unico (analisi del prodotto, 12 nov) |
 
 ---
 
