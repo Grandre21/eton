@@ -456,7 +456,8 @@ else
             {
                 var creata = await Repository.CreaAsync(attivo.Id, pagante, importo, nuovaDescrizione, nuovaCategoria, nuovaData!.Value, nuovoTipo);
                 ultimaSpesaCreataId = creata.Id;
-                if (daBudget)
+                // Solo una spesa consuma un budget: un'entrata segnata da qui resta nel Registro.
+                if (daBudget && nuovoTipo == TipoMovimento.Spesa)
                 {
                     Navigation.NavigateTo("expenses/budgets");
                     return;
