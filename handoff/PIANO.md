@@ -115,6 +115,11 @@ sessione di chiusura del goal 2.4 con `claude --bg`: si aspetta `handoff/CHIUSUR
 successivo: la «poi la 2.1-bis» della riga qui sopra è superata dalla revisione del 12 nov della spec di prodotto
 (§6, «La sequenza in vigore»): dopo la 2.4 viene la 2.5, poi «due persone vere», poi la 2.1-bis; l'obiettivo lo
 scrive l'utente.
+2026-11-14 letta `handoff/CHIUSURA.md` (4 unità FATTO, copertura 7 clausole — coperte 6 · scoperte 0 · rinviate 1,
+contratti 10 su 10 convergenti, 2 correzioni del bug-hunter finale) e portata su `main` (avanzamento a 3e70465);
+le cartelle delle unità sono in `storico/handoff/`.
+
+PROSSIMA AZIONE: GOAL CHIUSO — apri una sessione nuova
 
 controllo contesto 2026-10-24 (avvio): nulla
 
