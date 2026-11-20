@@ -48,7 +48,7 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
-| **01-migrazione-periodo** | una migrazione additiva: colonna `description` (facoltativa, ≤ 200) con i privilegi di colonna, e in un blocco a sé `btree_gist` + vincolo di esclusione sui periodi, preceduto da un controllo che fallisce se in tabella ci sono già sovrapposizioni; script di collaudo RLS; provata sul Supabase locale, **non applicata** | side session, mandato in `handoff/01-migrazione-periodo/` | — | PIANIFICATA |
+| **01-migrazione-periodo** | una migrazione additiva: colonna `description` (facoltativa, ≤ 200) con i privilegi di colonna, e in un blocco a sé `btree_gist` + vincolo di esclusione sui periodi, preceduto da un controllo che fallisce se in tabella ci sono già sovrapposizioni; script di collaudo RLS; provata sul Supabase locale, **non applicata** | side session `local_1ae7e8fa-1314-461c-80b5-916b69c89cbf`, avviata dall'utente il 2026-11-20, mandato in `handoff/01-migrazione-periodo/` | — | IN CORSO |
 | **02-residui** | ScegliTipo che dopo Entrata→Spesa perde la categoria del budget; guardia d'uscita dell'editor delle ricorrenti; frase sulle ricorrenti nell'editor del budget; la decisione del ritorno ai budget dopo «Segna» estratta in una funzione pura e coperta da test | side session, mandato in `handoff/02-residui/` | 01 (solo ordine: chi scrive va in fila) | PIANIFICATA |
 | **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | PIANIFICATA |
 | **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session, mandato in `handoff/03-budget-periodo/` | GATE, 02 | PIANIFICATA |
@@ -64,8 +64,9 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 
 ## PROSSIMA AZIONE
 
-Aprire la 01-migrazione-periodo come side session: proposta come scheda il 2026-11-20 (l'app non avvia una side da
-un turno nato da un evento automatico), parte quando l'utente la avvia. Mandato della 02 pronto.
+2026-11-20 la 01 è in corso (side avviata dall'utente dalla scheda), rete armata sul suo resoconto. Al suo
+COMPLETATO: recepire il resoconto, aprire la 02 (mandato pronto) e portare all'utente il popup del GATE con lo SQL
+per DBeaver, il sì all'estensione e le righe da ratificare.
 
 controllo contesto 2026-11-20 (avvio): nulla
 
