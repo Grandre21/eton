@@ -63,6 +63,11 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
   GATE superato, archivio del rapporto della 2.4: **ratificate 2026-11-20** (le righe «da ratificare» qui sopra con
   data 2026-11-20, tranne il nome del check, che resta per il popup di fine goal).
 
+- 2026-11-20 utente (chat, popup delle ratifiche di fine goal): «Confermo tutte (Consigliata)» — nome del check
+  della descrizione, guardia delle ricorrenti su tutti i valori predefiniti, descrizione e periodo nella fila dei
+  pulsanti, anni non più in monospazio: ratificate 2026-11-20. Con le ratifiche del popup del GATE, nessuna scelta
+  del goal 2.5 resta da confermare.
+
 ## PARTIZIONE
 
 | Unità | Cosa | Dove | Dipende da | Stato |
