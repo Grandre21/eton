@@ -26,8 +26,7 @@ PERIMETRO: `Models/CategoryBudget.cs`, `Services/BudgetRepository.cs`, `Services
 se non basta è una domanda al capo), `wwwroot/` salvo una regola CSS indispensabile dichiarata in `SCOSTAMENTI`,
 `docs/`, `handoff/PIANO.md`, `handoff/CODA.md`, le cartelle delle altre unità
 
-CAPO: eton 1 (la sessione coordinatore che ti ha aperto con start_session; se il nome non risolve,
-`local_74b48072-0219-465a-8eb7-00e4f17a9ac4`)
+CAPO: la sessione coordinatore che ti ha aperto con start_session (domande e riga di fine le mandi a lei)
 
 CONTRATTI: dalla 01, già su `main` in `supabase/migrations/20261120000000_budget_periodo.sql` e applicata in
 produzione dall'utente:
@@ -41,8 +40,10 @@ produzione dall'utente:
   `ends_on` è già nel grant di INSERT e di UPDATE dalla 2.4; `starts_on` e `category` restano solo in INSERT.
 
 STATO: 01 FATTO (resoconto `handoff/01-migrazione-periodo/resoconto.md`); 02 FATTO (resoconto
-`handoff/02-residui/resoconto.md`: ha aggiunto una frase sulle ricorrenti in `Pages/BudgetEdit.razor`, da non
-spostare). La 2.4 ha costruito il flusso budget: rapporto in `storico/handoff/2026-11-14-CHIUSURA-budget-2.4.md`,
+`handoff/02-residui/resoconto.md`: ha aggiunto una frase sulle ricorrenti in `Pages/BudgetEdit.razor`, in un
+elemento a sé dopo la categoria e prima dell'importo, da non spostare). Per la prova nel browser: il pannello Browser
+dell'app ha già l'accesso a Eton fatto dall'utente il 20 nov; se torna la schermata «Entra con Google», il login lo
+fa l'utente. La 2.4 ha costruito il flusso budget: rapporto in `storico/handoff/2026-11-14-CHIUSURA-budget-2.4.md`,
 resoconti in `storico/handoff/02-budget/` e `storico/handoff/04-correzioni-budget/`. Lo sviluppo punta ai dati di
 produzione e un push su `main` pubblica il sito.
 
