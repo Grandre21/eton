@@ -46,13 +46,20 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
   la 03 si pubblica solo a GATE superato, perché un push su `main` pubblica il sito e il client nuovo scrive la
   colonna nuova — scelta del coordinatore, **da ratificare**. Raccomandazione: confermare.
 
+- 2026-11-20 utente (chat, popup, database): «Completa (Consigliata)» — migrazione con descrizione e vincolo sui
+  periodi, estensione `btree_gist` compresa.
+- 2026-11-20 utente (chat, popup, ratifiche): «Confermo tutte (Consigliata)» — lettura del «lavoro rimasto»,
+  descrizione e durata, «a rate» resta nel Registro, guardia delle ricorrenti, unità in fila con la 03 pubblicata a
+  GATE superato, archivio del rapporto della 2.4: **ratificate 2026-11-20** (le righe «da ratificare» qui sopra con
+  data 2026-11-20, tranne il nome del check, che resta per il popup di fine goal).
+
 ## PARTIZIONE
 
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
 | **01-migrazione-periodo** | una migrazione additiva: colonna `description` (facoltativa, ≤ 200) con i privilegi di colonna, e in un blocco a sé `btree_gist` + vincolo di esclusione sui periodi, preceduto da un controllo che fallisce se in tabella ci sono già sovrapposizioni; script di collaudo RLS; provata sul Supabase locale, **non applicata** | side session `local_1ae7e8fa-1314-461c-80b5-916b69c89cbf`, avviata dall'utente il 2026-11-20, mandato in `handoff/01-migrazione-periodo/` | — | **FATTO** — commit 6b0f857 (resoconto 4c08daa); provata sul Supabase locale: 4 errori attesi su 4 nello script nuovo, 14 su 14 nella regressione della 2.4, il controllo preliminare ferma la migrazione su dati sovrapposti; la violazione torna da PostgREST come HTTP 400 con `code` 23P01 (contratto per la 03); BE2/BE3 di backend-expert fuori scope; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
 | **02-residui** | ScegliTipo che dopo Entrata→Spesa perde la categoria del budget; guardia d'uscita dell'editor delle ricorrenti; frase sulle ricorrenti nell'editor del budget; la decisione del ritorno ai budget dopo «Segna» estratta in una funzione pura e coperta da test | side session, mandato in `handoff/02-residui/` | 01 (solo ordine: chi scrive va in fila) | PIANIFICATA |
-| **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | PIANIFICATA |
+| **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | IN CORSO — SQL dato in chat il 2026-11-20, versione completa |
 | **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session, mandato in `handoff/03-budget-periodo/` | GATE, 02 | PIANIFICATA |
 | **prova del capo** | prova nel browser sui dati di produzione con un sì nuovo dell'utente, poi ui-critic | coordinatore | 03 | PIANIFICATA |
 
