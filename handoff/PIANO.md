@@ -45,6 +45,11 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
 - 2026-11-20 dalla 02: in creazione di una ricorrente non conta come modifica nessuna scelta con un valore
   predefinito (categoria, cadenza, giorno, data, tipo), solo importo e descrizione scritti — la regola dell'editor del
   budget — **da ratificare**. Raccomandazione: confermare.
+- 2026-11-20 dalla 03: descrizione e periodo nell'elenco stanno nella fila dei pulsanti del budget, non accanto al
+  nome della categoria, per non aggiungere CSS — **da ratificare**. Raccomandazione: confermare, salvo che la prova
+  con una descrizione lunga non regga.
+- 2026-11-20 dalla 03: gli anni del periodo non sono più in carattere monospazio, il periodo è una frase sola —
+  **da ratificare**. Raccomandazione: confermare.
 - 2026-11-20 le unità girano come side session nella cartella del progetto, una alla volta perché scrivono tutte;
   la 03 si pubblica solo a GATE superato, perché un push su `main` pubblica il sito e il client nuovo scrive la
   colonna nuova — scelta del coordinatore, **da ratificare**. Raccomandazione: confermare.
@@ -63,8 +68,8 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
 | **01-migrazione-periodo** | una migrazione additiva: colonna `description` (facoltativa, ≤ 200) con i privilegi di colonna, e in un blocco a sé `btree_gist` + vincolo di esclusione sui periodi, preceduto da un controllo che fallisce se in tabella ci sono già sovrapposizioni; script di collaudo RLS; provata sul Supabase locale, **non applicata** | side session `local_1ae7e8fa-1314-461c-80b5-916b69c89cbf`, avviata dall'utente il 2026-11-20, mandato in `handoff/01-migrazione-periodo/` | — | **FATTO** — commit 6b0f857 (resoconto 4c08daa); provata sul Supabase locale: 4 errori attesi su 4 nello script nuovo, 14 su 14 nella regressione della 2.4, il controllo preliminare ferma la migrazione su dati sovrapposti; la violazione torna da PostgREST come HTTP 400 con `code` 23P01 (contratto per la 03); BE2/BE3 di backend-expert fuori scope; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
 | **02-residui** | ScegliTipo che dopo Entrata→Spesa perde la categoria del budget; guardia d'uscita dell'editor delle ricorrenti; frase sulle ricorrenti nell'editor del budget; la decisione del ritorno ai budget dopo «Segna» estratta in una funzione pura e coperta da test | side session `local_7e70954d-f830-4431-a42a-5742d837c0be`, avviata dall'utente il 2026-11-20, mandato in `handoff/02-residui/` | 01 (solo ordine: chi scrive va in fila) | **FATTO** — commit 7d5ad61 (resoconto 532b827); 4 rilievi fondati corretti e verificati dal checker; prova nel browser 3/3 dopo il login dell'utente nel pannello, nessun dato salvato; la metà della guardia delle ricorrenti con la finestra nativa l'ha provata l'utente nella sessione della 02 («fatte le prove, ok», riportato dalla side, trascritto nel resoconto, commit 40e3c25); verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 446 passed, 0 skipped` |
 | **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | **SUPERATO** — 2026-11-20 l'utente ha incollato in chat l'esito della query di controllo: `colonna_presente=true, check_presente=true, grant_insert=true, grant_update=true, schema_estensione=extensions, vincolo_presente=true` (tutti uguali all'atteso) |
-| **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session `local_fc75c159-7471-4a28-b004-fed18aebe851`, avviata dall'utente il 2026-11-20, mandato in `handoff/03-budget-periodo/` | GATE, 02 | IN CORSO |
-| **prova del capo** | prova nel browser sui dati di produzione con un sì nuovo dell'utente, poi ui-critic | coordinatore | 03 | PIANIFICATA |
+| **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session `local_fc75c159-7471-4a28-b004-fed18aebe851`, avviata dall'utente il 2026-11-20, mandato in `handoff/03-budget-periodo/` | GATE, 02 | **FATTO** — commit bced3ea (resoconto eb4af55); 2 rilievi fondati di backend-expert corretti e verificati, BE2 fuori scope; prova nel browser verde sull'editor senza salvare; elenco, scorciatoia e modifica non provati perché in produzione non c'è nessun budget: passano alla prova del capo (10 passi nel resoconto); verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 451 passed, 0 skipped` |
+| **prova del capo** | prova nel browser sui dati di produzione con un sì nuovo dell'utente, poi ui-critic | coordinatore | 03 | BLOCKED — serve un sì nuovo dell'utente per scrivere dati di prova in produzione; l'utente si è allontanato (avviso dell'Amministratore del 2026-11-20) |
 
 ## RAZIONALE
 
@@ -76,7 +81,12 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 
 ## PROSSIMA AZIONE
 
-2026-11-20 GATE SUPERATO e 02 recepita (perimetro verificato, riga `consentito` nel log). Prossimo: aprire la 03
+2026-11-20 03 recepita (perimetro verificato, riga `consentito` nel log), side archiviata, tutte e tre le unità FATTO
+e pubblicate. Prossimo: chiedere all'utente, al ritorno, il sì alla prova con salvataggio sui dati di produzione (i 10
+passi in `handoff/03-budget-periodo/resoconto.md`, SCOSTAMENTI), poi ui-critic, poi la sessione di chiusura del goal
+con il popup delle ratifiche (nome del check, guardia delle ricorrenti per tutti i valori predefiniti, le due della
+03). Archiviare la side 02 (rifiutato dall'app finché è aperta dall'utente).
+(storico) 2026-11-20 GATE SUPERATO e 02 recepita (perimetro verificato, riga `consentito` nel log). Prossimo: aprire la 03
 (scheda proposta: il turno nasce dal messaggio della side). L'archivio della side 02 è stato rifiutato dall'app
 (sessione aperta dall'utente): da archiviare a fine goal. Il campo `CAPO: eton 1` non risolve per le side: il
 mandato della 03 lo dice come «la sessione che ti ha aperto».

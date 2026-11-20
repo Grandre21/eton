@@ -8,4 +8,6 @@ si ferma alla voce successiva, che resta proposta, quando il turno non lo apre l
 1. 01-migrazione-periodo — mandato `handoff/01-migrazione-periodo/mandato.md` — COMPLETATO 6b0f857, archiviata
 2. 02-residui — mandato `handoff/02-residui/mandato.md` — COMPLETATO 7d5ad61
 3. GATE migrazione — SUPERATO 2026-11-20
-4. 03-budget-periodo — IN CORSO (local_fc75c159-7471-4a28-b004-fed18aebe851)
+4. 03-budget-periodo — COMPLETATO bced3ea, archiviata
+5. prova del capo con salvataggio — aspetta il sì dell'utente
+6. sessione di chiusura del goal 2.5
