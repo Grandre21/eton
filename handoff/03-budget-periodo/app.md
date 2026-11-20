@@ -1,0 +1,1 @@
+App di sviluppo per la prova nel browser (§7): eton, http://localhost:5000, pid 30776, avviata 2026-11-20 ~19:42 con mcp__synapse__app_start project=Eton.csproj profile=Eton ttl=1h. La ferma l'esecutore a ciclo chiuso.

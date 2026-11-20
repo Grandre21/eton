@@ -1,6 +1,7 @@
 @page "/expenses/budgets/new"
 @page "/expenses/budgets/{Id:guid}"
 @using Eton.Models
+@using Supabase.Postgrest.Exceptions
 @inherits PaginaEditor
 @inject BudgetRepository Repository
 @inject SpaceStateService Spazi
@@ -63,9 +64,8 @@ else
         }
         else
         {
-            var inizio = CalcoliBudget.InizioDiUnNuovo(budgetDelloSpazio, categoria, DateTime.Today);
-            <p class="spiega">Vale da @CalcoliSpese.NomeMese(inizio.Month) <span class="dato">@inizio.Year</span>, ogni mese.</p>
-            @if (inizio > CalcoliBudget.PrimoDelMese(DateTime.Today))
+            <p class="spiega">Vale @CalcoliBudget.TestoPeriodo(Inizio, UltimoMese). Lo stesso importo vale ogni mese, e quello che resta non si riporta.</p>
+            @if (Inizio >CalcoliBudget.PrimoDelMese(DateTime.Today))
             {
                 <p class="spiega">Il budget precedente di @categoria vale ancora questo mese.</p>
             }
@@ -74,11 +74,7 @@ else
     else
     {
         <div class="campo campo-lettura"><span class="etichetta-campo">Categoria</span><p>@budget!.Category</p></div>
-        <p class="spiega">Vale da @CalcoliSpese.NomeMese(budget!.StartsOn.Month) <span class="dato">@budget.StartsOn.Year</span></p>
-        @if (budget.EndsOn is { } fine)
-        {
-            <p class="spiega">Ultimo mese: @CalcoliSpese.NomeMese(fine.Month) <span class="dato">@fine.Year</span></p>
-        }
+        <p class="spiega">Vale @CalcoliBudget.TestoPeriodo(budget!.StartsOn, budget.EndsOn).</p>
     }
     @if (!string.IsNullOrEmpty(categoria))
     {
@@ -102,6 +98,32 @@ else
     @if (Testi.MessaggioImporto(Denaro.Verifica(importoTesto, out _)) is string erroreImporto)
     {
         <p class="errore-campo">@erroreImporto</p>
+    }
+    @if (PuoIntervenire)
+    {
+        <label class="campo">
+            <span class="etichetta-campo">Descrizione</span>
+            <input type="text" maxlength="@CalcoliBudget.DescrizioneMassima" placeholder="Facoltativa"
+                   @bind="descrizione" @bind:event="oninput" disabled="@occupato" />
+        </label>
+        <p class="spiega">@descrizione.Length di @CalcoliBudget.DescrizioneMassima caratteri</p>
+    }
+    else if (!string.IsNullOrEmpty(budget!.Description))
+    {
+        <div class="campo campo-lettura"><span class="etichetta-campo">Descrizione</span><p>@budget!.Description</p></div>
+    }
+    @if (Nuova)
+    {
+        <label class="campo">
+            <span class="etichetta-campo">Durata</span>
+            <select @bind="mesi" disabled="@occupato">
+                <option value="0">ogni mese, finché non lo chiudo</option>
+                @for (var n = 1; n <= CalcoliBudget.MesiMassimi; n++)
+                {
+                    <option value="@n">per @n @(n == 1 ? "mese" : "mesi")</option>
+                }
+            </select>
+        </label>
     }
     @if (!Nuova)
     {
@@ -149,7 +171,9 @@ else
     private CategoryBudget? budget, conflitto;
     private IReadOnlyList<CategoryBudget> budgetDelloSpazio = [];
     private IReadOnlyList<string> disponibili = [];
-    private string categoria = "", importoTesto = "";
+    private string categoria = "", importoTesto = "", descrizione = "";
+    // 0 = ogni mese, finché non lo chiudo; 1..24 = per N mesi. Vale solo in creazione.
+    private int mesi;
     private bool caricato, occupato, sparita, aperturaFallita;
     private bool conflittoDaChiusura;
     private string? errore, avviso;
@@ -158,12 +182,15 @@ else
     private bool Nuova => Id is null;
     private bool PuoIntervenire => Nuova || (budget is not null && Permessi.PuoIntervenire(mioId, budget.CreatedBy, budget.SpaceId, Spazi.Elenco));
     private bool Valido => Denaro.Prova(importoTesto, out _) && (!Nuova || disponibili.Contains(categoria, StringComparer.Ordinal));
+    // Ciò che si mostra è ciò che si salva: il periodo di un budget nuovo si calcola qui, una volta sola.
+    private DateTime Inizio => CalcoliBudget.InizioDiUnNuovo(budgetDelloSpazio, categoria, DateTime.Today);
+    private DateTime? UltimoMese => mesi > 0 ? CalcoliBudget.FineDaMesi(Inizio, mesi) : null;
 
-    // In creazione conta solo l'importo scritto: una categoria scelta senza importo non è lavoro che si perde.
+    // In creazione contano solo importo e descrizione scritti: una categoria o una durata scelte da sole non sono lavoro che si perde.
     // Per un budget esistente, stessa conversione del campo, così sopra mille euro il modulo non nasce già modificato.
     protected override bool Cambiata => Nuova
-        ? !string.IsNullOrWhiteSpace(importoTesto)
-        : budget is not null && importoTesto != Denaro.TestoDigitabile(budget.Amount);
+        ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
+        : budget is not null && (importoTesto != Denaro.TestoDigitabile(budget.Amount) || descrizione.Trim() != budget.Description);
 
     // Blazor riusa l'editor: la generazione scarta risposte di un precedente cambio di rotta,
     // come in RicorrenteEdit.razor. Anche il fallimento della lista in creazione blocca l'editor.
@@ -196,7 +223,8 @@ else
                     budgetDelloSpazio = letti;
                     disponibili = CalcoliBudget.CategorieDisponibili(letti);
                     categoria = disponibili.FirstOrDefault() ?? "";
-                    importoTesto = "";
+                    importoTesto = descrizione = "";
+                    mesi = 0;
                 }
             }
             else
@@ -209,6 +237,7 @@ else
                 {
                     categoria = budget.Category;
                     importoTesto = Denaro.TestoDigitabile(budget.Amount);
+                    descrizione = budget.Description;
                 }
             }
         }
@@ -236,13 +265,17 @@ else
                 if (attivo is null) { errore = "Serve uno spazio attivo per creare un budget."; return; }
                 if (!Guid.TryParse(await AuthState.GetUserIdAsync(), out var autore))
                 { errore = "La sessione non è più valida: esci e rientra."; return; }
-                var inizio = CalcoliBudget.InizioDiUnNuovo(budgetDelloSpazio, categoria, DateTime.Today);
-                await Repository.CreaAsync(attivo.Id, autore, categoria, importo, inizio);
+                await Repository.CreaAsync(attivo.Id, autore, categoria, importo, descrizione, Inizio, UltimoMese);
                 // Disarma la guardia e non lascia /new nella cronologia, come RicorrenteEdit.
                 Esci("expenses/budgets", replace: true);
                 return;
             }
             await SalvaCon(budget!.Version, importo);
+        }
+        catch (PostgrestException ex) when (CalcoliBudget.RifiutoPerSovrapposizione(ex.StatusCode, ex.Content))
+        {
+            Console.Error.WriteLine($"[Budget] Rifiutato per sovrapposizione: {ex.Message}");
+            errore = "C'è già un budget per questa categoria in quei mesi: forse l'ha appena creato qualcun altro. Torna ai budget per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
@@ -254,12 +287,13 @@ else
 
     private async Task SalvaCon(int versione, decimal importo)
     {
-        var esito = await Repository.SalvaImportoAsync(Id!.Value, versione, importo);
+        var esito = await Repository.SalvaAsync(Id!.Value, versione, importo, descrizione);
         switch (esito.Esito)
         {
             case EsitoSalvataggio.Salvata:
                 budget = esito.Aggiornata;
                 importoTesto = Denaro.TestoDigitabile(budget!.Amount);
+                descrizione = budget.Description;
                 avviso = "Salvato.";
                 break;
             case EsitoSalvataggio.Conflitto:
@@ -280,6 +314,7 @@ else
         if (conflitto is null) return;
         budget = conflitto;
         importoTesto = Denaro.TestoDigitabile(budget.Amount);
+        descrizione = budget.Description;
         categoria = budget.Category;
         conflitto = null;
         avviso = "Caricata la versione più recente.";
@@ -317,7 +352,7 @@ else
             switch (esito.Esito)
             {
                 case EsitoSalvataggio.Salvata:
-                    // Non si tocca l'importo del modulo: può contenere modifiche non salvate.
+                    // Non si toccano importo e descrizione del modulo: possono contenere modifiche non salvate.
                     budget = esito.Aggiornata;
                     avviso = "Chiuso: vale fino alla fine di questo mese.";
                     break;

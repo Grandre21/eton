@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eton.Models;
 
 namespace Eton.Services;
@@ -52,6 +53,57 @@ public static class CalcoliBudget
         return inizio;
     }
 
+    // La chiusura scrive come ultimo mese quello corrente: un budget che finisce già questo mese o prima non si chiude, o si allungherebbe.
     public static bool SiPuoChiudere(CategoryBudget b, DateTime oggi)
-        => b.EndsOn is null && b.StartsOn.Date <= PrimoDelMese(oggi);
+        => b.StartsOn.Date <= PrimoDelMese(oggi) && (b.EndsOn is null || b.EndsOn.Value.Date > PrimoDelMese(oggi));
+
+    /// <summary>La durata massima di un budget a periodo, in mesi.</summary>
+    public const int MesiMassimi = 24;
+
+    /// <summary>La descrizione più lunga di un budget: 200 (check di category_budgets.description).</summary>
+    public const int DescrizioneMassima = 200;
+
+    /// <summary>L'ultimo mese coperto da un budget di <paramref name="mesi"/> mesi, mese di inizio compreso.
+    /// Un valore fuori da 1..<see cref="MesiMassimi"/> lancia: degradare darebbe un risultato plausibile e sbagliato.</summary>
+    public static DateTime FineDaMesi(DateTime inizio, int mesi)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(mesi, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(mesi, MesiMassimi);
+        return PrimoDelMese(inizio).AddMonths(mesi - 1);
+    }
+
+    /// <summary>Il periodo in parole: «da gennaio 2027, senza fine», «solo gennaio 2027»,
+    /// «da gennaio a marzo 2027», «da novembre 2026 a febbraio 2027».</summary>
+    public static string TestoPeriodo(DateTime inizio, DateTime? fine)
+    {
+        var da = CalcoliSpese.NomeMese(inizio.Month);
+        if (fine is not { } f) return $"da {da} {inizio.Year}, senza fine";
+        var a = CalcoliSpese.NomeMese(f.Month);
+        if (f.Year != inizio.Year) return $"da {da} {inizio.Year} a {a} {f.Year}";
+        return f.Month == inizio.Month ? $"solo {da} {inizio.Year}" : $"da {da} a {a} {inizio.Year}";
+    }
+
+    // Il vincolo è category_budgets_no_overlap; 23P01 = exclusion_violation, che PostgREST rende come HTTP 400.
+    public static bool RifiutoPerSovrapposizione(int stato, string? corpo)
+    {
+        if (stato != 400 || string.IsNullOrWhiteSpace(corpo)) return false;
+        try
+        {
+            using var documento = JsonDocument.Parse(corpo);
+            return documento.RootElement.ValueKind == JsonValueKind.Object
+                && documento.RootElement.TryGetProperty("code", out var codice)
+                && codice.ValueKind == JsonValueKind.String
+                && codice.GetString() == "23P01";
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>La tabella delle spese sul mese, solo spese e senza filtro di categoria: quelle da portare nel budget stanno in altre categorie.</summary>
+    public static string IndirizzoSpeseDelMese(int anno, int mese)
+        => "expenses/table" + new VistaTabella(TipoPeriodo.Libero, new DateTime(anno, mese, 1),
+            new DateTime(anno, mese, DateTime.DaysInMonth(anno, mese)),
+            FiltriSpese.Nessuno with { Tipo = TipoMovimento.Spesa }, TabellaSpese.Colonne.Data, true, null).InQuery();
 }

@@ -85,6 +85,63 @@ public class CalcoliBudgetTests
     }
 
     [Fact]
+    public void FineDaMesi_conta_il_mese_di_inizio()
+    {
+        Assert.Equal(new DateTime(2026, 11, 1), CalcoliBudget.FineDaMesi(new(2026, 11, 1), 1));
+        Assert.Equal(new DateTime(2027, 1, 1), CalcoliBudget.FineDaMesi(new(2026, 11, 1), 3));
+        Assert.Equal(new DateTime(2028, 10, 1), CalcoliBudget.FineDaMesi(new(2026, 11, 25), 24));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CalcoliBudget.FineDaMesi(new(2026, 11, 1), 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CalcoliBudget.FineDaMesi(new(2026, 11, 1), 25));
+    }
+
+    [Fact]
+    public void Un_budget_a_periodo_si_chiude_prima_della_fine_ma_non_si_allunga()
+    {
+        var oggi = new DateTime(2026, 10, 25);
+        Assert.True(CalcoliBudget.SiPuoChiudere(Budget(mese: 10, fine: 12), oggi));
+        Assert.False(CalcoliBudget.SiPuoChiudere(Budget(mese: 10, fine: 10), oggi));
+        Assert.False(CalcoliBudget.SiPuoChiudere(Budget(mese: 8, fine: 9), oggi));
+        Assert.False(CalcoliBudget.SiPuoChiudere(Budget(mese: 11, fine: 12), oggi));
+    }
+
+    [Fact]
+    public void TestoPeriodo_nei_quattro_casi()
+    {
+        Assert.Equal("da gennaio 2027, senza fine", CalcoliBudget.TestoPeriodo(new(2027, 1, 1), null));
+        Assert.Equal("solo gennaio 2027", CalcoliBudget.TestoPeriodo(new(2027, 1, 1), new(2027, 1, 1)));
+        Assert.Equal("da gennaio a marzo 2027", CalcoliBudget.TestoPeriodo(new(2027, 1, 1), new(2027, 3, 1)));
+        Assert.Equal("da novembre 2026 a febbraio 2027", CalcoliBudget.TestoPeriodo(new(2026, 11, 1), new(2027, 2, 1)));
+    }
+
+    [Fact]
+    public void Il_rifiuto_23P01_si_riconosce_solo_col_400_e_il_suo_codice()
+    {
+        const string corpo = "{\"code\":\"23P01\",\"details\":\"Key conflicts with existing key.\",\"hint\":null,\"message\":\"conflicting key value violates exclusion constraint \\\"category_budgets_no_overlap\\\"\"}";
+        Assert.True(CalcoliBudget.RifiutoPerSovrapposizione(400, corpo));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(409, corpo));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, "{\"code\":\"23505\"}"));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, null));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, ""));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, "non json"));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, "[]"));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, "{\"code\":23}"));
+    }
+
+    [Fact]
+    public void La_scorciatoia_apre_la_tabella_sul_mese_tipo_spesa_senza_categoria()
+    {
+        const string percorso = "expenses/table";
+        var indirizzo = CalcoliBudget.IndirizzoSpeseDelMese(2026, 2);
+        Assert.StartsWith(percorso + "?", indirizzo);
+        var vista = VistaTabella.DaQuery(indirizzo[percorso.Length..]);
+        Assert.Equal(TipoPeriodo.Libero, vista.Periodo);
+        Assert.Equal(new DateTime(2026, 2, 1), vista.Da);
+        Assert.Equal(new DateTime(2026, 2, 28), vista.A);
+        Assert.Equal(TipoMovimento.Spesa, vista.Filtri.Tipo);
+        Assert.Empty(vista.Filtri.Categorie);
+    }
+
+    [Fact]
     public void Ordine_elenco_poi_ordinale_e_confronto_esatto()
     {
         var r = new RiepilogoMese(10, [new("casa", 10, 100)], 0, null);

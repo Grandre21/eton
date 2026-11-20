@@ -13,7 +13,7 @@
         }
     </Azione>
     <Aiuto>
-        <p>Il budget vale ogni mese e riparte pieno: il residuo non si riporta.</p>
+        <p>Il budget vale ogni mese, senza fine o per il numero di mesi che scegli, e riparte pieno: il residuo non si riporta.</p>
         <p>Ogni spesa della categoria lo consuma, da qualunque pagina la segni.</p>
         <p>Le entrate non lo toccano.</p>
     </Aiuto>
@@ -89,7 +89,9 @@ else
                             <span class="quota dato">@(s.Residuo >= 0 ? "restano" : "sforato di") @Denaro.Testo(Math.Abs(s.Residuo))&#160;€</span>
                             <span class="totale-categoria dato">@Denaro.Testo(s.Speso) / @Denaro.Testo(s.Budget.Amount)&#160;€</span>
                             <div class="azioni">
+                                <span class="spiega">@(string.IsNullOrEmpty(s.Budget.Description) ? "" : s.Budget.Description + " · ")@CalcoliBudget.TestoPeriodo(s.Budget.StartsOn, s.Budget.EndsOn)</span>
                                 <a class="btn compatto" href="@($"expenses?categoria={Uri.EscapeDataString(categoria)}")">Registra una spesa</a>
+                                <a class="btn compatto" href="@CalcoliBudget.IndirizzoSpeseDelMese(anno, mese)">Spese del mese</a>
                                 <a class="btn compatto" href="expenses/budgets/@s.Budget.Id">Modifica</a>
                             </div>
                         </li>
@@ -106,8 +108,8 @@ else
                     {
                         <li>
                             <a class="riga riga-spesa" href="expenses/budgets/@b.Id">
-                                <span class="descrizione">@b.Category</span>
-                                <span class="meta">da @CalcoliSpese.NomeMese(b.StartsOn.Month) <span class="dato">@b.StartsOn.Year</span></span>
+                                <span class="descrizione">@b.Category@(string.IsNullOrEmpty(b.Description) ? "" : " · " + b.Description)</span>
+                                <span class="meta">@CalcoliBudget.TestoPeriodo(b.StartsOn, b.EndsOn)</span>
                                 <span class="importo dato">@Denaro.Testo(b.Amount)&#160;€</span>
                             </a>
                         </li>

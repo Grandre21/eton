@@ -17,6 +17,7 @@ public class CategoryBudget : BaseModel
     [Column("starts_on", ignoreOnUpdate: true)] public DateTime StartsOn { get; set; }
     [Column("amount")] public decimal Amount { get; set; }
     [Column("ends_on")] public DateTime? EndsOn { get; set; }
+    [Column("description")] public string Description { get; set; } = "";
 
     // La versione si usa come filtro, mai come valore: la scrive il trigger, come in Expense.cs.
     [Column("version", ignoreOnInsert: true, ignoreOnUpdate: true)] public int Version { get; set; }

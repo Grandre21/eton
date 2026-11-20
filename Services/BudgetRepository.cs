@@ -25,24 +25,26 @@ public class BudgetRepository
         return risposta.Models.FirstOrDefault();
     }
 
-    public async Task<CategoryBudget> CreaAsync(Guid spazioId, Guid autore, string categoria, decimal importo, DateTime inizio)
+    public async Task<CategoryBudget> CreaAsync(Guid spazioId, Guid autore, string categoria, decimal importo, string descrizione, DateTime inizio, DateTime? ultimoMese)
     {
         var client = await _supabase.GetClientAsync();
         var risposta = await client.From<CategoryBudget>().Insert(new CategoryBudget
         {
             Id = Guid.NewGuid(), SpaceId = spazioId, CreatedBy = autore, Category = categoria,
-            Amount = importo, StartsOn = ExpenseRepository.PerIlDatabase(CalcoliBudget.PrimoDelMese(inizio)), EndsOn = null
+            Amount = importo, Description = descrizione.Trim(),
+            StartsOn = ExpenseRepository.PerIlDatabase(CalcoliBudget.PrimoDelMese(inizio)),
+            EndsOn = ultimoMese is { } u ? ExpenseRepository.PerIlDatabase(CalcoliBudget.PrimoDelMese(u)) : null
         });
         return risposta.Models.FirstOrDefault()
             ?? throw new InvalidOperationException("Il database non ha restituito il budget appena creato.");
     }
 
-    public async Task<RisultatoSalvataggio<CategoryBudget>> SalvaImportoAsync(Guid budgetId, int versioneLetta, decimal importo)
+    public async Task<RisultatoSalvataggio<CategoryBudget>> SalvaAsync(Guid budgetId, int versioneLetta, decimal importo, string descrizione)
     {
         var client = await _supabase.GetClientAsync();
         // Version è solo filtro: il trigger la incrementa e il grant non consente di scriverla.
         var risposta = await client.From<CategoryBudget>().Where(b => b.Id == budgetId && b.Version == versioneLetta)
-            .Set(b => b.Amount, importo).Update();
+            .Set(b => b.Amount, importo).Set(b => b.Description, descrizione.Trim()).Update();
         return await Esito(risposta, budgetId, versioneLetta);
     }
 
