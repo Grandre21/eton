@@ -235,10 +235,10 @@ else
 
     @* 'testo-tenue' e non 'errore-campo': è un'istruzione, non un rimprovero, come in
        Pages/NoteEdit.razor:90-104 e Pages/SpesaEdit.razor:160-171. In creazione la riga segue
-       !Valido e non !Cambiata: da quando Cambiata guarda anche cadenza, giorno, categoria e data,
-       può essere vera con importo e descrizione ancora vuoti, e la riga deve restare finché manca
-       qualcosa di valido. Su una regola esistente serve invece !Cambiata && Valido, altrimenti il
-       messaggio comparirebbe insieme a un errore-campo sullo stesso campo. *@
+       !Valido e non !Cambiata perché Cambiata è vera appena si scrive qualcosa, anche un importo
+       non valido o senza descrizione, e la riga deve restare finché manca qualcosa di valido.
+       Su una regola esistente serve invece !Cambiata && Valido, altrimenti il messaggio
+       comparirebbe insieme a un errore-campo sullo stesso campo. *@
     @if (!occupato && PuoIntervenire && conflitto is null && (Nuova ? !Valido : !Cambiata && Valido))
     {
         <p class="testo-tenue">
@@ -382,11 +382,10 @@ else
 
     // TestoDigitabile e non Testo nel confronto: v. Pages/SpesaEdit.razor:250-252, i due lati
     // devono passare dalla stessa funzione o la pagina nascerebbe già "modificata" sopra i mille euro.
-    // I campi con un default (categoria, ogniMesi, giorno, inizio) contano come modifica solo se si
-    // allontanano da quel default, gli stessi valori che OnParametersSetAsync assegna in creazione.
+    // In creazione contano solo i campi scritti, come in Pages/BudgetEdit.razor (stessa regola): una
+    // scelta senza niente di scritto non è lavoro che si perde.
     protected override bool Cambiata => Nuova
         ? !string.IsNullOrWhiteSpace(importoTesto) || !string.IsNullOrWhiteSpace(descrizione)
-          || categoria != CategorieSpesa.Elenco[0] || ogniMesi != 1 || giorno != DateTime.Today.Day || inizio?.Date != DateTime.Today || tipo != TipoMovimento.Spesa
         : regola is not null && (Piano
             ? totaleTesto != Denaro.TestoDigitabile(regola.PlanTotal ?? 0) || rate != regola.Installments
               || descrizione != regola.Description || categoria != regola.Category || inizio?.Date != regola.StartsOn.Date

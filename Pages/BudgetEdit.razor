@@ -80,6 +80,10 @@ else
             <p class="spiega">Ultimo mese: @CalcoliSpese.NomeMese(fine.Month) <span class="dato">@fine.Year</span></p>
         }
     }
+    @if (!string.IsNullOrEmpty(categoria))
+    {
+        <p class="spiega">Anche le spese ricorrenti di @categoria consumano questo budget, dal giorno in cui scadono.</p>
+    }
     @if (PuoIntervenire)
     {
         <label class="campo">
