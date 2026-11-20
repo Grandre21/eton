@@ -57,3 +57,5 @@ SCOSTAMENTI
 - I brief erano tre, meccanici e su file disgiunti; la revisione è stata una sola, sul diff cumulativo, con tutti e quattro i revisori.
 - `handoff/PIANO.md` non è stato creato: nessuno l'ha chiesto.
 - L'app è stata avviata e fermata da questa sessione (PID 16696, handoff/05-log-errori/app.md).
+
+COMPLETATO 69faee5
