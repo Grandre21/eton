@@ -58,6 +58,7 @@ SCOSTAMENTI:
 
 DECISIONI DELL'UTENTE QUI:
 - 2026-11-20 utente (chat, sessione 02-residui): «Fatto, ho fatto l'accesso» (login con Google nel pannello Browser per la prova).
+- 2026-11-20 utente (chat, sessione 02-residui): «fatte le prove, ok» — la PROVA PER L'UTENTE della guardia con la finestra nativa (Chiudi, Indietro, F5 con importo scritto) è passata.
 
 DA RATIFICARE:
 - (b) In creazione di una ricorrente non conta più come modifica nessuna scelta con un default (categoria, cadenza, giorno, data, tipo), non solo la categoria: contano solo importo e descrizione scritti. Raccomando di tenerlo: è la regola dell'editor del budget («stessa regola, stessa forma» del mandato).
