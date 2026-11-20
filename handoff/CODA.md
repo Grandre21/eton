@@ -10,5 +10,5 @@ si ferma alla voce successiva, che resta proposta, quando il turno non lo apre l
 3. GATE migrazione — SUPERATO 2026-11-20
 4. 03-budget-periodo — COMPLETATO bced3ea, archiviata
 5. prova del capo con salvataggio — fatta 2026-11-20, due difetti
-5b. 04-correzioni-periodo — mandato `handoff/04-correzioni-periodo/mandato.md`, IN CORSO (local_433f1faa-648f-4584-9a3c-02346db4cb57)
+5b. 04-correzioni-periodo — mandato `handoff/04-correzioni-periodo/mandato.md`, COMPLETATO d6b8030
 6. sessione di chiusura del goal 2.5

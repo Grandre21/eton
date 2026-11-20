@@ -72,7 +72,7 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
 | **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | **SUPERATO** — 2026-11-20 l'utente ha incollato in chat l'esito della query di controllo: `colonna_presente=true, check_presente=true, grant_insert=true, grant_update=true, schema_estensione=extensions, vincolo_presente=true` (tutti uguali all'atteso) |
 | **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session `local_fc75c159-7471-4a28-b004-fed18aebe851`, avviata dall'utente il 2026-11-20, mandato in `handoff/03-budget-periodo/` | GATE, 02 | **FATTO** — commit bced3ea (resoconto eb4af55); 2 rilievi fondati di backend-expert corretti e verificati, BE2 fuori scope; prova nel browser verde sull'editor senza salvare; elenco, scorciatoia e modifica non provati perché in produzione non c'è nessun budget: passano alla prova del capo (10 passi nel resoconto); verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 451 passed, 0 skipped` |
 | **prova del capo** | prova nel browser sui dati di produzione con un sì nuovo dell'utente, poi ui-critic | coordinatore | 03 | **PARZIALE** — 2026-11-20 eseguita da live-testing col sì dell'utente: 8 passi su 10 OK, pulizia completa; KO: overflow con descrizione lunga senza spazi, barra «errore imprevisto» dopo il rifiuto per sovrapposizione (`handoff/03-budget-periodo/prova-capo.md`); è una prova, nessun comando la verifica |
-| **04-correzioni-periodo** | i due KO della prova del capo: eccezione dopo il rifiuto 23P01, descrizione lunga che esce dalla pagina; prova nel browser con pulizia | side session `local_433f1faa-648f-4584-9a3c-02346db4cb57`, avviata dall'utente il 2026-11-20, mandato in `handoff/04-correzioni-periodo/` | prova del capo | IN CORSO |
+| **04-correzioni-periodo** | i due KO della prova del capo: eccezione dopo il rifiuto 23P01, descrizione lunga che esce dalla pagina; prova nel browser con pulizia | side session `local_433f1faa-648f-4584-9a3c-02346db4cb57`, avviata dall'utente il 2026-11-20, mandato in `handoff/04-correzioni-periodo/` | prova del capo | **FATTO** — commit d6b8030 (resoconto 330d6e1, pubblicati dalla side); (a) la barra non era un'eccezione: in Blazor WASM ogni scrittura su stderr la accende, il log del rifiuto ora va su stdout; (b) `overflow-wrap: anywhere` sulla descrizione; prova nel browser verde col sì dell'utente ripetuto nella side, dati di prova cancellati; ui-critic 0 rilievi; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 451 passed, 0 skipped` |
 
 ## RAZIONALE
 
@@ -84,8 +84,10 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 
 ## PROSSIMA AZIONE
 
-2026-11-20 prova del capo fatta (8/10, due difetti), app fermata. Prossimo: aprire la 04-correzioni-periodo (scheda
-proposta), poi ui-critic sull'elenco e la sessione di chiusura con il popup delle ratifiche.
+2026-11-20 04 recepita (perimetro verificato, riga `consentito` nel log); ui-critic fatto dentro la 04. Tutte le
+unità sono FATTO. Prossimo: la sessione di chiusura del goal 2.5 (scheda proposta), poi il popup delle ratifiche
+(nome del check, guardia delle ricorrenti, le due della 03) e la proposta della correzione dei log su stderr.
+(storico) 2026-11-20 prova del capo fatta (8/10, due difetti), app fermata.
 (storico) 2026-11-20 03 recepita (perimetro verificato, riga `consentito` nel log), side archiviata, tutte e tre le unità FATTO
 e pubblicate. Prossimo: chiedere all'utente, al ritorno, il sì alla prova con salvataggio sui dati di produzione (i 10
 passi in `handoff/03-budget-periodo/resoconto.md`, SCOSTAMENTI), poi ui-critic, poi la sessione di chiusura del goal
@@ -110,6 +112,12 @@ controllo contesto 2026-11-20 (avvio): nulla
   `supabase/verifica-*.sql`, decisione dell'utente); nota di threat-hunter non provata e preesistente: la policy di
   modifica dei budget non chiede di essere ancora membro dello spazio, quindi un ex membro autore di un budget
   potrebbe forse ancora modificarlo. Da collocare con S1/S3 della sicurezza.
+- Dalla 04, difetto di tutto il progetto, fuori da questo goal: 106 `Console.Error.WriteLine` in 29 file; in Blazor
+  WASM ogni scrittura su stderr accende la barra «Si è verificato un errore imprevisto», quindi ogni errore gestito
+  (salvataggio rifiutato, apertura non riuscita) la mostra anche quando la pagina dice già il suo messaggio. Unità a
+  sé: passare i log degli errori gestiti su stdout o su un logger. Da proporre all'utente a fine goal.
+- Dalla 04, ui-critic: con una descrizione corta, a 1280 px il testo nella fila dei pulsanti sta in alto mentre le
+  etichette dei pulsanti stanno al centro. Per la 2.1-bis.
 - Granularità sotto la categoria: con la categoria intera resta aggiungere una categoria.
 - Vincolo operativo dalla 2.3: aggiornare la PWA su tutti i dispositivi prima di creare il primo piano a rate.
 - I rilievi S1/S3 dell'analisi di sicurezza vanno collocati prima di «due persone vere» (goal loro).
