@@ -85,7 +85,8 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 ## PROSSIMA AZIONE
 
 2026-11-20 04 recepita (perimetro verificato, riga `consentito` nel log); ui-critic fatto dentro la 04. Tutte le
-unità sono FATTO. Prossimo: la sessione di chiusura del goal 2.5 (scheda proposta), poi il popup delle ratifiche
+unità sono FATTO. Sessione di chiusura avviata dall'utente (`local_7ed7e3f4-2c18-460a-b06b-d4677c592b3b`), rete armata su
+`handoff/CHIUSURA.md`; al suo rapporto: GOAL CHIUSO, poi il popup delle ratifiche
 (nome del check, guardia delle ricorrenti, le due della 03) e la proposta della correzione dei log su stderr.
 (storico) 2026-11-20 prova del capo fatta (8/10, due difetti), app fermata.
 (storico) 2026-11-20 03 recepita (perimetro verificato, riga `consentito` nel log), side archiviata, tutte e tre le unità FATTO
