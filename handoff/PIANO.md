@@ -64,7 +64,8 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 
 ## PROSSIMA AZIONE
 
-Aprire la 01-migrazione-periodo come side session (mandato pronto); mentre corre, scrivere il mandato della 02.
+Aprire la 01-migrazione-periodo come side session: proposta come scheda il 2026-11-20 (l'app non avvia una side da
+un turno nato da un evento automatico), parte quando l'utente la avvia. Mandato della 02 pronto.
 
 controllo contesto 2026-11-20 (avvio): nulla
 

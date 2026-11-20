@@ -5,7 +5,7 @@ quella prima completata.
 
 si ferma alla voce successiva, che resta proposta, quando il turno non lo apre l'utente (l'app rifiuta l'avvio)
 
-1. 01-migrazione-periodo — mandato `handoff/01-migrazione-periodo/mandato.md` — IN CORSO
-2. 02-residui — mandato `handoff/02-residui/mandato.md` (da scrivere mentre corre la 01)
+1. 01-migrazione-periodo — mandato `handoff/01-migrazione-periodo/mandato.md` — proposta come scheda, da avviare
+2. 02-residui — mandato `handoff/02-residui/mandato.md` (pronto)
 3. GATE migrazione — gesto dell'utente, popup dopo la 01
 4. 03-budget-periodo — solo a GATE superato e 02 completata
