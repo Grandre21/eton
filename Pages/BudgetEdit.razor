@@ -274,7 +274,9 @@ else
         }
         catch (PostgrestException ex) when (CalcoliBudget.RifiutoPerSovrapposizione(ex.StatusCode, ex.Content))
         {
-            Console.Error.WriteLine($"[Budget] Rifiutato per sovrapposizione: {ex.Message}");
+            // stderr in Blazor WASM accende la barra «errore imprevisto»: qui il rifiuto è previsto
+            // e ha già il suo messaggio per l'utente, quindi il log va su stdout.
+            Console.WriteLine($"[Budget] Rifiutato per sovrapposizione: {ex.Message}");
             errore = "C'è già un budget per questa categoria in quei mesi: forse l'ha appena creato qualcun altro. Torna ai budget per vedere com'è adesso.";
         }
         catch (Exception ex)

@@ -1,0 +1,1 @@
+App di sviluppo per la prova nel browser dell'unità 04: `app_start project=Eton.csproj profile=Eton name=eton`, http://localhost:5000, pid 30300, avviata 2026-11-20 dopo la build verde. Da fermare con `app_stop name=eton` prima del resoconto.

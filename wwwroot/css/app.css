@@ -2119,6 +2119,11 @@ li:last-child > .riga { border-bottom: none; }
    già lo stacco (stessa logica di .azioni:not(:last-child) più su). */
 .barre-categorie > li:not(:last-child) > .azioni { margin-bottom: var(--s4); }
 
+/* Una descrizione senza spazi va a capo dentro la riga invece di allargare la pagina.
+   `anywhere` e non `break-word`: solo `anywhere` abbassa la larghezza minima del flex item.
+   Con testo normale non cambia nulla, perché spezza solo dove altrimenti traboccherebbe. */
+.barre-categorie > li > .azioni > .spiega { overflow-wrap: anywhere; }
+
 .barra {
     position: relative;
     height: 8px;
