@@ -47,6 +47,9 @@ DECISIONI DA RATIFICARE
 - 2026-11-21 forma unica `Diagnostica.ErroreGestito` su stdout (raccomandazione di tech-advisor), da ratificare. Si annulla con un revert. Se un giorno servono gli errori nel filtro «Errors» o «Warnings» dei DevTools, si cambia la sola riga dell'helper.
 - 2026-11-21 l'esportazione CSV fallita tiene la barra (`ErroreNonSegnalato`) invece di avere un messaggio nuovo, perché il mandato chiedeva di non cambiare i messaggi; da ratificare.
 
+- 2026-11-21 utente (popup della sessione Amministratore, riportato da lei al coordinatore con le parole dell'utente):
+  alla 1 «Confermo (Recommended)», alla 2 «Confermo (Recommended)» — ratificate 2026-11-21, come riportate.
+
 FUORI SCOPE
 - L'esportazione della tabella spese fallita non ha un messaggio suo: oggi l'utente vede solo la barra generica. Un messaggio vero vuol dire testo nuovo per l'utente, più un esito restituito da `Griglia.EsportaAsync` e mostrato da `SpeseTabella` (per esempio in `avvisoPagina`).
 - checker, sotto soglia: in Pages/SpaceDetail.razor:287 il catch della rilettura dei membri dopo una rimozione non ha un commento che dichiari la degradazione (la pagina mostra comunque l'avviso). Era così già prima.
