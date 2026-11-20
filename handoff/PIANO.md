@@ -58,7 +58,7 @@ rapporto di chiusura della 2.4 sono in `storico/handoff/2026-10-24-PIANO-budget-
 | Unità | Cosa | Dove | Dipende da | Stato |
 |---|---|---|---|---|
 | **01-migrazione-periodo** | una migrazione additiva: colonna `description` (facoltativa, ≤ 200) con i privilegi di colonna, e in un blocco a sé `btree_gist` + vincolo di esclusione sui periodi, preceduto da un controllo che fallisce se in tabella ci sono già sovrapposizioni; script di collaudo RLS; provata sul Supabase locale, **non applicata** | side session `local_1ae7e8fa-1314-461c-80b5-916b69c89cbf`, avviata dall'utente il 2026-11-20, mandato in `handoff/01-migrazione-periodo/` | — | **FATTO** — commit 6b0f857 (resoconto 4c08daa); provata sul Supabase locale: 4 errori attesi su 4 nello script nuovo, 14 su 14 nella regressione della 2.4, il controllo preliminare ferma la migrazione su dati sovrapposti; la violazione torna da PostgREST come HTTP 400 con `code` 23P01 (contratto per la 03); BE2/BE3 di backend-expert fuori scope; verifica: `mcp__synapse__test root=G:\Sviluppo\Eton` → `test: 0 failed, 442 passed, 0 skipped` |
-| **02-residui** | ScegliTipo che dopo Entrata→Spesa perde la categoria del budget; guardia d'uscita dell'editor delle ricorrenti; frase sulle ricorrenti nell'editor del budget; la decisione del ritorno ai budget dopo «Segna» estratta in una funzione pura e coperta da test | side session, mandato in `handoff/02-residui/` | 01 (solo ordine: chi scrive va in fila) | PIANIFICATA |
+| **02-residui** | ScegliTipo che dopo Entrata→Spesa perde la categoria del budget; guardia d'uscita dell'editor delle ricorrenti; frase sulle ricorrenti nell'editor del budget; la decisione del ritorno ai budget dopo «Segna» estratta in una funzione pura e coperta da test | side session `local_7e70954d-f830-4431-a42a-5742d837c0be`, avviata dall'utente il 2026-11-20, mandato in `handoff/02-residui/` | 01 (solo ordine: chi scrive va in fila) | IN CORSO |
 | **GATE migrazione** | l'utente applica la migrazione in DBeaver (con il sì all'estensione) e incolla l'esito della query di controllo | utente | 01 | IN CORSO — SQL dato in chat il 2026-11-20, versione completa |
 | **03-budget-periodo** | modello e repository con `description` ed `EndsOn`; editor con descrizione e durata; chiusura anticipata di un budget a periodo; messaggio proprio per il rifiuto del vincolo di sovrapposizione; elenco con descrizione e periodo; scorciatoia dal budget alla tabella del mese; test | side session, mandato in `handoff/03-budget-periodo/` | GATE, 02 | PIANIFICATA |
 | **prova del capo** | prova nel browser sui dati di produzione con un sì nuovo dell'utente, poi ui-critic | coordinatore | 03 | PIANIFICATA |
@@ -73,7 +73,9 @@ perché il push su `main` pubblica, e il client nuovo scriverebbe una colonna ch
 
 ## PROSSIMA AZIONE
 
-2026-11-20 01 FATTO e recepita (perimetro verificato, riga `consentito` nel log delle verifiche), side archiviata.
+2026-11-20 02 in corso (avviata dall'utente), rete armata; mandato della 03 pronto. GATE: SQL dato in chat,
+si aspetta l'esito della query di controllo. La 03 si apre solo con GATE SUPERATO e 02 recepita.
+(storico della riga precedente) 2026-11-20 01 FATTO e recepita (perimetro verificato, riga `consentito` nel log delle verifiche), side archiviata.
 Prossimo: aprire la 02 (scheda proposta: il turno nasce dal messaggio della side) e, in parallelo, il popup del GATE
 all'utente con lo SQL per DBeaver dal resoconto della 01, il sì all'estensione e le righe da ratificare.
 
