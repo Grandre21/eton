@@ -9,5 +9,6 @@ si ferma alla voce successiva, che resta proposta, quando il turno non lo apre l
 2. 02-residui — mandato `handoff/02-residui/mandato.md` — COMPLETATO 7d5ad61
 3. GATE migrazione — SUPERATO 2026-11-20
 4. 03-budget-periodo — COMPLETATO bced3ea, archiviata
-5. prova del capo con salvataggio — aspetta il sì dell'utente
+5. prova del capo con salvataggio — fatta 2026-11-20, due difetti
+5b. 04-correzioni-periodo — mandato `handoff/04-correzioni-periodo/mandato.md`, proposta come scheda
 6. sessione di chiusura del goal 2.5
