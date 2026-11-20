@@ -40,7 +40,7 @@ public class BrowserSessionHandler : IGotrueSessionPersistence<Session>
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Salvataggio della sessione fallito: alla ricarica vale ancora la precedente, se c'era: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Salvataggio della sessione fallito: alla ricarica vale ancora la precedente, se c'era: {ex.Message}");
         }
     }
 
@@ -77,7 +77,7 @@ public class BrowserSessionHandler : IGotrueSessionPersistence<Session>
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Sessione persistita illeggibile, la scarto: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Sessione persistita illeggibile, la scarto: {ex.Message}");
             try { DestroySession(); } catch { /* se anche questo fallisce, localStorage è inservibile: si prosegue senza */ }
             return null;
         }

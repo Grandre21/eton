@@ -309,7 +309,7 @@ else
             // pulsante ce l'ha, solo quando Spazi.Attivo è nullo — e SpaceStateService, che è un
             // singleton, tiene lo spazio attivo precedente anche quando la lettura fallisce. Con
             // Attivo valorizzato resta il <div class="errore"> sopra il contenuto, senza pulsante.
-            Console.Error.WriteLine($"[Home] Elenco degli spazi non caricato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Home] Elenco degli spazi non caricato: {ex.Message}");
             errore = "Non è stato possibile caricare i tuoi spazi: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
             caricato = true;
             return;
@@ -401,7 +401,7 @@ else
                 // qui sotto: un fallimento già sorpassato da una lettura più recente non deve andare a
                 // schermo — e infatti il return resta — ma nemmeno sparire senza lasciare traccia, o
                 // questo catch sarebbe muto in quel ramo.
-                Console.Error.WriteLine($"[Home] Dettagli dello spazio non letti: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Home] Dettagli dello spazio non letti: {ex.Message}");
                 if (mia != generazione) return;
                 errore = $"{premessa}, ma non è stato possibile leggerne i dettagli: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Ricarica la pagina per riprovare.";
                 dettagliMancanti = true;
@@ -426,7 +426,7 @@ else
             catch (Exception ex)
             {
                 if (mia != generazione) return;
-                Console.Error.WriteLine($"[Home] Spese non disponibili: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Home] Spese non disponibili: {ex.Message}");
             }
         }
         finally

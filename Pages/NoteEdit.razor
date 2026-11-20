@@ -232,7 +232,7 @@ else
             // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
             // voleva solo aprire una nota. In console ci va invece per intero, così la diagnosi non
             // si perde. Vale per tutti i catch qui sotto.
-            Console.Error.WriteLine($"[Note] Apertura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Note] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire la nota: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
@@ -259,7 +259,7 @@ else
             // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
             // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
             // esattamente ciò che non è stato scritto.
-            Console.Error.WriteLine($"[Note] Salvataggio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Note] Salvataggio non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -353,7 +353,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Note] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Note] Sovrascrittura non riuscita: {ex.Message}");
             errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -387,7 +387,7 @@ else
             // Pages/CollectionEdit.razor: NoteRepository.EliminaAsync fa TRE chiamate di rete —
             // lettura preventiva, DELETE, rilettura di conferma — quindi un'eccezione può scoppiare
             // DOPO una cancellazione riuscita, e la promessa sarebbe falsa in un caso raggiungibile.
-            Console.Error.WriteLine($"[Note] Eliminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Note] Eliminazione non riuscita: {ex.Message}");
             errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se la nota c'è ancora.";
         }
         finally

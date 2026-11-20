@@ -42,7 +42,7 @@
             // giusto. Un banner rosso dentro la barra di navigazione comparirebbe una seconda volta
             // accanto a quello della pagina, dicendo la stessa cosa in un posto dove non si può
             // fare niente per rimediare.
-            Console.Error.WriteLine($"[Selettore] Spazi non caricati: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Selettore] Spazi non caricati: {ex.Message}");
         }
     }
 

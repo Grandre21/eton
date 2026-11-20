@@ -181,7 +181,7 @@ public class ExpenseRepository
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Ricorrenti] Occorrenze non scritte per una regola: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Ricorrenti] Occorrenze non scritte per una regola: {ex.Message}");
             }
         }
     }

@@ -458,7 +458,7 @@ else
             regola = null;
             // Il testo dell'eccezione NON va all'utente, solo in console: v. il commento nel catch
             // di Pages/NoteEdit.razor:230-235. Vale per tutti i catch qui sotto.
-            Console.Error.WriteLine($"[Ricorrenti] Apertura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Ricorrenti] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire questa ricorrente: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
@@ -485,7 +485,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Ricorrenti] Salvataggio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Ricorrenti] Salvataggio non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -608,7 +608,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Ricorrenti] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Ricorrenti] Sovrascrittura non riuscita: {ex.Message}");
             errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -648,7 +648,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Ricorrenti] Terminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Ricorrenti] Terminazione non riuscita: {ex.Message}");
             errore = $"Non è stato possibile terminare {LaNomeTipo} ricorrente: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally
@@ -674,7 +674,7 @@ else
             // Il 23503 (FK di expenses.recurring_id, no action) arriva da qui: v.
             // RecurringExpenseRepository.EliminaAsync. Una regola che ha già generato occorrenze
             // non si elimina, si termina.
-            Console.Error.WriteLine($"[Ricorrenti] Eliminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Ricorrenti] Eliminazione non riuscita: {ex.Message}");
             errore = $"Non è stato possibile eliminare {LaNomeTipo} ricorrente: se nel frattempo ha segnato delle {NomeTipoPlurale} si può solo terminare, altrimenti il database non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally

@@ -246,7 +246,7 @@ else
             if (mia != generazione) return;
             aperturaFallita = true;
             // Il dettaglio tecnico resta in console, come negli altri editor.
-            Console.Error.WriteLine($"[Budget] Apertura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire questo budget: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
         caricato = true;
@@ -274,14 +274,12 @@ else
         }
         catch (PostgrestException ex) when (CalcoliBudget.RifiutoPerSovrapposizione(ex.StatusCode, ex.Content))
         {
-            // stderr in Blazor WASM accende la barra «errore imprevisto»: qui il rifiuto è previsto
-            // e ha già il suo messaggio per l'utente, quindi il log va su stdout.
-            Console.WriteLine($"[Budget] Rifiutato per sovrapposizione: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Rifiutato per sovrapposizione: {ex.Message}");
             errore = "C'è già un budget per questa categoria in quei mesi: forse l'ha appena creato qualcun altro. Torna ai budget per vedere com'è adesso.";
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Budget] Salvataggio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Salvataggio non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally { occupato = false; }
@@ -338,7 +336,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Budget] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Sovrascrittura non riuscita: {ex.Message}");
             errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally { occupato = false; }
@@ -372,7 +370,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Budget] Chiusura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Chiusura non riuscita: {ex.Message}");
             errore = "Non è stato possibile chiudere il budget: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally { occupato = false; }
@@ -389,7 +387,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Budget] Eliminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Budget] Eliminazione non riuscita: {ex.Message}");
             errore = "Non è stato possibile eliminare il budget: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Ricarica la pagina per vedere com'è adesso.";
         }
         finally { occupato = false; }

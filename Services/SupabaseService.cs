@@ -115,7 +115,7 @@ public class SupabaseService
                     // Il grezzo del provider si registra e si ferma qui: in console per esteso, col marcatore
                     // [Auth] che il file già usa (v. ScambiaCodiceAsync). Tradurre senza registrare baratterebbe
                     // un'indiscrezione con una cecità.
-                    Console.Error.WriteLine($"[Auth] Ritorno da Google rifiutato: {esito.Diagnostica}");
+                    Diagnostica.ErroreGestito($"[Auth] Ritorno da Google rifiutato: {esito.Diagnostica}");
 
                     ErroreAccesso = OAuthCallback.FraseRifiuto(esito.Errore);
 
@@ -231,7 +231,7 @@ public class SupabaseService
             // pagina d'ingresso»: chi legge ci è già, perché AuthRedirect.razor:68 lo ha rimbalzato
             // lì senza forceLoad — è così che questa proprietà sopravvive fino a Benvenuto:211.
             // Niente «esci e rientra»: non c'è nessuna sessione da rifare.
-            Console.Error.WriteLine($"[Auth] Scambio del codice PKCE non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Scambio del codice PKCE non riuscito: {ex.Message}");
             ErroreAccesso = "Non è stato possibile completare l'accesso: può essere la connessione, oppure l'autorizzazione appena rilasciata da Google, che vale una sola volta e per pochi minuti. Prova di nuovo a entrare con Google.";
         }
         finally
@@ -292,13 +292,13 @@ public class SupabaseService
             ex.Reason == Supabase.Gotrue.Exceptions.FailureHint.Reason.ExpiredRefreshToken
             || ex.Reason == Supabase.Gotrue.Exceptions.FailureHint.Reason.InvalidRefreshToken)
         {
-            Console.Error.WriteLine($"[Auth] Refresh token non valido, eseguo il logout: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Refresh token non valido, eseguo il logout: {ex.Message}");
             await SignOutAsync();
         }
         catch (Exception ex)
         {
             // Rete assente, 5xx, timeout: NON sloggare. Il refresh token può essere ancora buono.
-            Console.Error.WriteLine($"[Auth] Refresh sessione fallito, riprovo più avanti: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Refresh sessione fallito, riprovo più avanti: {ex.Message}");
             _ultimoRefreshFallito = DateTime.UtcNow;
         }
     }
@@ -328,7 +328,7 @@ public class SupabaseService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] SignOut lato server fallito, procedo con la pulizia locale: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] SignOut lato server fallito, procedo con la pulizia locale: {ex.Message}");
         }
 
         try
@@ -337,7 +337,7 @@ public class SupabaseService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Cancellazione della sessione da localStorage fallita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Cancellazione della sessione da localStorage fallita: {ex.Message}");
         }
 
         // Senza try, e non è una svista: PkceStore.Cancella() raccoglie e registra da sé, come negli
@@ -351,12 +351,12 @@ public class SupabaseService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Azzeramento della sessione in memoria fallito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Azzeramento della sessione in memoria fallito: {ex.Message}");
         }
 
         var uscito = _auth.CurrentSession is null;
         if (!uscito)
-            Console.Error.WriteLine("[Auth] Logout NON riuscito: la sessione è ancora attiva in memoria.");
+            Diagnostica.ErroreGestito("[Auth] Logout NON riuscito: la sessione è ancora attiva in memoria.");
 
         return uscito;
     }

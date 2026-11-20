@@ -367,7 +367,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
             membriNonLetti = true;
         }
 
@@ -556,7 +556,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Spese] Cella non salvata: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Cella non salvata: {ex.Message}");
             return new RispostaCella(EsitoCella.Chiusa, "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Riscrivi il valore e riprova fra un momento.");
         }
     }
@@ -636,7 +636,7 @@
         catch (Exception ex)
         {
             // Il conflitto resta: «Sovrascrivi con la mia» si può ripremere.
-            Console.Error.WriteLine($"[Spese] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Sovrascrittura non riuscita: {ex.Message}");
             avvisoPagina = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Riprova fra un momento.";
         }
         finally
@@ -693,7 +693,7 @@
         catch (Exception ex)
         {
             // Una frase che non promette nulla: l'eliminazione a blocchi può essere riuscita in parte.
-            Console.Error.WriteLine($"[Spese] Azione di massa non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Azione di massa non riuscita: {ex.Message}");
             esitoMassa = "Non è stato possibile completare l'operazione: ricarica per vedere com'è adesso.";
         }
 

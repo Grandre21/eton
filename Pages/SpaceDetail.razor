@@ -211,7 +211,7 @@ else
             // Le due cause nominate sono quelle che questo catch non sa distinguere: la prima
             // chiamata del try è AuthState.GetUserIdAsync(). "Non ne fai più parte" NON è fra
             // queste — quel caso non lancia, rende zero righe, e ha già il suo ramo a schermo.
-            Console.Error.WriteLine($"[Spazi] Caricamento dello spazio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Caricamento dello spazio non riuscito: {ex.Message}");
             errore = "Non è stato possibile caricare lo spazio: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
         }
 
@@ -244,7 +244,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Rilettura dopo la rinomina fallita: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Rilettura dopo la rinomina fallita: {ex.Message}");
             }
 
             avviso = "Nome aggiornato.";
@@ -255,7 +255,7 @@ else
             // Esci ed Elimina qui sotto: SpaceRepository.RinominaAsync fa UNA sola chiamata di rete
             // (una UPDATE), e la rilettura che potrebbe fallire dopo ha già il suo try annidato.
             // Se si arriva qui, la rinomina non è avvenuta.
-            Console.Error.WriteLine($"[Spazi] Rinomina non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Rinomina non riuscita: {ex.Message}");
             errore = "Non è stato possibile rinominare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Il nome che hai scritto è ancora qui e lo spazio si chiama ancora come prima: riprova fra un momento.";
         }
         finally { occupato = false; }
@@ -284,7 +284,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Rilettura dei membri fallita: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Rilettura dei membri fallita: {ex.Message}");
             }
 
             avviso = $"{m.Nome} non fa più parte dello spazio.";
@@ -295,7 +295,7 @@ else
             // la DELETE e la rilettura di conferma — quindi l'eccezione può scoppiare DOPO una
             // rimozione riuscita. Dire "è ancora nello spazio" sarebbe falso in un caso
             // raggiungibile, e l'unica azione onesta è guardare com'è adesso.
-            Console.Error.WriteLine($"[Spazi] Rimozione di un membro non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Rimozione di un membro non riuscita: {ex.Message}");
             errore = $"Non è stato possibile togliere {m.Nome} dallo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere chi ne fa parte adesso.";
         }
         finally { occupato = false; }
@@ -325,7 +325,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'uscita: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Elenco non aggiornato dopo l'uscita: {ex.Message}");
             }
 
             Navigation.NavigateTo("spaces");
@@ -334,7 +334,7 @@ else
         {
             // Come in Rimuovi: EsciAsync fa DUE chiamate di rete, quindi l'eccezione può scoppiare
             // dopo un'uscita riuscita e nessuna promessa sullo stato sarebbe onesta.
-            Console.Error.WriteLine($"[Spazi] Uscita dallo spazio non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Uscita dallo spazio non riuscita: {ex.Message}");
             errore = "Non è stato possibile uscire dallo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se ne fai ancora parte.";
         }
         finally { occupato = false; }
@@ -362,7 +362,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'eliminazione: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Elenco non aggiornato dopo l'eliminazione: {ex.Message}");
             }
 
             Navigation.NavigateTo("spaces");
@@ -372,7 +372,7 @@ else
             // Nessuna promessa "lo spazio è ancora al suo posto": SpaceRepository.EliminaAsync fa
             // TRE chiamate di rete — lettura preventiva, DELETE, rilettura di conferma — quindi
             // l'eccezione può scoppiare dopo una cancellazione riuscita.
-            Console.Error.WriteLine($"[Spazi] Eliminazione dello spazio non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Eliminazione dello spazio non riuscita: {ex.Message}");
             errore = "Non è stato possibile eliminare lo spazio: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se lo spazio c'è ancora.";
         }
         finally { occupato = false; confermaRichiesta = false; }

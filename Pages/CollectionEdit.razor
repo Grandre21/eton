@@ -412,7 +412,7 @@ else
             // voleva solo aprire una collezione. In console ci va invece per intero, con lo stesso
             // marcatore [Collezione] che CollectionDetail.razor usa per le proprie diagnosi, così
             // la diagnosi non si perde.
-            Console.Error.WriteLine($"[Collezione] Apertura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Collezione] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire la collezione: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
         }
 
@@ -627,7 +627,7 @@ else
             // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
             // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
             // esattamente ciò che non è stato scritto.
-            Console.Error.WriteLine($"[Collezione] Salvataggio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Collezione] Salvataggio non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -729,7 +729,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Collezione] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Collezione] Sovrascrittura non riuscita: {ex.Message}");
             errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -765,7 +765,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Collezione] Eliminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Collezione] Eliminazione non riuscita: {ex.Message}");
             // Nessuna promessa che la collezione sia al suo posto, e la frase l'ha persa apposta:
             // CollectionRepository.EliminaAsync fa TRE chiamate di rete — la lettura preventiva, la
             // DELETE e la rilettura di conferma — quindi un'eccezione può scoppiare DOPO una

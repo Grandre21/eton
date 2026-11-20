@@ -138,7 +138,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Note] Nomi degli autori non disponibili: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Note] Nomi degli autori non disponibili: {ex.Message}");
         }
     }
 

@@ -487,7 +487,7 @@ else
             // nuovoImporto e nuovaDescrizione si azzerano solo DOPO che CreaAsync è tornata, quindi
             // ogni percorso che finisce in questo catch li lascia intatti. Data e categoria non si
             // azzerano mai.
-            Console.Error.WriteLine($"[Spese] Spesa non segnata: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Spesa non segnata: {ex.Message}");
             errore = "Non è stato possibile segnare la spesa: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento.";
         }
         finally
@@ -575,7 +575,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Spese] Budget non disponibili: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Budget non disponibili: {ex.Message}");
         }
 
         // Letti sempre, non solo negli spazi condivisi: chi ha pagato si nasconde riga per riga in
@@ -594,7 +594,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spese] Nomi dei paganti non disponibili: {ex.Message}");
         }
     }
 

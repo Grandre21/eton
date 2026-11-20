@@ -92,7 +92,7 @@ else
             // pagina non compare in nessun ramo, a differenza di Home e dei tre registri, dove può
             // comparire. Nessun lavoro in sospeso da perdere: i due campi sono ancora vuoti,
             // questo è OnInitializedAsync.
-            Console.Error.WriteLine($"[Spazi] Elenco non caricato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Elenco non caricato: {ex.Message}");
             errore = "Non è stato possibile caricare i tuoi spazi: può essere la connessione, oppure la sessione che è scaduta. Ricarica la pagina, e se non basta esci e rientra.";
         }
         caricato = true;
@@ -118,7 +118,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo la creazione: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Elenco non aggiornato dopo la creazione: {ex.Message}");
             }
 
             Navigation.NavigateTo($"spaces/{id}");
@@ -131,7 +131,7 @@ else
             // caso della risposta persa dopo che l'INSERT è passata, e in quello lo spazio esiste
             // eccome: v. il commento nel try qui sopra, che spiega perché create_space non
             // deduplica sul nome.
-            Console.Error.WriteLine($"[Spazi] Creazione dello spazio non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Creazione dello spazio non riuscita: {ex.Message}");
             errore = "Non è stato possibile creare lo spazio: il database ha rifiutato la creazione, oppure non è stato raggiunto. Il nome che hai scritto è ancora qui: riprova fra un momento.";
         }
         finally
@@ -165,7 +165,7 @@ else
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Spazi] Elenco non aggiornato dopo l'ingresso: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Spazi] Elenco non aggiornato dopo l'ingresso: {ex.Message}");
             }
 
             Navigation.NavigateTo($"spaces/{id.Value}");
@@ -174,7 +174,7 @@ else
         {
             // Il codice digitato è ancora nel campo: 'codice' si svuota solo dopo che EntraAsync è
             // andata a buon fine, quindi la promessa è vera in ogni ramo che arriva qui.
-            Console.Error.WriteLine($"[Spazi] Ingresso nello spazio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Ingresso nello spazio non riuscito: {ex.Message}");
             errore = "Non è stato possibile entrare nello spazio: il database ha rifiutato la richiesta, oppure non è stato raggiunto. Il codice che hai scritto è ancora qui: riprova fra un momento.";
         }
         finally

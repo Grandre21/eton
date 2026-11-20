@@ -85,7 +85,7 @@ public class AllineatoreProfilo
         {
             // Si riprova al prossimo avvio: l'impronta non è stata salvata, quindi VaScritto
             // tornerà true alla prossima occasione.
-            Console.Error.WriteLine($"[Profilo] Allineamento del profilo fallito, riprovo al prossimo avvio: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Profilo] Allineamento del profilo fallito, riprovo al prossimo avvio: {ex.Message}");
         }
     }
 
@@ -101,7 +101,7 @@ public class AllineatoreProfilo
         {
             // Ripiego onesto: se la rimozione fallisce, al prossimo accesso l'impronta non
             // combacia e si riscrive comunque, quindi non c'è correttezza in gioco.
-            Console.Error.WriteLine($"[Profilo] Rimozione dell'impronta fallita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Profilo] Rimozione dell'impronta fallita: {ex.Message}");
         }
     }
 
@@ -116,7 +116,7 @@ public class AllineatoreProfilo
         {
             // Si ripiega su null, cioè "non risulta allineato": costa una scrittura in più al
             // prossimo avvio, mai un dato scorretto — è il degrado peggiore possibile e non va oltre.
-            Console.Error.WriteLine($"[Profilo] Impronta salvata illeggibile, la ignoro: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Profilo] Impronta salvata illeggibile, la ignoro: {ex.Message}");
             return null;
         }
     }
@@ -131,7 +131,7 @@ public class AllineatoreProfilo
         {
             // Si perde solo il risparmio della prossima chiamata di rete: il profilo è già stato
             // scritto con successo, quindi non è la correttezza a essere in gioco qui.
-            Console.Error.WriteLine($"[Profilo] Salvataggio dell'impronta fallito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Profilo] Salvataggio dell'impronta fallito: {ex.Message}");
         }
     }
 }

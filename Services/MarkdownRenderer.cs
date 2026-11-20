@@ -48,7 +48,7 @@ public sealed class MarkdownRenderer
             // l'eccezione risalirebbe fino al rendering di Blazor, e siccome l'estratto si calcola
             // DENTRO il @foreach dell'elenco, una sola nota malformata romperebbe la pagina di
             // chiunque stia in quello spazio — non solo di chi l'ha scritta.
-            Console.Error.WriteLine($"[Markdown] Testo non interpretabile, lo mostro grezzo: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Markdown] Testo non interpretabile, lo mostro grezzo: {ex.Message}");
 
             // Il ripiego è sicuro per costruzione: HtmlEncode non può produrre marcatura attiva.
             return $"<p>{WebUtility.HtmlEncode(markdown)}</p>";
@@ -104,7 +104,7 @@ public sealed class MarkdownRenderer
         {
             // Stesso tetto di annidamento di InHtml. Il ripiego qui è il testo grezzo così com'è:
             // finisce in un'interpolazione Razor normale, che l'escape lo fa da sé.
-            Console.Error.WriteLine($"[Markdown] Estratto non calcolabile, uso il testo grezzo: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Markdown] Estratto non calcolabile, uso il testo grezzo: {ex.Message}");
             return markdown;
         }
     }

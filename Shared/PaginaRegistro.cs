@@ -132,7 +132,7 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
     /// </summary>
     protected void SegnalaNonLetti(Exception ex)
     {
-        Console.Error.WriteLine($"[Registro] Lettura del registro non riuscita: {ex.Message}");
+        Diagnostica.ErroreGestito($"[Registro] Lettura del registro non riuscita: {ex.Message}");
         errore = $"Lo spazio si è caricato, ma non è stato possibile leggerne {NomePlurale}: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova.";
         datiNonLetti = true;
     }
@@ -161,7 +161,7 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
             // AssicuraCaricatoAsync può lanciare con Attivo ancora valorizzato. Lì a schermo resta
             // il <div class="errore"> nudo, e una frase che dice "Riprova" nominerebbe un pulsante
             // che non c'è. La formula senza pulsante è quella che il progetto usa ovunque.
-            Console.Error.WriteLine($"[Registro] Elenco degli spazi non caricato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Registro] Elenco degli spazi non caricato: {ex.Message}");
             errore = "Non è stato possibile caricare i tuoi spazi: può essere la connessione, oppure la sessione che è scaduta. Riprova fra un momento, e se non basta esci e rientra.";
             return;
         }
@@ -205,7 +205,7 @@ public abstract class PaginaRegistro : ComponentBase, IDisposable
             // contenere un importo e una descrizione appena digitati, che la ricarica butta via.
             // Si accetta perché l'alternativa non funziona, e un'azione che non produce niente è
             // peggio di una che costa qualcosa. Su Notes e Collections non c'è nulla da perdere.
-            Console.Error.WriteLine($"[Registro] Aggiornamento dopo il cambio di spazio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Registro] Aggiornamento dopo il cambio di spazio non riuscito: {ex.Message}");
             errore = $"Non è stato possibile aggiornare {NomePlurale} dopo il cambio di spazio: può essere la connessione, oppure il tuo accesso al nuovo spazio che è cambiato. Ricarica la pagina.";
             caricato = true;
         }

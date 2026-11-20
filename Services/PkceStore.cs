@@ -38,7 +38,7 @@ public class PkceStore
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Verificatore PKCE illeggibile, procedo senza: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Verificatore PKCE illeggibile, procedo senza: {ex.Message}");
             return null;
         }
     }
@@ -54,7 +54,7 @@ public class PkceStore
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Auth] Cancellazione del verificatore PKCE non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Auth] Cancellazione del verificatore PKCE non riuscita: {ex.Message}");
         }
     }
 }

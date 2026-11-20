@@ -54,7 +54,7 @@ else
         {
             // Il profilo non è indispensabile: senza nome ed email il pulsante "Esci" funziona
             // comunque, ed è l'unica cosa per cui si arriva davvero su questa pagina.
-            Console.Error.WriteLine($"[Profilo] Lettura dell'identità fallita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Profilo] Lettura dell'identità fallita: {ex.Message}");
         }
         caricato = true;
     }

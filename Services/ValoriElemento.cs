@@ -50,7 +50,7 @@ public static class ValoriElemento
             // Stesso ragionamento di MarkdownRenderer.InTestoSemplice: questo testo finisce dentro
             // un @foreach di una scheda elemento, e un'eccezione qui romperebbe la pagina di
             // chiunque stia in quello spazio, non solo la scheda del valore malformato.
-            Console.Error.WriteLine($"[ValoriElemento] Valore non convertibile, lo mostro grezzo: {ex.Message}");
+            Diagnostica.ErroreGestito($"[ValoriElemento] Valore non convertibile, lo mostro grezzo: {ex.Message}");
             return valore.ToString() ?? "";
         }
     }

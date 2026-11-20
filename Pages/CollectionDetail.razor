@@ -247,7 +247,7 @@ else
             // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
             // voleva solo aprire una collezione. In console ci va per intero, con lo stesso
             // marcatore delle due diagnosi già presenti più sotto.
-            Console.Error.WriteLine($"[Collezione] Apertura del dettaglio non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Collezione] Apertura del dettaglio non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire la collezione: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
 
             // NON si accende 'sparita': quello significa "il database ha risposto che non c'è", e
@@ -315,7 +315,7 @@ else
                         // al buio non è ancora stata applicata al database, la funzione review_counts
                         // non esiste e ogni chiamata finisce qui.
                         conteggiMancanti = true;
-                        Console.Error.WriteLine($"[Collezione] Conteggi voti al buio non disponibili: {ex.Message}");
+                        Diagnostica.ErroreGestito($"[Collezione] Conteggi voti al buio non disponibili: {ex.Message}");
                     }
                 }
             }
@@ -329,7 +329,7 @@ else
                 // traccia, un fallimento sistematico dei voti resterebbe indistinguibile da uno
                 // spazio in cui nessuno ha ancora votato. Stesso formato di Notes.razor:187-194 e
                 // SpaceDetail.
-                Console.Error.WriteLine($"[Collezione] Voti non disponibili: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Collezione] Voti non disponibili: {ex.Message}");
             }
         }
 

@@ -65,7 +65,7 @@
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Tutorial] Modulo non caricato, i passi restano centrati: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Tutorial] Modulo non caricato, i passi restano centrati: {ex.Message}");
             }
 
             try
@@ -78,7 +78,7 @@
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Tutorial] Ricordo illeggibile, l'invito non viene mostrato: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Tutorial] Ricordo illeggibile, l'invito non viene mostrato: {ex.Message}");
             }
         }
 
@@ -93,7 +93,7 @@
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"[Tutorial] Riquadro non portato in primo piano: {ex.Message}");
+                    Diagnostica.ErroreGestito($"[Tutorial] Riquadro non portato in primo piano: {ex.Message}");
                 }
             }
             await riquadro.FocusAsync();
@@ -116,7 +116,7 @@
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Tutorial] Ricordo non salvato, l'invito potrà ricomparire: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Tutorial] Ricordo non salvato, l'invito potrà ricomparire: {ex.Message}");
             }
         }
         await MostraPasso(0);
@@ -153,7 +153,7 @@
         catch (Exception ex)
         {
             // Un guasto non dimostra che l'ancora manca: resta solo il testo del passo.
-            Console.Error.WriteLine($"[Tutorial] Elemento non evidenziato, il passo resta centrato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Tutorial] Elemento non evidenziato, il passo resta centrato: {ex.Message}");
         }
         stile = nuovoStile;
         assente = nuovoAssente;
@@ -188,7 +188,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Tutorial] Contorno non rimosso: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Tutorial] Contorno non rimosso: {ex.Message}");
         }
         focalizzaPulsante = true;
     }
@@ -205,7 +205,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Tutorial] Chiusura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Tutorial] Chiusura non riuscita: {ex.Message}");
         }
     }
 }

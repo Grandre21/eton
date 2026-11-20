@@ -47,7 +47,7 @@
             // qualcosa che il disegno usa — resta un canvas vuoto e tutto il resto funziona.
             // È la stessa lezione del banner di errore sulla vetrina: il difetto va contenuto dove
             // nasce, non fatto risalire fino al riquadro di crash di Blazor.
-            Console.Error.WriteLine($"[Grafo] Non disegnato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Grafo] Non disegnato: {ex.Message}");
         }
     }
 
@@ -70,7 +70,7 @@
         {
             // Smontare un componente non è un'operazione che possa fallire in faccia all'utente:
             // se il modulo è già sparito (navigazione in corso), non c'è niente da salvare.
-            Console.Error.WriteLine($"[Grafo] Chiusura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Grafo] Chiusura non riuscita: {ex.Message}");
         }
     }
 }

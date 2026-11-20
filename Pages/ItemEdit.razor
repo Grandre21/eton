@@ -293,7 +293,7 @@ else
             // GRANT da eseguire, cioè istruzioni per un amministratore di database mostrate a chi
             // voleva solo aprire un elemento. In console ci va invece per intero, così la diagnosi
             // non si perde. Vale per tutti i catch qui sotto.
-            Console.Error.WriteLine($"[Elemento] Apertura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Elemento] Apertura non riuscita: {ex.Message}");
             errore = "Non è stato possibile aprire l'elemento: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
 
             // NON si accende 'sparito': quello significa "il database ha risposto che non c'è", e
@@ -383,7 +383,7 @@ else
             // domanda di chi ha appena visto fallire un salvataggio — e per la stessa ragione
             // l'azione suggerita è riprovare, mai ricaricare: una ricarica butterebbe via
             // esattamente ciò che non è stato scritto.
-            Console.Error.WriteLine($"[Elemento] Salvataggio non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Elemento] Salvataggio non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -497,7 +497,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Elemento] Sovrascrittura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Elemento] Sovrascrittura non riuscita: {ex.Message}");
             errore = "Non è stato possibile sovrascrivere: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
         finally
@@ -532,7 +532,7 @@ else
             // di rete — lettura preventiva, DELETE, rilettura di conferma — quindi un'eccezione può
             // scoppiare DOPO una cancellazione riuscita, e la promessa sarebbe falsa in un caso
             // raggiungibile.
-            Console.Error.WriteLine($"[Elemento] Eliminazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Elemento] Eliminazione non riuscita: {ex.Message}");
             errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se l'elemento c'è ancora.";
         }
         finally

@@ -248,7 +248,7 @@
             // stesso marcatore [RecensioniElemento] che questo file già usa per le diagnosi non
             // fatali — i nomi degli autori, il conteggio dei recensori, la rilettura silenziosa —
             // così la diagnosi non si perde. Vale per tutti i catch qui sotto.
-            Console.Error.WriteLine($"[RecensioniElemento] Identificazione dell'utente non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Identificazione dell'utente non riuscita: {ex.Message}");
             errore = "Non è stato possibile riconoscere il tuo accesso: può essere la connessione, oppure la sessione che è scaduta. Finché non si risolve, la tua recensione non viene riconosciuta come tua: ricarica la pagina, e se non basta esci e rientra.";
         }
 
@@ -271,7 +271,7 @@
 
             // v. il commento nel catch dell'identificazione, sopra: il JSON in console, la frase
             // all'utente.
-            Console.Error.WriteLine($"[RecensioniElemento] Lettura delle recensioni non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Lettura delle recensioni non riuscita: {ex.Message}");
             errore = "Non è stato possibile leggere le recensioni: può essere la connessione, oppure il tuo accesso a questo spazio che è cambiato. Riprova fra un momento.";
             recensioniNonLette = true;
             caricato = true;
@@ -293,7 +293,7 @@
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            Console.Error.WriteLine($"[RecensioniElemento] Nomi degli autori non disponibili: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Nomi degli autori non disponibili: {ex.Message}");
         }
 
         await LeggiRecensori(miaGenerazione);
@@ -332,7 +332,7 @@
         catch (Exception ex)
         {
             if (miaGenerazione != generazione) return;
-            Console.Error.WriteLine($"[RecensioniElemento] Conteggio dei recensori non disponibile: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Conteggio dei recensori non disponibile: {ex.Message}");
         }
     }
 
@@ -409,7 +409,7 @@
             // In console sempre, anche quando la rilettura qui sotto scopre che la recensione
             // c'era già e all'utente compare un avviso invece di un errore: l'eccezione che ha
             // fatto partire tutto questo è la sola cosa che dice PERCHÉ l'INSERT è fallita.
-            Console.Error.WriteLine($"[RecensioniElemento] Creazione della recensione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Creazione della recensione non riuscita: {ex.Message}");
 
             // Il vincolo unique (item_id, user_id) vieta una seconda recensione della stessa persona
             // sullo stesso elemento: se questa INSERT è fallita perché una c'era già — scritta da te
@@ -515,7 +515,7 @@
         {
             if (miaGenerazione != generazione) return;
 
-            Console.Error.WriteLine($"[RecensioniElemento] Salvataggio della recensione non riuscito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Salvataggio della recensione non riuscito: {ex.Message}");
             errore = "Non è stato possibile salvare: il database ha rifiutato la scrittura, oppure non è stato raggiunto. Quello che hai scritto è ancora qui: riprova fra un momento, e non chiudere la pagina.";
         }
     }
@@ -532,7 +532,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[RecensioniElemento] Rilettura dopo una scrittura fallita non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Rilettura dopo una scrittura fallita non riuscita: {ex.Message}");
             return null;
         }
     }
@@ -643,7 +643,7 @@
             // EliminaAsync fa tre chiamate di rete (lettura preventiva, DELETE, rilettura di
             // conferma), quindi un'eccezione può scoppiare DOPO una cancellazione riuscita.
             // "La recensione è ancora al suo posto" sarebbe una promessa che non si può mantenere.
-            Console.Error.WriteLine($"[RecensioniElemento] Eliminazione della recensione non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[RecensioniElemento] Eliminazione della recensione non riuscita: {ex.Message}");
             errore = "Non è stato possibile eliminare: il database ha rifiutato la cancellazione, oppure non è stato raggiunto. Ricarica la pagina per vedere se la recensione c'è ancora.";
         }
         finally

@@ -290,7 +290,7 @@
             catch (Exception ex)
             {
                 // Senza il modulo la griglia funziona ancora col mouse: il guasto si contiene qui.
-                Console.Error.WriteLine($"[Griglia] Modulo non caricato: {ex.Message}");
+                Diagnostica.ErroreGestito($"[Griglia] Modulo non caricato: {ex.Message}");
             }
         }
 
@@ -304,7 +304,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Griglia] Fuoco non spostato: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Griglia] Fuoco non spostato: {ex.Message}");
         }
     }
 
@@ -322,7 +322,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Griglia] Chiusura non riuscita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Griglia] Chiusura non riuscita: {ex.Message}");
         }
     }
 
@@ -331,7 +331,7 @@
     {
         if (modulo is null)
         {
-            Console.Error.WriteLine("[Griglia] Esportazione non riuscita: il modulo non è caricato.");
+            Diagnostica.ErroreNonSegnalato("[Griglia] Esportazione non riuscita: il modulo non è caricato.");
             return;
         }
 
@@ -342,7 +342,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Griglia] Esportazione non riuscita: {ex.Message}");
+            Diagnostica.ErroreNonSegnalato($"[Griglia] Esportazione non riuscita: {ex.Message}");
         }
     }
 

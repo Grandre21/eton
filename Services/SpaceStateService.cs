@@ -145,7 +145,7 @@ public class SpaceStateService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[Spazi] Rimozione dello spazio salvato fallita: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Rimozione dello spazio salvato fallita: {ex.Message}");
         }
         Cambiato?.Invoke();
     }
@@ -161,7 +161,7 @@ public class SpaceStateService
         {
             // Si riparte dallo spazio personale: una preferenza illeggibile non vale il blocco
             // dell'applicazione, ma va detta, altrimenti un localStorage rotto resta invisibile.
-            Console.Error.WriteLine($"[Spazi] Spazio salvato illeggibile, lo ignoro: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Spazio salvato illeggibile, lo ignoro: {ex.Message}");
             return null;
         }
     }
@@ -176,7 +176,7 @@ public class SpaceStateService
         {
             // Si perde solo la memoria della scelta fra un caricamento e l'altro: non vale
             // un'eccezione in faccia all'utente, ma nemmeno il silenzio.
-            Console.Error.WriteLine($"[Spazi] Salvataggio dello spazio scelto fallito: {ex.Message}");
+            Diagnostica.ErroreGestito($"[Spazi] Salvataggio dello spazio scelto fallito: {ex.Message}");
         }
     }
 }
