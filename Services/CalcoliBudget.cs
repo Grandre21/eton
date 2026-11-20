@@ -83,17 +83,18 @@ public static class CalcoliBudget
         return f.Month == inizio.Month ? $"solo {da} {inizio.Year}" : $"da {da} a {a} {inizio.Year}";
     }
 
-    // Il vincolo è category_budgets_no_overlap; 23P01 = exclusion_violation, che PostgREST rende come HTTP 400.
+    // 23P01 = esclusione category_budgets_no_overlap (HTTP 400); 23505 = indice univoco category_budgets_aperto_uq dei budget aperti (HTTP 409),
+    // l'unico conflitto di unicità possibile da un INSERT su category_budgets (l'id lo genera il client).
     public static bool RifiutoPerSovrapposizione(int stato, string? corpo)
     {
-        if (stato != 400 || string.IsNullOrWhiteSpace(corpo)) return false;
+        if (stato is not (400 or 409) || string.IsNullOrWhiteSpace(corpo)) return false;
         try
         {
             using var documento = JsonDocument.Parse(corpo);
             return documento.RootElement.ValueKind == JsonValueKind.Object
                 && documento.RootElement.TryGetProperty("code", out var codice)
                 && codice.ValueKind == JsonValueKind.String
-                && codice.GetString() == "23P01";
+                && (stato == 400 ? codice.GetString() == "23P01" : codice.GetString() == "23505");
         }
         catch (JsonException)
         {

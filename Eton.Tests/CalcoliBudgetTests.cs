@@ -128,6 +128,15 @@ public class CalcoliBudgetTests
     }
 
     [Fact]
+    public void Il_rifiuto_23505_del_budget_aperto_si_riconosce_col_409()
+    {
+        const string corpo = "{\"code\":\"23505\",\"details\":\"Key (space_id, category)=(…) already exists.\",\"hint\":null,\"message\":\"duplicate key value violates unique constraint \\\"category_budgets_aperto_uq\\\"\"}";
+        Assert.True(CalcoliBudget.RifiutoPerSovrapposizione(409, corpo));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(400, corpo));
+        Assert.False(CalcoliBudget.RifiutoPerSovrapposizione(409, "{\"code\":\"23503\"}"));
+    }
+
+    [Fact]
     public void La_scorciatoia_apre_la_tabella_sul_mese_tipo_spesa_senza_categoria()
     {
         const string percorso = "expenses/table";
