@@ -49,6 +49,7 @@ DECISIONI DA RATIFICARE
 
 - 2026-11-21 utente (popup della sessione Amministratore, riportato da lei al coordinatore con le parole dell'utente):
   alla 1 «Confermo (Recommended)», alla 2 «Confermo (Recommended)» — ratificate 2026-11-21, come riportate.
+- 2026-11-21 utente (chat del coordinatore, bottone): «Confermo entrambe» — conferma diretta delle due ratifiche.
 
 FUORI SCOPE
 - L'esportazione della tabella spese fallita non ha un messaggio suo: oggi l'utente vede solo la barra generica. Un messaggio vero vuol dire testo nuovo per l'utente, più un esito restituito da `Griglia.EsportaAsync` e mostrato da `SpeseTabella` (per esempio in `avvisoPagina`).
